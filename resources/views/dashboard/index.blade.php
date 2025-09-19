@@ -207,14 +207,6 @@
         {{-- Active Period Tags --}}
         <div class="grid grid-cols-2 gap-6 mt-4">
             <div class="text-center">
-                <span class="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    ACTIVE: 9/SEP/25 - 12/Sep/25
-                </span>
-            </div>
-            <div class="text-center">
-                <span class="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    ACTIVE: 10/SEP/25
-                </span>
             </div>
         </div>
     </div>
@@ -233,7 +225,10 @@
                 <tbody>
                     @foreach ($methods as $m)
                         <tr>
-                            <td class="border px-2 py-1">{{ $m->station_id ?? '-' }}</td>
+                          <td class="border px-2 py-1">
+    {{ $m->station->station_name ?? '-' }}
+</td>
+
                             <td class="border px-2 py-1 text-center">{{ $m->keterangan ?? '-' }}</td>
                             <td class="border px-2 py-1 text-center">{{ $m->foto_path ?? '-' }}</td>
                         </tr>

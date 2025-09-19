@@ -1,8 +1,8 @@
 
 @php
-    // Cek apakah Auth::user() ada, jika tidak pakai dummy
+    
     $user = Auth::user() ?? (object)[
-        'name' => 'admin',
+        'name' => 'Admin',
         'npk' => '00000',
     ];
 @endphp

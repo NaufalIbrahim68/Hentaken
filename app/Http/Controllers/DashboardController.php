@@ -13,35 +13,35 @@ use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     public function index()
-{
-    $manPower   = ManPower::all();
-    $methods    = Method::all();
-    $materials  = Material::all();
-    $stations   = Station::all();
-    
+    {
+        $manPower   = ManPower::all();
+     $methods = Method::with('station')->get();
+        $materials  = Material::all();
+        $stations   = Station::all();
+        
+        // JOIN machines dengan stations
+        $machines = DB::table('machines')
+            ->join('stations', 'machines.station_id', '=', 'stations.id')
+            ->select(
+                'machines.*',
+                'stations.station_name'
+            )
+            ->get();
 
-    // JOIN machines dengan stations
-    $machines = DB::table('machines')
-        ->join('stations', 'machines.station_id', '=', 'stations.id')
-        ->select(
-            'machines.*',
-            'stations.station_name'
-        )
-        ->get();
+        // contoh current & new part
+        $currentPart = $materials->first();
+        $newPart     = $materials->skip(1)->first();
+        $currentShift = 'Shift A';
 
-    $currentPart = $materials->first();
-    $newPart     = $materials->skip(1)->first();
-    $currentShift = 'Shift A';
-
-    return view('dashboard.index', compact(
-        'manPower', 
-        'methods', 
-        'machines', 
-        'materials', 
-        'stations', 
-        'currentPart', 
-        'newPart', 
-        'currentShift'
-    ));
-}
+        return view('dashboard.index', compact(
+            'manPower', 
+            'methods', 
+            'machines', 
+            'materials', 
+            'stations', 
+            'currentPart', 
+            'newPart', 
+            'currentShift'
+        ));
+    }
 }

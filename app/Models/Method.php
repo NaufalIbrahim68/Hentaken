@@ -18,4 +18,9 @@ class Method extends Model
         'active_from',
         'active_to',
     ];
+
+    public function station()
+{
+    return $this->belongsTo(Station::class, 'station_id', 'id');
+}
 }
