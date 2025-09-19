@@ -70,6 +70,18 @@
         flex-direction: column;
         border-radius: 4px;
     }
+
+    .status-text {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.status-henkaten {
+    background-color: red;
+    color: white;
+}
+
 </style>
 
 <div class="container mx-auto px-4 py-6">
@@ -121,7 +133,7 @@
                         {{ $isAbsent ? 'bg-red-500' : 'bg-green-500' }} 
                         border-2 border-white"></div>
                 </div>
-                
+                    
                 {{-- Name --}}
                 <p class="text-xs font-medium truncate">{{ $displayName }}</p>
                 
@@ -238,7 +250,7 @@
     </div>
 
     {{-- Machine Status Bar with Green Background --}}
-    <div class="bg-green-500 p-2">
+    <div class="bg-white p-2">
     <div class="flex justify-center items-center space-x-4">
         @foreach ($machines as $mc)
             @php
@@ -292,9 +304,7 @@
 
             {{-- Status Badge --}}
             <div class="text-center mt-3">
-                <div class="status-badge">
-                    ACTIVE: 10/SEP/25
-                </div>
+                
             </div>
         </div>
     </div>
@@ -310,7 +320,7 @@
     
 
     {{-- Material Status Bar with Green Background --}}
-    <div class="bg-green-500 p-2">
+    <div class="bg-white p-2">
         <div class="flex justify-center items-center space-x-2">
             {{-- Material status indicators --}}
             @for($i = 1; $i <= 10; $i++)
@@ -379,7 +389,7 @@
    
 
 
-{{-- Real-time Clock Script --}}
+
 {{-- Scripts --}}
 <script>
     // Real-time Clock
@@ -412,14 +422,18 @@ function updateMachineStatus() {
     const machines = document.querySelectorAll('.machine-status');
     machines.forEach((machine) => {
         if (Math.random() > 0.95) { // 5% chance to change status
+            const statusText = machine.querySelector('.status-text');
+            
             if (machine.classList.contains('machine-active')) {
                 machine.classList.remove('machine-active');
                 machine.classList.add('machine-inactive');
-                machine.querySelector('.status-text').innerText = 'HENKATEN';
+                statusText.innerText = 'HENKATEN';
+                statusText.classList.add('status-henkaten'); 
             } else {
                 machine.classList.remove('machine-inactive');
                 machine.classList.add('machine-active');
-                machine.querySelector('.status-text').innerText = 'NORMAL';
+                statusText.innerText = 'NORMAL';
+                statusText.classList.remove('status-henkaten'); 
             }
         }
     });

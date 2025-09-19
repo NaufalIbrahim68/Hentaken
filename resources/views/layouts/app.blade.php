@@ -2,7 +2,7 @@
 @php
     // Cek apakah Auth::user() ada, jika tidak pakai dummy
     $user = Auth::user() ?? (object)[
-        'name' => 'Dummy User',
+        'name' => 'admin',
         'npk' => '00000',
     ];
 @endphp
