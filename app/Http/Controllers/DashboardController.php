@@ -15,7 +15,7 @@ class DashboardController extends Controller
     public function index()
     {
         $manPower   = ManPower::all();
-     $methods = Method::with('station')->get();
+    $methods = Method::with('station')->paginate(10); 
         $materials  = Material::all();
         $stations   = Station::all();
         

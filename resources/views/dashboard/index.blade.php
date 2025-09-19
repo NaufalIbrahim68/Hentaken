@@ -86,20 +86,24 @@
 
 <div class="container mx-auto px-4 py-6">
     {{-- HEADER --}}
-    <div class="flex justify-between items-center border-b pb-2 mb-6">
-        <div class="flex items-center space-x-3">
-            
-            <div>
-                <h1 class="text-2xl font-bold">HENKATEN FA</h1>
-                <p class="text-sm text-gray-600" id="current-date"></p>
-            </div>
+    <div class="flex items-center justify-between border-b pb-2 mb-6">
+        
+        {{-- Kolom Kiri (kosong untuk nge-balance biar judul tetap center) --}}
+        <div class="w-1/3"></div>
+
+        {{-- Title & Date di tengah --}}
+        <div class="w-1/3 text-center">
+            <h1 class="text-2xl font-bold">HENKATEN FA</h1>
+            <p class="text-sm text-gray-600" id="current-date"></p>
         </div>
-        <div class="text-right">
+
+        {{-- Time & Shift di kanan --}}
+        <div class="w-1/3 text-right">
             <p class="font-mono text-lg" id="current-time"></p>
-            <p class="text-sm">SHIFT 2</p>
+           <p id="current-shift"></p>
         </div>
     </div>
-
+</div>
     {{-- 4 SECTION GRID --}}
     <div class="grid grid-cols-2 gap-6">
 
@@ -211,31 +215,35 @@
         </div>
     </div>
 </div>
-        {{-- METHOD --}}
-        <div class="bg-white shadow rounded p-4">
-            <h2 class="text-lg font-semibold mb-3 border-b pb-1">METHOD</h2>
-            <table class="w-full border-collapse text-sm">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="border px-2 py-1 text-left">Station</th>
-                        <th class="border px-2 py-1 text-center">Keterangan</th>
-                        <th class="border px-2 py-1 text-center">Lampiran</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($methods as $m)
-                        <tr>
-                          <td class="border px-2 py-1">
-    {{ $m->station->station_name ?? '-' }}
-</td>
+{{-- METHOD --}}
+<div class="bg-white shadow rounded p-4">
+    <h2 class="text-lg font-semibold mb-3 border-b pb-1">METHOD</h2>
+    <table class="w-full border-collapse text-sm">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="border px-2 py-1 text-left">Station</th>
+                <th class="border px-2 py-1 text-center">Keterangan</th>
+                <th class="border px-2 py-1 text-center">Lampiran</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($methods as $m)
+                <tr>
+                    <td class="border px-2 py-1">
+                        {{ $m->station->station_name ?? '-' }}
+                    </td>
+                    <td class="border px-2 py-1 text-center">{{ $m->keterangan ?? '-' }}</td>
+                    <td class="border px-2 py-1 text-center">{{ $m->foto_path ?? '-' }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
 
-                            <td class="border px-2 py-1 text-center">{{ $m->keterangan ?? '-' }}</td>
-                            <td class="border px-2 py-1 text-center">{{ $m->foto_path ?? '-' }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+    {{-- Pagination --}}
+    <div class="mt-3">
+        {{ $methods->links() }}
+    </div>
+</div>
 
  {{-- MACHINE --}}
 <div class="bg-white shadow rounded p-4">
@@ -274,7 +282,7 @@
 
 
     {{-- Bottom Section - Jig Change (PASTIKAN ADA DI SINI) --}}
-    <div class="flex p-4 bg-gray-100 mt-4">
+    <div class="flex p-4 bg-white-100 mt-4">
         <div class="flex-1">
             <div class="flex items-center justify-center">
                 {{-- Old Jig --}}
@@ -388,14 +396,33 @@
 {{-- Scripts --}}
 <script>
     // Real-time Clock
-    function updateDateTime() {
-        const now = new Date();
-        const options = { day: '2-digit', month: 'long', year: 'numeric' };
-        document.getElementById("current-date").textContent = now.toLocaleDateString('en-GB', options);
-        document.getElementById("current-time").textContent = now.toLocaleTimeString('en-GB');
+   function updateDateTime() {
+    const now = new Date();
+
+    // Format tanggal
+    const options = { day: '2-digit', month: 'long', year: 'numeric' };
+    document.getElementById("current-date").textContent = now.toLocaleDateString('en-GB', options);
+
+    // Format waktu
+    document.getElementById("current-time").textContent = now.toLocaleTimeString('en-GB');
+
+    // Tentukan shift
+    const hour = now.getHours();
+    let shift;
+
+    if (hour >= 7 && hour < 19) {
+        shift = "Shift 2"; // 07:00 - 18:59
+    } else {
+        shift = "Shift 1"; // 19:00 - 06:59
     }
-    setInterval(updateDateTime, 1000);
-    updateDateTime();
+
+    document.getElementById("current-shift").textContent = shift;
+}
+
+// Update tiap detik
+setInterval(updateDateTime, 1000);
+updateDateTime();
+
 
     function toggleMachine(element) {
     const statusText = element.querySelector('.status-text');
