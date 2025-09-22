@@ -14,10 +14,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $manPower   = ManPower::all();
-    $methods = Method::with('station')->paginate(10); 
-        $materials  = Material::all();
-        $stations   = Station::all();
+        $manPower = ManPower::all();
+        $methods  = Method::with('station')->paginate(5); 
+        $materials = Material::all();
+        $stations  = Station::all();
         
         // JOIN machines dengan stations
         $machines = DB::table('machines')
@@ -28,10 +28,19 @@ class DashboardController extends Controller
             )
             ->get();
 
-        // contoh current & new part
+        // Contoh current & new part (sementara ambil dari materials)
         $currentPart = $materials->first();
         $newPart     = $materials->skip(1)->first();
         $currentShift = 'Shift A';
+
+        // Mapping station dengan status (sementara default NORMAL)
+        $stationStatuses = $stations->map(function ($station) {
+            return [
+                'id'    => $station->id,
+                'name'  => $station->station_name,
+                'status'=> 'NORMAL', // default
+            ];
+        });
 
         return view('dashboard.index', compact(
             'manPower', 
@@ -39,6 +48,7 @@ class DashboardController extends Controller
             'machines', 
             'materials', 
             'stations', 
+            'stationStatuses',
             'currentPart', 
             'newPart', 
             'currentShift'
