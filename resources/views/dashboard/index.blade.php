@@ -131,36 +131,35 @@
         }
     </style>
 
-    <div class="container mx-auto px-4 py-4">
-        {{-- HEADER --}}
-        <div class="flex items-center justify-between border-b pb-2 mb-4">
+ <div class="w-full h-screen flex flex-col px-4 py-2">
+    {{-- HEADER --}}
+      <div class="flex items-center justify-between border-b pb-2 mb-2 h-[12vh]">
+        {{-- Kolom Kiri --}}
+         <div class="w-1/3"></div>
 
-            {{-- Kolom Kiri (kosong untuk nge-balance biar judul tetap center) --}}
-            <div class="w-1/3"></div>
-
-            {{-- Title & Date di tengah --}}
-            <div class="w-1/3 text-center">
-                <h1 class="text-xl font-bold">HENKATEN FA</h1>
-                <p class="text-xs text-gray-600" id="current-date"></p>
-            </div>
-
-            {{-- Time & Shift di kanan --}}
-            <div class="w-1/3 text-right">
-                <p class="font-mono text-base" id="current-time"></p>
-                <p class="text-sm" id="current-shift"></p>
-            </div>
+        {{-- Title & Date --}}
+        <div class="w-1/3 text-center">
+            <h1 class="text-lg font-bold">HENKATEN FA LINE 5</h1>
+            <p class="text-xs text-gray-600" id="current-date"></p>
         </div>
-        {{-- WRAPPER FULL WIDTH TANPA PADDING --}}
-        <div class="w-full">
-            {{-- 4 SECTION GRID - COMPACT VERSION --}}
-            <div class="grid grid-cols-2 gap-3 w-full">
 
+        {{-- Time & Shift --}}
+        <div class="w-1/3 text-right">
+            <p class="font-mono text-base" id="current-time"></p>
+            <p class="text-sm" id="current-shift"></p>
+        </div>
+    </div>
+
+    {{-- 4 SECTION GRID --}}
+    <div class="grid grid-cols-2 gap-3 h-[88vh]">
                 {{-- MAN POWER --}}
-                <div class="bg-white shadow rounded p-4 section-compact overflow-auto">
-                    <h2 class="text-lg font-semibold mb-3 border-b pb-2 text-center">MAN POWER</h2>
+                  <div class="bg-white shadow rounded p-2 flex flex-col">
+                       <h2 class="text-sm font-semibold mb-1 text-center">MAN POWER</h2>
+                       
 
                     {{-- Top Row - All Stations Grid --}}
-                    <div class="grid grid-cols-11 gap-2 mb-4">
+                    <div class="flex-1 overflow">
+                <div class="grid grid-cols-11 gap-1">
                         @php
                             $currentShift = 'Shift A';
                             $groupedManPower = $manPower->groupBy('station_id');
@@ -286,11 +285,46 @@
                             </button>
                         </div>
                     </div>
-                </div>
+                      {{-- CURRENT PART & NEW PARTKT --}}
+<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
+    {{-- Current Part --}}
+    <div class="bg-white shadow rounded p-2 text-center">
+        <h3 class="text-sm font-bold mb-1">CURRENT PART</h3>
+        <p class="text-xs"><span class="font-semibold">PT NUMBER:</span> VPGZKF-19N551-AA</p>
+        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (NITTO)</p>
+    </div>
+
+    {{-- New PartKT --}}
+    <div class="bg-white shadow rounded p-2 text-center">
+        <h3 class="text-sm font-bold mb-1 text-red-600">NEW PARTKT</h3>
+        <p class="text-xs"><span class="font-semibold">NUMBER:</span> VPGZKF-19N551-AB</p>
+        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (BRADY)</p>
+    </div>
+</div>
+
+{{-- SERIAL NUMBER & DATE --}}
+<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
+    <div class="bg-blue-400 text-center py-1 rounded">
+        <span class="text-xs text-white font-medium">S/n Start : K1Zxxxxxxx</span>
+    </div>
+    <div class="bg-blue-400 text-center py-1 rounded">
+        <span class="text-xs text-white font-medium">S/n End : K1Zxxxxxxx</span>
+    </div>
+</div>
+
+{{-- Tanggal Aktif --}}
+<div class="col-span-2 mt-1 flex justify-center">
+    <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+        ACTIVE: 9/SEP/25 - 12/SEP/25
+    </div>
+</div>
+                 </div>
+                  </div>
 
                 {{-- METHOD --}}
-                <div class="bg-white shadow rounded p-4 section-compact">
-                    <h2 class="text-lg font-semibold mb-3 border-b pb-2 text-center">METHOD</h2>
+                <div class="bg-white shadow rounded p-2 flex flex-col">
+                       <h2 class="text-sm font-semibold mb-1 text-center">MAN POWER</h2>
+                       
 
                     {{-- Table Wrapper Scroll --}}
                     <div class="overflow-auto">
@@ -320,13 +354,49 @@
                     <div class="mt-2 flex justify-center">
                     {{ $methods->links() }}
                     </div>
-                </div>
+
+                  {{-- CURRENT PART & NEW PARTKT --}}
+<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
+    {{-- Current Part --}}
+    <div class="bg-white shadow rounded p-2 text-center">
+        <h3 class="text-sm font-bold mb-1">CURRENT PART</h3>
+        <p class="text-xs"><span class="font-semibold">PT NUMBER:</span> VPGZKF-19N551-AA</p>
+        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (NITTO)</p>
+    </div>
+
+    {{-- New PartKT --}}
+    <div class="bg-white shadow rounded p-2 text-center">
+        <h3 class="text-sm font-bold mb-1 text-red-600">NEW PARTKT</h3>
+        <p class="text-xs"><span class="font-semibold">NUMBER:</span> VPGZKF-19N551-AB</p>
+        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (BRADY)</p>
+    </div>
+</div>
+
+{{-- SERIAL NUMBER & DATE --}}
+<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
+    <div class="bg-blue-400 text-center py-1 rounded">
+        <span class="text-xs text-white font-medium">S/n Start : K1Zxxxxxxx</span>
+    </div>
+    <div class="bg-blue-400 text-center py-1 rounded">
+        <span class="text-xs text-white font-medium">S/n End : K1Zxxxxxxx</span>
+    </div>
+</div>
+
+{{-- Tanggal Aktif --}}
+<div class="col-span-2 mt-1 flex justify-center">
+    <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+        ACTIVE: 9/SEP/25 - 12/SEP/25
+    </div>
+</div>
+                 </div>
+                  
+          
 
                 {{-- MACHINE --}}
-                <div class="bg-white shadow rounded p-4 section-compact">
+                <div class="bg-white shadow rounded p-4 h-full">
                     {{-- Header --}}
-                    <div class="text-black text-center py-2">
-                        <h2 class="text-lg font-bold">MACHINE</h2>
+                     <div class="bg-white shadow rounded p-2 flex flex-col">
+                       <h2 class="text-sm font-semibold mb-1 text-center">MACHINE</h2>
                     </div>
 
                     {{-- Machine Status Bar with Navigation --}}
@@ -411,14 +481,47 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                      {{-- CURRENT PART & NEW PARTKT --}}
+<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
+    {{-- Current Part --}}
+    <div class="bg-white shadow rounded p-2 text-center">
+        <h3 class="text-sm font-bold mb-1">CURRENT PART</h3>
+        <p class="text-xs"><span class="font-semibold">PT NUMBER:</span> VPGZKF-19N551-AA</p>
+        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (NITTO)</p>
+    </div>
+
+    {{-- New PartKT --}}
+    <div class="bg-white shadow rounded p-2 text-center">
+        <h3 class="text-sm font-bold mb-1 text-red-600">NEW PARTKT</h3>
+        <p class="text-xs"><span class="font-semibold">NUMBER:</span> VPGZKF-19N551-AB</p>
+        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (BRADY)</p>
+    </div>
+</div>
+
+{{-- SERIAL NUMBER & DATE --}}
+<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
+    <div class="bg-blue-400 text-center py-1 rounded">
+        <span class="text-xs text-white font-medium">S/n Start : K1Zxxxxxxx</span>
+    </div>
+    <div class="bg-blue-400 text-center py-1 rounded">
+        <span class="text-xs text-white font-medium">S/n End : K1Zxxxxxxx</span>
+    </div>
+</div>
+
+{{-- Tanggal Aktif --}}
+<div class="col-span-2 mt-1 flex justify-center">
+    <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+        ACTIVE: 9/SEP/25 - 12/SEP/25
+    </div>
+</div>
+                 </div>
 
                 {{-- MATERIAL --}}
-                <div class="bg-white shadow rounded-xl p-4 section-compact">
+                <div class="bg-white shadow rounded p-4 h-full">
                     {{-- Header --}}
-                    <div class="text-black text-center pb-3">
-                        <h2 class="text-lg font-bold">MATERIAL</h2>
-                    </div>
+                     <div class="bg-white shadow rounded p-2 flex flex-col">
+                       <h2 class="text-sm font-semibold mb-1 text-center">MATERIAL</h2>
+                       
 
                     <div class="relative">
                         {{-- Tombol Navigasi di Kiri --}}
@@ -481,7 +584,43 @@
                             </button>
                         </div>
                     </div>
-                </div>
+
+                  {{-- CURRENT PART & NEW PARTKT --}}
+<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
+    {{-- Current Part --}}
+    <div class="bg-white shadow rounded p-2 text-center">
+        <h3 class="text-sm font-bold mb-1">CURRENT PART</h3>
+        <p class="text-xs"><span class="font-semibold">PT NUMBER:</span> VPGZKF-19N551-AA</p>
+        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (NITTO)</p>
+    </div>
+
+    {{-- New PartKT --}}
+    <div class="bg-white shadow rounded p-2 text-center">
+        <h3 class="text-sm font-bold mb-1 text-red-600">NEW PARTKT</h3>
+        <p class="text-xs"><span class="font-semibold">NUMBER:</span> VPGZKF-19N551-AB</p>
+        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (BRADY)</p>
+    </div>
+</div>
+
+{{-- SERIAL NUMBER & DATE --}}
+<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
+    <div class="bg-blue-400 text-center py-1 rounded">
+        <span class="text-xs text-white font-medium">S/n Start : K1Zxxxxxxx</span>
+    </div>
+    <div class="bg-blue-400 text-center py-1 rounded">
+        <span class="text-xs text-white font-medium">S/n End : K1Zxxxxxxx</span>
+    </div>
+</div>
+
+{{-- Tanggal Aktif --}}
+<div class="col-span-2 mt-1 flex justify-center">
+    <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+        ACTIVE: 9/SEP/25 - 12/SEP/25
+    </div>
+</div>
+                 </div>
+
+                
 
 
 
@@ -554,40 +693,54 @@
                     }
 
                     // logic materials
-                    document.addEventListener('DOMContentLoaded', () => {
-                        const materials = document.querySelectorAll('.material-status');
+                 document.addEventListener('DOMContentLoaded', () => {
+    const materials = document.querySelectorAll('.material-status');
 
-                        materials.forEach((material) => {
-                            material.addEventListener('click', () => {
-                                const statusText = material.closest('td').nextElementSibling?.querySelector('.status-text');
+    materials.forEach((material) => {
+        material.addEventListener('click', () => {
+            const tdMaterial = material.closest('td'); // td untuk kotak
+            const tdStatus = tdMaterial.parentElement.nextElementSibling?.children[tdMaterial.cellIndex]; // td baris bawah
+            const statusText = tdStatus?.querySelector('.status-text');
 
-                                // Kondisi default putih → klik → jadi HENKATEN (merah)
-                                if (!material.classList.contains('bg-red-500')) {
-                                    material.classList.remove('bg-white'); // default putih
-                                    material.classList.add('bg-red-500');
-                                    material.innerText = 'HENKATEN';
+            // === Jika NORMAL → ubah jadi HENKATEN ===
+            if (!material.classList.contains('bg-red-500')) {
+                // Ubah box
+                material.classList.remove('bg-white');
+                  material.classList.add('bg-red-500', 'text-white');
+                material.innerText = 'HENKATEN';
 
-                                    if (statusText) {
-                                        statusText.innerText = 'HENKATEN';
-                                        statusText.classList.remove('text-green-600');
-                                        statusText.classList.add('text-red-600');
-                                    }
-                                }
-                                // Kondisi HENKATEN (merah) → klik lagi → kembali ke putih
-                                else {
-                                    material.classList.remove('bg-red-500');
-                                    material.classList.add('bg-white');
-                                    material.innerText = '';
+                // Ubah status text
+                if (statusText) {
+                    statusText.innerText = 'HENKATEN';
+                    statusText.classList.remove('text-white');
+                    statusText.classList.add('text-white');
+                }
 
-                                    if (statusText) {
-                                        statusText.innerText = 'NORMAL';
-                                        statusText.classList.remove('text-red-600');
-                                        statusText.classList.add('text-green-600');
-                                    }
-                                }
-                            });
-                        });
-                    });
+                // Warnai seluruh cell merah
+                tdMaterial.classList.add('bg-red-500', 'text-white');
+                tdStatus.classList.add('bg-red-500', 'text-white');
+            } 
+            // === Jika sudah HENKATEN → balik NORMAL ===
+            else {
+                // Ubah box
+                material.classList.remove('bg-red-500', 'text-white');
+                material.classList.add('bg-white');
+                material.innerText = '';
+
+                // Ubah status text
+                if (statusText) {
+                    statusText.innerText = 'NORMAL';
+                    statusText.classList.remove('text-white');
+                    statusText.classList.add('text-green-500');
+                }
+
+                // Kembalikan cell ke default
+                tdMaterial.classList.remove('bg-red-500', 'text-white');
+                tdStatus.classList.remove('bg-red-500', 'text-white');
+            }
+        });
+    });
+});
 
                     document.addEventListener("DOMContentLoaded", function () {
                         function setupScroll(containerId, leftBtnId, rightBtnId) {
