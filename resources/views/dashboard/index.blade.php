@@ -4,15 +4,15 @@
 
     <style>
         .machine-status {
-            width: 50px;
-            height: 40px;
+            width: 40px;
+            height: 32px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             border: 2px solid #333;
             margin: 1px;
-            font-size: 8px;
+            font-size: 7px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -32,54 +32,54 @@
         }
 
         .jig-icon {
-            width: 30px;
-            height: 30px;
+            width: 24px;
+            height: 24px;
             background: linear-gradient(45deg, #e5e7eb, #9ca3af);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 8px;
             font-weight: bold;
             color: #374151;
             border: 2px solid #6b7280;
         }
 
         .arrow {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
             color: #374151;
-            margin: 0 10px;
+            margin: 0 8px;
         }
 
         .status-badge {
             background-color: #f59e0b;
             color: white;
-            padding: 2px 8px;
-            border-radius: 8px;
-            font-size: 8px;
+            padding: 1px 6px;
+            border-radius: 6px;
+            font-size: 7px;
             font-weight: bold;
-            margin-top: 5px;
+            margin-top: 3px;
             display: inline-block;
         }
 
         .document-icon {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border: 2px solid #6b7280;
             background-color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 8px;
             color: #6b7280;
             flex-direction: column;
             border-radius: 4px;
         }
 
         .status-text {
-            padding: 1px 4px;
-            border-radius: 3px;
+            padding: 1px 3px;
+            border-radius: 2px;
             font-weight: bold;
         }
 
@@ -92,14 +92,14 @@
             background-color: #e5e7eb;
             border: none;
             border-radius: 50%;
-            width: 32px;
-            height: 32px;
+            width: 26px;
+            height: 26px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            font-size: 16px;
+            font-size: 12px;
         }
 
         .nav-button:hover {
@@ -108,14 +108,14 @@
 
         .material-status {
             width: 100%;
-            height: 50px;
+            height: 40px;
         }
 
         .compact-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            height: calc(100vh - 200px);
+            gap: 0.75rem;
+            height: calc(100vh - 120px);
         }
 
         .section-compact {
@@ -125,506 +125,452 @@
 
         .section-compact .overflow-x-auto {
             flex: 1;
-            /* tabel fleksibel isi */
             min-height: 0;
-            /* biar scroll aktif */
+        }
+
+        /* Optimasi untuk profile icons */
+        .profile-icon {
+            width: 6px;
+            height: 6px;
+        }
+
+        .status-dot {
+            width: 2px;
+            height: 2px;
         }
     </style>
 
- <div class="w-full h-screen flex flex-col px-4 py-2">
-    {{-- HEADER --}}
-      <div class="flex items-center justify-between border-b pb-2 mb-2 h-[12vh]">
+ <div class="w-full h-screen flex flex-col px-3 py-1">
+    {{-- HEADER - Diperkecil --}}
+    <div class="flex items-center justify-between border-b pb-1 mb-1 h-[8vh]">
         {{-- Kolom Kiri --}}
          <div class="w-1/3"></div>
 
         {{-- Title & Date --}}
         <div class="w-1/3 text-center">
-            <h1 class="text-lg font-bold">HENKATEN FA LINE 5</h1>
-            <p class="text-xs text-gray-600" id="current-date"></p>
+            <h1 class="text-base font-bold">HENKATEN FA LINE 5</h1>
+            <p class="text-[10px] text-gray-600" id="current-date"></p>
         </div>
 
         {{-- Time & Shift --}}
         <div class="w-1/3 text-right">
-            <p class="font-mono text-base" id="current-time"></p>
-            <p class="text-sm" id="current-shift"></p>
+            <p class="font-mono text-sm" id="current-time"></p>
+            <p class="text-xs" id="current-shift"></p>
         </div>
     </div>
 
-    {{-- 4 SECTION GRID --}}
-    <div class="grid grid-cols-2 gap-3 h-[88vh]">
-                {{-- MAN POWER --}}
-                  <div class="bg-white shadow rounded p-2 flex flex-col">
-                       <h2 class="text-sm font-semibold mb-1 text-center">MAN POWER</h2>
-                       
+    {{-- 4 SECTION GRID - Diperkecil --}}
+    <div class="grid grid-cols-2 gap-3 h-[92vh]">
+        {{-- MAN POWER --}}
+        <div class="bg-white shadow rounded p-1 flex flex-col">
+            <h2 class="text-xs font-semibold mb-0.5 text-center">MAN POWER</h2>
 
-                    {{-- Top Row - All Stations Grid --}}
-                    <div class="flex-1 overflow">
-                <div class="grid grid-cols-11 gap-1">
+            {{-- Top Row - All Stations Grid - Diperkecil --}}
+            <div class="flex-1 overflow">
+                <div class="grid grid-cols-11 gap-2">
+                    @php
+                        $currentShift = 'Shift A';
+                        $groupedManPower = $manPower->groupBy('station_id');
+                    @endphp
+
+                    @for($stationId = 1; $stationId <= 11; $stationId++)
                         @php
-                            $currentShift = 'Shift A';
-                            $groupedManPower = $manPower->groupBy('station_id');
+                            $stationWorkers = $groupedManPower->get($stationId, collect());
+                            $currentWorker = $stationWorkers->where('shift', $currentShift)->first();
+                            $displayName = $currentWorker ? $currentWorker->nama : 'No Worker';
+                            $isAbsent = in_array($stationId, [4, 8]); 
                         @endphp
 
-                        @for($stationId = 1; $stationId <= 11; $stationId++)
-                            @php
-                                $stationWorkers = $groupedManPower->get($stationId, collect());
-                                $currentWorker = $stationWorkers->where('shift', $currentShift)->first();
-                                $displayName = $currentWorker ? $currentWorker->nama : 'No Worker';
-                                $isAbsent = in_array($stationId, [4, 8]); 
-                            @endphp
+                        <div class="text-center">
+                            {{-- Profile Icon - Diperkecil --}}
+                            <div class="relative mx-auto mb-0.5">
+                                <div class="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] font-bold">
+                                    👤
+                                </div>
+                                {{-- Status Dot - Diperkecil --}}
+                                <div class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full 
+                                    {{ $isAbsent ? 'bg-red-500' : 'bg-green-500' }} 
+                                    border border-white"></div>
+                            </div>
 
-                            <div class="text-center">
-                                {{-- Profile Icon --}}
-                                <div class="relative mx-auto mb-1">
-                                    <div
-                                        class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                            {{-- Name - Diperkecil --}}
+                            <p class="text-[8px] font-medium truncate">{{ $displayName }}</p>
+
+                            {{-- Status Badge - Diperkecil --}}
+                            <div class="mt-0.5">
+                                <span class="px-0.5 py-0.5 text-[6px] rounded 
+                                    {{ $isAbsent ? 'bg-red-500 text-white' : 'bg-green-500 text-white' }}">
+                                    {{ $isAbsent ? 'ABSENT' : 'NORMAL' }}
+                                </span>
+                            </div>
+                        </div>
+                    @endfor
+                </div>
+
+                {{-- Bottom Section - Shift Changes - Diperkecil --}}
+                <div class="border-t pt-2 relative">
+                    {{-- Tombol Navigasi di Kiri - Diperkecil --}}
+                    <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+                        <button id="scrollLeftManPower" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    {{-- Grid Shift Changes - Diperkecil --}}
+                    <div class="mx-8">
+                        <div class="grid grid-cols-2 gap-2">
+                            {{-- First Shift Change - Station 4 - Diperkecil --}}
+                            @php
+                                $station4Workers = $groupedManPower->get(4, collect());
+                                $shiftAWorker4 = $station4Workers->where('shift', 'Shift A')->first();
+                                $shiftBWorker4 = $station4Workers->where('shift', 'Shift B')->first();
+                            @endphp
+                            <div class="flex items-center justify-center space-x-2 bg-gray-50 p-1 rounded-lg">
+                                <div class="text-center">
+                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
                                         👤
                                     </div>
-                                    {{-- Status Dot --}}
-                                    <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full 
-                                        {{ $isAbsent ? 'bg-red-500' : 'bg-green-500' }} 
-                                        border border-white"></div>
+                                    <p class="text-[8px] font-semibold">{{ $shiftAWorker4 ? $shiftAWorker4->nama : 'No Worker' }}</p>
+                                    <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
                                 </div>
-
-                                {{-- Name --}}
-                                <p class="text-[10px] font-medium truncate">{{ $displayName }}</p>
-
-                                {{-- Status Badge --}}
-                                <div class="mt-0.5">
-                                    <span class="px-1 py-0.5 text-[8px] rounded 
-                                        {{ $isAbsent ? 'bg-red-500 text-white' : 'bg-green-500 text-white' }}">
-                                        {{ $isAbsent ? 'ABSENT' : 'NORMAL' }}
-                                    </span>
+                                <div class="text-sm text-gray-400 font-bold">→</div>
+                                <div class="text-center">
+                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
+                                        👤
+                                    </div>
+                                    <p class="text-[8px] font-semibold">{{ $shiftBWorker4 ? $shiftBWorker4->nama : 'No Worker' }}</p>
+                                    <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
                                 </div>
                             </div>
-                        @endfor
-                    </div>
 
-                    {{-- Bottom Section - Shift Changes --}}
-                    <div class="border-t pt-3 relative">
-                        {{-- Tombol Navigasi di Kiri --}}
-                        <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-                            <button id="scrollLeftManPower"
-                                class="w-9 h-9 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15 19l-7-7 7-7"></path>
-                                </svg>
-                            </button>
-                        </div>
-
-                        {{-- Grid Shift Changes --}}
-                        <div class="mx-12">
-                            <div class="grid grid-cols-2 gap-4">
-                                {{-- First Shift Change - Station 4 --}}
-                                @php
-                                    $station4Workers = $groupedManPower->get(4, collect());
-                                    $shiftAWorker4 = $station4Workers->where('shift', 'Shift A')->first();
-                                    $shiftBWorker4 = $station4Workers->where('shift', 'Shift B')->first();
-                                @endphp
-                                <div class="flex items-center justify-center space-x-3 bg-gray-50 p-2 rounded-lg">
-                                    <div class="text-center">
-                                        <div
-                                            class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm mx-auto mb-1">
-                                            👤
-                                        </div>
-                                        <p class="text-xs font-semibold">
-                                            {{ $shiftAWorker4 ? $shiftAWorker4->nama : 'No Worker' }}</p>
-                                        <div class="w-3 h-3 rounded-full bg-green-500 mx-auto mt-0.5"></div>
+                            {{-- Second Shift Change - Station 7 - Diperkecil --}}
+                            @php
+                                $station7Workers = $groupedManPower->get(7, collect());
+                                $shiftAWorker7 = $station7Workers->where('shift', 'Shift A')->first();
+                                $shiftBWorker7 = $station7Workers->where('shift', 'Shift B')->first();
+                            @endphp
+                            <div class="flex items-center justify-center space-x-2 bg-gray-50 p-1 rounded-lg">
+                                <div class="text-center">
+                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
+                                        👤
                                     </div>
-                                    <div class="text-xl text-gray-400 font-bold">→</div>
-                                    <div class="text-center">
-                                        <div
-                                            class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm mx-auto mb-1">
-                                            👤
-                                        </div>
-                                        <p class="text-xs font-semibold">
-                                            {{ $shiftBWorker4 ? $shiftBWorker4->nama : 'No Worker' }}</p>
-                                        <div class="w-3 h-3 rounded-full bg-green-500 mx-auto mt-0.5"></div>
-                                    </div>
+                                    <p class="text-[8px] font-semibold">{{ $shiftAWorker7 ? $shiftAWorker7->nama : 'No Worker' }}</p>
+                                    <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
                                 </div>
-
-                                {{-- Second Shift Change - Station 7 --}}
-                                @php
-                                    $station7Workers = $groupedManPower->get(7, collect());
-                                    $shiftAWorker7 = $station7Workers->where('shift', 'Shift A')->first();
-                                    $shiftBWorker7 = $station7Workers->where('shift', 'Shift B')->first();
-                                @endphp
-                                <div class="flex items-center justify-center space-x-3 bg-gray-50 p-2 rounded-lg">
-                                    <div class="text-center">
-                                        <div
-                                            class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm mx-auto mb-1">
-                                            👤
-                                        </div>
-                                        <p class="text-xs font-semibold">
-                                            {{ $shiftAWorker7 ? $shiftAWorker7->nama : 'No Worker' }}</p>
-                                        <div class="w-3 h-3 rounded-full bg-green-500 mx-auto mt-0.5"></div>
+                                <div class="text-sm text-gray-400 font-bold">→</div>
+                                <div class="text-center">
+                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
+                                        👤
                                     </div>
-                                    <div class="text-xl text-gray-400 font-bold">→</div>
-                                    <div class="text-center">
-                                        <div
-                                            class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm mx-auto mb-1">
-                                            👤
-                                        </div>
-                                        <p class="text-xs font-semibold">
-                                            {{ $shiftBWorker7 ? $shiftBWorker7->nama : 'No Worker' }}</p>
-                                        <div class="w-3 h-3 rounded-full bg-green-500 mx-auto mt-0.5"></div>
-                                    </div>
+                                    <p class="text-[8px] font-semibold">{{ $shiftBWorker7 ? $shiftBWorker7->nama : 'No Worker' }}</p>
+                                    <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
                                 </div>
                             </div>
                         </div>
-
-                        {{-- Tombol Navigasi di Kanan --}}
-                        <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-                            <button id="scrollRightManPower"
-                                class="w-9 h-9 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
-                                    </path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                      {{-- CURRENT PART & NEW PARTKT --}}
-<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
-    {{-- Current Part --}}
-    <div class="bg-white shadow rounded p-2 text-center">
-        <h3 class="text-sm font-bold mb-1">CURRENT PART</h3>
-        <p class="text-xs"><span class="font-semibold">PT NUMBER:</span> VPGZKF-19N551-AA</p>
-        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (NITTO)</p>
-    </div>
-
-    {{-- New PartKT --}}
-    <div class="bg-white shadow rounded p-2 text-center">
-        <h3 class="text-sm font-bold mb-1 text-red-600">NEW PARTKT</h3>
-        <p class="text-xs"><span class="font-semibold">NUMBER:</span> VPGZKF-19N551-AB</p>
-        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (BRADY)</p>
-    </div>
-</div>
-
-{{-- SERIAL NUMBER & DATE --}}
-<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
-    <div class="bg-blue-400 text-center py-1 rounded">
-        <span class="text-xs text-white font-medium">S/n Start : K1Zxxxxxxx</span>
-    </div>
-    <div class="bg-blue-400 text-center py-1 rounded">
-        <span class="text-xs text-white font-medium">S/n End : K1Zxxxxxxx</span>
-    </div>
-</div>
-
-{{-- Tanggal Aktif --}}
-<div class="col-span-2 mt-1 flex justify-center">
-    <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-        ACTIVE: 9/SEP/25 - 12/SEP/25
-    </div>
-</div>
-                 </div>
-                  </div>
-
-                {{-- METHOD --}}
-                <div class="bg-white shadow rounded p-2 flex flex-col">
-                       <h2 class="text-sm font-semibold mb-1 text-center">MAN POWER</h2>
-                       
-
-                    {{-- Table Wrapper Scroll --}}
-                    <div class="overflow-auto">
-                        <table class="w-full border-collapse text-sm">
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="border px-1 py-1 text-left">Station</th>
-                                    <th class="border px-1 py-1 text-center">Keterangan</th>
-                                    <th class="border px-1 py-1 text-center">Lampiran</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($methods as $m)
-                                    <tr>
-                                        <td class="border px-1 py-1">
-                                            {{ $m->station->station_name ?? '-' }}
-                                        </td>
-                                        <td class="border px-1 py-1 text-center">{{ $m->keterangan ?? '-' }}</td>
-                                        <td class="border px-1 py-1 text-center">{{ $m->foto_path ?? '-' }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
                     </div>
 
-                    {{-- Pagination --}}
-                    <div class="mt-2 flex justify-center">
-                    {{ $methods->links() }}
+                    {{-- Tombol Navigasi di Kanan - Diperkecil --}}
+                    <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+                        <button id="scrollRightManPower" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
                     </div>
+                </div>
 
-                  {{-- CURRENT PART & NEW PARTKT --}}
-<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
-    {{-- Current Part --}}
-    <div class="bg-white shadow rounded p-2 text-center">
-        <h3 class="text-sm font-bold mb-1">CURRENT PART</h3>
-        <p class="text-xs"><span class="font-semibold">PT NUMBER:</span> VPGZKF-19N551-AA</p>
-        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (NITTO)</p>
-    </div>
+                {{-- CURRENT PART & NEW PARTKT - Diperkecil --}}
+                <div class="grid grid-cols-2 gap-1 mt-1">
+                                   </div>
 
-    {{-- New PartKT --}}
-    <div class="bg-white shadow rounded p-2 text-center">
-        <h3 class="text-sm font-bold mb-1 text-red-600">NEW PARTKT</h3>
-        <p class="text-xs"><span class="font-semibold">NUMBER:</span> VPGZKF-19N551-AB</p>
-        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (BRADY)</p>
-    </div>
-</div>
-
-{{-- SERIAL NUMBER & DATE --}}
-<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
-    <div class="bg-blue-400 text-center py-1 rounded">
-        <span class="text-xs text-white font-medium">S/n Start : K1Zxxxxxxx</span>
-    </div>
-    <div class="bg-blue-400 text-center py-1 rounded">
-        <span class="text-xs text-white font-medium">S/n End : K1Zxxxxxxx</span>
-    </div>
-</div>
-
-{{-- Tanggal Aktif --}}
-<div class="col-span-2 mt-1 flex justify-center">
-    <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-        ACTIVE: 9/SEP/25 - 12/SEP/25
-    </div>
-</div>
-                 </div>
-                  
-          
-
-                {{-- MACHINE --}}
-                <div class="bg-white shadow rounded p-4 h-full">
-                    {{-- Header --}}
-                     <div class="bg-white shadow rounded p-2 flex flex-col">
-                       <h2 class="text-sm font-semibold mb-1 text-center">MACHINE</h2>
+                {{-- SERIAL NUMBER & DATE - Diperkecil --}}
+                                <div class="grid grid-cols-2 gap-1 mt-1">
+                    <div class="bg-blue-400 text-center py-0.5 rounded">
+                        <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
                     </div>
+                    <div class="bg-blue-400 text-center py-0.5 rounded">
+                        <span class="text-[8px] text-white font-medium">Serial Number End : K1ZVNA2020QX</span>
+                    </div>
+                </div>
 
-                    {{-- Machine Status Bar with Navigation --}}
-                    <div class="relative">
-                        {{-- Tombol Navigasi di Kiri --}}
-                        <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-                            <button id="scrollLeftMachine"
-                                class="w-9 h-9 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15 19l-7-7 7-7"></path>
-                                </svg>
-                            </button>
-                        </div>
-                        {{-- Machine Status Container --}}
-                        <div class="bg-white p-3 mx-12">
-                            <div class="flex justify-center items-center space-x-2">
-                                @foreach ($machines as $mc)
-                                            @php
-                                                $isHenkaten = ($mc->keterangan === 'HENKATEN');
-                                            @endphp
-                                            <div class="machine-status {{ $isHenkaten ? 'machine-inactive' : 'machine-active' }}"
-                                                onclick="toggleMachine(this)">
 
-                                                {{-- Station ID --}}
-                                                <div class="station-id text-[10px] font-bold text-black mb-1">
-                                                    ST {{ $mc->station_id }}
-                                                </div>
+                {{-- Tanggal Aktif - Diperkecil --}}
+                <div class="mt-1 flex justify-center">
+                    <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
+                        ACTIVE: 9/SEP/25 - 12/SEP/25
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                                                {{-- Ikon mesin --}}
-                                                <div style="font-size: 25px;">🏭</div>
+        {{-- METHOD - Diperkecil --}}
+        <div class="bg-white shadow rounded p-1 flex flex-col">
+            <h2 class="text-xs font-semibold mb-0.5 text-center">METHOD</h2>
 
-                                                {{-- Status Text --}}
-                                                <div class="status-text text-[10px] font-bold mt-1 px-1 py-0.5 rounded-full 
+            {{-- Table Wrapper Scroll - Diperkecil --}}
+            <div class="overflow-auto flex-1">
+                <table class="w-full border-collapse text-[10px]">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border px-0.5 py-0.5 text-left">Station</th>
+                            <th class="border px-0.5 py-0.5 text-center">Keterangan</th>
+                            <th class="border px-0.5 py-0.5 text-center">Lampiran</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($methods as $m)
+                            <tr>
+                                <td class="border px-0.5 py-0.5">{{ $m->station->station_name ?? '-' }}</td>
+                                <td class="border px-0.5 py-0.5 text-center">{{ $m->keterangan ?? '-' }}</td>
+                                <td class="border px-0.5 py-0.5 text-center">{{ $m->foto_path ?? '-' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Bottom sections untuk Method - Diperkecil --}}
+            <div class="mt-1">
+                {{-- CURRENT PART & NEW PARTKT - Diperkecil --}}
+                <div class="grid grid-cols-2 gap-1">
+                    <div class="bg-white shadow rounded p-1 text-center">
+                        <h3 class="text-[9px] font-bold mb-0.5">CURRENT METHOD</h3>
+                        <p class="text-[7px]"><span class="font-semibold">STATION :</span> STATION 5</p>
+                        <p class="text-[7px]"><span class="font-semibold">METHOD :</span> INNERCASE ASSY</p>
+                    </div>
+                    <div class="bg-white shadow rounded p-1 text-center">
+                        <h3 class="text-[9px] font-bold mb-0.5 text-red-600">NEW METHOD</h3>
+                        <p class="text-[7px]"><span class="font-semibold">STATION :</span> STATION 5</p>
+                        <p class="text-[7px]"><span class="font-semibold">METHOD :</span> INNERCASE ASSY</p>
+                    </div>
+                </div>
+
+                {{-- SERIAL NUMBER & DATE - Diperkecil --}}
+                               <div class="grid grid-cols-2 gap-1 mt-1">
+                    <div class="bg-blue-400 text-center py-0.5 rounded">
+                        <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
+                    </div>
+                    <div class="bg-blue-400 text-center py-0.5 rounded">
+                        <span class="text-[8px] text-white font-medium">Serial Number End : K1ZVNA2020QX</span>
+                    </div>
+                </div>
+
+
+                {{-- Tanggal Aktif - Diperkecil --}}
+                <div class="mt-1 flex justify-center">
+                    <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
+                        ACTIVE: 9/SEP/25 - 12/SEP/25
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- MACHINE - Diperkecil --}}
+        <div class="bg-white shadow rounded p-1 flex flex-col">
+            <h2 class="text-xs font-semibold mb-0.5 text-center">MACHINE</h2>
+
+            {{-- Machine Status Bar with Navigation - Diperkecil --}}
+            <div class="relative">
+                {{-- Tombol Navigasi di Kiri - Diperkecil --}}
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+                    <button id="scrollLeftMachine" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Machine Status Container - Diperkecil --}}
+                <div class="bg-white p-2 mx-8">
+                    <div class="flex justify-center items-center space-x-1">
+                        @foreach ($machines as $mc)
+                            @php
+                                $isHenkaten = ($mc->keterangan === 'HENKATEN');
+                            @endphp
+                            <div class="machine-status {{ $isHenkaten ? 'machine-inactive' : 'machine-active' }}" onclick="toggleMachine(this)">
+                                {{-- Station ID - Diperkecil --}}
+                                <div class="station-id text-[8px] font-bold text-black mb-0.5">
+                                    ST {{ $mc->station_id }}
+                                </div>
+
+                                {{-- Ikon mesin - Diperkecil --}}
+                                <div style="font-size: 16px;">🏭</div>
+
+                                {{-- Status Text - Diperkecil --}}
+                                <div class="status-text text-[7px] font-bold mt-0.5 px-0.5 py-0.5 rounded-full 
                                     {{ $isHenkaten ? 'bg-red-600 text-white ' : 'bg-green-700 text-white' }}">
-                                                    {{ $isHenkaten ? 'HENKATEN' : 'NORMAL' }}
-                                                </div>
-                                            </div>
+                                    {{ $isHenkaten ? 'HENKATEN' : 'NORMAL' }}
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Tombol Navigasi di Kanan - Diperkecil --}}
+                <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+                    <button id="scrollRightMachine" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Bottom Section - Jig Change - Diperkecil --}}
+            <div class="flex p-2 bg-white-100 mt-2">
+                <div class="flex-1">
+                    <div class="flex items-center justify-center">
+                        {{-- Old Jig - Diperkecil --}}
+                        <div class="text-center">
+                            <div class="text-[8px] font-bold mb-0.5">Old jig</div>
+                            <div class="jig-icon">
+                                <span style="font-size: 10px;">⚙️</span>
+                            </div>
+                        </div>
+
+                        {{-- Arrow - Diperkecil --}}
+                        <div class="arrow mx-4 text-lg font-bold text-blue-500">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            </svg>
+                        </div>
+
+                        {{-- New Jig - Diperkecil --}}
+                        <div class="text-center">
+                            <div class="text-[8px] font-bold mb-0.5">New jig</div>
+                            <div class="jig-icon">
+                                <span style="font-size: 10px;">⚙️</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Bottom sections untuk Machine - Diperkecil --}}
+            <div class="mt-1">
+               
+
+                {{-- SERIAL NUMBER & DATE - Diperkecil --}}
+                                <div class="grid grid-cols-2 gap-1 mt-1">
+                    <div class="bg-blue-400 text-center py-0.5 rounded">
+                        <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
+                    </div>
+                    <div class="bg-blue-400 text-center py-0.5 rounded">
+                        <span class="text-[8px] text-white font-medium">Serial Number End : K1ZVNA2020QX</span>
+                    </div>
+                </div>
+
+
+                {{-- Tanggal Aktif - Diperkecil --}}
+                <div class="mt-1 flex justify-center">
+                    <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
+                        ACTIVE: 9/SEP/25 - 12/SEP/25
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- MATERIAL - Diperkecil --}}
+        <div class="bg-white shadow rounded p-1 flex flex-col">
+            <h2 class="text-xs font-semibold mb-0.5 text-center">MATERIAL</h2>
+
+            <div class="relative flex-1">
+                {{-- Tombol Navigasi di Kiri - Diperkecil --}}
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+                    <button id="scrollLeftMaterial" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Material Table Container - Diperkecil --}}
+                <div id="materialTableContainer" class="mx-8 overflow-hidden">
+                    <table class="table-auto border-collapse border border-gray-300 w-full text-center text-[10px]">
+                        <thead>
+                            <tr>
+                                @foreach($stationStatuses as $station)
+                                    <th class="border border-gray-300 px-1 py-1 bg-green-600 text-white text-[8px] font-semibold">
+                                        {{ $station['name'] }}
+                                    </th>
                                 @endforeach
-                            </div>
-                        </div>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                @foreach($stationStatuses as $station)
+                                    <td class="border border-gray-300 px-1 py-1">
+                                        <div class="material-status flex items-center justify-center bg-white text-gray-800 font-bold cursor-pointer" data-id="{{ $station['id'] }}">
+                                        </div>
+                                    </td>
+                                @endforeach
+                            </tr>
+                            <tr>
+                                @foreach($stationStatuses as $station)
+                                    <td class="border border-gray-300 px-1 py-0.5 text-[8px] font-bold">
+                                        <div class="status-text text-green-600">
+                                            {{ $station['status'] }}
+                                        </div>
+                                    </td>
+                                @endforeach
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-                        {{-- Tombol Navigasi di Kanan --}}
-                        <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-                            <button id="scrollRightMachine"
-                                class="w-9 h-9 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
-                                    </path>
-                                </svg>
-                            </button>
-                        </div>
+                {{-- Tombol Navigasi di Kanan - Diperkecil --}}
+                <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+                    <button id="scrollRightMaterial" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Bottom sections untuk Material - Diperkecil --}}
+            <div class="mt-1">
+                {{-- CURRENT PART & NEW PARTKT - Diperkecil --}}
+                <div class="grid grid-cols-2 gap-1">
+                    <div class="bg-white shadow rounded p-1 text-center">
+                        <h3 class="text-[9px] font-bold mb-0.5">CURRENT PART</h3>
+                        <p class="text-[7px]"><span class="font-semibold">PART NUMBER :</span> VPGZKF-19N551-AA</p>
+                        <p class="text-[7px]"><span class="font-semibold">DESC:</span> FLTR-VEN AIR (NITTO)</p>
                     </div>
-
-                    {{-- Bottom Section - Jig Change --}}
-                    <div class="flex p-3 bg-white-100 mt-3">
-                        <div class="flex-1">
-                            <div class="flex items-center justify-center">
-                                {{-- Old Jig --}}
-                                <div class="text-center">
-                                    <div class="text-xs font-bold mb-1">Old jig</div>
-                                    <div class="jig-icon">
-                                        <span style="font-size: 12px;">⚙️</span>
-                                    </div>
-                                </div>
-
-                                {{-- Arrow --}}
-                                <div class="arrow mx-6 text-2xl font-bold text-blue-500">
-                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-                                            d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                                    </svg>
-                                </div>
-
-                                {{-- New Jig --}}
-                                <div class="text-center">
-                                    <div class="text-xs font-bold mb-1">New jig</div>
-                                    <div class="jig-icon">
-                                        <span style="font-size: 12px;">⚙️</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="bg-white shadow rounded p-1 text-center">
+                        <h3 class="text-[9px] font-bold mb-0.5 text-red-600">NEW PART</h3>
+                        <p class="text-[7px]"><span class="font-semibold">PART NUMBER :</span> VPGZKF-19N551-AB</p>
+                        <p class="text-[7px]"><span class="font-semibold">DESC:</span> FLTR-VEN AIR (BRADY)</p>
                     </div>
-                      {{-- CURRENT PART & NEW PARTKT --}}
-<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
-    {{-- Current Part --}}
-    <div class="bg-white shadow rounded p-2 text-center">
-        <h3 class="text-sm font-bold mb-1">CURRENT PART</h3>
-        <p class="text-xs"><span class="font-semibold">PT NUMBER:</span> VPGZKF-19N551-AA</p>
-        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (NITTO)</p>
-    </div>
+                </div>
 
-    {{-- New PartKT --}}
-    <div class="bg-white shadow rounded p-2 text-center">
-        <h3 class="text-sm font-bold mb-1 text-red-600">NEW PARTKT</h3>
-        <p class="text-xs"><span class="font-semibold">NUMBER:</span> VPGZKF-19N551-AB</p>
-        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (BRADY)</p>
-    </div>
-</div>
-
-{{-- SERIAL NUMBER & DATE --}}
-<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
-    <div class="bg-blue-400 text-center py-1 rounded">
-        <span class="text-xs text-white font-medium">S/n Start : K1Zxxxxxxx</span>
-    </div>
-    <div class="bg-blue-400 text-center py-1 rounded">
-        <span class="text-xs text-white font-medium">S/n End : K1Zxxxxxxx</span>
-    </div>
-</div>
-
-{{-- Tanggal Aktif --}}
-<div class="col-span-2 mt-1 flex justify-center">
-    <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-        ACTIVE: 9/SEP/25 - 12/SEP/25
-    </div>
-</div>
-                 </div>
-
-                {{-- MATERIAL --}}
-                <div class="bg-white shadow rounded p-4 h-full">
-                    {{-- Header --}}
-                     <div class="bg-white shadow rounded p-2 flex flex-col">
-                       <h2 class="text-sm font-semibold mb-1 text-center">MATERIAL</h2>
-                       
-
-                    <div class="relative">
-                        {{-- Tombol Navigasi di Kiri --}}
-                        <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-                            <button id="scrollLeftMaterial"
-                                class="w-9 h-9 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15 19l-7-7 7-7"></path>
-                                </svg>
-                            </button>
-                        </div>
-
-                        {{-- Material Table Container --}}
-                        <div id="materialTableContainer" class="mx-12 overflow-hidden">
-                            <table class="table-auto border-collapse border border-gray-300 w-full text-center text-sm">
-                                <thead>
-                                    <tr>
-                                        @foreach($stationStatuses as $station)
-                                            <th
-                                                class="border border-gray-300 px-2 py-2 bg-green-600 text-white text-xs font-semibold">
-                                                {{ $station['name'] }}
-                                            </th>
-                                        @endforeach
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        @foreach($stationStatuses as $station)
-                                            <td class="border border-gray-300 px-2 py-2">
-                                                <div class="material-status flex items-center justify-center 
-                                                    bg-white text-gray-800 font-bold cursor-pointer"
-                                                    data-id="{{ $station['id'] }}">
-                                                    {{-- status HENKATEN bisa ditampilkan di sini --}}
-                                                </div>
-                                            </td>
-                                        @endforeach
-                                    </tr>
-                                    <tr>
-                                        @foreach($stationStatuses as $station)
-                                            <td class="border border-gray-300 px-2 py-1 text-[11px] font-bold">
-                                                <div class="status-text text-green-600">
-                                                    {{ $station['status'] }}
-                                                </div>
-                                            </td>
-                                        @endforeach
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {{-- Tombol Navigasi di Kanan --}}
-                        <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-                            <button id="scrollRightMaterial"
-                                class="w-9 h-9 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
-                                    </path>
-                                </svg>
-                            </button>
-                        </div>
+                {{-- SERIAL NUMBER & DATE - Diperkecil --}}
+                <div class="grid grid-cols-2 gap-1 mt-1">
+                    <div class="bg-blue-400 text-center py-0.5 rounded">
+                        <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
                     </div>
+                    <div class="bg-blue-400 text-center py-0.5 rounded">
+                        <span class="text-[8px] text-white font-medium">Serial Number End : K1ZVNA2020QX</span>
+                    </div>
+                </div>
 
-                  {{-- CURRENT PART & NEW PARTKT --}}
-<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
-    {{-- Current Part --}}
-    <div class="bg-white shadow rounded p-2 text-center">
-        <h3 class="text-sm font-bold mb-1">CURRENT PART</h3>
-        <p class="text-xs"><span class="font-semibold">PT NUMBER:</span> VPGZKF-19N551-AA</p>
-        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (NITTO)</p>
+                {{-- Tanggal Aktif - Diperkecil --}}
+                <div class="mt-1 flex justify-center">
+                    <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
+                        ACTIVE: 9/SEP/25 - 12/SEP/25
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+ </div>
 
-    {{-- New PartKT --}}
-    <div class="bg-white shadow rounded p-2 text-center">
-        <h3 class="text-sm font-bold mb-1 text-red-600">NEW PARTKT</h3>
-        <p class="text-xs"><span class="font-semibold">NUMBER:</span> VPGZKF-19N551-AB</p>
-        <p class="text-xs"><span class="font-semibold">DESCRIPTION:</span> FLTR-VEN AIR (BRADY)</p>
-    </div>
-</div>
 
-{{-- SERIAL NUMBER & DATE --}}
-<div class="col-span-2 grid grid-cols-2 gap-2 mt-2">
-    <div class="bg-blue-400 text-center py-1 rounded">
-        <span class="text-xs text-white font-medium">S/n Start : K1Zxxxxxxx</span>
-    </div>
-    <div class="bg-blue-400 text-center py-1 rounded">
-        <span class="text-xs text-white font-medium">S/n End : K1Zxxxxxxx</span>
-    </div>
-</div>
 
-{{-- Tanggal Aktif --}}
-<div class="col-span-2 mt-1 flex justify-center">
-    <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-        ACTIVE: 9/SEP/25 - 12/SEP/25
-    </div>
-</div>
-                 </div>
 
                 
-
-
-
-                {{-- Scripts --}}
                 <script>
                     // Real-time Clock
                     function updateDateTime() {
