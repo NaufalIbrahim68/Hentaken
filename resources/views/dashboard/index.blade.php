@@ -183,12 +183,12 @@
 
                         <div class="text-center">
                             {{-- Profile Icon - Diperkecil --}}
-                            <div class="relative mx-auto mb-0.5">
+                            <div class="relative mx-auto mb-0.5 px-4">
                                 <div class="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] font-bold">
                                     👤
                                 </div>
                                 {{-- Status Dot - Diperkecil --}}
-                                <div class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full 
+                                <div class="absolute -bottom-0.5 w-2 h-2 rounded-full 
                                     {{ $isAbsent ? 'bg-red-500' : 'bg-green-500' }} 
                                     border border-white"></div>
                             </div>
@@ -227,7 +227,7 @@
                                 $shiftAWorker4 = $station4Workers->where('shift', 'Shift A')->first();
                                 $shiftBWorker4 = $station4Workers->where('shift', 'Shift B')->first();
                             @endphp
-                            <div class="flex items-center justify-center space-x-2 bg-gray-50 p-1 rounded-lg">
+                            <div class="flex items-center justify-center space-x-2 bg-gray-50 p-2 rounded-lg">
                                 <div class="text-center">
                                     <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
                                         👤
@@ -330,6 +330,14 @@
                     </tbody>
                 </table>
             </div>
+
+            
+{{-- Pagination Compact --}}
+<div class="mt-2 flex justify-end">
+    {{ $methods->onEachSide(1)->links('vendor.pagination.compact') }}
+</div>
+
+
 
             {{-- Bottom sections untuk Method - Diperkecil --}}
             <div class="mt-1">
