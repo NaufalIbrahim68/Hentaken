@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ManPowerController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -13,6 +14,28 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
 
+
+
+});
+// Grup route untuk Man Power dan proses Henkaten
+Route::prefix('manpower')->name('manpower.')->group(function () {
+    
+    // Rute INDEX: Menampilkan daftar master dari tabel 'man_power'
+    Route::get('/', [ManPowerController::class, 'index'])->name('index');
+    
+    // Rute AKSI: Membuat entri henkaten baru dari man_power yang dipilih
+    // Menggunakan metode POST karena ini adalah aksi yang menciptakan data.
+    Route::post('/{id}/create-henkaten', [ManPowerController::class, 'createHenkaten'])->name('create-henkaten');
+
+    // Rute EDIT: Menampilkan form edit untuk data HENKATEN
+    Route::get('/{id}/edit', [ManPowerController::class, 'edit'])->name('edit');
+    
+    // Rute UPDATE: Memperbarui data HENKATEN yang ada
+    Route::put('/{id}', [ManPowerController::class, 'update'])->name('update');
+    
+    // Rute DESTROY: Menghapus data HENKATEN
+    Route::delete('/{id}', [ManPowerController::class, 'destroy'])->name('destroy');
+
+});
 require __DIR__.'/auth.php';
