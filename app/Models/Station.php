@@ -13,5 +13,6 @@ class Station extends Model
 
     protected $fillable = [
         'station_name',
+         'station_code',
     ];
 }

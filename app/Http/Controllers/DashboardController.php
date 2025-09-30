@@ -14,8 +14,26 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $manPower = ManPower::all();
-        $methods  = Method::with('station')->paginate(5); 
+        // ================= FOKUS PADA MAN POWER =================
+        // 1. Eager load relasi 'station' untuk efisiensi query
+        $manPower = ManPower::with('station')->get();
+        
+        // 2. Kelompokkan data manPower berdasarkan station_id untuk kemudahan di view
+        $groupedManPower = $manPower->groupBy('station_id');
+
+        // 3. Siapkan data spesifik untuk pergantian shift langsung di controller
+        // Stasiun 4
+        $station4Workers = $groupedManPower->get(4, collect()); // Gunakan collect() kosong sebagai default
+        $shiftAWorker4 = $station4Workers->where('shift', 'Shift A')->first();
+        $shiftBWorker4 = $station4Workers->where('shift', 'Shift B')->first();
+        
+        // Stasiun 7
+        $station7Workers = $groupedManPower->get(7, collect());
+        $shiftAWorker7 = $station7Workers->where('shift', 'Shift A')->first();
+        $shiftBWorker7 = $station7Workers->where('shift', 'Shift B')->first();
+        // =========================================================
+
+        $methods   = Method::with('station')->paginate(5); 
         $materials = Material::all();
         $stations  = Station::all();
         
@@ -43,7 +61,12 @@ class DashboardController extends Controller
         });
 
         return view('dashboard.index', compact(
-            'manPower', 
+            'manPower',         // Tetap dikirim jika masih digunakan di tempat lain
+            'groupedManPower',  // Data yang sudah dikelompokkan
+            'shiftAWorker4',    // Data siap pakai untuk shift change
+            'shiftBWorker4',
+            'shiftAWorker7',
+            'shiftBWorker7',
             'methods', 
             'machines', 
             'materials', 

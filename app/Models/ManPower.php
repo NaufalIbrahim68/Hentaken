@@ -11,6 +11,10 @@ class ManPower extends Model
 
     protected $table = 'man_power'; // nama tabel di SQL Server
 
+    public function station()
+    {
+        return $this->belongsTo(Station::class);
+    }
     protected $fillable = [
         'name',
         'station_id',

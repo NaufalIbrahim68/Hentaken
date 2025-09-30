@@ -138,10 +138,20 @@
             width: 2px;
             height: 2px;
         }
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+
     </style>
 
  <div class="w-full h-screen flex flex-col px-3 py-1">
-    {{-- HEADER - Diperkecil --}}
+    {{-- HEADER - . --}}
     <div class="flex items-center justify-between border-b pb-1 mb-1 h-[8vh]">
         {{-- Kolom Kiri --}}
          <div class="w-1/3"></div>
@@ -159,133 +169,150 @@
         </div>
     </div>
 
-    {{-- 4 SECTION GRID - Diperkecil --}}
+    {{-- 4 SECTION GRID - . --}}
     <div class="grid grid-cols-2 gap-3 h-[92vh]">
-        {{-- MAN POWER --}}
-        <div class="bg-white shadow rounded p-1 flex flex-col">
-            <h2 class="text-xs font-semibold mb-0.5 text-center">MAN POWER</h2>
+  {{-- MAN POWER --}}
+<div class="bg-white shadow rounded p-1 flex flex-col">
+    <h2 class="text-xs font-semibold mb-2 text-center">MAN POWER</h2>
 
-            {{-- Top Row - All Stations Grid - Diperkecil --}}
-            <div class="flex-1 overflow">
-                <div class="grid grid-cols-11 gap-2">
+    <div class="relative">
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+            <button id="scrollLeftManPower" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="manPowerTableContainer" class="mx-8 overflow-x-auto scrollbar-hide scroll-smooth">
+            {{-- UBAH LOOP MENJADI FOREACH --}}
+            <div class="flex gap-6 py-2">
+                @foreach($groupedManPower as $stationId => $stationWorkers)
                     @php
-                        $currentShift = 'Shift A';
-                        $groupedManPower = $manPower->groupBy('station_id');
+                        // Cari pekerja untuk shift saat ini dari grup yang sudah ada
+                        $currentWorker = $stationWorkers->where('shift', $currentShift)->first();
+                        
+                        // Jika tidak ada pekerja di shift ini untuk stasiun ini, lewati
+                        if (!$currentWorker) continue;
+
+                        $displayName = $currentWorker->nama;
+                        $stationCode = $currentWorker->station ? $currentWorker->station->station_code : 'ST-' . $stationId;
+                        $isAbsent = in_array($stationId, [4, 8]); // Logika 'absent' Anda
                     @endphp
 
-                    @for($stationId = 1; $stationId <= 11; $stationId++)
-                        @php
-                            $stationWorkers = $groupedManPower->get($stationId, collect());
-                            $currentWorker = $stationWorkers->where('shift', $currentShift)->first();
-                            $displayName = $currentWorker ? $currentWorker->nama : 'No Worker';
-                            $isAbsent = in_array($stationId, [4, 8]); 
-                        @endphp
+                    <div class="flex-shrink-0 text-center" style="min-width: 80px;">
+                        <p class="text-[10px] font-bold text-gray-800 mb-1">{{ $stationCode }}</p>
 
-                        <div class="text-center">
-                            {{-- Profile Icon - Diperkecil --}}
-                            <div class="relative mx-auto mb-0.5 px-4">
-                                <div class="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] font-bold">
-                                    👤
-                                </div>
-                                {{-- Status Dot - Diperkecil --}}
-                                <div class="absolute -bottom-0.5 w-2 h-2 rounded-full 
-                                    {{ $isAbsent ? 'bg-red-500' : 'bg-green-500' }} 
-                                    border border-white"></div>
+                        <div class="relative mx-auto mb-2 w-8 h-8">
+                            <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold">
+                                👤
                             </div>
-
-                            {{-- Name - Diperkecil --}}
-                            <p class="text-[8px] font-medium truncate">{{ $displayName }}</p>
-
-                            {{-- Status Badge - Diperkecil --}}
-                            <div class="mt-0.5">
-                                <span class="px-0.5 py-0.5 text-[6px] rounded 
-                                    {{ $isAbsent ? 'bg-red-500 text-white' : 'bg-green-500 text-white' }}">
-                                    {{ $isAbsent ? 'ABSENT' : 'NORMAL' }}
-                                </span>
-                            </div>
+                            <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full {{ $isAbsent ? 'bg-red-500' : 'bg-green-500' }} border-2 border-white"></div>
                         </div>
-                    @endfor
-                </div>
 
-                {{-- Bottom Section - Shift Changes - Diperkecil --}}
-                <div class="border-t pt-2 relative">
-                    {{-- Tombol Navigasi di Kiri - Diperkecil --}}
-                    <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-                        <button id="scrollLeftManPower" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                        </button>
-                    </div>
+                        <p class="text-[10px] font-medium mb-1 truncate px-1">{{ $displayName }}</p>
 
-                    {{-- Grid Shift Changes - Diperkecil --}}
-                    <div class="mx-8">
-                        <div class="grid grid-cols-2 gap-2">
-                            {{-- First Shift Change - Station 4 - Diperkecil --}}
-                            @php
-                                $station4Workers = $groupedManPower->get(4, collect());
-                                $shiftAWorker4 = $station4Workers->where('shift', 'Shift A')->first();
-                                $shiftBWorker4 = $station4Workers->where('shift', 'Shift B')->first();
-                            @endphp
-                            <div class="flex items-center justify-center space-x-2 bg-gray-50 p-2 rounded-lg">
-                                <div class="text-center">
-                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
-                                        👤
-                                    </div>
-                                    <p class="text-[8px] font-semibold">{{ $shiftAWorker4 ? $shiftAWorker4->nama : 'No Worker' }}</p>
-                                    <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
-                                </div>
-                                <div class="text-sm text-gray-400 font-bold">→</div>
-                                <div class="text-center">
-                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
-                                        👤
-                                    </div>
-                                    <p class="text-[8px] font-semibold">{{ $shiftBWorker4 ? $shiftBWorker4->nama : 'No Worker' }}</p>
-                                    <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
-                                </div>
-                            </div>
-
-                            {{-- Second Shift Change - Station 7 - Diperkecil --}}
-                            @php
-                                $station7Workers = $groupedManPower->get(7, collect());
-                                $shiftAWorker7 = $station7Workers->where('shift', 'Shift A')->first();
-                                $shiftBWorker7 = $station7Workers->where('shift', 'Shift B')->first();
-                            @endphp
-                            <div class="flex items-center justify-center space-x-2 bg-gray-50 p-1 rounded-lg">
-                                <div class="text-center">
-                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
-                                        👤
-                                    </div>
-                                    <p class="text-[8px] font-semibold">{{ $shiftAWorker7 ? $shiftAWorker7->nama : 'No Worker' }}</p>
-                                    <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
-                                </div>
-                                <div class="text-sm text-gray-400 font-bold">→</div>
-                                <div class="text-center">
-                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
-                                        👤
-                                    </div>
-                                    <p class="text-[8px] font-semibold">{{ $shiftBWorker7 ? $shiftBWorker7->nama : 'No Worker' }}</p>
-                                    <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
-                                </div>
-                            </div>
+                        <div>
+                            <span class="inline-block px-2 py-1 text-[9px] font-semibold rounded {{ $isAbsent ? 'bg-red-500 text-white' : 'bg-green-500 text-white' }}">
+                                {{ $isAbsent ? 'ABSENT' : 'NORMAL' }}
+                            </span>
                         </div>
                     </div>
+                @endforeach
+            </div>
+        </div>
 
-                    {{-- Tombol Navigasi di Kanan - Diperkecil --}}
-                    <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-                        <button id="scrollRightManPower" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                        </button>
-                    </div>
+        <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+            <button id="scrollRightManPower" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    {{-- Bottom Section - Shift Changes (Layout diubah) --}}
+    <div class="border-t mt-2 pt-2">
+        <div class="flex items-center gap-1">
+            {{-- Tombol Navigasi di Kiri --}}
+            <button id="scrollLeftShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+
+         {{-- Scrollable Container for Shift Changes --}}
+<div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
+    {{-- Tambahkan class `justify-center` dan `min-w-full` di sini --}}
+    <div class="flex justify-center gap-3 min-w-full"> 
+        {{-- First Shift Change --}}
+        @php
+            $station4Workers = $groupedManPower->get(4, collect());
+            $shiftAWorker4 = $station4Workers->where('shift', 'Shift A')->first();
+            $shiftBWorker4 = $station4Workers->where('shift', 'Shift B')->first();
+        @endphp
+        <div class="flex-shrink-0 flex items-center justify-center space-x-2 bg-gray-50 p-2 rounded-lg" style="width: 220px;">
+            <div class="text-center">
+                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
+                    👤
                 </div>
+                <p class="text-[8px] font-semibold">{{ $shiftAWorker4 ? $shiftAWorker4->nama : 'No Worker' }}</p>
+                <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
+            </div>
+            <div class="text-sm text-gray-400 font-bold">→</div>
+            <div class="text-center">
+                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
+                    👤
+                </div>
+                <p class="text-[8px] font-semibold">{{ $shiftBWorker4 ? $shiftBWorker4->nama : 'No Worker' }}</p>
+                <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
+            </div>
+        </div>
 
-                {{-- CURRENT PART & NEW PARTKT - Diperkecil --}}
+        {{-- Second Shift Change --}}
+        @php
+            $station7Workers = $groupedManPower->get(7, collect());
+            $shiftAWorker7 = $station7Workers->where('shift', 'Shift A')->first();
+            $shiftBWorker7 = $station7Workers->where('shift', 'Shift B')->first();
+        @endphp
+        <div class="flex-shrink-0 flex items-center justify-center space-x-2 bg-gray-50 p-2 rounded-lg" style="width: 220px;">
+            <div class="text-center">
+                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
+                    👤
+                </div>
+                <p class="text-[8px] font-semibold">{{ $shiftAWorker7 ? $shiftAWorker7->nama : 'No Worker' }}</p>
+                <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
+            </div>
+            <div class="text-sm text-gray-400 font-bold">→</div>
+            <div class="text-center">
+                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
+                    👤
+                </div>
+                <p class="text-[8px] font-semibold">{{ $shiftBWorker7 ? $shiftBWorker7->nama : 'No Worker' }}</p>
+                <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+                  
+
+                
+
+            {{-- Tombol Navigasi di Kanan --}}
+            <button id="scrollRightShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+  
+
+                {{-- CURRENT PART & NEW PARTKT - . --}}
                 <div class="grid grid-cols-2 gap-1 mt-1">
                                    </div>
 
-                {{-- SERIAL NUMBER & DATE - Diperkecil --}}
+                {{-- SERIAL NUMBER & DATE - . --}}
                                 <div class="grid grid-cols-2 gap-1 mt-1">
                     <div class="bg-blue-400 text-center py-0.5 rounded">
                         <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
@@ -296,7 +323,7 @@
                 </div>
 
 
-                {{-- Tanggal Aktif - Diperkecil --}}
+                {{-- Tanggal Aktif - . --}}
                 <div class="mt-1 flex justify-center">
                     <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
                         ACTIVE: 9/SEP/25 - 12/SEP/25
@@ -305,11 +332,11 @@
             </div>
         </div>
 
-        {{-- METHOD - Diperkecil --}}
+        {{-- METHOD - . --}}
         <div class="bg-white shadow rounded p-1 flex flex-col">
             <h2 class="text-xs font-semibold mb-0.5 text-center">METHOD</h2>
 
-            {{-- Table Wrapper Scroll - Diperkecil --}}
+            {{-- Table Wrapper Scroll - . --}}
             <div class="overflow-auto flex-1">
                 <table class="w-full border-collapse text-[10px]">
                     <thead>
@@ -339,9 +366,9 @@
 
 
 
-            {{-- Bottom sections untuk Method - Diperkecil --}}
+            {{-- Bottom sections untuk Method - . --}}
             <div class="mt-1">
-                {{-- CURRENT PART & NEW PARTKT - Diperkecil --}}
+                {{-- CURRENT PART & NEW PARTKT - . --}}
                 <div class="grid grid-cols-2 gap-1">
                     <div class="bg-white shadow rounded p-1 text-center">
                         <h3 class="text-[9px] font-bold mb-0.5">CURRENT METHOD</h3>
@@ -355,7 +382,7 @@
                     </div>
                 </div>
 
-                {{-- SERIAL NUMBER & DATE - Diperkecil --}}
+                {{-- SERIAL NUMBER & DATE - . --}}
                                <div class="grid grid-cols-2 gap-1 mt-1">
                     <div class="bg-blue-400 text-center py-0.5 rounded">
                         <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
@@ -366,7 +393,7 @@
                 </div>
 
 
-                {{-- Tanggal Aktif - Diperkecil --}}
+                {{-- Tanggal Aktif - . --}}
                 <div class="mt-1 flex justify-center">
                     <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
                         ACTIVE: 9/SEP/25 - 12/SEP/25
@@ -375,13 +402,13 @@
             </div>
         </div>
 
-        {{-- MACHINE - Diperkecil --}}
+        {{-- MACHINE - . --}}
         <div class="bg-white shadow rounded p-1 flex flex-col">
             <h2 class="text-xs font-semibold mb-0.5 text-center">MACHINE</h2>
 
-            {{-- Machine Status Bar with Navigation - Diperkecil --}}
+            {{-- Machine Status Bar with Navigation - . --}}
             <div class="relative">
-                {{-- Tombol Navigasi di Kiri - Diperkecil --}}
+                {{-- Tombol Navigasi di Kiri - . --}}
                 <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
                     <button id="scrollLeftMachine" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -390,7 +417,7 @@
                     </button>
                 </div>
 
-                {{-- Machine Status Container - Diperkecil --}}
+                {{-- Machine Status Container - . --}}
                 <div class="bg-white p-2 mx-8">
                     <div class="flex justify-center items-center space-x-1">
                         @foreach ($machines as $mc)
@@ -398,15 +425,15 @@
                                 $isHenkaten = ($mc->keterangan === 'HENKATEN');
                             @endphp
                             <div class="machine-status {{ $isHenkaten ? 'machine-inactive' : 'machine-active' }}" onclick="toggleMachine(this)">
-                                {{-- Station ID - Diperkecil --}}
+                                {{-- Station ID - . --}}
                                 <div class="station-id text-[8px] font-bold text-black mb-0.5">
                                     ST {{ $mc->station_id }}
                                 </div>
 
-                                {{-- Ikon mesin - Diperkecil --}}
+                                {{-- Ikon mesin - . --}}
                                 <div style="font-size: 16px;">🏭</div>
 
-                                {{-- Status Text - Diperkecil --}}
+                                {{-- Status Text - . --}}
                                 <div class="status-text text-[7px] font-bold mt-0.5 px-0.5 py-0.5 rounded-full 
                                     {{ $isHenkaten ? 'bg-red-600 text-white ' : 'bg-green-700 text-white' }}">
                                     {{ $isHenkaten ? 'HENKATEN' : 'NORMAL' }}
@@ -416,7 +443,7 @@
                     </div>
                 </div>
 
-                {{-- Tombol Navigasi di Kanan - Diperkecil --}}
+                {{-- Tombol Navigasi di Kanan - . --}}
                 <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
                     <button id="scrollRightMachine" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -426,11 +453,11 @@
                 </div>
             </div>
 
-            {{-- Bottom Section - Jig Change - Diperkecil --}}
+            {{-- Bottom Section - Jig Change - . --}}
             <div class="flex p-2 bg-white-100 mt-2">
                 <div class="flex-1">
                     <div class="flex items-center justify-center">
-                        {{-- Old Jig - Diperkecil --}}
+                        {{-- Old Jig - . --}}
                         <div class="text-center">
                             <div class="text-[8px] font-bold mb-0.5">Old jig</div>
                             <div class="jig-icon">
@@ -438,14 +465,14 @@
                             </div>
                         </div>
 
-                        {{-- Arrow - Diperkecil --}}
+                        {{-- Arrow - . --}}
                         <div class="arrow mx-4 text-lg font-bold text-blue-500">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
                         </div>
 
-                        {{-- New Jig - Diperkecil --}}
+                        {{-- New Jig - . --}}
                         <div class="text-center">
                             <div class="text-[8px] font-bold mb-0.5">New jig</div>
                             <div class="jig-icon">
@@ -456,11 +483,11 @@
                 </div>
             </div>
 
-            {{-- Bottom sections untuk Machine - Diperkecil --}}
+            {{-- Bottom sections untuk Machine - . --}}
             <div class="mt-1">
                
 
-                {{-- SERIAL NUMBER & DATE - Diperkecil --}}
+                {{-- SERIAL NUMBER & DATE - . --}}
                                 <div class="grid grid-cols-2 gap-1 mt-1">
                     <div class="bg-blue-400 text-center py-0.5 rounded">
                         <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
@@ -471,7 +498,7 @@
                 </div>
 
 
-                {{-- Tanggal Aktif - Diperkecil --}}
+                {{-- Tanggal Aktif - . --}}
                 <div class="mt-1 flex justify-center">
                     <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
                         ACTIVE: 9/SEP/25 - 12/SEP/25
@@ -480,12 +507,12 @@
             </div>
         </div>
 
-        {{-- MATERIAL - Diperkecil --}}
+        {{-- MATERIAL - . --}}
         <div class="bg-white shadow rounded p-1 flex flex-col">
             <h2 class="text-xs font-semibold mb-0.5 text-center">MATERIAL</h2>
 
             <div class="relative flex-1">
-                {{-- Tombol Navigasi di Kiri - Diperkecil --}}
+                {{-- Tombol Navigasi di Kiri - . --}}
                 <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
                     <button id="scrollLeftMaterial" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -494,7 +521,7 @@
                     </button>
                 </div>
 
-                {{-- Material Table Container - Diperkecil --}}
+                {{-- Material Table Container - . --}}
                 <div id="materialTableContainer" class="mx-8 overflow-hidden">
                     <table class="table-auto border-collapse border border-gray-300 w-full text-center text-[10px]">
                         <thead>
@@ -528,7 +555,7 @@
                     </table>
                 </div>
 
-                {{-- Tombol Navigasi di Kanan - Diperkecil --}}
+                {{-- Tombol Navigasi di Kanan - . --}}
                 <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
                     <button id="scrollRightMaterial" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -538,9 +565,9 @@
                 </div>
             </div>
 
-            {{-- Bottom sections untuk Material - Diperkecil --}}
+            {{-- Bottom sections untuk Material - . --}}
             <div class="mt-1">
-                {{-- CURRENT PART & NEW PARTKT - Diperkecil --}}
+                {{-- CURRENT PART & NEW PARTKT - . --}}
                 <div class="grid grid-cols-2 gap-1">
                     <div class="bg-white shadow rounded p-1 text-center">
                         <h3 class="text-[9px] font-bold mb-0.5">CURRENT PART</h3>
@@ -554,7 +581,7 @@
                     </div>
                 </div>
 
-                {{-- SERIAL NUMBER & DATE - Diperkecil --}}
+                {{-- SERIAL NUMBER & DATE - . --}}
                 <div class="grid grid-cols-2 gap-1 mt-1">
                     <div class="bg-blue-400 text-center py-0.5 rounded">
                         <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
@@ -564,7 +591,7 @@
                     </div>
                 </div>
 
-                {{-- Tanggal Aktif - Diperkecil --}}
+                {{-- Tanggal Aktif - . --}}
                 <div class="mt-1 flex justify-center">
                     <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
                         ACTIVE: 9/SEP/25 - 12/SEP/25
@@ -696,29 +723,68 @@
     });
 });
 
-                    document.addEventListener("DOMContentLoaded", function () {
-                        function setupScroll(containerId, leftBtnId, rightBtnId) {
-                            const container = document.getElementById(containerId);
-                            const btnLeft = document.getElementById(leftBtnId);
-                            const btnRight = document.getElementById(rightBtnId);
+                  document.addEventListener("DOMContentLoaded", function () {
+    function setupScroll(containerId, leftBtnId, rightBtnId) {
+        const container = document.getElementById(containerId);
+        const btnLeft = document.getElementById(leftBtnId);
+        const btnRight = document.getElementById(rightBtnId);
 
-                            if (!container || !btnLeft || !btnRight) return;
+        if (!container || !btnLeft || !btnRight) return;
 
-                            btnLeft.addEventListener("click", () => {
-                                container.scrollBy({ left: -200, behavior: "smooth" });
-                            });
+        btnLeft.addEventListener("click", () => {
+            container.scrollBy({ left: -200, behavior: "smooth" });
+        });
 
-                            btnRight.addEventListener("click", () => {
-                                container.scrollBy({ left: 200, behavior: "smooth" });
-                            });
-                        }
+        btnRight.addEventListener("click", () => {
+            container.scrollBy({ left: 200, behavior: "smooth" });
+        });
+    }
 
-                        // sudah ada sebelumnya untuk Material
-                        setupScroll("materialTableContainer", "scrollLeftMaterial", "scrollRightMaterial");
+    // Setup scroll untuk semua section
+    setupScroll("materialTableContainer", "scrollLeftMaterial", "scrollRightMaterial");
+    setupScroll("manPowerTableContainer", "scrollLeftManPower", "scrollRightManPower");
+    setupScroll("machineTableContainer", "scrollLeftMachine", "scrollRightMachine");
+});
 
-                        // tambahkan ini
-                        setupScroll("manPowerTableContainer", "scrollLeftManPower", "scrollRightManPower");
-                        setupScroll("machineTableContainer", "scrollLeftMachine", "scrollRightMachine");
-                    });
-                </script>
+// Man Power
+                 document.addEventListener('DOMContentLoaded', function() {
+    const scrollContainer = document.getElementById('manpowerScroll');
+    const scrollLeftBtn = document.getElementById('scrollLeft');
+    const scrollRightBtn = document.getElementById('scrollRight');
+    
+    const scrollAmount = 200; // pixels to scroll
+    
+    scrollLeftBtn.addEventListener('click', function() {
+        scrollContainer.scrollBy({
+            left: -scrollAmount,
+            behavior: 'smooth'
+        });
+    });
+    
+    scrollRightBtn.addEventListener('click', function() {
+        scrollContainer.scrollBy({
+            left: scrollAmount,
+            behavior: 'smooth'
+        });
+    });
+    
+    // Hide/show buttons based on scroll position
+    function updateButtons() {
+        const isAtStart = scrollContainer.scrollLeft <= 0;
+        const isAtEnd = scrollContainer.scrollLeft + scrollContainer.clientWidth >= scrollContainer.scrollWidth - 1;
+        
+        scrollLeftBtn.style.opacity = isAtStart ? '0.3' : '1';
+        scrollLeftBtn.style.pointerEvents = isAtStart ? 'none' : 'auto';
+        
+        scrollRightBtn.style.opacity = isAtEnd ? '0.3' : '1';
+        scrollRightBtn.style.pointerEvents = isAtEnd ? 'none' : 'auto';
+    }
+    
+    scrollContainer.addEventListener('scroll', updateButtons);
+    updateButtons(); // Initial check
+});
+</script>
+
+
+
 @endsection
