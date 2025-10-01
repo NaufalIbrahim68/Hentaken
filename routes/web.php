@@ -24,8 +24,16 @@ Route::prefix('manpower')->name('manpower.')->group(function () {
     // Rute INDEX: Menampilkan daftar master dari tabel 'man_power'
     Route::get('/', [ManPowerController::class, 'index'])->name('index');
     
+    // --- PENYESUAIAN DI SINI ---
+    // BARU: Rute untuk mengelola data MASTER Man Power
+    Route::get('/master/{id}/edit', [ManPowerController::class, 'editMaster'])->name('master.edit');
+    Route::delete('/master/{id}', [ManPowerController::class, 'destroyMaster'])->name('master.destroy');
+    // Anda juga perlu route untuk update data master
+    // Route::put('/master/{id}', [ManPowerController::class, 'updateMaster'])->name('master.update');
+
+
+    // --- RUTE ANDA UNTUK PROSES HENKATEN (TETAP SAMA) ---
     // Rute AKSI: Membuat entri henkaten baru dari man_power yang dipilih
-    // Menggunakan metode POST karena ini adalah aksi yang menciptakan data.
     Route::post('/{id}/create-henkaten', [ManPowerController::class, 'createHenkaten'])->name('create-henkaten');
 
     // Rute EDIT: Menampilkan form edit untuk data HENKATEN
@@ -37,5 +45,6 @@ Route::prefix('manpower')->name('manpower.')->group(function () {
     // Rute DESTROY: Menghapus data HENKATEN
     Route::delete('/{id}', [ManPowerController::class, 'destroy'])->name('destroy');
 
+    Route::put('/master/{id}', [ManPowerController::class, 'updateMaster'])->name('master.update');
 });
 require __DIR__.'/auth.php';

@@ -11,15 +11,16 @@ class ManPowerController extends Controller
     /**
      * PERUBAHAN: Menampilkan daftar dari tabel 'man_power'
      */
-    public function index()
-    {
-        // Mengambil data dari tabel master 'man_power'
-        $man_powers = DB::table('man_power')->get();
-        
-        // Mengirim data ke view
-        return view('manpower.index', ['man_powers' => $man_powers]);
-    }
+  public function index()
+{
+    // Mengambil data dari tabel master 'man_power'
+    $man_powers = DB::table('man_power')->get();
 
+   
+
+    // Mengirim data ke view
+    return view('manpower.index', ['man_powers' => $man_powers]);
+}
     /**
      * BARU: Membuat entri henkaten dari man_power yang dipilih
      * lalu redirect ke halaman edit henkaten tersebut.
@@ -107,5 +108,36 @@ class ManPowerController extends Controller
         DB::table('man_power_henkaten')->where('id', $id)->delete();
         return redirect()->route('manpower.index')->with('success', 'Data Henkaten berhasil dihapus.');
     }
+
+      public function editMaster($id)
+    {
+        $man_power = DB::table('man_power')->find($id);
+
+        if (!$man_power) {
+            return redirect()->route('manpower.index')->with('error', 'Data Man Power tidak ditemukan.');
+        }
+        
+        // Anda perlu membuat view baru: 'manpower.edit_master'
+        return view('manpower.edit_master', ['man_power' => $man_power]);
+    }
+
+    /**
+     * BARU: Menghapus data MASTER man_power dari database.
+     */
+    public function destroyMaster($id)
+    {
+        // Cari dulu datanya
+        $man_power = DB::table('man_power')->find($id);
+
+        if (!$man_power) {
+            return redirect()->route('manpower.index')->with('error', 'Data Man Power gagal dihapus karena tidak ditemukan.');
+        }
+
+        // Hapus data
+        DB::table('man_power')->where('id', $id)->delete();
+
+        return redirect()->route('manpower.index')->with('success', 'Data Man Power berhasil dihapus.');
+    }
+
 }
 
