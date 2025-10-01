@@ -1,6 +1,6 @@
-@extends('layouts.app')
+<x-app-layout>
 
-@section('content')
+
 
     <style>
         .machine-status {
@@ -149,6 +149,8 @@
 
 
     </style>
+
+    
 
  <div class="w-full h-screen flex flex-col px-3 py-1">
     {{-- HEADER - . --}}
@@ -605,7 +607,7 @@
 
 
 
-                
+                  @push('scripts')
                 <script>
                     // Real-time Clock
                     function updateDateTime() {
@@ -787,4 +789,5 @@
 
 
 
-@endsection
+  @endpush
+</x-app-layout>
