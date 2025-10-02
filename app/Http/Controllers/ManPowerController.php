@@ -30,20 +30,27 @@ class ManPowerController extends Controller
     }
 
     public function updateMaster(Request $request, $id)
-    {
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'shift' => 'required|in:1,2',
-            'line_area' => 'required|string|max:255',
-            'station_id' => 'required|exists:stations,id',
-        ]);
+{
+    // 1. Validasi input dari form
+    // Hanya field yang relevan yang divalidasi.
+    // 'station_code' tidak perlu divalidasi di sini karena yang kita simpan adalah 'station_id'.
+    $validatedData = $request->validate([
+        'nama' => 'required|string|max:255',
+        'station_id' => 'required|exists:stations,id',
+        'shift' => 'required|in:Shift A,Shift B', // Diubah sesuai dropdown di view sebelumnya
+    ]);
 
-        $man_power = ManPower::findOrFail($id);
-        $man_power->update($request->all());
+    // 2. Cari data ManPower yang akan di-update
+    $man_power = ManPower::findOrFail($id);
+    
+    // 3. Update data dengan data yang sudah tervalidasi
+    // Menggunakan $validatedData lebih aman daripada $request->all()
+    $man_power->update($validatedData);
 
-        return redirect()->route('manpower.index')
-            ->with('success', 'Data Man Power berhasil diperbarui.');
-    }
+    // 4. Redirect kembali ke halaman index dengan pesan sukses
+    return redirect()->route('manpower.index')
+        ->with('success', 'Data Man Power berhasil diperbarui.');
+}
 
     public function destroyMaster($id)
     {
