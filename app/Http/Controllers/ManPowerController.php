@@ -15,11 +15,13 @@ class ManPowerController extends Controller
     // MASTER MAN POWER (Full CRUD)
     // ========================================
     
-    public function index()
-    {
-        $man_powers = ManPower::all();
-        return view('manpower.index', compact('man_powers'));
-    }
+ public function index()
+{
+    
+    $man_powers = ManPower::with('station')->orderBy('nama', 'asc')->paginate(5); 
+    
+    return view('manpower.index', compact('man_powers'));
+}
 
     public function editMaster($id)
     {
@@ -31,13 +33,12 @@ class ManPowerController extends Controller
 
     public function updateMaster(Request $request, $id)
 {
-    // 1. Validasi input dari form
-    // Hanya field yang relevan yang divalidasi.
-    // 'station_code' tidak perlu divalidasi di sini karena yang kita simpan adalah 'station_id'.
+   
+    
     $validatedData = $request->validate([
         'nama' => 'required|string|max:255',
         'station_id' => 'required|exists:stations,id',
-        'shift' => 'required|in:Shift A,Shift B', // Diubah sesuai dropdown di view sebelumnya
+        'shift' => 'required|in:Shift A,Shift B', 
     ]);
 
     // 2. Cari data ManPower yang akan di-update
