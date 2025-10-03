@@ -38,9 +38,9 @@
                             {{ __('Man Power') }}
                         </x-dropdown-link>
 
-                        <x-dropdown-link href="#">
-                            {{ __('Machine') }}
-                        </x-dropdown-link>
+                      <x-dropdown-link :href="route('machines.index')">
+    {{ __('Machine') }}
+</x-dropdown-link>
 
                         <x-dropdown-link :href="route('materials.index')">
                             {{ __('Material') }}

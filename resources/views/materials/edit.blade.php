@@ -56,13 +56,18 @@
                                 @endif
                             </div>
 
-                            <div class="mb-4">
-                                <label for="status" class="block text-gray-700 text-sm font-bold mb-2">Status</label>
-                                <select id="status" name="status" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
-                                    <option value="1" {{ old('status', $material->status) == '1' ? 'selected' : '' }}>Aktif</option>
-                                    <option value="0" {{ old('status', $material->status) == '0' ? 'selected' : '' }}>Tidak Aktif</option>
-                                </select>
-                            </div>
+                           <div class="mb-4">
+    <label for="status" class="block text-gray-700 text-sm font-bold mb-2">Status</label>
+    <select id="status" name="status" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        <option value="normal" {{ old('status', $material->status) == 'normal' ? 'selected' : '' }}>
+            Normal
+        </option>
+        <option value="henkaten" {{ old('status', $material->status) == 'henkaten' ? 'selected' : '' }}>
+            Henkaten
+        </option>
+    </select>
+    @error('status') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+</div>
                         </div>
 
                         <div class="flex items-center justify-end space-x-4 mt-6">

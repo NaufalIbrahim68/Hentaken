@@ -32,11 +32,16 @@ class MaterialController extends Controller
     /**
      * Menampilkan form untuk membuat material baru.
      */
-    public function create()
-    {
-        $stations = Station::all();
-        return view('materials.create', compact('stations'));
-    }
+   public function create()
+{
+    // 2. Ambil semua data stasiun dari database
+    //    Kita urutkan berdasarkan nama/kode agar dropdown rapi
+    $stations = Station::orderBy('station_code')->get();
+
+    // 3. Kirim variabel $stations ke view 'materials.create'
+    return view('materials.create', compact('stations'));
+}
+
 
     /**
      * Menyimpan material baru ke database.

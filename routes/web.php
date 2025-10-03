@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ManPowerController;
 use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\MachineController; 
 use App\Http\Controllers\HenkatenController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +45,9 @@ Route::prefix('manpower')->name('manpower.')->group(function () {
 
 // Material
 Route::resource('materials', MaterialController::class);
+
+// --- Machine Routes ---
+Route::resource('machines', MachineController::class);
 
 // --- (Opsional) Hilangkan auth karena website ini tidak pakai login ---
 // Kalau memang 100% tidak ada login, baris berikut tidak usah dipakai:

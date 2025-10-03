@@ -26,19 +26,19 @@
                         @csrf
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             
-                            {{-- Station --}}
-                            <div class="mb-4">
-                                <label for="station_id" class="block text-gray-700 text-sm font-bold mb-2">Station</label>
-                                <select id="station_id" name="station_id" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                                    <option value="">-- Pilih Station --</option>
-                                    @foreach ($stations as $station)
-                                        <option value="{{ $station->id }}" {{ old('station_id') == $station->id ? 'selected' : '' }}>
-                                            {{ $station->station_code }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
+                           {{-- Station --}}
+<div class="mb-4">
+    <label for="station_id" class="block text-gray-700 text-sm font-bold mb-2">Station</label>
+    <select id="station_id" name="station_id" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        <option value="">-- Pilih Station --</option>
+        @foreach ($stations as $station)
+            <option value="{{ $station->id }}" {{ old('station_id') == $station->id ? 'selected' : '' }}>
+                {{ $station->station_code }} <!-- Atau $station->station_name, sesuaikan dengan nama kolom Anda -->
+            </option>
+        @endforeach
+    </select>
+    @error('station_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+</div>
                             {{-- Nama Material --}}
                             <div class="mb-4">
                                 <label for="material_name" class="block text-gray-700 text-sm font-bold mb-2">Nama Material</label>

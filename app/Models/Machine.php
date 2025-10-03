@@ -4,18 +4,39 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Machine extends Model
 {
     use HasFactory;
 
-    protected $table = 'machines'; // nama tabel di SQL Server
+    /**
+     * Nama tabel yang terhubung dengan model ini.
+     *
+     * @var string
+     */
+    protected $table = 'machines';
 
+    /**
+     * Kolom-kolom yang dapat diisi secara massal.
+     *
+     * @var array
+     */
     protected $fillable = [
-        'name',
         'station_id',
-        'shift',
-        'active_from',
-        'active_to',
+        'deskripsi',
+        'keterangan',
+        'foto_path',
     ];
+
+    /**
+     * Mendefinisikan relasi "belongsTo" ke model Station.
+     * Sebuah mesin (Machine) hanya dimiliki oleh satu stasiun (Station).
+     */
+    public function station(): BelongsTo
+    {
+        // Relasi ini menghubungkan 'station_id' di tabel 'machines'
+        // dengan 'id' di tabel 'stations'.
+        return $this->belongsTo(Station::class, 'station_id');
+    }
 }
