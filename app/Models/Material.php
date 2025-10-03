@@ -9,13 +9,19 @@ class Material extends Model
 {
     use HasFactory;
 
-    protected $table = 'materials'; // nama tabel di SQL Server
+    protected $table = 'materials'; 
 
     protected $fillable = [
-        'name',
+        'material_name', // 👈 harus sesuai kolom di tabel kamu
         'station_id',
-        'shift',
-        'active_from',
-        'active_to',
+        'keterangan',
+        'foto_path',
+        'status',
     ];
+
+    // Relasi ke Station
+    public function station()
+    {
+        return $this->belongsTo(Station::class, 'station_id', 'id');
+    }
 }

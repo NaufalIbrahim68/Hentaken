@@ -74,31 +74,43 @@ class ManPowerController extends Controller
         return view('manpower.create_henkaten', compact('man_power', 'stations'));
     }
 
-    public function storeHenkaten(Request $request, $id)
+  public function storeHenkaten(Request $request, $id)
     {
+        // [MODIFIKASI] 1. Menambahkan validasi untuk 'nama_after' dan 'lampiran'
         $request->validate([
             'shift' => 'required|in:1,2',
             'line_area' => 'required|string|max:255',
-            'man_power_id_after' => 'nullable|string|max:255',
+            'nama_after' => 'required|string|max:255', // Validasi untuk nama karyawan pengganti
             'station_id_after' => 'nullable|exists:stations,id',
             'effective_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:effective_date',
             'keterangan' => 'nullable|string',
+            'lampiran' => 'nullable|image|mimes:jpeg,png|max:2048', // Validasi untuk file foto
         ]);
 
         $man_power = ManPower::findOrFail($id);
 
+        // [MODIFIKASI] 2. Logika untuk menangani upload file
+        $lampiranPath = null;
+        if ($request->hasFile('lampiran')) {
+            // Simpan file ke storage/app/public/lampiran_henkaten
+            // dan simpan path-nya ke variabel.
+            $lampiranPath = $request->file('lampiran')->store('public/lampiran_henkaten');
+        }
+
+        // [MODIFIKASI] 3. Menyesuaikan data yang akan disimpan
         ManPowerHenkaten::create([
             'man_power_id' => $man_power->id,
             'station_id'   => $man_power->station_id,
             'shift'        => $request->shift,
-            'nama'         => $man_power->nama,
+            'nama'         => $man_power->nama, // Ini adalah 'nama_before'
             'line_area'    => $request->line_area,
-            'man_power_id_after' => $request->man_power_id_after,
-            'station_id_after'   => $request->station_id_after,
-            'effective_date'     => $request->effective_date,
-            'end_date'           => $request->end_date,
-            'keterangan'         => $request->keterangan,
+            'nama_after'   => $request->nama_after, // Menggunakan 'nama_after' dari form
+            'station_id_after' => $request->station_id_after,
+            'effective_date'   => $request->effective_date,
+            'end_date'         => $request->end_date,
+            'keterangan'       => $request->keterangan,
+            'lampiran'         => $lampiranPath, // Menyimpan path file lampiran
         ]);
 
         return redirect()->route('manpower.index')
