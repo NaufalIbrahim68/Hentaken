@@ -23,6 +23,35 @@ class ManPowerController extends Controller
     return view('manpower.index', compact('man_powers'));
 }
 
+
+  public function createMaster()
+    {
+        $stations = Station::all(); // Mengambil semua data station untuk dropdown
+        return view('manpower.create', compact('stations'));
+    }
+
+    /**
+     * Menyimpan data Man Power baru ke database.
+     */
+    public function storeMaster(Request $request)
+    {
+        $request->validate([
+            'nama' => 'required|string|max:255',
+            'station_id' => 'required|exists:stations,id',
+            'shift' => 'required|in:1,2',
+        ]);
+
+        ManPower::create([
+            'nama' => $request->nama,
+            'station_id' => $request->station_id,
+            'shift' => $request->shift,
+        ]);
+
+        return redirect()->route('manpower.index')
+                         ->with('success', 'Data Man Power berhasil ditambahkan.');
+    }
+
+
     public function editMaster($id)
     {
         $man_power = ManPower::findOrFail($id);
@@ -65,6 +94,17 @@ class ManPowerController extends Controller
     // ========================================
     // HENKATEN (Create & Delete ONLY, NO EDIT)
     // ========================================
+
+    public function createHenkatenForm()
+{
+    // misalnya ambil man power pertama sebagai default
+    $man_power = ManPower::with('station')->first();
+
+    $stations = Station::all();
+
+    return view('manpower.create_henkaten', compact('man_power', 'stations'));
+}
+
     
     public function createHenkaten($id)
     {

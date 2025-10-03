@@ -25,9 +25,15 @@
                         </div>
                     @endif
 
+                      
                     {{-- Tabel Data --}}
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white">
+                            <div class="flex items-center justify-between mb-6">
+                        <a href="{{ route('manpower.master.create') }}" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
+                            Tambah Data
+                        </a>
+
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th

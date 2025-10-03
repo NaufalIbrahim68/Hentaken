@@ -15,14 +15,7 @@
                         <a href="{{ route('materials.create') }}" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
                             Tambah Data
                         </a>
-                        <form action="{{ route('materials.index') }}" method="GET">
-                            <div class="flex items-center">
-                                <input type="text" name="search" placeholder="Cari material..." class="border rounded-l-md py-2 px-3 focus:outline-none" value="{{ request('search') }}">
-                                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-r-md">
-                                    Cari
-                                </button>
-                            </div>
-                        </form>
+                        
                     </div>
 
                     {{-- Tabel Data --}}
