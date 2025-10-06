@@ -16,10 +16,12 @@ class ManPower extends Model
         return $this->belongsTo(Station::class);
     }
     protected $fillable = [
-        'name',
+        'id',
+        'nama',
         'station_id',
         'shift',
-        'active_from',
-        'active_to',
+        'line_area',
+        'created_at',
+        'updated_at',
     ];
 }

@@ -15,7 +15,7 @@ class ManPowerHenkaten extends Model
         'nama',              // nama_before
         'line_area',
         'nama_after',   
-        'station_id_after',
+        'station_id_after', 
         'effective_date',
         'end_date',
         'keterangan',

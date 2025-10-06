@@ -6,6 +6,8 @@ use App\Http\Controllers\ManPowerController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\MachineController; 
 use App\Http\Controllers\HenkatenController;
+use App\Models\ManPower;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,6 +41,7 @@ Route::prefix('manpower')->name('manpower.')->group(function () {
 
     // Henkaten routes
     Route::get('/{id}/henkaten/create', [ManPowerController::class, 'createHenkaten'])->name('henkaten.create');
+    
     Route::post('/henkaten/store', [ManPowerController::class, 'storeHenkaten'])->name('henkaten.store'); // ADD THIS LINE
     Route::delete('/henkaten/{id}', [ManPowerController::class, 'destroy'])->name('henkaten.destroy');
 });
@@ -48,3 +51,13 @@ Route::resource('materials', MaterialController::class);
 
 // --- Machine Routes ---
 Route::resource('machines', MachineController::class);
+
+
+Route::get('/manpower/search', function (Request $request) {
+    $q = $request->query('q');
+    $results = ManPower::where('nama', 'like', "%$q%")
+                        ->orderBy('nama')
+                        ->limit(10)
+                        ->get();
+    return response()->json($results);
+});

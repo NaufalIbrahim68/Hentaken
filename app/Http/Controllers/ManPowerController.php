@@ -117,57 +117,80 @@ class ManPowerController extends Controller
 
 
 
-public function storeHenkaten(Request $request)
-{
-    $request->validate([
-        'nama'         => 'required|string|max:255', // nama_before
-        'nama_after'   => 'required|string|max:255',
-        'shift'        => 'required|in:1,2',
-        'line_area'    => 'required|string|max:255',
-        'station_id_after' => 'nullable|exists:stations,id',
-        'effective_date'   => 'nullable|date',
-        'end_date'         => 'nullable|date|after_or_equal:effective_date',
-        'keterangan'       => 'nullable|string',
-        'lampiran'         => 'nullable|image|mimes:jpeg,png|max:2048',
-    ]);
+  public function storeHenkaten(Request $request)
+    {
+        // ###############################################################
+        // PERUBAHAN DIMULAI DI SINI
+        // ###############################################################
 
-    // Cari man_power_id dari nama_before
-    $manPowerBefore = ManPower::where('nama', $request->nama)->first();
-    if (!$manPowerBefore) {
-        return back()->withErrors(['nama' => 'Karyawan dengan nama ini tidak ditemukan.'])->withInput();
+        // 1. UBAH VALIDASI: Kita validasi ID yang dikirim dari hidden input.
+        // Ini lebih aman dan efisien.
+        $validated = $request->validate([
+            'shift'              => 'required|in:1,2',
+            'line_area'          => 'required|string|max:255',
+            'effective_date'     => 'required|date',
+            'end_date'           => 'nullable|date|after_or_equal:effective_date',
+
+            // Validasi ID Karyawan "Before" dari hidden input
+            'man_power_id'       => 'required|exists:man_powers,id',
+
+            // Validasi ID Karyawan "After" dari hidden input
+            'man_power_id_after' => 'required|exists:man_powers,id',
+
+            'station_id_after'   => 'required|exists:stations,id',
+            'keterangan'         => 'nullable|string',
+            'lampiran'           => 'nullable|image|mimes:jpeg,png|max:2048',
+            
+            // Validasi untuk teks nama (opsional, tapi baik untuk ada)
+            'nama'               => 'required|string|max:255',
+            'nama_after'         => 'required|string|max:255',
+        ], [
+            // Pesan error yang lebih ramah pengguna
+            'man_power_id.required'       => 'Karyawan sebelumnya wajib dipilih dari daftar.',
+            'man_power_id.exists'         => 'Karyawan sebelumnya tidak valid.',
+            'man_power_id_after.required' => 'Karyawan sesudah wajib dipilih dari daftar.',
+            'man_power_id_after.exists'   => 'Karyawan sesudah tidak valid.',
+        ]);
+
+        // 2. HAPUS PENCARIAN MANUAL: Kode di bawah ini tidak lagi diperlukan
+        // karena validasi 'exists' sudah memastikan ID-nya valid.
+        /*
+        $manPowerBefore = ManPower::where('nama', $request->nama)->first();
+        if (!$manPowerBefore) { ... }
+        $manPowerAfter = ManPower::where('nama', $request->nama_after)->first();
+        if (!$manPowerAfter) { ... }
+        */
+
+        // Upload lampiran jika ada
+        $lampiranPath = null;
+        if ($request->hasFile('lampiran')) {
+            $lampiranPath = $request->file('lampiran')->store('lampiran_henkaten', 'public');
+        }
+
+        // 3. GUNAKAN ID LANGSUNG: Saat menyimpan, gunakan ID dari request
+        // yang sudah tervalidasi.
+        ManPowerHenkaten::create([
+            'man_power_id'       => $validated['man_power_id'],       // Gunakan ID langsung
+            'man_power_id_after' => $validated['man_power_id_after'], // Gunakan ID langsung
+            
+            'station_id'         => $validated['station_id_after'], // Asumsi station before & after sama
+            'station_id_after'   => $validated['station_id_after'],
+            'shift'              => $validated['shift'],
+            'line_area'          => $validated['line_area'],
+            'effective_date'     => $validated['effective_date'],
+            'end_date'           => $validated['end_date'],
+            'keterangan'         => $validated['keterangan'],
+            'lampiran'           => $lampiranPath,
+
+            // Anda tetap bisa menyimpan nama untuk kemudahan menampilkan data
+            // tanpa perlu join tabel, jika mau.
+            'nama'               => $validated['nama'],
+            'nama_after'         => $validated['nama_after'],
+        ]);
+
+        return redirect()->route('manpower.index')
+            ->with('success', 'Data Henkaten berhasil disimpan.');
     }
-
-    // Cari man_power_id dari nama_after
-    $manPowerAfter = ManPower::where('nama', $request->nama_after)->first();
-    if (!$manPowerAfter) {
-        return back()->withErrors(['nama_after' => 'Karyawan dengan nama sesudah tidak ditemukan.'])->withInput();
-    }
-
-    // Upload lampiran jika ada
-    $lampiranPath = null;
-    if ($request->hasFile('lampiran')) {
-        $lampiranPath = $request->file('lampiran')->store('lampiran_henkaten', 'public');
-    }
-
-    // Simpan data Henkaten
-    ManPowerHenkaten::create([
-        'man_power_id'       => $manPowerBefore->id,  // ID karyawan sebelum
-        'man_power_id_after' => $manPowerAfter->id,   // ID karyawan sesudah
-        'station_id'         => $request->station_id_after,
-        'station_id_after'   => $request->station_id_after,
-        'shift'              => $request->shift,
-        'nama'               => $request->nama,
-        'nama_after'         => $request->nama_after,
-        'line_area'          => $request->line_area,
-        'effective_date'     => $request->effective_date,
-        'end_date'           => $request->end_date,
-        'keterangan'         => $request->keterangan,
-        'lampiran'           => $lampiranPath,
-    ]);
-
-    return redirect()->route('manpower.index')
-        ->with('success', 'Data Henkaten berhasil disimpan.');
-}
     public function destroy($id)
     {
         $henkaten = ManPowerHenkaten::findOrFail($id);
