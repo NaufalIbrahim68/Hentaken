@@ -25,7 +25,7 @@ class MachineController extends Controller
                   });
         }
 
-        $machines = $query->paginate(15);
+        $machines = $query->paginate(5);
         return view('machines.index', compact('machines'));
     }
 

@@ -25,7 +25,7 @@ class MaterialController extends Controller
             });
         }
 
-        $materials = $query->paginate(15);
+        $materials = $query->paginate(5);
         return view('materials.index', compact('materials'));
     }
 

@@ -89,7 +89,6 @@
                         </table>
 
 
-{{-- Tambahkan bagian ini untuk Pagination --}}
 <div class="mt-6">
     {{ $man_powers->links('vendor.pagination.tailwind-index-mp') }}
 </div>

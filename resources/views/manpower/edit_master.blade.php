@@ -69,15 +69,7 @@
         @enderror
     </div>
 
-    {{-- Kolom untuk menampilkan Station ID yang dipilih --}}
-    <div class="mb-4">
-        <label for="station_id_display" class="block text-gray-700 text-sm font-bold mb-2">Station ID</label>
-        <input type="text" 
-               id="station_id_display" 
-               value="{{ $man_power->station_id ?? '' }}" 
-               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 bg-gray-200 leading-tight focus:outline-none"
-               readonly>
-    </div>
+  
 @endif
 
 

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Master Data Mesin') }}
+            {{ __('Machines') }}
         </h2>
     </x-slot>
 
@@ -75,10 +75,9 @@
                         </table>
                     </div>
                     
-                    {{-- Pagination --}}
-                    <div class="mt-6">
-                        {{ $machines->links() }}
-                    </div>
+                  <div class="mt-6">
+    {{ $machines->links('vendor.pagination.tailwind-index-machine') }}
+</div>
 
                 </div>
             </div>
