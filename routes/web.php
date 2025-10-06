@@ -21,12 +21,12 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::redirect('/henkaten/manpower/select', '/henkaten/form');
 
 // ==== HENKATEN (PUBLIC) ====
+// Form tampil
 Route::get('/henkaten/form', [HenkatenController::class, 'form'])->name('henkaten.form');
-Route::post('/manpower/henkaten/store', [HenkatenController::class, 'store'])
-    ->name('manpower.henkaten.store');
+// Proses simpan
+Route::post('/henkaten/store', [HenkatenController::class, 'store'])->name('henkaten.store');
 
 // ==== MASTER DATA (PUBLIC) ====
-// Man Power
 Route::prefix('manpower')->name('manpower.')->group(function () {
     Route::get('/', [ManPowerController::class, 'index'])->name('index');
 
@@ -37,9 +37,9 @@ Route::prefix('manpower')->name('manpower.')->group(function () {
     Route::put('/master/{id}', [ManPowerController::class, 'updateMaster'])->name('master.update');
     Route::delete('/master/{id}', [ManPowerController::class, 'destroyMaster'])->name('master.destroy');
 
-    // Henkaten khusus Man Power ID
+    // Henkaten routes
     Route::get('/{id}/henkaten/create', [ManPowerController::class, 'createHenkaten'])->name('henkaten.create');
-    Route::post('/{id}/henkaten/store', [ManPowerController::class, 'storeHenkaten'])->name('henkaten.store_by_id');
+    Route::post('/henkaten/store', [ManPowerController::class, 'storeHenkaten'])->name('henkaten.store'); // ADD THIS LINE
     Route::delete('/henkaten/{id}', [ManPowerController::class, 'destroy'])->name('henkaten.destroy');
 });
 
@@ -48,7 +48,3 @@ Route::resource('materials', MaterialController::class);
 
 // --- Machine Routes ---
 Route::resource('machines', MachineController::class);
-
-// --- (Opsional) Hilangkan auth karena website ini tidak pakai login ---
-// Kalau memang 100% tidak ada login, baris berikut tidak usah dipakai:
-// require __DIR__.'/auth.php';

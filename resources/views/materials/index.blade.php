@@ -101,10 +101,9 @@
                     </div>
 
                     {{-- Pagination --}}
-                    <div class="mt-6">
-                        {{ $materials->links() }}
-                    </div>
-
+                   <div class="mt-6">
+    {{ $materials->links('vendor.pagination.tailwind-index-materials') }}
+</div>
                 </div>
             </div>
         </div>

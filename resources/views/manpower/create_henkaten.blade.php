@@ -22,7 +22,7 @@
                         </div>
                     @endif
 
-                <form action="{{ route('manpower.henkaten.store') }}" method="POST" enctype="multipart/form-data">
+         <form action="{{ route('manpower.henkaten.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         {{-- Kolom Kiri --}}
@@ -87,7 +87,7 @@
                                         </div>
                                         <label for="nama_before" class="text-gray-700 text-sm font-bold">Nama Karyawan Sebelumnya</label>
                                     </div>
-                                    <input type="text" id="nama_before" name="nama_before" 
+                                    <input type="text" id="nama_before" name="nama" 
                 value="{{ old('nama_before') }}"  class="w-full py-3 px-4 text-gray-700 bg-white border-2 border-green-300 rounded-lg font-semibold focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition duration-200"
     >
                                     <p class="text-xs text-gray-500 mt-2 italic">Data karyawan sebelum perpindahan</p>

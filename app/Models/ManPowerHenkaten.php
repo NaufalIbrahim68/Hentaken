@@ -2,39 +2,29 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ManPowerHenkaten extends Model
 {
-    use HasFactory;
-
-    // Tetapkan nama tabel secara eksplisit
-    protected $table = 'man_power_henkaten';
+    protected $table = 'man_power_henkaten'; // Sesuaikan nama tabel
 
     protected $fillable = [
         'man_power_id',
         'station_id',
         'shift',
-        'nama',
+        'nama',              // nama_before
         'line_area',
-        'man_power_id_after',
+        'nama_after',   
         'station_id_after',
         'effective_date',
         'end_date',
         'keterangan',
+        'lampiran',
+        'man_power_id_after',
     ];
 
-    // Jika ada relasi
-    public function manPower()
-    {
-        return $this->belongsTo(ManPower::class, 'man_power_id');
-    }
-
-    public function station()
-    {
-        return $this->belongsTo(Station::class, 'station_id');
-    }
-
-  
+    protected $casts = [
+        'effective_date' => 'date',
+        'end_date' => 'date',
+    ];
 }

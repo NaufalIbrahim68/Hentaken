@@ -62,10 +62,7 @@
                                         <td class="py-3 px-4">{{ $man_power->shift }}</td>
                                         <td class="py-3 px-4 text-center">
                                             <div class="flex items-center justify-center space-x-2">
-                                                <a href="{{ route('manpower.henkaten.create', $man_power->id) }}"
-                                                    class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-md text-sm transition duration-300">
-                                                    Buat Henkaten
-                                                </a>
+                                               
                                                 <a href="{{ route('manpower.master.edit', $man_power->id) }}"
                                                     class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-1 px-3 rounded-md text-sm transition">
                                                     Edit

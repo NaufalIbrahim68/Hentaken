@@ -272,31 +272,96 @@
         </div>
 
         {{-- Second Shift Change --}}
-        @php
-            $station7Workers = $groupedManPower->get(7, collect());
-            $shiftAWorker7 = $station7Workers->where('shift', 'Shift A')->first();
-            $shiftBWorker7 = $station7Workers->where('shift', 'Shift B')->first();
-        @endphp
-        <div class="flex-shrink-0 flex items-center justify-center space-x-2 bg-gray-50 p-2 rounded-lg" style="width: 220px;">
-            <div class="text-center">
-                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
-                    👤
-                </div>
-                <p class="text-[8px] font-semibold">{{ $shiftAWorker7 ? $shiftAWorker7->nama : 'No Worker' }}</p>
-                <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
+       
+            {{-- === SHIFT A LOGIC === --}}
+            @php
+                $station7Workers = $groupedManPower->get(7, collect());
+                $workerA = $station7Workers->where('shift', 'Shift A')->first();
+                $cardClassA = '';
+                $displayNameA = '';
+                $statusColorA = '';
+
+                if ($workerA) {
+                    $activeHenkatenA = \App\Models\ManPowerHenkaten::where('man_power_id', $workerA->id)
+                        ->where(function($query) {
+                            $query->where('effective_date', '<=', now())
+                                  ->where(function($q) {
+                                      $q->where('end_date', '>=', now())
+                                        ->orWhereNull('end_date');
+                                  });
+                        })
+                        ->latest('effective_date')
+                        ->first();
+
+                    if ($activeHenkatenA) {
+                        $displayNameA = $activeHenkatenA->nama_after;
+                        $statusColorA = 'bg-yellow-500'; 
+                        $cardClassA = 'border-yellow-500 shadow-md';
+                    } else {
+                        $displayNameA = $workerA->nama;
+                        $statusColorA = 'bg-green-500';
+                    }
+                }
+            @endphp
+            
+            {{-- Tampilkan blok ini HANYA JIKA $workerA ada --}}
+            @if ($workerA)
+            <div class="flex-shrink-0 text-center bg-gray-50 p-2 rounded-lg {{ $cardClassA }}" style="width: 100px;">
+                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
+                <p class="text-[8px] font-semibold truncate" title="{{ $displayNameA }}">{{ $displayNameA }}</p>
+                <div class="w-2 h-2 rounded-full {{ $statusColorA }} mx-auto mt-0.5"></div>
             </div>
-            <div class="text-sm text-gray-400 font-bold">→</div>
-            <div class="text-center">
-                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
-                    👤
-                </div>
-                <p class="text-[8px] font-semibold">{{ $shiftBWorker7 ? $shiftBWorker7->nama : 'No Worker' }}</p>
-                <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
+            @endif
+
+
+            {{-- === SHIFT B LOGIC === --}}
+            @php
+                $workerB = $station7Workers->where('shift', 'Shift B')->first();
+                $cardClassB = '';
+                $displayNameB = '';
+                $statusColorB = '';
+
+                if ($workerB) {
+                    $activeHenkatenB = \App\Models\ManPowerHenkaten::where('man_power_id', $workerB->id)
+                         ->where(function($query) {
+                            $query->where('effective_date', '<=', now())
+                                  ->where(function($q) {
+                                      $q->where('end_date', '>=', now())
+                                        ->orWhereNull('end_date');
+                                  });
+                        })
+                        ->latest('effective_date')
+                        ->first();
+
+                    if ($activeHenkatenB) {
+                        $displayNameB = $activeHenkatenB->nama_after;
+                        $statusColorB = 'bg-yellow-500'; 
+                        $cardClassB = 'border-yellow-500 shadow-md';
+                    } else {
+                        $displayNameB = $workerB->nama;
+                        $statusColorB = 'bg-green-500';
+                    }
+                }
+            @endphp
+            
+            {{-- Tampilkan tanda panah HANYA JIKA KEDUA worker ada --}}
+            @if ($workerA && $workerB)
+                <div class="text-sm text-gray-400 font-bold">→</div>
+            @endif
+
+            {{-- Tampilkan blok ini HANYA JIKA $workerB ada --}}
+            @if ($workerB)
+            <div class="flex-shrink-0 text-center bg-gray-50 p-2 rounded-lg {{ $cardClassB }}" style="width: 100px;">
+                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
+                <p class="text-[8px] font-semibold truncate" title="{{ $displayNameB }}">{{ $displayNameB }}</p>
+                <div class="w-2 h-2 rounded-full {{ $statusColorB }} mx-auto mt-0.5"></div>
             </div>
+            @endif
+            
         </div>
-        
     </div>
-</div>
+
+
                   
 
                 
