@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ManPowerHenkaten extends Model
 {
@@ -27,4 +29,19 @@ class ManPowerHenkaten extends Model
         'effective_date' => 'date',
         'end_date' => 'date',
     ];
+
+       public function manPowerBefore(): BelongsTo
+    {
+        // Relasi ini menghubungkan kolom 'man_power_id' di tabel ini
+        // ke 'id' di tabel 'man_power'.
+        return $this->belongsTo(ManPower::class, 'man_power_id');
+    }
+
+    /**
+     * Opsional: Mendapatkan data ManPower pengganti (setelah henkaten).
+     */
+    public function manPowerAfter(): BelongsTo
+    {
+        return $this->belongsTo(ManPower::class, 'man_power_id_after');
+    }
 }

@@ -245,41 +245,49 @@
             </button>
         </div>
     </div>
+{{-- ======================================================================= --}}
+{{-- BAGIAN BAWAH: DETAIL HENKATEN (REVISI - SATU KOTAK PER HENKATEN) --}}
+{{-- ======================================================================= --}}
+<div class="border-t mt-2 pt-2">
+    @php
+        // Ambil SEMUA data henkaten yang sedang aktif
+        $allActiveHenkatens = \App\Models\ManPowerHenkaten::where('effective_date', '<=', now())
+            ->where(function($query) {
+                $query->where('end_date', '>=', now())->orWhereNull('end_date');
+            })
+            ->get();
+    @endphp
 
-    {{-- ======================================================================= --}}
-    {{-- BAGIAN BAWAH: DETAIL HENKATEN & TANGGAL AKTIF (DINAMIS)            --}}
-    {{-- ======================================================================= --}}
-    <div class="border-t mt-2 pt-2">
-        @php
-            // Ambil SEMUA data henkaten yang sedang aktif untuk ditampilkan di bagian bawah
-            $allActiveHenkatens = \App\Models\ManPowerHenkaten::where('effective_date', '<=', now())
-                ->where(function($query) {
-                    $query->where('end_date', '>=', now())->orWhereNull('end_date');
-                })
-                ->get();
-        @endphp
+    <div class="flex items-center gap-1">
+        <button id="scrollLeftShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
 
-        <div class="flex items-center gap-1">
-            <button id="scrollLeftShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </button>
+        <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
+            @if($allActiveHenkatens->isNotEmpty())
+                <div class="flex justify-start gap-3 min-w-full px-2">
+                    {{-- Loop untuk setiap Henkaten yang aktif --}}
+                    @foreach($allActiveHenkatens as $henkaten)
+                        @php
+                            // Kalkulasi tanggal untuk setiap henkaten di dalam loop
+                            $startDate = strtoupper($henkaten->effective_date->format('j/M/y'));
+                            $endDate = $henkaten->end_date ? strtoupper($henkaten->end_date->format('j/M/y')) : 'SELANJUTNYA';
+                        @endphp
 
-            <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
-                @if($allActiveHenkatens->isNotEmpty())
-                    <div class="flex justify-center gap-3 min-w-full">
-                        @foreach($allActiveHenkatens as $henkaten)
-                            <div class="flex-shrink-0 flex items-center justify-center space-x-2 bg-gray-50 p-2 rounded-lg border-2 border-yellow-500 shadow-md" style="width: 220px;">
+                        {{-- KOTAK UTAMA UNTUK SETIAP HENKATEN --}}
+                        <div class="flex-shrink-0 flex flex-col space-y-2 bg-gray-50 p-2 rounded-lg border-2 border-yellow-500 shadow-md" style="width: 240px;">
+
+                            {{-- 1. Perubahan Pekerja (Before -> After) --}}
+                            <div class="flex items-center justify-center space-x-2">
                                 {{-- Kiri (Pekerja SEBELUM Henkaten) --}}
                                 <div class="text-center">
                                     <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
                                     <p class="text-[8px] font-semibold" title="{{ $henkaten->nama }}">{{ $henkaten->nama }}</p>
                                     <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5" title="Before"></div>
                                 </div>
-                                
                                 <div class="text-sm text-gray-400 font-bold">→</div>
-
                                 {{-- Kanan (Pekerja SETELAH Henkaten / Pengganti) --}}
                                 <div class="text-center">
                                     <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
@@ -287,54 +295,39 @@
                                     <div class="w-2 h-2 rounded-full bg-red-500 mx-auto mt-0.5" title="Henkaten"></div>
                                 </div>
                             </div>
-                        @endforeach
-                    </div>
-                @else
-                    {{-- Opsional: Tampilkan pesan jika tidak ada Henkaten aktif --}}
-                    <div class="text-center text-xs text-gray-400 py-4">No Active Henkaten</div>
-                @endif
-            </div>
 
-            <button id="scrollRightShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-            </button>
-        </div>
-            {{-- SERIAL NUMBER & DATE - . --}}
-                               <div class="grid grid-cols-2 gap-1 mt-1">
-                    <div class="bg-blue-400 text-center py-0.5 rounded">
-                        <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
-                    </div>
-                    <div class="bg-blue-400 text-center py-0.5 rounded">
-                        <span class="text-[8px] text-white font-medium">Serial Number End : K1ZVNA2020QX</span>
-                    </div>
+                            {{-- 2. Serial Number --}}
+                            <div class="grid grid-cols-2 gap-1">
+                                <div class="bg-blue-400 text-center py-0.5 rounded">
+                                    <span class="text-[8px] text-white font-medium">Serial Start: K1ZVNA2018QX</span>
+                                </div>
+                                <div class="bg-blue-400 text-center py-0.5 rounded">
+                                    <span class="text-[8px] text-white font-medium">Serial End: K1ZVNA2020QX</span>
+                                </div>
+                            </div>
+
+                            {{-- 3. Tanggal Aktif --}}
+                            <div class="flex justify-center">
+                                <div class="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                                    ACTIVE: {{ $startDate }} - {{ $endDate }}
+                                </div>
+                            </div>
+
+                        </div>
+                    @endforeach
                 </div>
-
-{{-- Tanggal Aktif Henkaten (hanya muncul jika ada henkaten aktif) --}}
-@if ($allActiveHenkatens->isNotEmpty())
-    @php
-        $firstHenkaten = $allActiveHenkatens->first();
-        $startDate = strtoupper($firstHenkaten->effective_date->format('j/M/y'));
-        $endDate = $firstHenkaten->end_date ? strtoupper($firstHenkaten->end_date->format('j/M/y')) : 'SELANJUTNYA';
-    @endphp
-
-    {{-- Mengubah class menjadi justify-between --}}
-    <div class="mt-3 px-5 flex justify-between">
-        
-        {{-- Tampilan di sebelah KIRI --}}
-        <div class="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[10px] font-semibold">
-            ACTIVE: {{ $startDate }} - {{ $endDate }}
+            @else
+                <div class="text-center text-xs text-gray-400 py-4">No Active Henkaten</div>
+            @endif
         </div>
 
-        {{-- Tampilan di sebelah KANAN --}}
-        <div class="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[10px] font-semibold">
-            ACTIVE: {{ $startDate }} - {{ $endDate }}
-        </div>
-        
+        <button id="scrollRightShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
     </div>
-@endif
-    </div>
+</div>
 </div>
 
 
