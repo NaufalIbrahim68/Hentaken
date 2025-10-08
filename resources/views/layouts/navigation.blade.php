@@ -46,9 +46,9 @@
                             {{ __('Material') }}
                         </x-dropdown-link>
 
-                        <x-dropdown-link href="#">
-                            {{ __('Method') }}
-                        </x-dropdown-link>
+                       <x-dropdown-link :href="route('methods.index')">
+    {{ __('Method') }}
+</x-dropdown-link>
                     </x-slot>
                 </x-dropdown>
 

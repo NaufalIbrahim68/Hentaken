@@ -6,6 +6,7 @@ use App\Http\Controllers\ManPowerController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\MachineController; 
 use App\Http\Controllers\HenkatenController;
+use App\Http\Controllers\MethodController;
 use App\Models\ManPower;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -52,6 +53,7 @@ Route::resource('materials', MaterialController::class);
 // --- Machine Routes ---
 Route::resource('machines', MachineController::class);
 
+Route::resource('methods', MethodController::class);
 
 Route::get('/manpower/search', function (Request $request) {
     $q = $request->query('q');

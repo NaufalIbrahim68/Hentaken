@@ -20,7 +20,7 @@ class ManPowerController extends Controller
     
     $man_powers = ManPower::with('station')->orderBy('nama', 'asc')->paginate(5); 
     
-    return view('manpower.index', compact('man_power'));
+    return view('manpower.index', compact('man_powers'));
 }
 
 
