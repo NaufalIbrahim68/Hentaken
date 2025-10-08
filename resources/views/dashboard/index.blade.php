@@ -177,6 +177,9 @@
 <div class="bg-white shadow rounded p-1 flex flex-col">
     <h2 class="text-xs font-semibold mb-2 text-center">MAN POWER</h2>
 
+    {{-- ======================================================================= --}}
+    {{-- BAGIAN ATAS: DAFTAR SEMUA MAN POWER PADA SHIFT SAAT INI (DINAMIS) --}}
+    {{-- ======================================================================= --}}
     <div class="relative">
         <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
             <button id="scrollLeftManPower" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
@@ -187,19 +190,29 @@
         </div>
 
         <div id="manPowerTableContainer" class="mx-8 overflow-x-auto scrollbar-hide scroll-smooth">
-            {{-- UBAH LOOP MENJADI FOREACH --}}
             <div class="flex gap-6 py-2">
                 @foreach($groupedManPower as $stationId => $stationWorkers)
                     @php
-                        // Cari pekerja untuk shift saat ini dari grup yang sudah ada
+                        // Cari pekerja untuk shift saat ini
                         $currentWorker = $stationWorkers->where('shift', $currentShift)->first();
                         
                         // Jika tidak ada pekerja di shift ini untuk stasiun ini, lewati
                         if (!$currentWorker) continue;
 
-                        $displayName = $currentWorker->nama;
+                        // Cek apakah pekerja saat ini memiliki Henkaten yang aktif
+                        $activeHenkaten = \App\Models\ManPowerHenkaten::where('man_power_id', $currentWorker->id)
+                            ->where('effective_date', '<=', now())
+                            ->where(function($q) {
+                                $q->where('end_date', '>=', now())->orWhereNull('end_date');
+                            })
+                            ->latest('effective_date')
+                            ->first();
+
+                        $isHenkaten = (bool)$activeHenkaten;
+                        $displayName = $isHenkaten ? $activeHenkaten->nama_after : $currentWorker->nama;
+                        $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
+                        $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
                         $stationCode = $currentWorker->station ? $currentWorker->station->station_code : 'ST-' . $stationId;
-                        $isAbsent = in_array($stationId, [4, 8]); // Logika 'absent' Anda
                     @endphp
 
                     <div class="flex-shrink-0 text-center" style="min-width: 80px;">
@@ -209,14 +222,14 @@
                             <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold">
                                 👤
                             </div>
-                            <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full {{ $isAbsent ? 'bg-red-500' : 'bg-green-500' }} border-2 border-white"></div>
+                            <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full {{ $statusColor }} border-2 border-white"></div>
                         </div>
 
-                        <p class="text-[10px] font-medium mb-1 truncate px-1">{{ $displayName }}</p>
+                        <p class="text-[10px] font-medium mb-1 truncate px-1" title="{{ $displayName }}">{{ $displayName }}</p>
 
                         <div>
-                            <span class="inline-block px-2 py-1 text-[9px] font-semibold rounded {{ $isAbsent ? 'bg-red-500 text-white' : 'bg-green-500 text-white' }}">
-                                {{ $isAbsent ? 'ABSENT' : 'NORMAL' }}
+                            <span class="inline-block px-2 py-1 text-[9px] font-semibold rounded text-white {{ $statusColor }}">
+                                {{ $statusText }}
                             </span>
                         </div>
                     </div>
@@ -233,154 +246,63 @@
         </div>
     </div>
 
-    {{-- Bottom Section - Shift Changes (Layout diubah) --}}
+    {{-- ======================================================================= --}}
+    {{-- BAGIAN BAWAH: DETAIL HENKATEN & TANGGAL AKTIF (DINAMIS)            --}}
+    {{-- ======================================================================= --}}
     <div class="border-t mt-2 pt-2">
+        @php
+            // Ambil SEMUA data henkaten yang sedang aktif untuk ditampilkan di bagian bawah
+            $allActiveHenkatens = \App\Models\ManPowerHenkaten::where('effective_date', '<=', now())
+                ->where(function($query) {
+                    $query->where('end_date', '>=', now())->orWhereNull('end_date');
+                })
+                ->get();
+        @endphp
+
         <div class="flex items-center gap-1">
-            {{-- Tombol Navigasi di Kiri --}}
             <button id="scrollLeftShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
             </button>
 
-         {{-- Scrollable Container for Shift Changes --}}
-<div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
-    {{-- Tambahkan class `justify-center` dan `min-w-full` di sini --}}
-    <div class="flex justify-center gap-3 min-w-full"> 
-        {{-- First Shift Change --}}
-        @php
-            $station4Workers = $groupedManPower->get(4, collect());
-            $shiftAWorker4 = $station4Workers->where('shift', 'Shift A')->first();
-            $shiftBWorker4 = $station4Workers->where('shift', 'Shift B')->first();
-        @endphp
-        <div class="flex-shrink-0 flex items-center justify-center space-x-2 bg-gray-50 p-2 rounded-lg" style="width: 220px;">
-            <div class="text-center">
-                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
-                    👤
-                </div>
-                <p class="text-[8px] font-semibold">{{ $shiftAWorker4 ? $shiftAWorker4->nama : 'No Worker' }}</p>
-                <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
+            <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
+                @if($allActiveHenkatens->isNotEmpty())
+                    <div class="flex justify-center gap-3 min-w-full">
+                        @foreach($allActiveHenkatens as $henkaten)
+                            <div class="flex-shrink-0 flex items-center justify-center space-x-2 bg-gray-50 p-2 rounded-lg border-2 border-yellow-500 shadow-md" style="width: 220px;">
+                                {{-- Kiri (Pekerja SEBELUM Henkaten) --}}
+                                <div class="text-center">
+                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
+                                    <p class="text-[8px] font-semibold" title="{{ $henkaten->nama }}">{{ $henkaten->nama }}</p>
+                                    <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5" title="Before"></div>
+                                </div>
+                                
+                                <div class="text-sm text-gray-400 font-bold">→</div>
+
+                                {{-- Kanan (Pekerja SETELAH Henkaten / Pengganti) --}}
+                                <div class="text-center">
+                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
+                                    <p class="text-[8px] font-semibold" title="{{ $henkaten->nama_after }}">{{ $henkaten->nama_after }}</p>
+                                    <div class="w-2 h-2 rounded-full bg-red-500 mx-auto mt-0.5" title="Henkaten"></div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    {{-- Opsional: Tampilkan pesan jika tidak ada Henkaten aktif --}}
+                    <div class="text-center text-xs text-gray-400 py-4">No Active Henkaten</div>
+                @endif
             </div>
-            <div class="text-sm text-gray-400 font-bold">→</div>
-            <div class="text-center">
-                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">
-                    👤
-                </div>
-                <p class="text-[8px] font-semibold">{{ $shiftBWorker4 ? $shiftBWorker4->nama : 'No Worker' }}</p>
-                <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5"></div>
-            </div>
-        </div>
 
-        {{-- Second Shift Change --}}
-       
-            {{-- === SHIFT A LOGIC === --}}
-            @php
-                $station7Workers = $groupedManPower->get(7, collect());
-                $workerA = $station7Workers->where('shift', 'Shift A')->first();
-                $cardClassA = '';
-                $displayNameA = '';
-                $statusColorA = '';
-
-                if ($workerA) {
-                    $activeHenkatenA = \App\Models\ManPowerHenkaten::where('man_power_id', $workerA->id)
-                        ->where(function($query) {
-                            $query->where('effective_date', '<=', now())
-                                  ->where(function($q) {
-                                      $q->where('end_date', '>=', now())
-                                        ->orWhereNull('end_date');
-                                  });
-                        })
-                        ->latest('effective_date')
-                        ->first();
-
-                    if ($activeHenkatenA) {
-                        $displayNameA = $activeHenkatenA->nama_after;
-                        $statusColorA = 'bg-yellow-500'; 
-                        $cardClassA = 'border-yellow-500 shadow-md';
-                    } else {
-                        $displayNameA = $workerA->nama;
-                        $statusColorA = 'bg-green-500';
-                    }
-                }
-            @endphp
-            
-            {{-- Tampilkan blok ini HANYA JIKA $workerA ada --}}
-            @if ($workerA)
-            <div class="flex-shrink-0 text-center bg-gray-50 p-2 rounded-lg {{ $cardClassA }}" style="width: 100px;">
-                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
-                <p class="text-[8px] font-semibold truncate" title="{{ $displayNameA }}">{{ $displayNameA }}</p>
-                <div class="w-2 h-2 rounded-full {{ $statusColorA }} mx-auto mt-0.5"></div>
-            </div>
-            @endif
-
-
-            {{-- === SHIFT B LOGIC === --}}
-            @php
-                $workerB = $station7Workers->where('shift', 'Shift B')->first();
-                $cardClassB = '';
-                $displayNameB = '';
-                $statusColorB = '';
-
-                if ($workerB) {
-                    $activeHenkatenB = \App\Models\ManPowerHenkaten::where('man_power_id', $workerB->id)
-                         ->where(function($query) {
-                            $query->where('effective_date', '<=', now())
-                                  ->where(function($q) {
-                                      $q->where('end_date', '>=', now())
-                                        ->orWhereNull('end_date');
-                                  });
-                        })
-                        ->latest('effective_date')
-                        ->first();
-
-                    if ($activeHenkatenB) {
-                        $displayNameB = $activeHenkatenB->nama_after;
-                        $statusColorB = 'bg-yellow-500'; 
-                        $cardClassB = 'border-yellow-500 shadow-md';
-                    } else {
-                        $displayNameB = $workerB->nama;
-                        $statusColorB = 'bg-green-500';
-                    }
-                }
-            @endphp
-            
-            {{-- Tampilkan tanda panah HANYA JIKA KEDUA worker ada --}}
-            @if ($workerA && $workerB)
-                <div class="text-sm text-gray-400 font-bold">→</div>
-            @endif
-
-            {{-- Tampilkan blok ini HANYA JIKA $workerB ada --}}
-            @if ($workerB)
-            <div class="flex-shrink-0 text-center bg-gray-50 p-2 rounded-lg {{ $cardClassB }}" style="width: 100px;">
-                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
-                <p class="text-[8px] font-semibold truncate" title="{{ $displayNameB }}">{{ $displayNameB }}</p>
-                <div class="w-2 h-2 rounded-full {{ $statusColorB }} mx-auto mt-0.5"></div>
-            </div>
-            @endif
-            
-        </div>
-    </div>
-
-
-                  
-
-                
-
-            {{-- Tombol Navigasi di Kanan --}}
             <button id="scrollRightShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </button>
         </div>
-  
-
-                {{-- CURRENT PART & NEW PARTKT - . --}}
-                <div class="grid grid-cols-2 gap-1 mt-1">
-                                   </div>
-
-                {{-- SERIAL NUMBER & DATE - . --}}
-                                <div class="grid grid-cols-2 gap-1 mt-1">
+            {{-- SERIAL NUMBER & DATE - . --}}
+                               <div class="grid grid-cols-2 gap-1 mt-1">
                     <div class="bg-blue-400 text-center py-0.5 rounded">
                         <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
                     </div>
@@ -389,15 +311,32 @@
                     </div>
                 </div>
 
+{{-- Tanggal Aktif Henkaten (hanya muncul jika ada henkaten aktif) --}}
+@if ($allActiveHenkatens->isNotEmpty())
+    @php
+        $firstHenkaten = $allActiveHenkatens->first();
+        $startDate = strtoupper($firstHenkaten->effective_date->format('j/M/y'));
+        $endDate = $firstHenkaten->end_date ? strtoupper($firstHenkaten->end_date->format('j/M/y')) : 'SELANJUTNYA';
+    @endphp
 
-                {{-- Tanggal Aktif - . --}}
-                <div class="mt-1 flex justify-center">
-                    <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
-                        ACTIVE: 9/SEP/25 - 12/SEP/25
-                    </div>
-                </div>
-            </div>
+    {{-- Mengubah class menjadi justify-between --}}
+    <div class="mt-3 px-5 flex justify-between">
+        
+        {{-- Tampilan di sebelah KIRI --}}
+        <div class="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[10px] font-semibold">
+            ACTIVE: {{ $startDate }} - {{ $endDate }}
         </div>
+
+        {{-- Tampilan di sebelah KANAN --}}
+        <div class="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[10px] font-semibold">
+            ACTIVE: {{ $startDate }} - {{ $endDate }}
+        </div>
+        
+    </div>
+@endif
+    </div>
+</div>
+
 
         {{-- METHOD - . --}}
         <div class="bg-white shadow rounded p-1 flex flex-col">
@@ -813,43 +752,64 @@
     setupScroll("machineTableContainer", "scrollLeftMachine", "scrollRightMachine");
 });
 
-// Man Power
-                 document.addEventListener('DOMContentLoaded', function() {
-    const scrollContainer = document.getElementById('manpowerScroll');
-    const scrollLeftBtn = document.getElementById('scrollLeft');
-    const scrollRightBtn = document.getElementById('scrollRight');
-    
-    const scrollAmount = 200; // pixels to scroll
-    
-    scrollLeftBtn.addEventListener('click', function() {
-        scrollContainer.scrollBy({
-            left: -scrollAmount,
-            behavior: 'smooth'
-        });
-    });
-    
-    scrollRightBtn.addEventListener('click', function() {
-        scrollContainer.scrollBy({
-            left: scrollAmount,
-            behavior: 'smooth'
-        });
-    });
-    
-    // Hide/show buttons based on scroll position
-    function updateButtons() {
-        const isAtStart = scrollContainer.scrollLeft <= 0;
-        const isAtEnd = scrollContainer.scrollLeft + scrollContainer.clientWidth >= scrollContainer.scrollWidth - 1;
+// man power  
+document.addEventListener('DOMContentLoaded', function() {
         
-        scrollLeftBtn.style.opacity = isAtStart ? '0.3' : '1';
-        scrollLeftBtn.style.pointerEvents = isAtStart ? 'none' : 'auto';
-        
-        scrollRightBtn.style.opacity = isAtEnd ? '0.3' : '1';
-        scrollRightBtn.style.pointerEvents = isAtEnd ? 'none' : 'auto';
-    }
-    
-    scrollContainer.addEventListener('scroll', updateButtons);
-    updateButtons(); // Initial check
-});
+        /**
+         * Fungsi untuk menginisialisasi scroll horizontal pada sebuah elemen.
+         * @param {string} containerId - ID dari elemen container yang bisa di-scroll.
+         * @param {string} leftBtnId - ID dari tombol scroll ke kiri.
+         * @param {string} rightBtnId - ID dari tombol scroll ke kanan.
+         */
+        function initializeHorizontalScroll(containerId, leftBtnId, rightBtnId) {
+            const scrollContainer = document.getElementById(containerId);
+            const scrollLeftBtn = document.getElementById(leftBtnId);
+            const scrollRightBtn = document.getElementById(rightBtnId);
+            
+            // Hentikan eksekusi jika salah satu elemen tidak ditemukan
+            if (!scrollContainer || !scrollLeftBtn || !scrollRightBtn) {
+                // console.error('One or more elements not found for scrollable section:', containerId);
+                return;
+            }
+
+            const scrollAmount = 250; // Jarak scroll dalam piksel
+
+            scrollLeftBtn.addEventListener('click', function() {
+                scrollContainer.scrollBy({
+                    left: -scrollAmount,
+                    behavior: 'smooth'
+                });
+            });
+
+            scrollRightBtn.addEventListener('click', function() {
+                scrollContainer.scrollBy({
+                    left: scrollAmount,
+                    behavior: 'smooth'
+                });
+            });
+
+            // Fungsi untuk menyembunyikan/menampilkan tombol berdasarkan posisi scroll
+            function updateButtons() {
+                // Sedikit toleransi (misal 1px) untuk perhitungan yang lebih akurat
+                const isAtStart = scrollContainer.scrollLeft <= 0;
+                const isAtEnd = scrollContainer.scrollLeft + scrollContainer.clientWidth >= scrollContainer.scrollWidth - 1;
+
+                scrollLeftBtn.style.visibility = isAtStart ? 'hidden' : 'visible';
+                scrollRightBtn.style.visibility = isAtEnd ? 'hidden' : 'visible';
+            }
+
+            // Panggil fungsi saat ada event scroll dan saat halaman pertama kali dimuat
+            scrollContainer.addEventListener('scroll', updateButtons);
+            updateButtons(); // Pengecekan awal
+        }
+
+        // Inisialisasi untuk bagian ATAS (Man Power List)
+        initializeHorizontalScroll('manPowerTableContainer', 'scrollLeftManPower', 'scrollRightManPower');
+
+        // Inisialisasi untuk bagian BAWAH (Shift / Henkaten Details)
+        initializeHorizontalScroll('shiftChangeContainer', 'scrollLeftShift', 'scrollRightShift');
+
+    });
 </script>
 
 
