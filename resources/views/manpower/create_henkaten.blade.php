@@ -22,7 +22,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('manpower.henkaten.store') }}" method="POST" enctype="multipart/form-data">
+              <form action="{{ route('henkaten.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {{-- Kolom Kiri --}}
@@ -47,68 +47,56 @@
                             </div>
 
                             {{-- Kolom Kanan --}}
-                            <div>
-                                <div class="mb-4">
-                                    <label for="station_id_after" class="block text-gray-700 text-sm font-bold mb-2">Station Code</label>
-                                    <select id="station_id_after" name="station_id_after" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
-                                        <option value="">-- Pilih Station --</option>
-                                        @foreach ($stations as $station)
-                                            <option value="{{ $station->id }}" {{ old('station_id_after') == $station->id ? 'selected' : '' }}>
-                                                {{ $station->station_code }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                           <div class="mb-4">
+    <label for="station_id" class="block text-sm font-medium text-gray-700">Station</label>
+    <select id="station_id" name="station_id" required
+        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
+        <option value="">-- Pilih Station --</option>
+        @foreach ($stations as $station)
+            <option value="{{ $station->id }}">{{ $station->station_name }}</option>
+        @endforeach
+    </select>
 
-                                <div class="mb-4">
+                                 <div class="mb-4">
                                     <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
                                     <input type="date" id="end_date" name="end_date" value="{{ old('end_date') }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Nama Karyawan Before & After (Autocomplete) --}}
-                        <div class="bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-lg border-2 border-blue-200 mt-6 mb-6">
-                            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                                <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                                </svg>
-                                Perpindahan Karyawan
-                            </h3>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {{-- Before --}}
-                                <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md relative" x-data="autocomplete('/manpower/search')">
-                                    <label class="text-gray-700 text-sm font-bold">Nama Karyawan Sebelumnya</label>
-                                    <input type="text" x-model="query" @input.debounce.300="search()" autocomplete="off"
-                                        class="w-full py-3 px-4 border rounded" placeholder="Masukkan Nama...">
-                                    <input type="hidden" name="man_power_id" x-model="selectedId">
+    {{-- Before --}}
+    <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md relative" x-data="autocomplete('/manpower/search')">
+        <label class="text-gray-700 text-sm font-bold">Nama Karyawan Sebelumnya</label>
+        <input type="text" name="nama" x-model="query" @input.debounce.300="search()" autocomplete="off"
+            class="w-full py-3 px-4 border rounded" placeholder="Masukkan Nama...">
+        <input type="hidden" name="man_power_id" x-model="selectedId">
 
-                                    <ul x-show="results.length > 0" class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
-                                        <template x-for="item in results" :key="item.id">
-                                            <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-blue-100" x-text="item.nama"></li>
-                                        </template>
-                                    </ul>
-                                    <p class="text-xs text-gray-500 mt-2 italic">Data karyawan sebelum perpindahan</p>
-                                </div>
+        <ul x-show="results.length > 0" class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
+            <template x-for="item in results" :key="item.id">
+                <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-blue-100" x-text="item.nama"></li>
+            </template>
+        </ul>
+        <p class="text-xs text-gray-500 mt-2 italic">Data karyawan sebelum perpindahan</p>
+    </div>
 
-                                {{-- After --}}
-                                <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative" x-data="autocomplete('/manpower/search')">
-                                    <label class="text-gray-700 text-sm font-bold">Nama Karyawan Sesudah</label>
-                                    <input type="text" x-model="query" @input.debounce.300="search()" autocomplete="off"
-                                        class="w-full py-3 px-4 border rounded" placeholder="Masukkan Nama...">
-                                    <input type="hidden" name="man_power_id_after" x-model="selectedId">
+    {{-- After --}}
+    <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative" x-data="autocomplete('/manpower/search')">
+        <label class="text-gray-700 text-sm font-bold">Nama Karyawan Sesudah</label>
+        <input type="text" name="nama_after" x-model="query" @input.debounce.300="search()" autocomplete="off"
+            class="w-full py-3 px-4 border rounded" placeholder="Masukkan Nama...">
+        <input type="hidden" name="man_power_id_after" x-model="selectedId">
 
-                                    <ul x-show="results.length > 0" class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
-                                        <template x-for="item in results" :key="item.id">
-                                            <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-green-100" x-text="item.nama"></li>
-                                        </template>
-                                    </ul>
-                                    <p class="text-xs text-green-600 mt-2 italic">Data karyawan setelah perpindahan</p>
-                                </div>
-                            </div>
-                        </div>
+        <ul x-show="results.length > 0" class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
+            <template x-for="item in results" :key="item.id">
+                <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-green-100" x-text="item.nama"></li>
+            </template>
+        </ul>
+        <p class="text-xs text-green-600 mt-2 italic">Data karyawan setelah perpindahan</p>
+    </div>
+
+</div>
 
                         {{-- Keterangan --}}
                         <div class="mb-6 mt-6">

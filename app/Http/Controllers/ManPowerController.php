@@ -20,7 +20,7 @@ class ManPowerController extends Controller
     
     $man_powers = ManPower::with('station')->orderBy('nama', 'asc')->paginate(5); 
     
-    return view('manpower.index', compact('man_powers'));
+    return view('manpower.index', compact('man_power'));
 }
 
 
@@ -132,12 +132,12 @@ class ManPowerController extends Controller
             'end_date'           => 'nullable|date|after_or_equal:effective_date',
 
             // Validasi ID Karyawan "Before" dari hidden input
-            'man_power_id'       => 'required|exists:man_powers,id',
+            'man_power_id'       => 'required|exists:man_power,id',
 
             // Validasi ID Karyawan "After" dari hidden input
-            'man_power_id_after' => 'required|exists:man_powers,id',
+            'man_power_id_after' => 'required|exists:man_power,id',
 
-            'station_id_after'   => 'required|exists:stations,id',
+
             'keterangan'         => 'nullable|string',
             'lampiran'           => 'nullable|image|mimes:jpeg,png|max:2048',
             
@@ -173,8 +173,7 @@ class ManPowerController extends Controller
             'man_power_id'       => $validated['man_power_id'],       // Gunakan ID langsung
             'man_power_id_after' => $validated['man_power_id_after'], // Gunakan ID langsung
             
-            'station_id'         => $validated['station_id_after'], // Asumsi station before & after sama
-            'station_id_after'   => $validated['station_id_after'],
+           
             'shift'              => $validated['shift'],
             'line_area'          => $validated['line_area'],
             'effective_date'     => $validated['effective_date'],

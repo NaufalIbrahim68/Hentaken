@@ -15,13 +15,18 @@ class ManPower extends Model
     {
         return $this->belongsTo(Station::class);
     }
-    protected $fillable = [
-        'id',
-        'nama',
-        'station_id',
-        'shift',
-        'line_area',
-        'created_at',
-        'updated_at',
-    ];
+   protected $fillable = [
+    'man_power_id',
+    'man_power_id_after',
+    'shift',
+    'nama',
+    'nama_after',
+    'keterangan',
+    'line_area',
+    'station_id', 
+    'effective_date',
+    'end_date',
+    'lampiran',
+];
+
 }
