@@ -24,7 +24,7 @@ class HenkatenController extends Controller
         'nama_after'        => 'required|string',
         'man_power_id'      => 'required|integer', 
         'man_power_id_after'=> 'required|integer', 
-        'station_id'        => 'required|integer|exists:stations,id', // ✅ Tambahkan ini
+        'station_id'        => 'required|integer|exists:stations,id', 
         'keterangan'        => 'nullable|string',
         'line_area'         => 'required|string',
         'effective_date'    => 'nullable|date',
@@ -39,7 +39,7 @@ class HenkatenController extends Controller
     ManPowerHenkaten::create([
         'man_power_id'      => $request->man_power_id,
         'man_power_id_after'=> $request->man_power_id_after,
-        'station_id'        => $request->station_id, // ✅ Tambahkan ini
+        'station_id'        => $request->station_id, 
         'shift'             => $request->shift,
         'nama'              => $request->nama,
         'nama_after'        => $request->nama_after,
