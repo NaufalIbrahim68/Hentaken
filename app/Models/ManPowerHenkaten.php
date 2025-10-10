@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ManPowerHenkaten extends Model
 {
+    use HasFactory;
+    
     protected $table = 'man_power_henkaten'; // Sesuaikan nama tabel
 
     protected $fillable = [
@@ -30,7 +32,10 @@ class ManPowerHenkaten extends Model
         'end_date' => 'date',
     ];
 
-       public function manPowerBefore(): BelongsTo
+    /**
+     * Relasi ke ManPower sebelum henkaten (pekerja yang diganti).
+     */
+    public function manPowerBefore(): BelongsTo
     {
         // Relasi ini menghubungkan kolom 'man_power_id' di tabel ini
         // ke 'id' di tabel 'man_power'.
@@ -38,10 +43,21 @@ class ManPowerHenkaten extends Model
     }
 
     /**
-     * Opsional: Mendapatkan data ManPower pengganti (setelah henkaten).
+     * Relasi ke ManPower setelah henkaten (pekerja pengganti).
      */
     public function manPowerAfter(): BelongsTo
     {
         return $this->belongsTo(ManPower::class, 'man_power_id_after');
     }
+
+    /**
+     * Relasi ke Station sebelum henkaten (station awal).
+     */
+    public function station(): BelongsTo
+    {
+        return $this->belongsTo(Station::class, 'station_id');
+    }
+
+  
+  
 }
