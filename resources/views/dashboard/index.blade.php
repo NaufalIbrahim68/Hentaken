@@ -304,14 +304,14 @@
                                     <div class="text-center">
                                         <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
                                         <p class="text-[8px] font-semibold" title="{{ $henkaten->nama }}">{{ $henkaten->nama }}</p>
-                                        <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5" title="Before"></div>
+                                        <div class="w-2 h-2 rounded-full bg-red-500  mx-auto mt-0.5" title="Before"></div>
                                     </div>
                                     <div class="text-sm text-gray-400 font-bold">→</div>
                                     {{-- Kanan (Pekerja SETELAH Henkaten / Pengganti) --}}
                                     <div class="text-center">
                                         <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
                                         <p class="text-[8px] font-semibold" title="{{ $henkaten->nama_after }}">{{ $henkaten->nama_after }}</p>
-                                        <div class="w-2 h-2 rounded-full bg-red-500 mx-auto mt-0.5" title="Henkaten"></div>
+                                        <div class="w-2 h-2 rounded-full bg-green-500  mx-auto mt-0.5" title="Henkaten"></div>
                                     </div>
                                 </div>
 
