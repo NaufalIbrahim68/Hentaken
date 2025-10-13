@@ -14,7 +14,8 @@ class MaterialController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Material::with('station')->latest();
+       $query = Material::with('station')->orderBy('id', 'desc'); 
+
 
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
