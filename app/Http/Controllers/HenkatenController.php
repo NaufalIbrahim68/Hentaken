@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ManPower;
 use Illuminate\Http\Request;
 use App\Models\ManPowerHenkaten;
 use App\Models\Station; // Tambahkan import ini
@@ -49,6 +50,19 @@ class HenkatenController extends Controller
         'keterangan'        => $request->keterangan,
         'lampiran'          => $validated['lampiran'] ?? null,
     ]);
+
+     // --- BARIS TAMBAHAN DIMULAI DI SINI ---
+
+    // 2. Cari data ManPower asli yang digantikan berdasarkan ID
+    $manPowerAsli = ManPower::find($request->man_power_id);
+
+    // 3. Jika data ditemukan, update statusnya menjadi 'henkaten'
+    if ($manPowerAsli) {
+        $manPowerAsli->status = 'henkaten';
+        $manPowerAsli->save();
+    }
+
+    // --- BARIS TAMBAHAN SELESAI ---
 
     return redirect()->route('henkaten.form')
         ->with('success', 'Data Henkaten berhasil disimpan.');

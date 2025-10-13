@@ -54,10 +54,10 @@
                                                 -
                                             @endif
                                         </td>
-                                        <td class="py-3 px-4 text-center">
+                                        <td class="py-3 px-4">
                                             @if($material->status == 'normal')
                                                 <span
-                                                    class="bg-green-100 text-green-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">
+                                                    class="bg-green-100 text-green-800 text-xs font-medium me-2 px-0.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">
                                                     Normal
                                                 </span>
                                             @elseif($material->status == 'henkaten')

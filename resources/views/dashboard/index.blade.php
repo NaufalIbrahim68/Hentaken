@@ -193,27 +193,33 @@
             <div class="flex gap-6 py-2">
                 @foreach($groupedManPower as $stationId => $stationWorkers)
                     @php
-                        // Cari pekerja untuk shift saat ini
-                        $currentWorker = $stationWorkers->where('shift', $currentShift)->first();
-                        
-                        // Jika tidak ada pekerja di shift ini untuk stasiun ini, lewati
-                        if (!$currentWorker) continue;
+    // Cari pekerja untuk shift saat ini
+    $currentWorker = $stationWorkers->where('shift', $currentShift)->first();
+    
+    // Jika tidak ada pekerja di shift ini untuk stasiun ini, lewati
+    if (!$currentWorker) continue;
 
-                        // Cek apakah pekerja saat ini memiliki Henkaten yang aktif
-                        $activeHenkaten = \App\Models\ManPowerHenkaten::where('man_power_id', $currentWorker->id)
-                            ->where('effective_date', '<=', now())
-                            ->where(function($q) {
-                                $q->where('end_date', '>=', now())->orWhereNull('end_date');
-                            })
-                            ->latest('effective_date')
-                            ->first();
+    // Cek apakah pekerja saat ini memiliki Henkaten yang aktif
+    $activeHenkaten = \App\Models\ManPowerHenkaten::where('man_power_id', $currentWorker->id)
+        ->where('effective_date', '<=', now())
+        ->where(function($q) {
+            $q->where('end_date', '>=', now())->orWhereNull('end_date');
+        })
+        ->latest('effective_date')
+        ->first();
 
-                        $isHenkaten = (bool)$activeHenkaten;
-                        $displayName = $isHenkaten ? $activeHenkaten->nama_after : $currentWorker->nama;
-                        $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
-                        $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-                        $stationCode = $currentWorker->station ? $currentWorker->station->station_code : 'ST-' . $stationId;
-                    @endphp
+    $isHenkaten = (bool)$activeHenkaten;
+    
+    // ==========================================================
+    // PERUBAHAN DI SINI: Selalu tampilkan nama pekerja asli
+    // ==========================================================
+    $displayName = $currentWorker->nama; 
+    
+    // Status dan warna tetap ditentukan oleh adanya henkaten
+    $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
+    $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
+    $stationCode = $currentWorker->station ? $currentWorker->station->station_code : 'ST-' . $stationId;
+@endphp
 
                     <div class="flex-shrink-0 text-center" style="min-width: 80px;">
                         <p class="text-[10px] font-bold text-gray-800 mb-1">{{ $stationCode }}</p>
@@ -268,7 +274,7 @@
 
             <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
                 @if($allActiveHenkatens->isNotEmpty())
-                    <div class="flex justify-start gap-3 min-w-full px-2">
+                    <div class="flex justify-center gap-3 min-w-full px-2">
                         {{-- Loop untuk setiap Henkaten yang aktif --}}
                         @foreach($allActiveHenkatens as $henkaten)
                             @php
@@ -278,7 +284,7 @@
                             @endphp
 
                             {{-- KOTAK UTAMA UNTUK SETIAP HENKATEN --}}
-                            <div class="flex-shrink-0 flex flex-col space-y-2 bg-gray-50 p-2 rounded-lg border-2 border-yellow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
+                            <div class="flex-shrink-0 flex flex-col space-y-2 p-2 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
                                  style="width: 240px;"
                                  onclick="showHenkatenDetail({{ $henkaten->id }})"
                                  data-henkaten-id="{{ $henkaten->id }}"
@@ -292,7 +298,7 @@
                                  data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
                                  data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}">
 
-                                {{-- 1. Perubahan Pekerja (Before -> After) --}}
+                                {{-- Perubahan Pekerja (Before -> After) --}}
                                 <div class="flex items-center justify-center space-x-2">
                                     {{-- Kiri (Pekerja SEBELUM Henkaten) --}}
                                     <div class="text-center">
@@ -857,7 +863,8 @@
     setupScroll("machineTableContainer", "scrollLeftMachine", "scrollRightMachine");
 });
 
-// man power  
+
+// Man Power
 document.addEventListener('DOMContentLoaded', function() {
         
         /**
