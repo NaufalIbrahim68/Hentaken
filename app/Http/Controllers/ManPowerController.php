@@ -11,9 +11,7 @@ use App\Models\ManPowerHenkaten;
 
 class ManPowerController extends Controller
 {
-    // ========================================
-    // MASTER MAN POWER (Full CRUD)
-    // ========================================
+    
     
  public function index()
 {
@@ -91,9 +89,7 @@ class ManPowerController extends Controller
             ->with('success', 'Data Man Power berhasil dihapus.');
     }
 
-    // ========================================
-    // HENKATEN (Create & Delete ONLY, NO EDIT)
-    // ========================================
+    
 
     public function createHenkatenForm()
 {
@@ -119,9 +115,7 @@ class ManPowerController extends Controller
 
   public function storeHenkaten(Request $request)
     {
-        // ###############################################################
-        // PERUBAHAN DIMULAI DI SINI
-        // ###############################################################
+        
 
         // 1. UBAH VALIDASI: Kita validasi ID yang dikirim dari hidden input.
         // Ini lebih aman dan efisien.
@@ -152,15 +146,7 @@ class ManPowerController extends Controller
             'man_power_id_after.exists'   => 'Karyawan sesudah tidak valid.',
         ]);
 
-        // 2. HAPUS PENCARIAN MANUAL: Kode di bawah ini tidak lagi diperlukan
-        // karena validasi 'exists' sudah memastikan ID-nya valid.
-        /*
-        $manPowerBefore = ManPower::where('nama', $request->nama)->first();
-        if (!$manPowerBefore) { ... }
-        $manPowerAfter = ManPower::where('nama', $request->nama_after)->first();
-        if (!$manPowerAfter) { ... }
-        */
-
+       
         // Upload lampiran jika ada
         $lampiranPath = null;
         if ($request->hasFile('lampiran')) {
@@ -180,9 +166,6 @@ class ManPowerController extends Controller
             'end_date'           => $validated['end_date'],
             'keterangan'         => $validated['keterangan'],
             'lampiran'           => $lampiranPath,
-
-            // Anda tetap bisa menyimpan nama untuk kemudahan menampilkan data
-            // tanpa perlu join tabel, jika mau.
             'nama'               => $validated['nama'],
             'nama_after'         => $validated['nama_after'],
         ]);

@@ -33,10 +33,21 @@ class HenkatenController extends Controller
         'lampiran'          => 'nullable|image|mimes:jpeg,png|max:2048',
     ]);
 
+    // Simpan lampiran langsung ke public/storage agar bisa dibaca IIS
     if ($request->hasFile('lampiran')) {
-        $validated['lampiran'] = $request->file('lampiran')->store('lampiran_henkaten', 'public');
+        $namaFile = time() . '_' . $request->file('lampiran')->getClientOriginalName();
+        $tujuan = public_path('storage/lampiran_henkaten');
+
+        if (!file_exists($tujuan)) {
+            mkdir($tujuan, 0777, true);
+        }
+
+        $request->file('lampiran')->move($tujuan, $namaFile);
+
+        $validated['lampiran'] = 'lampiran_henkaten/' . $namaFile;
     }
 
+    // Simpan data ke database
     ManPowerHenkaten::create([
         'man_power_id'      => $request->man_power_id,
         'man_power_id_after'=> $request->man_power_id_after,
@@ -51,21 +62,16 @@ class HenkatenController extends Controller
         'lampiran'          => $validated['lampiran'] ?? null,
     ]);
 
-     // --- BARIS TAMBAHAN DIMULAI DI SINI ---
-
-    // 2. Cari data ManPower asli yang digantikan berdasarkan ID
+    // Update status man power asli
     $manPowerAsli = ManPower::find($request->man_power_id);
-
-    // 3. Jika data ditemukan, update statusnya menjadi 'henkaten'
     if ($manPowerAsli) {
         $manPowerAsli->status = 'henkaten';
         $manPowerAsli->save();
     }
 
-    // --- BARIS TAMBAHAN SELESAI ---
-
     return redirect()->route('henkaten.form')
         ->with('success', 'Data Henkaten berhasil disimpan.');
 }
+
 
 }
