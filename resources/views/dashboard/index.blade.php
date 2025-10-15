@@ -401,11 +401,11 @@ data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y') : '
                      <p id="modalKeterangan" class="font-semibold text-sm"></p>
                  </div>
                  <div class="bg-blue-50 p-3 rounded-lg">
-                     <p class="text-xs text-gray-500">Serial Start</p>
+                     <p class="text-xs text-gray-500">Serial Number Start</p>
                      <p id="modalSerialStart" class="font-semibold text-sm"></p>
                  </div>
                  <div class="bg-blue-50 p-3 rounded-lg">
-                     <p class="text-xs text-gray-500">Serial End</p>
+                     <p class="text-xs text-gray-500">Serial Number End</p>
                      <p id="modalSerialEnd" class="font-semibold text-sm"></p>
                  </div>
                  <div class="bg-blue-50 p-3 rounded-lg">

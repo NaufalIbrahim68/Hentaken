@@ -67,9 +67,10 @@
             </button>
         </x-slot>
 
-        <x-dropdown-link :href="route('henkaten.form')">
-            {{ __('Man Power') }}
-        </x-dropdown-link>
+       <x-dropdown-link :href="route('henkaten.create')">
+    {{ __('Man Power') }}
+</x-dropdown-link>
+        
         <x-dropdown-link href="#">
             {{ __('Machine') }}
         </x-dropdown-link>
@@ -94,9 +95,9 @@
             </button>
         </x-slot>
 
-        <x-dropdown-link href="#">
-            {{ __('Man Power') }}
-        </x-dropdown-link>
+<x-dropdown-link :href="route('henkaten.start.page')">
+    {{ __('Man Power') }}
+</x-dropdown-link>        
         <x-dropdown-link href="#">
             {{ __('Machine') }}
         </x-dropdown-link>
