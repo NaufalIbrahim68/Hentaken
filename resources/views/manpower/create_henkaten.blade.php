@@ -23,24 +23,23 @@
                     @endif
 
                     {{-- Notifikasi sukses --}}
-@if (session('success'))
-    <div 
-        x-data="{ show: true }"
-        x-show="show"
-        x-transition
-        class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md relative"
-        role="alert"
-    >
-        <span class="block font-semibold">{{ session('success') }}</span>
-        <button 
-            @click="show = false"
-            class="absolute top-2 right-2 text-green-700 hover:text-green-900 font-bold"
-        >
-            &times;
-        </button>
-    </div>
-@endif
-
+                    @if (session('success'))
+                        <div 
+                            x-data="{ show: true }"
+                            x-show="show"
+                            x-transition
+                            class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md relative"
+                            role="alert"
+                        >
+                            <span class="block font-semibold">{{ session('success') }}</span>
+                            <button 
+                                @click="show = false"
+                                class="absolute top-2 right-2 text-green-700 hover:text-green-900 font-bold"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                    @endif
 
                     <form action="{{ route('henkaten.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
@@ -57,41 +56,57 @@
                                 </div>
 
                                 <div class="mb-4">
-                                    <label for="line_area" class="block text-gray-700 text-sm font-bold mb-2">Line
-                                        Area</label>
+                                    <label for="line_area" class="block text-gray-700 text-sm font-bold mb-2">Line Area</label>
                                     <input type="text" id="line_area" name="line_area" value="{{ old('line_area') }}"
                                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
                                 </div>
 
                                 <div class="mb-4">
-                                    <label for="effective_date"
-                                        class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
+                                    <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
                                     <input type="date" id="effective_date" name="effective_date"
                                         value="{{ old('effective_date') }}"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                </div>
+
+                                {{-- Tambahan: Waktu Mulai --}}
+                                <div class="mb-4">
+                                    <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
+                                    <input type="time" id="time_start" name="time_start"
+                                        value="{{ old('time_start') }}"
                                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
                                 </div>
                             </div>
 
                             {{-- Kolom Kanan --}}
-                            <div class="mb-4">
-                                <label for="station_id" class="block text-sm font-medium text-gray-700">Station</label>
-                                <select id="station_id" name="station_id" required
-                                    class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
-                                    <option value="">-- Pilih Station --</option>
-                                    @foreach ($stations as $station)
-                                        <option value="{{ $station->id }}">{{ $station->station_name }}</option>
-                                    @endforeach
-                                </select>
+                            <div>
+                                <div class="mb-4">
+                                    <label for="station_id" class="block text-sm font-medium text-gray-700">Station</label>
+                                    <select id="station_id" name="station_id" required
+                                        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
+                                        <option value="">-- Pilih Station --</option>
+                                        @foreach ($stations as $station)
+                                            <option value="{{ $station->id }}">{{ $station->station_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
 
                                 <div class="mb-4">
-                                    <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal
-                                        Berakhir</label>
+                                    <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
                                     <input type="date" id="end_date" name="end_date" value="{{ old('end_date') }}"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                </div>
+
+                                {{-- Tambahan: Waktu Berakhir --}}
+                                <div class="mb-4">
+                                    <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
+                                    <input type="time" id="time_end" name="time_end"
+                                        value="{{ old('time_end') }}"
                                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
                                 </div>
                             </div>
                         </div>
 
+                        {{-- Before & After --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                             {{-- Before --}}
@@ -153,8 +168,9 @@
                             <a href="{{ route('manpower.index') }}"
                                 class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">Batal</a>
                             <button type="submit"
-                                class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">Simpan
-                                Data</button>
+                                class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
+                                Simpan Data
+                            </button>
                         </div>
                     </form>
 

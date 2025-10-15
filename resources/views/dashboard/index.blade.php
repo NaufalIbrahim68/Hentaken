@@ -252,201 +252,199 @@
         </div>
     </div>
 
-    {{-- ======================================================================= --}}
-    {{-- BAGIAN BAWAH: DETAIL HENKATEN (REVISI - SATU KOTAK PER HENKATEN) --}}
-    {{-- ======================================================================= --}}
-    <div class="border-t mt-2 pt-2">
-        @php
-            // Ambil SEMUA data henkaten yang sedang aktif
-            $allActiveHenkatens = \App\Models\ManPowerHenkaten::where('effective_date', '<=', now())
-                ->where(function($query) {
-                    $query->where('end_date', '>=', now())->orWhereNull('end_date');
-                })
-                ->get();
-        @endphp
+   {{-- ======================================================================= --}}
+{{-- BAGIAN BAWAH: DETAIL HENKATEN (SATU KOTAK PER HENKATEN) --}}
+{{-- ======================================================================= --}}
+<div class="border-t mt-2 pt-2">
+    @php
+        $allActiveHenkatens = \App\Models\ManPowerHenkaten::where('effective_date', '<=', now())
+            ->where(function($query) {
+                $query->where('end_date', '>=', now())->orWhereNull('end_date');
+            })
+            ->get();
+    @endphp
 
-        <div class="flex items-center gap-1">
-            <button id="scrollLeftShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </button>
+    <div class="flex items-center gap-1">
+        <button id="scrollLeftShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
 
-            <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
-                @if($allActiveHenkatens->isNotEmpty())
-                    <div class="flex justify-center gap-3 min-w-full px-2">
-                        {{-- Loop untuk setiap Henkaten yang aktif --}}
-                        @foreach($allActiveHenkatens as $henkaten)
-                            @php
-                                // Kalkulasi tanggal untuk setiap henkaten di dalam loop
-                                $startDate = strtoupper($henkaten->effective_date->format('j/M/y'));
-                                $endDate = $henkaten->end_date ? strtoupper($henkaten->end_date->format('j/M/y')) : 'SELANJUTNYA';
-                            @endphp
+        <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
+            @if($allActiveHenkatens->isNotEmpty())
+                <div class="flex justify-center gap-3 min-w-full px-2">
+                    @foreach($allActiveHenkatens as $henkaten)
+                        @php
+                            $startDate = strtoupper($henkaten->effective_date->format('j/M/y'));
+                            $endDate = $henkaten->end_date ? strtoupper($henkaten->end_date->format('j/M/y')) : 'SELANJUTNYA';
+                        @endphp
 
-                            {{-- KOTAK UTAMA UNTUK SETIAP HENKATEN --}}
-                            <div class="flex-shrink-0 flex flex-col space-y-2 p-2 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
-                                 style="width: 240px;"
-                                 onclick="showHenkatenDetail({{ $henkaten->id }})"
-                                 data-henkaten-id="{{ $henkaten->id }}"
-                                 data-nama="{{ $henkaten->nama }}"
-                                 data-nama-after="{{ $henkaten->nama_after }}"
-                                 data-station="{{ $henkaten->station->station_name ?? 'N/A' }}"
-                                 data-shift="{{ $henkaten->shift }}"
-                                 data-keterangan="{{ $henkaten->keterangan }}"
-                                 data-line-area="{{ $henkaten->line_area }}"
-                                 data-effective-date="{{ $henkaten->effective_date->format('d/m/Y H:i') }}"
-                                 data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
-                                 data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}">
+                       {{-- KOTAK UTAMA UNTUK SETIAP HENKATEN --}}
+ <div class="flex-shrink-0 flex flex-col space-y-2 p-2 rounded-lg border border-gray-300 shadow-md cursor-pointer hover:bg-orange-50 transition transform hover:scale-[1.02]"
+     style="width: 240px;"
+     onclick="showHenkatenDetail({{ $henkaten->id }})"
+     data-henkaten-id="{{ $henkaten->id }}"
+     data-nama="{{ $henkaten->nama }}"
+     data-nama-after="{{ $henkaten->nama_after }}"
+     data-station="{{ $henkaten->station->station_name ?? 'N/A' }}"
+     data-shift="{{ $henkaten->shift }}"
+     data-keterangan="{{ $henkaten->keterangan }}"
+     data-line-area="{{ $henkaten->line_area }}"
+     data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y') : '-' }}"
+data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y') : 'Selanjutnya' }}"
+     data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
+     data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
+     data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
+     data-time-start="{{ $henkaten->time_start ? \Carbon\Carbon::parse($henkaten->time_start)->format('H:i') : '-' }}"
+     data-time-end="{{ $henkaten->time_end ? \Carbon\Carbon::parse($henkaten->time_end)->format('H:i') : '-' }}"
+ >
+     {{-- Perubahan Pekerja --}}
+     <div class="flex items-center justify-center space-x-2">
+         <div class="text-center">
+             <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
+             <p class="text-[8px] font-semibold truncate w-20">{{ $henkaten->nama }}</p>
+             <div class="w-2 h-2 rounded-full bg-red-500 mx-auto mt-0.5" title="Before"></div>
+         </div>
+         <div class="text-sm text-gray-400 font-bold">→</div>
+         <div class="text-center">
+             <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
+             <p class="text-[8px] font-semibold truncate w-20">{{ $henkaten->nama_after }}</p>
+             <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5" title="After"></div>
+         </div>
+     </div>
 
-                                {{-- Perubahan Pekerja (Before -> After) --}}
-                                <div class="flex items-center justify-center space-x-2">
-                                    {{-- Kiri (Pekerja SEBELUM Henkaten) --}}
-                                    <div class="text-center">
-                                        <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
-                                        <p class="text-[8px] font-semibold" title="{{ $henkaten->nama }}">{{ $henkaten->nama }}</p>
-                                        <div class="w-2 h-2 rounded-full bg-red-500  mx-auto mt-0.5" title="Before"></div>
-                                    </div>
-                                    <div class="text-sm text-gray-400 font-bold">→</div>
-                                    {{-- Kanan (Pekerja SETELAH Henkaten / Pengganti) --}}
-                                    <div class="text-center">
-                                        <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
-                                        <p class="text-[8px] font-semibold" title="{{ $henkaten->nama_after }}">{{ $henkaten->nama_after }}</p>
-                                        <div class="w-2 h-2 rounded-full bg-green-500  mx-auto mt-0.5" title="Henkaten"></div>
-                                    </div>
-                                </div>
+     {{-- Serial Number --}}
+     <div class="grid grid-cols-2 gap-1">
+         <div class="bg-blue-400 text-center py-0.5 rounded">
+             <span class="text-[8px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? '-' }}</span>
+         </div>
+         <div class="bg-blue-400 text-center py-0.5 rounded">
+             <span class="text-[8px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? '-' }}</span>
+         </div>
+     </div>
 
-                                {{-- 2. Serial Number --}}
-                                <div class="grid grid-cols-2 gap-1">
-                                    <div class="bg-blue-400 text-center py-0.5 rounded">
-                                        <span class="text-[8px] text-white font-medium">Serial Start: K1ZVNA2018QX</span>
-                                    </div>
-                                    <div class="bg-blue-400 text-center py-0.5 rounded">
-                                        <span class="text-[8px] text-white font-medium">Serial End: K1ZVNA2020QX</span>
-                                    </div>
-                                </div>
+     {{-- Periode Aktif --}}
+     <div class="flex justify-center">
+         <div class="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[9px] font-semibold">
+             {{ $startDate }} - {{ $endDate }}
+         </div>
+     </div>
+ </div>
+ @endforeach
+ </div>
+ @else
+     <div class="text-center text-xs text-gray-400 py-4">No Active Henkaten</div>
+ @endif
+ </div>
 
-                                {{-- 3. Tanggal Aktif --}}
-                                <div class="flex justify-center">
-                                    <div class="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[10px] font-semibold">
-                                        ACTIVE: {{ $startDate }} - {{ $endDate }}
-                                    </div>
-                                </div>
+ <button id="scrollRightShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+     </svg>
+ </button>
+ </div>
+ </div>
 
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="text-center text-xs text-gray-400 py-4">No Active Henkaten</div>
-                @endif
-            </div>
+ {{-- ============================================================= --}}
+ {{-- MODAL DETAIL HENKATEN --}}
+ {{-- ============================================================= --}}
+ <div id="henkatenDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+     <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform transition-all scale-100">
+         {{-- HEADER MODAL --}}
+         <div class="sticky top-0 bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-4 flex justify-between items-center">
+             <h3 class="text-lg font-bold text-white tracking-wide">Detail Henkaten</h3>
+             <button onclick="closeHenkatenModal()" class="text-white hover:text-gray-200 transition">
+                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                 </svg>
+             </button>
+         </div>
 
-            <button id="scrollRightShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-            </button>
-        </div>
-    </div>
-</div>
+         {{-- DIUBAH: Padding (p-6 -> p-4) dan Spasi Vertikal (space-y-6 -> space-y-4) dikurangi --}}
+         <div class="p-4 space-y-4">
+             {{-- PERUBAHAN PEKERJA --}}
+             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                 <h4 class="text-sm font-semibold text-gray-700 mb-3">Perubahan Pekerja</h4>
+                 <div class="flex items-center justify-around">
+                     <div class="text-center">
+                         <div class="w-14 h-14 rounded-full bg-purple-600 flex items-center justify-center text-white text-xl mx-auto mb-1">👤</div>
+                         <p id="modalNamaBefore" class="font-semibold text-sm"></p>
+                         <span class="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">Sebelum</span>
+                     </div>
+                     <div class="text-2xl text-gray-400">→</div>
+                     <div class="text-center">
+                         <div class="w-14 h-14 rounded-full bg-purple-600 flex items-center justify-center text-white text-xl mx-auto mb-1">👤</div>
+                         <p id="modalNamaAfter" class="font-semibold text-sm"></p>
+                         <span class="text-xs bg-green-500 text-white px-2 py-0.5 rounded">Sesudah</span>
+                     </div>
+                 </div>
+             </div>
 
-{{-- MODAL DETAIL HENKATEN --}}
-<div id="henkatenDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div class="sticky top-0 bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-4 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">Detail Henkaten</h3>
-            <button onclick="closeHenkatenModal()" class="text-white hover:text-gray-200 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        </div>
+             {{-- INFORMASI DETAIL --}}
+             {{-- DIUBAH: Grid diubah dari 2 kolom (grid-cols-2) menjadi 4 kolom (grid-cols-4) --}}
+             <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                 <div class="bg-blue-50 p-3 rounded-lg">
+                     <p class="text-xs text-gray-500">Station</p>
+                     <p id="modalStation" class="font-semibold text-sm"></p>
+                 </div>
+                 <div class="bg-blue-50 p-3 rounded-lg">
+                     <p class="text-xs text-gray-500">Shift</p>
+                     <p id="modalShift" class="font-semibold text-sm"></p>
+                 </div>
+                 <div class="bg-blue-50 p-3 rounded-lg">
+                     <p class="text-xs text-gray-500">Line Area</p>
+                     <p id="modalLineArea" class="font-semibold text-sm"></p>
+                 </div>
+                 <div class="bg-blue-50 p-3 rounded-lg">
+                     <p class="text-xs text-gray-500">Keterangan</p>
+                     <p id="modalKeterangan" class="font-semibold text-sm"></p>
+                 </div>
+                 <div class="bg-blue-50 p-3 rounded-lg">
+                     <p class="text-xs text-gray-500">Serial Start</p>
+                     <p id="modalSerialStart" class="font-semibold text-sm"></p>
+                 </div>
+                 <div class="bg-blue-50 p-3 rounded-lg">
+                     <p class="text-xs text-gray-500">Serial End</p>
+                     <p id="modalSerialEnd" class="font-semibold text-sm"></p>
+                 </div>
+                 <div class="bg-blue-50 p-3 rounded-lg">
+                     <p class="text-xs text-gray-500">Time Start</p>
+                     <p id="modalTimeStart" class="font-semibold text-sm"></p>
+                 </div>
+                 <div class="bg-blue-50 p-3 rounded-lg">
+                     <p class="text-xs text-gray-500">Time End</p>
+                     <p id="modalTimeEnd" class="font-semibold text-sm"></p>
+                 </div>
+             </div>
 
-        <div class="p-6">
-            {{-- Perubahan Pekerja --}}
-            <div class="mb-6">
-                <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                    </svg>
-                    Perubahan Pekerja
-                </h4>
-                <div class="flex items-center justify-around bg-gray-50 p-4 rounded-lg">
-                    <div class="text-center">
-                        <div class="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center text-white text-2xl mx-auto mb-2">👤</div>
-                        <p class="font-semibold text-sm mb-1" id="modalNamaBefore"></p>
-                        <span class="inline-block px-2 py-1 text-xs rounded bg-green-500 text-white">SEBELUM</span>
-                    </div>
-                    <div class="text-3xl text-gray-400">→</div>
-                    <div class="text-center">
-                        <div class="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center text-white text-2xl mx-auto mb-2">👤</div>
-                        <p class="font-semibold text-sm mb-1" id="modalNamaAfter"></p>
-                        <span class="inline-block px-2 py-1 text-xs rounded bg-red-500 text-white">HENKATEN</span>
-                    </div>
-                </div>
-            </div>
+             {{-- PERIODE --}}
+             <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
+                 <div class="flex justify-between items-center">
+                     <div>
+                         <p class="text-xs text-gray-500">Mulai</p>
+                         <p id="modalEffectiveDate" class="font-semibold"></p>
+                     </div>
+                     <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                     </svg>
+                     <div>
+                         <p class="text-xs text-gray-500">Selesai</p>
+                         <p id="modalEndDate" class="font-semibold"></p>
+                     </div>
+                 </div>
+             </div>
 
-            {{-- Informasi Detail --}}
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-blue-50 p-3 rounded-lg">
-                    <p class="text-xs text-gray-600 mb-1">Station</p>
-                    <p class="font-semibold text-sm" id="modalStation"></p>
-                </div>
-                <div class="bg-blue-50 p-3 rounded-lg">
-                    <p class="text-xs text-gray-600 mb-1">Shift</p>
-                    <p class="font-semibold text-sm" id="modalShift"></p>
-                </div>
-                <div class="bg-blue-50 p-3 rounded-lg">
-                    <p class="text-xs text-gray-600 mb-1">Line Area</p>
-                    <p class="font-semibold text-sm" id="modalLineArea"></p>
-                </div>
-                <div class="bg-blue-50 p-3 rounded-lg">
-                    <p class="text-xs text-gray-600 mb-1">Keterangan</p>
-                    <p class="font-semibold text-sm" id="modalKeterangan"></p>
-                </div>
-            </div>
-
-            {{-- Period Aktif --}}
-            <div class="mb-6">
-                <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    Periode Aktif
-                </h4>
-                <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-xs text-gray-600">Mulai</p>
-                            <p class="font-semibold" id="modalEffectiveDate"></p>
-                        </div>
-                        <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                        </svg>
-                        <div>
-                            <p class="text-xs text-gray-600">Selesai</p>
-                            <p class="font-semibold" id="modalEndDate"></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Lampiran --}}
-            <div id="modalLampiranSection" class="mb-4 hidden">
-                <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-                    </svg>
-                    Lampiran
-                </h4>
-                <a id="modalLampiranLink" href="#" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Lihat Lampiran
-                </a>
-            </div>
-        </div>
-    </div>
+             {{-- LAMPIRAN --}}
+             <div id="modalLampiranSection" class="hidden">
+                 <h4 class="text-sm font-semibold text-gray-700 mb-2">Lampiran</h4>
+                 <a id="modalLampiranLink" href="#" target="_blank" class="block bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg text-center transition">
+                     Lihat Lampiran
+                 </a>
+             </div>
+         </div>
+     </div>
+ </div>
 </div>
 
         {{-- METHOD - . --}}
@@ -483,43 +481,63 @@
 
 
 
-            {{-- Bottom sections untuk Method - . --}}
-            <div class="mt-1">
-                {{-- CURRENT PART & NEW PARTKT - . --}}
-                <div class="grid grid-cols-2 gap-1">
-                    <div class="bg-white shadow rounded p-1 text-center">
-                        <h3 class="text-[9px] font-bold mb-0.5">CURRENT METHOD</h3>
-                        <p class="text-[7px]"><span class="font-semibold">STATION :</span> STATION 5</p>
-                        <p class="text-[7px]"><span class="font-semibold">METHOD :</span> INNERCASE ASSY</p>
-                    </div>
-                    <div class="bg-white shadow rounded p-1 text-center">
-                        <h3 class="text-[9px] font-bold mb-0.5 text-red-600">NEW METHOD</h3>
-                        <p class="text-[7px]"><span class="font-semibold">STATION :</span> STATION 5</p>
-                        <p class="text-[7px]"><span class="font-semibold">METHOD :</span> INNERCASE ASSY</p>
-                    </div>
-                </div>
-
-                {{-- SERIAL NUMBER & DATE - . --}}
-                               <div class="grid grid-cols-2 gap-1 mt-1">
-                    <div class="bg-blue-400 text-center py-0.5 rounded">
-                        <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
-                    </div>
-                    <div class="bg-blue-400 text-center py-0.5 rounded">
-                        <span class="text-[8px] text-white font-medium">Serial Number End : K1ZVNA2020QX</span>
-                    </div>
-                </div>
+{{-- KOTAK UTAMA UNTUK SETIAP HENKATEN --}}
+<div class="flex-shrink-0 flex flex-col space-y-2 p-2 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
+     style="width: 240px;"
+     onclick="showHenkatenDetail({{ $henkaten->id }})"
+     data-henkaten-id="{{ $henkaten->id }}"
+     data-nama="{{ $henkaten->nama }}"
+     data-nama-after="{{ $henkaten->nama_after }}"
+     data-station="{{ $henkaten->station->station_name ?? 'N/A' }}"
+     data-shift="{{ $henkaten->shift }}"
+     data-keterangan="{{ $henkaten->keterangan }}"
+     data-line-area="{{ $henkaten->line_area }}"
+     data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
+     data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
+     data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
+     data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
+     data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
+     data-time-start="{{ $henkaten->time_start ? \Carbon\Carbon::parse($henkaten->time_start)->format('H:i') : '-' }}"
+     data-time-end="{{ $henkaten->time_end ? \Carbon\Carbon::parse($henkaten->time_end)->format('H:i') : '-' }}"
+>
 
 
-                {{-- Tanggal Aktif - . --}}
-                <div class="mt-1 flex justify-center">
-                    <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
-                        ACTIVE: 9/SEP/25 - 12/SEP/25
-                    </div>
-                </div>
-            </div>
+    {{-- 1. CURRENT & NEW METHOD --}}
+    <div class="grid grid-cols-2 gap-1">
+        {{-- CURRENT --}}
+        <div class="bg-white shadow rounded p-1 text-center">
+            <h3 class="text-[9px] font-bold mb-0.5">CURRENT METHOD</h3>
+            <p class="text-[7px]"><span class="font-semibold">STATION :</span> {{ $henkaten->current_station ?? 'N/A' }}</p>
+            <p class="text-[7px]"><span class="font-semibold">METHOD :</span> {{ $henkaten->current_method ?? 'N/A' }}</p>
         </div>
+        {{-- NEW --}}
+        <div class="bg-white shadow rounded p-1 text-center">
+            <h3 class="text-[9px] font-bold mb-0.5 text-red-600">NEW METHOD</h3>
+            <p class="text-[7px]"><span class="font-semibold">STATION :</span> {{ $henkaten->new_station ?? 'N/A' }}</p>
+            <p class="text-[7px]"><span class="font-semibold">METHOD :</span> {{ $henkaten->new_method ?? 'N/A' }}</p>
+        </div>
+    </div>
 
-        {{-- MACHINE - . --}}
+    {{-- 2. SERIAL NUMBER --}}
+    <div class="grid grid-cols-2 gap-1">
+        <div class="bg-blue-400 text-center py-0.5 rounded">
+            <span class="text-[8px] text-white font-medium">Start: {{ $henkaten->serial_start ?? 'N/A' }}</span>
+        </div>
+        <div class="bg-blue-400 text-center py-0.5 rounded">
+            <span class="text-[8px] text-white font-medium">End: {{ $henkaten->serial_end ?? 'N/A' }}</span>
+        </div>
+    </div>
+
+    {{-- 3. TANGGAL AKTIF --}}
+    <div class="flex justify-center">
+        <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
+            ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+        </div>
+    </div>
+</div>
+</div>
+
+        {{-- MACHINE - --}}
         <div class="bg-white shadow rounded p-1 flex flex-col">
             <h2 class="text-xs font-semibold mb-0.5 text-center">MACHINE</h2>
 
@@ -533,7 +551,6 @@
                         </svg>
                     </button>
                 </div>
-
                 {{-- Machine Status Container - . --}}
                 <div class="bg-white p-2 mx-8">
                     <div class="flex justify-center items-center space-x-1">
@@ -570,59 +587,61 @@
                 </div>
             </div>
 
-            {{-- Bottom Section - Jig Change - . --}}
-            <div class="flex p-2 bg-white-100 mt-2">
-                <div class="flex-1">
-                    <div class="flex items-center justify-center">
-                        {{-- Old Jig - . --}}
-                        <div class="text-center">
-                            <div class="text-[8px] font-bold mb-0.5">Old jig</div>
-                            <div class="jig-icon">
-                                <span style="font-size: 10px;">⚙️</span>
-                            </div>
-                        </div>
+          {{-- KOTAK UTAMA UNTUK JIG/MACHINE HENKATEN (Ukuran Disesuaikan) --}}
+<div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition mt-4" 
+     style="width: 220px;"
+     onclick="showHenkatenDetail({{ $henkaten->id }})"
+     {{-- Pastikan semua data-attributes yang relevan ada di sini --}}
+     data-henkaten-id="{{ $henkaten->id }}"
+     data-old-jig="{{ $henkaten->old_jig ?? 'N/A' }}"
+     data-new-jig="{{ $henkaten->new_jig ?? 'N/A' }}"
+     data-serial-start="{{ $henkaten->serial_start ?? 'N/A' }}"
+     data-serial-end="{{ $henkaten->serial_end ?? 'N/A' }}"
+     data-effective-date="{{ $henkaten->effective_date->format('d/M/Y') }}"
+     data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/M/Y') : 'Selanjutnya' }}">
 
-                        {{-- Arrow - . --}}
-                        <div class="arrow mx-4 text-lg font-bold text-blue-500">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                            </svg>
-                        </div>
-
-                        {{-- New Jig - . --}}
-                        <div class="text-center">
-                            <div class="text-[8px] font-bold mb-0.5">New jig</div>
-                            <div class="jig-icon">
-                                <span style="font-size: 10px;">⚙️</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Bottom sections untuk Machine - . --}}
-            <div class="mt-1">
-               
-
-                {{-- SERIAL NUMBER & DATE - . --}}
-                                <div class="grid grid-cols-2 gap-1 mt-1">
-                    <div class="bg-blue-400 text-center py-0.5 rounded">
-                        <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
-                    </div>
-                    <div class="bg-blue-400 text-center py-0.5 rounded">
-                        <span class="text-[8px] text-white font-medium">Serial Number End : K1ZVNA2020QX</span>
-                    </div>
-                </div>
-
-
-                {{-- Tanggal Aktif - . --}}
-                <div class="mt-1 flex justify-center">
-                    <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
-                        ACTIVE: 9/SEP/25 - 12/SEP/25
-                    </div>
-                </div>
-            </div>
+    {{-- 1. JIG CHANGE --}}
+    <div class="flex items-center justify-center space-x-1.5">
+        {{-- Old Jig --}}
+        <div class="text-center">
+            <div class="text-[8px] font-bold">OLD JIG</div>
+            <div class="text-xl my-0.5">⚙️</div>
+            <p class="text-[7px] font-semibold">{{ $henkaten->old_jig ?? 'N/A' }}</p>
         </div>
+
+        {{-- Arrow --}}
+        <div class="text-blue-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+            </svg>
+        </div>
+
+        {{-- New Jig --}}
+        <div class="text-center">
+            <div class="text-[8px] font-bold text-red-600">NEW JIG</div>
+            <div class="text-xl my-0.5">⚙️</div>
+            <p class="text-[7px] font-semibold">{{ $henkaten->new_jig ?? 'N/A' }}</p>
+        </div>
+    </div>
+
+    {{-- 2. SERIAL NUMBER --}}
+    <div class="grid grid-cols-2 gap-1">
+        <div class="bg-blue-400 text-center py-0.5 rounded">
+            <span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_start ?? 'N/A' }}</span>
+        </div>
+        <div class="bg-blue-400 text-center py-0.5 rounded">
+            <span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_end ?? 'N/A' }}</span>
+        </div>
+    </div>
+
+    {{-- 3. TANGGAL AKTIF --}}
+    <div class="flex justify-center">
+        <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
+            ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+        </div>
+    </div>
+</div>
+</div>
 
         {{-- MATERIAL - . --}}
         <div class="bg-white shadow rounded p-1 flex flex-col">
@@ -682,43 +701,54 @@
                 </div>
             </div>
 
-            {{-- Bottom sections untuk Material - . --}}
-            <div class="mt-1">
-                {{-- CURRENT PART & NEW PARTKT - . --}}
-                <div class="grid grid-cols-2 gap-1">
-                    <div class="bg-white shadow rounded p-1 text-center">
-                        <h3 class="text-[9px] font-bold mb-0.5">CURRENT PART</h3>
-                        <p class="text-[7px]"><span class="font-semibold">PART NUMBER :</span> VPGZKF-19N551-AA</p>
-                        <p class="text-[7px]"><span class="font-semibold">DESC:</span> FLTR-VEN AIR (NITTO)</p>
-                    </div>
-                    <div class="bg-white shadow rounded p-1 text-center">
-                        <h3 class="text-[9px] font-bold mb-0.5 text-red-600">NEW PART</h3>
-                        <p class="text-[7px]"><span class="font-semibold">PART NUMBER :</span> VPGZKF-19N551-AB</p>
-                        <p class="text-[7px]"><span class="font-semibold">DESC:</span> FLTR-VEN AIR (BRADY)</p>
-                    </div>
-                </div>
+          {{-- KOTAK UTAMA UNTUK MATERIAL HENKATEN (Ukuran Disesuaikan) --}}
+<div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
+     style="width: 220px;"
+     onclick="showHenkatenDetail({{ $henkaten->id }})"
+     {{-- Add all necessary data attributes for the modal here --}}
+     data-henkaten-id="{{ $henkaten->id }}"
+     data-current-part-no="{{ $henkaten->current_part_no ?? 'N/A' }}"
+     data-current-part-desc="{{ $henkaten->current_part_desc ?? 'N/A' }}"
+     data-new-part-no="{{ $henkaten->new_part_no ?? 'N/A' }}"
+     data-new-part-desc="{{ $henkaten->new_part_desc ?? 'N/A' }}"
+     data-serial-start="{{ $henkaten->serial_start ?? 'N/A' }}"
+     data-serial-end="{{ $henkaten->serial_end ?? 'N/A' }}"
+     data-effective-date="{{ $henkaten->effective_date->format('d/M/Y') }}"
+     data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/M/Y') : 'Selanjutnya' }}">
 
-                {{-- SERIAL NUMBER & DATE - . --}}
-                <div class="grid grid-cols-2 gap-1 mt-1">
-                    <div class="bg-blue-400 text-center py-0.5 rounded">
-                        <span class="text-[8px] text-white font-medium">Serial Number Start : K1ZVNA2018QX</span>
-                    </div>
-                    <div class="bg-blue-400 text-center py-0.5 rounded">
-                        <span class="text-[8px] text-white font-medium">Serial Number End : K1ZVNA2020QX</span>
-                    </div>
-                </div>
-
-                {{-- Tanggal Aktif - . --}}
-                <div class="mt-1 flex justify-center">
-                    <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
-                        ACTIVE: 9/SEP/25 - 12/SEP/25
-                    </div>
-                </div>
-            </div>
+    {{-- 1. CURRENT & NEW PART --}}
+    <div class="grid grid-cols-2 gap-1">
+        {{-- CURRENT --}}
+        <div class="bg-white shadow rounded p-1 text-center">
+            <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
+            <p class="text-[7px]"><span class="font-semibold">PART NO:</span> {{ $henkaten->current_part_no ?? 'N/A' }}</p>
+            <p class="text-[7px]"><span class="font-semibold">DESC:</span> {{ $henkaten->current_part_desc ?? 'N/A' }}</p>
+        </div>
+        {{-- NEW --}}
+        <div class="bg-white shadow rounded p-1 text-center">
+            <h3 class="text-[8px] font-bold mb-0.5 text-red-600">NEW PART</h3>
+            <p class="text-[7px]"><span class="font-semibold">PART NO:</span> {{ $henkaten->new_part_no ?? 'N/A' }}</p>
+            <p class="text-[7px]"><span class="font-semibold">DESC:</span> {{ $henkaten->new_part_desc ?? 'N/A' }}</p>
         </div>
     </div>
- </div>
 
+    {{-- 2. SERIAL NUMBER --}}
+    <div class="grid grid-cols-2 gap-1">
+        <div class="bg-blue-400 text-center py-0.5 rounded">
+            <span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_start ?? 'N/A' }}</span>
+        </div>
+        <div class="bg-blue-400 text-center py-0.5 rounded">
+            <span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_end ?? 'N/A' }}</span>
+        </div>
+    </div>
+
+    {{-- 3. TANGGAL AKTIF --}}
+    <div class="flex justify-center">
+        <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
+            ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+        </div>
+    </div>
+</div>
 
 
 
@@ -927,8 +957,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showHenkatenDetail(henkatenId) {
     const card = document.querySelector(`[data-henkaten-id="${henkatenId}"]`);
-    
-    // Populate modal dengan data dari attributes
+    if (!card) return;
+
     document.getElementById('modalNamaBefore').textContent = card.dataset.nama;
     document.getElementById('modalNamaAfter').textContent = card.dataset.namaAfter;
     document.getElementById('modalStation').textContent = card.dataset.station;
@@ -937,41 +967,37 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('modalKeterangan').textContent = card.dataset.keterangan;
     document.getElementById('modalEffectiveDate').textContent = card.dataset.effectiveDate;
     document.getElementById('modalEndDate').textContent = card.dataset.endDate;
-    
-    // Handle lampiran
+    document.getElementById('modalSerialStart').textContent = card.dataset.serialNumberStart || '-';
+    document.getElementById('modalSerialEnd').textContent = card.dataset.serialNumberEnd || '-';
+    document.getElementById('modalTimeStart').textContent = card.dataset.timeStart || '-';
+    document.getElementById('modalTimeEnd').textContent = card.dataset.timeEnd || '-';
+
     const lampiran = card.dataset.lampiran;
-    const lampiranSection = document.getElementById('modalLampiranSection');
-    const lampiranLink = document.getElementById('modalLampiranLink');
-    
+    const section = document.getElementById('modalLampiranSection');
+    const link = document.getElementById('modalLampiranLink');
+
     if (lampiran) {
-        lampiranSection.classList.remove('hidden');
-        lampiranLink.href = lampiran;
+        section.classList.remove('hidden');
+        link.href = lampiran;
     } else {
-        lampiranSection.classList.add('hidden');
+        section.classList.add('hidden');
     }
-    
-    // Show modal
+
     document.getElementById('henkatenDetailModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Prevent scrolling
+    document.body.style.overflow = 'hidden';
 }
 
 function closeHenkatenModal() {
     document.getElementById('henkatenDetailModal').classList.add('hidden');
-    document.body.style.overflow = 'auto'; // Restore scrolling
+    document.body.style.overflow = 'auto';
 }
 
-// Close modal when clicking outside
 document.getElementById('henkatenDetailModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeHenkatenModal();
-    }
+    if (e.target === this) closeHenkatenModal();
 });
 
-// Close modal with Escape key
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeHenkatenModal();
-    }
+    if (e.key === 'Escape') closeHenkatenModal();
 });
 </script>
 

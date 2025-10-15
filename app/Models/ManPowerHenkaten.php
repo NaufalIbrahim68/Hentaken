@@ -16,20 +16,26 @@ class ManPowerHenkaten extends Model
         'man_power_id',
         'station_id',
         'shift',
-        'nama',              // nama_before
-        'line_area',
+        'nama',                  // nama_before
         'nama_after',   
         'station_id_after', 
+        'line_area',
         'effective_date',
         'end_date',
         'keterangan',
         'lampiran',
         'man_power_id_after',
+        'serial_number_start',
+        'serial_number_end',
+        'time_start',
+        'time_end',
     ];
 
     protected $casts = [
         'effective_date' => 'date',
         'end_date' => 'date',
+        'time_start' => 'datetime:H:i',
+        'time_end' => 'datetime:H:i',
     ];
 
     /**
@@ -57,7 +63,4 @@ class ManPowerHenkaten extends Model
     {
         return $this->belongsTo(Station::class, 'station_id');
     }
-
-  
-  
 }
