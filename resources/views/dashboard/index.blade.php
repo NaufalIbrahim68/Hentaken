@@ -447,94 +447,105 @@ data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y') : '
  </div>
 </div>
 
-        {{-- METHOD - . --}}
-        <div class="bg-white shadow rounded p-1 flex flex-col">
-            <h2 class="text-xs font-semibold mb-0.5 text-center">METHOD</h2>
+      {{-- METHOD - . --}}
+<div class="bg-white shadow rounded p-1 flex flex-col">
+    <h2 class="text-xs font-semibold mb-0.5 text-center">METHOD</h2>
 
-            {{-- Table Wrapper Scroll - . --}}
-            <div class="overflow-auto flex-1">
-                <table class="w-full border-collapse text-[10px]">
-                    <thead>
-                        <tr class="bg-gray-100">
-                            <th class="border px-0.5 py-0.5 text-left">Station</th>
-                            <th class="border px-0.5 py-0.5 text-center">Keterangan</th>
-                            <th class="border px-0.5 py-0.5 text-center">Lampiran</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($methods as $m)
-                            <tr>
-                                <td class="border px-0.5 py-0.5">{{ $m->station->station_name ?? '-' }}</td>
-                                <td class="border px-0.5 py-0.5 text-center">{{ $m->keterangan ?? '-' }}</td>
-                                <td class="border px-0.5 py-0.5 text-center">{{ $m->foto_path ?? '-' }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            
-{{-- Pagination Compact --}}
-<div class="mt-2 flex justify-end">
-    {{ $methods->onEachSide(1)->links('vendor.pagination.compact') }}
-</div>
-
-
-
-{{-- KOTAK UTAMA UNTUK SETIAP HENKATEN --}}
-<div class="flex-shrink-0 flex flex-col space-y-2 p-2 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
-     style="width: 240px;"
-     onclick="showHenkatenDetail({{ $henkaten->id }})"
-     data-henkaten-id="{{ $henkaten->id }}"
-     data-nama="{{ $henkaten->nama }}"
-     data-nama-after="{{ $henkaten->nama_after }}"
-     data-station="{{ $henkaten->station->station_name ?? 'N/A' }}"
-     data-shift="{{ $henkaten->shift }}"
-     data-keterangan="{{ $henkaten->keterangan }}"
-     data-line-area="{{ $henkaten->line_area }}"
-     data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
-     data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
-     data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
-     data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
-     data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
-     data-time-start="{{ $henkaten->time_start ? \Carbon\Carbon::parse($henkaten->time_start)->format('H:i') : '-' }}"
-     data-time-end="{{ $henkaten->time_end ? \Carbon\Carbon::parse($henkaten->time_end)->format('H:i') : '-' }}"
->
-
-
-    {{-- 1. CURRENT & NEW METHOD --}}
-    <div class="grid grid-cols-2 gap-1">
-        {{-- CURRENT --}}
-        <div class="bg-white shadow rounded p-1 text-center">
-            <h3 class="text-[9px] font-bold mb-0.5">CURRENT METHOD</h3>
-            <p class="text-[7px]"><span class="font-semibold">STATION :</span> {{ $henkaten->current_station ?? 'N/A' }}</p>
-            <p class="text-[7px]"><span class="font-semibold">METHOD :</span> {{ $henkaten->current_method ?? 'N/A' }}</p>
-        </div>
-        {{-- NEW --}}
-        <div class="bg-white shadow rounded p-1 text-center">
-            <h3 class="text-[9px] font-bold mb-0.5 text-red-600">NEW METHOD</h3>
-            <p class="text-[7px]"><span class="font-semibold">STATION :</span> {{ $henkaten->new_station ?? 'N/A' }}</p>
-            <p class="text-[7px]"><span class="font-semibold">METHOD :</span> {{ $henkaten->new_method ?? 'N/A' }}</p>
-        </div>
+    {{-- Table Wrapper Scroll - . --}}
+    <div class="overflow-auto flex-1">
+        <table class="w-full border-collapse text-[10px]">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="border px-0.5 py-0.5 text-left">Station</th>
+                    <th class="border px-0.5 py-0.5 text-center">Keterangan</th>
+                    <th class="border px-0.5 py-0.5 text-center">Lampiran</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($methods as $m)
+                    <tr>
+                        <td class="border px-0.5 py-0.5">{{ $m->station->station_name ?? '-' }}</td>
+                        <td class="border px-0.5 py-0.5 text-center">{{ $m->keterangan ?? '-' }}</td>
+                        <td class="border px-0.5 py-0.5 text-center">{{ $m->foto_path ?? '-' }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
 
-    {{-- 2. SERIAL NUMBER --}}
-    <div class="grid grid-cols-2 gap-1">
-        <div class="bg-blue-400 text-center py-0.5 rounded">
-            <span class="text-[8px] text-white font-medium">Start: {{ $henkaten->serial_start ?? 'N/A' }}</span>
-        </div>
-        <div class="bg-blue-400 text-center py-0.5 rounded">
-            <span class="text-[8px] text-white font-medium">End: {{ $henkaten->serial_end ?? 'N/A' }}</span>
-        </div>
+    {{-- Pagination Compact --}}
+    <div class="mt-2 flex justify-end">
+        {{ $methods->onEachSide(1)->links('vendor.pagination.compact') }}
     </div>
 
-    {{-- 3. TANGGAL AKTIF --}}
-    <div class="flex justify-center">
-        <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
-            ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+    {{-- ============================================= --}}
+    {{-- METHOD HENKATEN CARD SECTION (UPDATED) --}}
+    {{-- ============================================= --}}
+    <div class="border-t mt-2 pt-2 overflow-x-auto scrollbar-hide">
+        <div class="flex justify-center gap-3 p-2">
+            {{-- This should be inside a loop like: @foreach($methodHenkatens as $henkaten) --}}
+            @if(isset($methodHenkatens) && $methodHenkatens->isNotEmpty())
+                @foreach($methodHenkatens as $henkaten)
+                    {{-- KOTAK UTAMA UNTUK SETIAP HENKATEN --}}
+                    <div class="flex-shrink-0 flex flex-col space-y-2 p-2 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
+                         style="width: 240px;"
+                         {{-- LOGIC ADDED: This now calls the Man Power modal function --}}
+                         onclick="showHenkatenDetail({{ $henkaten->id }})"
+                         data-henkaten-id="{{ $henkaten->id }}"
+                         {{-- NOTE: These data attributes are placeholders. You will need to map your Method Henkaten data to them. --}}
+                         data-nama="Method Change"
+                         data-nama-after="{{ $henkaten->new_method ?? 'N/A' }}"
+                         data-station="{{ $henkaten->new_station ?? 'N/A' }}"
+                         data-shift="-"
+                         data-keterangan="{{ $henkaten->keterangan ?? 'Method Details' }}"
+                         data-line-area="-"
+                         data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
+                         data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
+                         data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
+                         data-serial-number-start="{{ $henkaten->serial_start ?? '-' }}"
+                         data-serial-number-end="{{ $henkaten->serial_end ?? '-' }}"
+                         data-time-start="-"
+                         data-time-end="-">
+
+                        {{-- 1. CURRENT & NEW METHOD --}}
+                        <div class="grid grid-cols-2 gap-1">
+                            {{-- CURRENT --}}
+                            <div class="bg-white shadow rounded p-1 text-center">
+                                <h3 class="text-[9px] font-bold mb-0.5">CURRENT METHOD</h3>
+                                <p class="text-[7px]"><span class="font-semibold">STATION :</span> {{ $henkaten->current_station ?? 'N/A' }}</p>
+                                <p class="text-[7px]"><span class="font-semibold">METHOD :</span> {{ $henkaten->current_method ?? 'N/A' }}</p>
+                            </div>
+                            {{-- NEW --}}
+                            <div class="bg-white shadow rounded p-1 text-center">
+                                <h3 class="text-[9px] font-bold mb-0.5 text-red-600">NEW METHOD</h3>
+                                <p class="text-[7px]"><span class="font-semibold">STATION :</span> {{ $henkaten->new_station ?? 'N/A' }}</p>
+                                <p class="text-[7px]"><span class="font-semibold">METHOD :</span> {{ $henkaten->new_method ?? 'N/A' }}</p>
+                            </div>
+                        </div>
+
+                        {{-- 2. SERIAL NUMBER --}}
+                        <div class="grid grid-cols-2 gap-1">
+                            <div class="bg-blue-400 text-center py-0.5 rounded">
+                                <span class="text-[8px] text-white font-medium">Start: {{ $henkaten->serial_start ?? 'N/A' }}</span>
+                            </div>
+                            <div class="bg-blue-400 text-center py-0.5 rounded">
+                                <span class="text-[8px] text-white font-medium">End: {{ $henkaten->serial_end ?? 'N/A' }}</span>
+                            </div>
+                        </div>
+
+                        {{-- 3. TANGGAL AKTIF --}}
+                        <div class="flex justify-center">
+                            <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
+                                ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            @else
+                <div class="text-center text-xs text-gray-400 py-4">No Active Method Henkaten</div>
+            @endif
         </div>
     </div>
-</div>
 </div>
 
         {{-- MACHINE - --}}
@@ -587,61 +598,72 @@ data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y') : '
                 </div>
             </div>
 
-          {{-- KOTAK UTAMA UNTUK JIG/MACHINE HENKATEN (Ukuran Disesuaikan) --}}
-<div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition mt-4" 
-     style="width: 220px;"
-     onclick="showHenkatenDetail({{ $henkaten->id }})"
-     {{-- Pastikan semua data-attributes yang relevan ada di sini --}}
-     data-henkaten-id="{{ $henkaten->id }}"
-     data-old-jig="{{ $henkaten->old_jig ?? 'N/A' }}"
-     data-new-jig="{{ $henkaten->new_jig ?? 'N/A' }}"
-     data-serial-start="{{ $henkaten->serial_start ?? 'N/A' }}"
-     data-serial-end="{{ $henkaten->serial_end ?? 'N/A' }}"
-     data-effective-date="{{ $henkaten->effective_date->format('d/M/Y') }}"
-     data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/M/Y') : 'Selanjutnya' }}">
+        {{-- ============================================= --}}
+{{-- MACHINE HENKATEN CARD SECTION (UPDATED) --}}
+{{-- ============================================= --}}
+<div class="border-t mt-2 pt-2 overflow-x-auto scrollbar-hide">
+    <div class="flex justify-center gap-3 p-2">
+        
+        {{-- ======================================================== --}}
+        {{-- LOGIKA IF/ELSE DIHAPUS, HANYA MENYISAKAN FOREACH --}}
+        {{-- ======================================================== --}}
+        @foreach($machineHenkatens as $henkaten)
+            <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
+                 style="width: 220px;"
+                 {{-- Logika ini tetap berfungsi karena loop hanya berjalan jika ada data --}}
+                 onclick="showHenkatenDetail({{ $henkaten->id }})"
+                 data-henkaten-id="{{ $henkaten->id }}"
+                 {{-- Data ini akan mengambil dari Man Power Henkaten sesuai controller --}}
+                 data-nama="Old Jig: {{ $henkaten->old_jig ?? 'N/A' }}"
+                 data-nama-after="New Jig: {{ $henkaten->new_jig ?? 'N/A' }}"
+                 data-station="{{ $henkaten->station->station_name ?? 'Machine Station' }}"
+                 data-shift="-"
+                 data-keterangan="{{ $henkaten->keterangan ?? 'Jig/Machine Change' }}"
+                 data-line-area="-"
+                 data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
+                 data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
+                 data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
+                 data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
+                 data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
+                 data-time-start="-"
+                 data-time-end="-">
+                
+                {{-- 1. JIG CHANGE --}}
+                <div class="flex items-center justify-center space-x-1.5">
+                    <div class="text-center">
+                        <div class="text-[8px] font-bold">OLD JIG</div>
+                        <div class="text-xl my-0.5">⚙️</div>
+                        {{-- Karena data dari Man Power Henkaten, ini akan tampil N/A --}}
+                        <p class="text-[7px] font-semibold">{{ $henkaten->old_jig ?? 'N/A' }}</p>
+                    </div>
+                    <div class="text-blue-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-[8px] font-bold text-red-600">NEW JIG</div>
+                        <div class="text-xl my-0.5">⚙️</div>
+                        {{-- Karena data dari Man Power Henkaten, ini akan tampil N/A --}}
+                        <p class="text-[7px] font-semibold">{{ $henkaten->new_jig ?? 'N/A' }}</p>
+                    </div>
+                </div>
+                {{-- 2. SERIAL NUMBER --}}
+                <div class="grid grid-cols-2 gap-1">
+                    {{-- Ini akan menampilkan serial number dari Man Power Henkaten --}}
+                    <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? 'N/A' }}</span></div>
+                    <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? 'N/A' }}</span></div>
+                </div>
+                {{-- 3. TANGGAL AKTIF --}}
+                <div class="flex justify-center">
+                    <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
+                        ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+                    </div>
+                </div>
+            </div>
+        @endforeach
 
-    {{-- 1. JIG CHANGE --}}
-    <div class="flex items-center justify-center space-x-1.5">
-        {{-- Old Jig --}}
-        <div class="text-center">
-            <div class="text-[8px] font-bold">OLD JIG</div>
-            <div class="text-xl my-0.5">⚙️</div>
-            <p class="text-[7px] font-semibold">{{ $henkaten->old_jig ?? 'N/A' }}</p>
-        </div>
-
-        {{-- Arrow --}}
-        <div class="text-blue-500">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-            </svg>
-        </div>
-
-        {{-- New Jig --}}
-        <div class="text-center">
-            <div class="text-[8px] font-bold text-red-600">NEW JIG</div>
-            <div class="text-xl my-0.5">⚙️</div>
-            <p class="text-[7px] font-semibold">{{ $henkaten->new_jig ?? 'N/A' }}</p>
-        </div>
-    </div>
-
-    {{-- 2. SERIAL NUMBER --}}
-    <div class="grid grid-cols-2 gap-1">
-        <div class="bg-blue-400 text-center py-0.5 rounded">
-            <span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_start ?? 'N/A' }}</span>
-        </div>
-        <div class="bg-blue-400 text-center py-0.5 rounded">
-            <span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_end ?? 'N/A' }}</span>
-        </div>
-    </div>
-
-    {{-- 3. TANGGAL AKTIF --}}
-    <div class="flex justify-center">
-        <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
-            ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
-        </div>
     </div>
 </div>
-</div>
+        </div>
 
         {{-- MATERIAL - . --}}
         <div class="bg-white shadow rounded p-1 flex flex-col">
@@ -701,51 +723,63 @@ data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y') : '
                 </div>
             </div>
 
-          {{-- KOTAK UTAMA UNTUK MATERIAL HENKATEN (Ukuran Disesuaikan) --}}
-<div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
-     style="width: 220px;"
-     onclick="showHenkatenDetail({{ $henkaten->id }})"
-     {{-- Add all necessary data attributes for the modal here --}}
-     data-henkaten-id="{{ $henkaten->id }}"
-     data-current-part-no="{{ $henkaten->current_part_no ?? 'N/A' }}"
-     data-current-part-desc="{{ $henkaten->current_part_desc ?? 'N/A' }}"
-     data-new-part-no="{{ $henkaten->new_part_no ?? 'N/A' }}"
-     data-new-part-desc="{{ $henkaten->new_part_desc ?? 'N/A' }}"
-     data-serial-start="{{ $henkaten->serial_start ?? 'N/A' }}"
-     data-serial-end="{{ $henkaten->serial_end ?? 'N/A' }}"
-     data-effective-date="{{ $henkaten->effective_date->format('d/M/Y') }}"
-     data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/M/Y') : 'Selanjutnya' }}">
-
-    {{-- 1. CURRENT & NEW PART --}}
-    <div class="grid grid-cols-2 gap-1">
-        {{-- CURRENT --}}
-        <div class="bg-white shadow rounded p-1 text-center">
-            <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
-            <p class="text-[7px]"><span class="font-semibold">PART NO:</span> {{ $henkaten->current_part_no ?? 'N/A' }}</p>
-            <p class="text-[7px]"><span class="font-semibold">DESC:</span> {{ $henkaten->current_part_desc ?? 'N/A' }}</p>
-        </div>
-        {{-- NEW --}}
-        <div class="bg-white shadow rounded p-1 text-center">
-            <h3 class="text-[8px] font-bold mb-0.5 text-red-600">NEW PART</h3>
-            <p class="text-[7px]"><span class="font-semibold">PART NO:</span> {{ $henkaten->new_part_no ?? 'N/A' }}</p>
-            <p class="text-[7px]"><span class="font-semibold">DESC:</span> {{ $henkaten->new_part_desc ?? 'N/A' }}</p>
-        </div>
-    </div>
-
-    {{-- 2. SERIAL NUMBER --}}
-    <div class="grid grid-cols-2 gap-1">
-        <div class="bg-blue-400 text-center py-0.5 rounded">
-            <span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_start ?? 'N/A' }}</span>
-        </div>
-        <div class="bg-blue-400 text-center py-0.5 rounded">
-            <span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_end ?? 'N/A' }}</span>
-        </div>
-    </div>
-
-    {{-- 3. TANGGAL AKTIF --}}
-    <div class="flex justify-center">
-        <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
-            ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+          {{-- ============================================= --}}
+    {{-- MATERIAL HENKATEN CARD SECTION (UPDATED) --}}
+    {{-- ============================================= --}}
+    <div class="border-t mt-2 pt-2 overflow-x-auto scrollbar-hide">
+        <div class="flex justify-center gap-3 p-2">
+            {{-- This should be inside a loop like: @foreach($materialHenkatens as $henkaten) --}}
+            @if(isset($materialHenkatens) && $materialHenkatens->isNotEmpty())
+                @foreach($materialHenkatens as $henkaten)
+                    <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
+                         style="width: 220px;"
+                         {{-- LOGIC ADDED: This now calls the Man Power modal function --}}
+                         onclick="showHenkatenDetail({{ $henkaten->id }})"
+                         data-henkaten-id="{{ $henkaten->id }}"
+                         {{-- NOTE: These data attributes are placeholders. --}}
+                         data-nama="Part No: {{ $henkaten->current_part_no ?? 'N/A' }}"
+                         data-nama-after="Part No: {{ $henkaten->new_part_no ?? 'N/A' }}"
+                         data-station="{{ $henkaten->station->station_name ?? 'Material Station' }}"
+                         data-shift="-"
+                         data-keterangan="{{ $henkaten->new_part_desc ?? 'Material Change' }}"
+                         data-line-area="-"
+                         data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
+                         data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
+                         data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
+                         data-serial-number-start="{{ $henkaten->serial_start ?? '-' }}"
+                         data-serial-number-end="{{ $henkaten->serial_end ?? '-' }}"
+                         data-time-start="-"
+                         data-time-end="-">
+                         
+                        {{-- 1. CURRENT & NEW PART --}}
+                        <div class="grid grid-cols-2 gap-1">
+                            <div class="bg-white shadow rounded p-1 text-center">
+                                <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
+                                <p class="text-[7px]"><span class="font-semibold">PART NO:</span> {{ $henkaten->current_part_no ?? 'N/A' }}</p>
+                                <p class="text-[7px]"><span class="font-semibold">DESC:</span> {{ $henkaten->current_part_desc ?? 'N/A' }}</p>
+                            </div>
+                            <div class="bg-white shadow rounded p-1 text-center">
+                                <h3 class="text-[8px] font-bold mb-0.5 text-red-600">NEW PART</h3>
+                                <p class="text-[7px]"><span class="font-semibold">PART NO:</span> {{ $henkaten->new_part_no ?? 'N/A' }}</p>
+                                <p class="text-[7px]"><span class="font-semibold">DESC:</span> {{ $henkaten->new_part_desc ?? 'N/A' }}</p>
+                            </div>
+                        </div>
+                        {{-- 2. SERIAL NUMBER --}}
+                        <div class="grid grid-cols-2 gap-1">
+                            <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_start ?? 'N/A' }}</span></div>
+                            <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_end ?? 'N/A' }}</span></div>
+                        </div>
+                        {{-- 3. TANGGAL AKTIF --}}
+                        <div class="flex justify-center">
+                            <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
+                                ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            @else
+                <div class="text-center text-xs text-gray-400 py-4">No Active Material Henkaten</div>
+            @endif
         </div>
     </div>
 </div>

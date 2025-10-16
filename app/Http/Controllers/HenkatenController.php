@@ -3,19 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\ManPower;
-use Illuminate\Http\Request;
 use App\Models\ManPowerHenkaten;
 use App\Models\Station;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class HenkatenController extends Controller
 {
-    // ===================================================================
-    // BAGIAN 1: FUNGSI UNTUK FORM PEMBUATAN HENKATEN (HALAMAN PERTAMA)
-    // ===================================================================
+    // ==============================================================
+    // BAGIAN 1: FORM PEMBUATAN HENKATEN BARU
+    // ==============================================================
 
     /**
      * Menampilkan form untuk membuat data Henkaten baru.
-     * (Fungsi 'form' Anda, diganti nama menjadi 'create' agar sesuai standar Laravel)
      */
     public function create()
     {
@@ -25,7 +26,6 @@ class HenkatenController extends Controller
 
     /**
      * Menyimpan data baru dari form create_henkaten.
-     * (Fungsi 'store' Anda, sudah bagus)
      */
     public function store(Request $request)
     {
@@ -33,8 +33,8 @@ class HenkatenController extends Controller
             'shift'              => 'required|string',
             'nama'               => 'required|string',
             'nama_after'         => 'required|string',
-            'man_power_id'       => 'required|integer|exists:man_powers,id',
-            'man_power_id_after' => 'required|integer|exists:man_powers,id',
+            'man_power_id'       => 'required|integer|exists:man_power,id',
+            'man_power_id_after' => 'required|integer|exists:man_power,id',
             'station_id'         => 'required|integer|exists:stations,id',
             'keterangan'         => 'nullable|string',
             'line_area'          => 'required|string',
@@ -45,83 +45,108 @@ class HenkatenController extends Controller
             'time_end'           => 'nullable|date_format:H:i|after_or_equal:time_start',
         ]);
 
-        // Hapus 'serial_number' dari validasi karena akan diisi di halaman terpisah
-        // 'serial_number_start' => 'nullable|string|max:255',
-        // 'serial_number_end'   => 'nullable|string|max:255',
+        try {
+            DB::beginTransaction();
 
-        $lampiranPath = null;
-        if ($request->hasFile('lampiran')) {
-            $namaFile = time() . '_' . $request->file('lampiran')->getClientOriginalName();
-            $tujuan = public_path('storage/lampiran_henkaten');
-            if (!file_exists($tujuan)) {
-                mkdir($tujuan, 0777, true);
+            // ===========================
+            // Upload file jika ada lampiran
+            // ===========================
+            $lampiranPath = null;
+            if ($request->hasFile('lampiran')) {
+                $lampiranPath = $request->file('lampiran')->store('lampiran_henkaten', 'public');
             }
-            $request->file('lampiran')->move($tujuan, $namaFile);
-            $lampiranPath = 'lampiran_henkaten/' . $namaFile;
+
+            // Gabungkan data yang akan disimpan
+            $dataToCreate = $validated;
+            $dataToCreate['lampiran'] = $lampiranPath;
+
+            // Simpan ke database
+            $henkaten = ManPowerHenkaten::create($dataToCreate);
+
+            // ===========================
+            // Update status Man Power lama
+            // ===========================
+            $manPowerAsli = ManPower::find($request->man_power_id);
+            if ($manPowerAsli) {
+                $manPowerAsli->status = 'henkaten';
+                $manPowerAsli->save();
+            }
+
+            // ===========================
+            // Opsional: update status pengganti jadi aktif
+            // ===========================
+            $manPowerAfter = ManPower::find($request->man_power_id_after);
+            if ($manPowerAfter) {
+                $manPowerAfter->status = 'aktif';
+                $manPowerAfter->save();
+            }
+
+            DB::commit();
+
+            return redirect()->route('henkaten.create')
+                ->with('success', 'Data Henkaten berhasil dibuat. Selanjutnya isi Serial Number di halaman Man Power Start.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()]);
         }
-
-        // Gabungkan path lampiran ke data yang akan disimpan
-        $dataToCreate = $validated;
-        $dataToCreate['lampiran'] = $lampiranPath;
-
-        // Simpan data ke database
-        ManPowerHenkaten::create($dataToCreate);
-
-        // Update status man power asli
-        $manPowerAsli = ManPower::find($request->man_power_id);
-        if ($manPowerAsli) {
-            $manPowerAsli->status = 'henkaten';
-            $manPowerAsli->save();
-        }
-
-        // Redirect kembali ke form dengan pesan sukses
-        return redirect()->route('henkaten.create')
-            ->with('success', 'Data Henkaten berhasil dibuat. Selanjutnya isi Serial Number di halaman Man Power Start.');
     }
 
-    // ===================================================================
-    // BAGIAN 2: FUNGSI UNTUK HALAMAN START/MANPOWER (HALAMAN KEDUA)
-    // ===================================================================
+    // ==============================================================
+    // BAGIAN 2: HALAMAN START / MENGISI SERIAL NUMBER
+    // ==============================================================
 
     /**
-     * BARU: Menampilkan halaman untuk mengisi Serial Number.
+     * Menampilkan halaman untuk mengisi Serial Number.
      */
     public function showStartPage()
     {
-        // Ambil data henkaten yang BELUM diisi serial number-nya.
-        // Gunakan `with('station')` untuk mengambil relasi agar lebih efisien (Eager Loading).
         $pendingHenkatens = ManPowerHenkaten::with('station')
-                                            ->whereNull('serial_number_start')
-                                            ->latest()
-                                            ->get();
+            ->whereNull('serial_number_start')
+            ->latest()
+            ->get();
 
-        // Kirim data ke view baru
-        return view('manpower.create_henkaten_start', ['henkatens' => $pendingHenkatens]);
+        return view('manpower.create_henkaten_start', [
+            'henkatens' => $pendingHenkatens,
+        ]);
     }
 
     /**
-     * BARU: Mengupdate Serial Number dari halaman start_henkaten.
-     * (Fungsi 'updateAll' Anda, diganti nama agar lebih deskriptif)
+     * Mengupdate Serial Number dari halaman start_henkaten.
      */
     public function updateStartData(Request $request)
     {
         $updates = $request->input('updates', []);
 
-        foreach ($updates as $id => $data) {
-            // Cek jika input tidak kosong untuk menghindari update data kosong
-            if (!empty($data['serial_number_start']) && !empty($data['serial_number_end'])) {
+        try {
+            foreach ($updates as $id => $data) {
                 $henkaten = ManPowerHenkaten::find($id);
 
-                if ($henkaten) {
+                if ($henkaten && (!empty($data['serial_number_start']) || !empty($data['serial_number_end']))) {
                     $henkaten->update([
-                        'serial_number_start' => $data['serial_number_start'],
-                        'serial_number_end'   => $data['serial_number_end'],
+                        'serial_number_start' => $data['serial_number_start'] ?? $henkaten->serial_number_start,
+                        'serial_number_end'   => $data['serial_number_end'] ?? $henkaten->serial_number_end,
                     ]);
                 }
             }
-        }
 
-        return redirect()->route('henkaten.start.page')
-            ->with('success', 'Data Serial Number berhasil diperbarui!');
+            return redirect()->route('henkaten.start.page')
+                ->with('success', 'Data Serial Number berhasil diperbarui!');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui serial number: ' . $e->getMessage()]);
+        }
     }
+
+    public function searchManPower(Request $request)
+{
+    $query = $request->get('q', '');
+
+    $results = ManPower::where('nama', 'like', "%{$query}%")
+        ->select('id', 'nama')
+        ->orderBy('nama', 'asc')
+        ->limit(10)
+        ->get();
+
+    return response()->json($results);
+}
+
 }

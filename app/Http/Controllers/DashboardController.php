@@ -8,73 +8,71 @@ use App\Models\Method;
 use App\Models\Machine;
 use App\Models\Material;
 use App\Models\Station;
-use Illuminate\Support\Facades\DB;
+// Impor model ManPowerHenkaten
+use App\Models\ManPowerHenkaten; 
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // ================= FOKUS PADA MAN POWER =================
-        // 1. Eager load relasi 'station' untuk efisiensi query
+        // 1. Tentukan Shift Secara Dinamis berdasarkan waktu saat ini
+        $now = Carbon::now();
+        // Kode BARU (Dengan asumsi Shift B adalah shift siang 07:00-19:00)
+$currentShift = ($now->hour >= 7 && $now->hour < 19) ? 'Shift B' : 'Shift A';
+
+        // ================= SUMBER DATA HENKATEN =================
+        // Ambil data Henkaten Man Power yang sedang aktif sebagai satu-satunya sumber data
+        $activeManPowerHenkatens = ManPowerHenkaten::with('station')
+            ->where('effective_date', '<=', $now)
+            ->where(function ($query) use ($now) {
+                $query->where('end_date', '>=', $now)
+                      ->orWhereNull('end_date');
+            })
+            ->latest('effective_date')
+            ->get();
+        
+        // ================= PENGGUNAAN DATA HENKATEN UNTUK SEMUA SEKSI =================
+        // Gunakan data Man Power Henkaten untuk section lainnya (UNTUK SEMENTARA)
+        $methodHenkatens   = $activeManPowerHenkatens;
+        $machineHenkatens  = $activeManPowerHenkatens;
+        $materialHenkatens = $activeManPowerHenkatens;
+
+        // ================= PENGAMBILAN DATA REGULER =================
         $manPower = ManPower::with('station')->get();
-        
-        // 2. Kelompokkan data manPower berdasarkan station_id untuk kemudahan di view
         $groupedManPower = $manPower->groupBy('station_id');
-
-        // 3. Siapkan data spesifik untuk pergantian shift langsung di controller
-        // Stasiun 4
-        $station4Workers = $groupedManPower->get(4, collect()); // Gunakan collect() kosong sebagai default
-        $shiftAWorker4 = $station4Workers->where('shift', 'Shift A')->first();
-        $shiftBWorker4 = $station4Workers->where('shift', 'Shift B')->first();
         
-        // Stasiun 7
-        $station7Workers = $groupedManPower->get(7, collect());
-        $shiftAWorker7 = $station7Workers->where('shift', 'Shift A')->first();
-        $shiftBWorker7 = $station7Workers->where('shift', 'Shift B')->first();
-        // =========================================================
-
-        $methods   = Method::with('station')->paginate(5); 
+        $methods = Method::with('station')->paginate(5);
+        
+        // Gunakan Eloquent untuk konsistensi, bukan DB::table()
+        $machines = Machine::with('station')->get();
+        
         $materials = Material::all();
         $stations  = Station::all();
-        
-        // JOIN machines dengan stations
-        $machines = DB::table('machines')
-            ->join('stations', 'machines.station_id', '=', 'stations.id')
-            ->select(
-                'machines.*',
-                'stations.station_name'
-            )
-            ->get();
-
-        // Contoh current & new part (sementara ambil dari materials)
-        $currentPart = $materials->first();
-        $newPart     = $materials->skip(1)->first();
-        $currentShift = 'Shift A';
-
-        // Mapping station dengan status (sementara default NORMAL)
+            
+        // Mapping status material (bisa dikembangkan jika perlu)
         $stationStatuses = $stations->map(function ($station) {
             return [
-                'id'    => $station->id,
-                'name'  => $station->station_name,
-                'status'=> 'NORMAL', // default
+                'id'     => $station->id,
+                'name'   => $station->station_name,
+                'status' => 'NORMAL', // default
             ];
         });
 
+        // Kirim semua variabel yang relevan ke view
         return view('dashboard.index', compact(
-            'manPower',         // Tetap dikirim jika masih digunakan di tempat lain
-            'groupedManPower',  // Data yang sudah dikelompokkan
-            'shiftAWorker4',    // Data siap pakai untuk shift change
-            'shiftBWorker4',
-            'shiftAWorker7',
-            'shiftBWorker7',
-            'methods', 
-            'machines', 
-            'materials', 
-            'stations', 
+            'groupedManPower',
+            'currentShift',
+            'methods',
+            'machines',
+            'materials',
+            'stations',
             'stationStatuses',
-            'currentPart', 
-            'newPart', 
-            'currentShift'
+            // Kirim semua variabel Henkaten yang sumber datanya sama
+            'activeManPowerHenkatens', // Untuk Man Power
+            'methodHenkatens',         // Untuk Method
+            'machineHenkatens',        // Untuk Machine
+            'materialHenkatens'        // Untuk Material
         ));
     }
 }
