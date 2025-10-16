@@ -8,6 +8,7 @@ use App\Models\Station;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class HenkatenController extends Controller
 {
@@ -101,7 +102,7 @@ class HenkatenController extends Controller
     public function showStartPage()
     {
         $pendingHenkatens = ManPowerHenkaten::with('station')
-            ->whereNull('serial_number_start')
+            ->whereNull('serial_number_start') // Logika ini sudah benar
             ->latest()
             ->get();
 
@@ -115,19 +116,35 @@ class HenkatenController extends Controller
      */
     public function updateStartData(Request $request)
     {
+        // DITAMBAHKAN: Validasi input 'updates'
+        $validator = Validator::make($request->all(), [
+            'updates'=> 'required|array',
+            'updates.*.serial_number_start' => 'nullable|string|max:255', // Sesuaikan max length
+            'updates.*.serial_number_end'=> 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
         $updates = $request->input('updates', []);
 
+        // DITAMBAHKAN: Gunakan DB::transaction untuk keamanan data
         try {
-            foreach ($updates as $id => $data) {
-                $henkaten = ManPowerHenkaten::find($id);
+            DB::transaction(function () use ($updates) {
+                foreach ($updates as $id => $data) {
+                    // Pastikan ID ada di database sebelum update
+                    $henkaten = ManPowerHenkaten::find($id);
 
-                if ($henkaten && (!empty($data['serial_number_start']) || !empty($data['serial_number_end']))) {
-                    $henkaten->update([
-                        'serial_number_start' => $data['serial_number_start'] ?? $henkaten->serial_number_start,
-                        'serial_number_end'   => $data['serial_number_end'] ?? $henkaten->serial_number_end,
-                    ]);
+                    // Hanya update jika data henkaten ditemukan dan ada input SN
+                    if ($henkaten && (!empty($data['serial_number_start']) || !empty($data['serial_number_end']))) {
+                        $henkaten->update([
+                            'serial_number_start' => $data['serial_number_start'] ?? $henkaten->serial_number_start,
+                            'serial_number_end'=> $data['serial_number_end'] ?? $henkaten->serial_number_end,
+                        ]);
+                    }
                 }
-            }
+            });
 
             return redirect()->route('henkaten.start.page')
                 ->with('success', 'Data Serial Number berhasil diperbarui!');
@@ -135,7 +152,6 @@ class HenkatenController extends Controller
             return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui serial number: ' . $e->getMessage()]);
         }
     }
-
     public function searchManPower(Request $request)
 {
     $query = $request->get('q', '');

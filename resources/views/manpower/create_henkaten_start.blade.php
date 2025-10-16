@@ -49,14 +49,14 @@
                                                 <input type="text"
                                                        name="updates[{{ $item->id }}][serial_number_start]"
                                                        class="w-full border-gray-300 rounded-md shadow-sm"
-                                                       placeholder="Isi SN Start...">
+                                                       >
                                             </td>
                                             <td class="py-2 px-4 border-b">
                                                 {{-- Input untuk Serial Number End --}}
                                                 <input type="text"
                                                        name="updates[{{ $item->id }}][serial_number_end]"
                                                        class="w-full border-gray-300 rounded-md shadow-sm"
-                                                       placeholder="Isi SN End...">
+                                                       >
                                             </td>
                                         </tr>
                                     @empty

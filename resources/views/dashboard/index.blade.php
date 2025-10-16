@@ -256,14 +256,7 @@
 {{-- BAGIAN BAWAH: DETAIL HENKATEN (SATU KOTAK PER HENKATEN) --}}
 {{-- ======================================================================= --}}
 <div class="border-t mt-2 pt-2">
-    @php
-        $allActiveHenkatens = \App\Models\ManPowerHenkaten::where('effective_date', '<=', now())
-            ->where(function($query) {
-                $query->where('end_date', '>=', now())->orWhereNull('end_date');
-            })
-            ->get();
-    @endphp
-
+   
     <div class="flex items-center gap-1">
         <button id="scrollLeftShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -272,9 +265,9 @@
         </button>
 
         <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
-            @if($allActiveHenkatens->isNotEmpty())
+          @if($activeManPowerHenkatens->isNotEmpty())
                 <div class="flex justify-center gap-3 min-w-full px-2">
-                    @foreach($allActiveHenkatens as $henkaten)
+                   @foreach($activeManPowerHenkatens as $henkaten)
                         @php
                             $startDate = strtoupper($henkaten->effective_date->format('j/M/y'));
                             $endDate = $henkaten->end_date ? strtoupper($henkaten->end_date->format('j/M/y')) : 'SELANJUTNYA';
