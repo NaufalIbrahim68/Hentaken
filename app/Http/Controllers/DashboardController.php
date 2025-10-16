@@ -17,14 +17,24 @@ class DashboardController extends Controller
     {
         // 1. Tentukan Shift Secara Dinamis berdasarkan waktu saat ini
         $now = Carbon::now();
-        $currentShift = ($now->hour >= 7 && $now->hour < 19) ? 'Shift B' : 'Shift A';
+        $time = $now->format('H:i');
+        $currentShift = 'Istirahat'; // Nilai default untuk jam istirahat/pergantian shift
+
+        // Shift B (sebelumnya Shift 2): dimulai dari pukul 07.00 sampai 19.00
+        if ($time >= '07:00' && $time <= '19:00') {
+            $currentShift = 'Shift B';
+        }
+        // Shift A (sebelumnya Shift 1): dimulai dari pukul 19.30 sampai 06.30
+        else if ($time >= '19:30' || $time <= '06:30') {
+            $currentShift = 'Shift A';
+        }
 
         // ================= SUMBER DATA HENKATEN =================
         // Ambil Henkaten yang belum berakhir, tanpa peduli kapan mulainya
         $activeManPowerHenkatens = ManPowerHenkaten::with('station')
             ->where(function ($query) use ($now) {
                 $query->where('end_date', '>=', $now)
-                      ->orWhereNull('end_date');
+                    ->orWhereNull('end_date');
             })
             ->latest('effective_date')
             ->get();
@@ -39,22 +49,20 @@ class DashboardController extends Controller
         $manPower = ManPower::with('station')->get();
 
         // Buat daftar ID Man Power yang sedang dalam proses Henkaten
-     $henkatenManPowerIds = $activeManPowerHenkatens
-    ->pluck('man_power_id')
-    ->merge($activeManPowerHenkatens->pluck('man_power_id_after'))
-    ->filter()
-    ->unique()
-    ->toArray();
+        $henkatenManPowerIds = $activeManPowerHenkatens
+            ->pluck('man_power_id')
+            ->merge($activeManPowerHenkatens->pluck('man_power_id_after'))
+            ->filter()
+            ->unique()
+            ->toArray();
 
-foreach ($manPower as $person) {
-    if (in_array($person->id, $henkatenManPowerIds)) {
-        $person->setAttribute('status', 'Henkaten');
-    } else {
-        $person->setAttribute('status', 'NORMAL');
-    }
-}
-
-        
+        foreach ($manPower as $person) {
+            if (in_array($person->id, $henkatenManPowerIds)) {
+                $person->setAttribute('status', 'Henkaten');
+            } else {
+                $person->setAttribute('status', 'NORMAL');
+            }
+        }
 
         // ================= PERSIAPAN DATA UNTUK VIEW (SETELAH LOOP) =================
         // DIPINDAHKAN KELUAR DARI LOOP: Lakukan grouping SETELAH semua status diperbarui
@@ -90,3 +98,4 @@ foreach ($manPower as $person) {
         ));
     }
 }
+
