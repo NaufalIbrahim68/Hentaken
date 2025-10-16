@@ -8,68 +8,85 @@ use App\Models\Method;
 use App\Models\Machine;
 use App\Models\Material;
 use App\Models\Station;
-// Impor model ManPowerHenkaten
-use App\Models\ManPowerHenkaten; 
+use App\Models\ManPowerHenkaten;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-   // DashboardController.php
+    public function index()
+    {
+        // 1. Tentukan Shift Secara Dinamis berdasarkan waktu saat ini
+        $now = Carbon::now();
+        $currentShift = ($now->hour >= 7 && $now->hour < 19) ? 'Shift B' : 'Shift A';
 
-public function index()
-{
-    // 1. Tentukan Shift Secara Dinamis berdasarkan waktu saat ini
-    $now = Carbon::now();
-    $currentShift = ($now->hour >= 7 && $now->hour < 19) ? 'Shift B' : 'Shift A';
+        // ================= SUMBER DATA HENKATEN =================
+        // Ambil Henkaten yang belum berakhir, tanpa peduli kapan mulainya
+        $activeManPowerHenkatens = ManPowerHenkaten::with('station')
+            ->where(function ($query) use ($now) {
+                $query->where('end_date', '>=', $now)
+                      ->orWhereNull('end_date');
+            })
+            ->latest('effective_date')
+            ->get();
 
-    // ================= SUMBER DATA HENKATEN (SUDAH DISESUAIKAN) =================
-    // Ambil Henkaten yang belum berakhir, tanpa peduli kapan mulainya
-    $activeManPowerHenkatens = ManPowerHenkaten::with('station')
-        ->where(function ($query) use ($now) {
-            $query->where('end_date', '>=', $now)
-                  ->orWhereNull('end_date');
-        })
-        ->latest('effective_date')
-        ->get();
-       
-    
-    // ================= PENGGUNAAN DATA HENKATEN UNTUK SEMUA SEKSI =================
-    $methodHenkatens   = $activeManPowerHenkatens;
-    $machineHenkatens  = $activeManPowerHenkatens;
-    $materialHenkatens = $activeManPowerHenkatens;
+        // ================= PENGGUNAAN DATA HENKATEN UNTUK SEMUA SEKSI =================
+        $methodHenkatens   = $activeManPowerHenkatens;
+        $machineHenkatens  = $activeManPowerHenkatens;
+        $materialHenkatens = $activeManPowerHenkatens;
 
-    // ================= PENGAMBILAN DATA REGULER =================
-    $manPower = ManPower::with('station')->get();
-    $groupedManPower = $manPower->groupBy('station_id');
-    
-    $methods = Method::with('station')->paginate(5);
-    
-    $machines = Machine::with('station')->get();
-    
-    $materials = Material::all();
-    $stations  = Station::all();
-        
-    $stationStatuses = $stations->map(function ($station) {
-        return [
-            'id'     => $station->id,
-            'name'   => $station->station_name,
-            'status' => 'NORMAL', // default
-        ];
-    });
+        // ================= PENGAMBILAN & SINKRONISASI DATA MAN POWER =================
+        // Ambil semua Man Power HANYA SEKALI
+        $manPower = ManPower::with('station')->get();
 
-    // Kirim semua variabel yang relevan ke view
-    return view('dashboard.index', compact(
-        'groupedManPower',
-        'currentShift',
-        'methods',
-        'machines',
-        'materials',
-        'stations',
-        'stationStatuses',
-        'activeManPowerHenkatens',
-        'methodHenkatens',
-        'machineHenkatens',
-        'materialHenkatens'
-    ));
+        // Buat daftar ID Man Power yang sedang dalam proses Henkaten
+     $henkatenManPowerIds = $activeManPowerHenkatens
+    ->pluck('man_power_id')
+    ->merge($activeManPowerHenkatens->pluck('man_power_id_after'))
+    ->filter()
+    ->unique()
+    ->toArray();
+
+foreach ($manPower as $person) {
+    if (in_array($person->id, $henkatenManPowerIds)) {
+        $person->setAttribute('status', 'Henkaten');
+    } else {
+        $person->setAttribute('status', 'NORMAL');
+    }
 }
+
+        
+
+        // ================= PERSIAPAN DATA UNTUK VIEW (SETELAH LOOP) =================
+        // DIPINDAHKAN KELUAR DARI LOOP: Lakukan grouping SETELAH semua status diperbarui
+        $groupedManPower = $manPower->groupBy('station_id');
+
+        // DIPINDAHKAN KELUAR DARI LOOP: Ambil data lain hanya sekali
+        $methods = Method::with('station')->paginate(5);
+        $machines = Machine::with('station')->get();
+        $materials = Material::all();
+        $stations  = Station::all();
+
+        $stationStatuses = $stations->map(function ($station) {
+            return [
+                'id'     => $station->id,
+                'name'   => $station->station_name,
+                'status' => 'NORMAL', // default
+            ];
+        });
+
+        // DIPINDAHKAN KELUAR DARI LOOP: Kirim semua variabel ke view di akhir
+        return view('dashboard.index', compact(
+            'groupedManPower',
+            'currentShift',
+            'methods',
+            'machines',
+            'materials',
+            'stations',
+            'stationStatuses',
+            'activeManPowerHenkatens',
+            'methodHenkatens',
+            'machineHenkatens',
+            'materialHenkatens'
+        ));
+    }
 }
