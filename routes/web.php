@@ -59,6 +59,9 @@ Route::prefix('manpower')->name('manpower.')->group(function () {
     Route::delete('/henkaten/{id}', [ManPowerController::class, 'destroy'])->name('henkaten.destroy');
 });
 
+Route::get('/get-stations-by-line', [HenkatenController::class, 'getStationsByLine'])
+     ->name('stations.by_line');
+
 // Master Data Material
 Route::resource('materials', MaterialController::class);
 

@@ -22,7 +22,17 @@ class HenkatenController extends Controller
     public function create()
     {
         $stations = Station::all();
-        return view('manpower.create_henkaten', compact('stations'));
+        $lineAreas = Station::whereNotNull('line_area')
+                        ->orderBy('line_area', 'asc')
+                        ->pluck('line_area')
+                        ->unique();
+
+                        $stations = [];
+    if ($oldLineArea = old('line_area')) {
+        // Jika ada error validasi, isi $stations berdasarkan line_area yang lama
+        $stations = Station::where('line_area', $oldLineArea)->get();
+    }
+        return view('manpower.create_henkaten', compact('stations','lineAreas'));
     }
 
     /**
@@ -163,6 +173,22 @@ class HenkatenController extends Controller
         ->get();
 
     return response()->json($results);
+}
+
+public function getStationsByLine(Request $request)
+{
+    // 1. Validasi input
+    $request->validate([
+        'line_area' => 'required|string',
+    ]);
+
+    // 2. Ambil data dari database
+    $stations = Station::where('line_area', $request->line_area)
+                       ->orderBy('station_name', 'asc')
+                       ->get(['id', 'station_name']); // Hanya ambil kolom yang perlu
+
+    // 3. Kembalikan sebagai JSON
+    return response()->json($stations);
 }
 
 }

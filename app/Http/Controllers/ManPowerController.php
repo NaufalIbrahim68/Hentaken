@@ -106,8 +106,12 @@ class ManPowerController extends Controller
     {
         $man_power = ManPower::findOrFail($id);
         $stations = Station::all();
+        $lineAreas = Station::whereNotNull('line_area')
+                        ->orderBy('line_area', 'asc')
+                        ->pluck('line_area')
+                        ->unique();
         
-        return view('manpower.create_henkaten', compact('man_power', 'stations'));
+        return view('manpower.create_henkaten', compact('man_power', 'stations','lineAreas'));
     }
 
 
