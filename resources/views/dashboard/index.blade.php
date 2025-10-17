@@ -1,3 +1,4 @@
+
 <x-app-layout>
 
 
@@ -192,30 +193,20 @@
         <div id="manPowerTableContainer" class="mx-8 overflow-x-auto scrollbar-hide scroll-smooth">
             <div class="flex gap-6 py-2">
                 @foreach($groupedManPower as $stationId => $stationWorkers)
-                    @php
+                 @php
     // Cari pekerja untuk shift saat ini
     $currentWorker = $stationWorkers->where('shift', $currentShift)->first();
     
     // Jika tidak ada pekerja di shift ini untuk stasiun ini, lewati
     if (!$currentWorker) continue;
 
-    // Cek apakah pekerja saat ini memiliki Henkaten yang aktif
-    $activeHenkaten = \App\Models\ManPowerHenkaten::where('man_power_id', $currentWorker->id)
-        ->where('effective_date', '<=', now())
-        ->where(function($q) {
-            $q->where('end_date', '>=', now())->orWhereNull('end_date');
-        })
-        ->latest('effective_date')
-        ->first();
-
-    $isHenkaten = (bool)$activeHenkaten;
+    // ==========================================================
+    // PERBAIKAN: Gunakan status yang sudah dihitung di Controller
+    // Tidak perlu query database baru
+    // ==========================================================
+    $isHenkaten = ($currentWorker->status == 'Henkaten'); 
     
-    // ==========================================================
-    // PERUBAHAN DI SINI: Selalu tampilkan nama pekerja asli
-    // ==========================================================
     $displayName = $currentWorker->nama; 
-    
-    // Status dan warna tetap ditentukan oleh adanya henkaten
     $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
     $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
     $stationCode = $currentWorker->station ? $currentWorker->station->station_code : 'ST-' . $stationId;

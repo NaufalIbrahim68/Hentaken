@@ -13,20 +13,24 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+   public function index()
     {
         // 1. Tentukan Shift Secara Dinamis berdasarkan waktu saat ini
         $now = Carbon::now();
         $time = $now->format('H:i');
-        $currentShift = 'Istirahat'; // Nilai default untuk jam istirahat/pergantian shift
 
-        // Shift B (sebelumnya Shift 2): dimulai dari pukul 07.00 sampai 19.00
-        if ($time >= '07:00' && $time <= '19:00') {
-            $currentShift = 'Shift B';
+        // TENTUKAN NILAI SHIFT SESUAI DATABASE ANDA
+      $shiftA_Value = 'Shift A';
+$shiftB_Value = 'Shift B';
+
+        // Shift B: 07:00 - 19:00
+        if ($time >= '07:00' && $time < '19:00') { // Gunakan '<'
+            $currentShift = $shiftB_Value;
         }
-        // Shift A (sebelumnya Shift 1): dimulai dari pukul 19.30 sampai 06.30
-        else if ($time >= '19:30' || $time <= '06:30') {
-            $currentShift = 'Shift A';
+        // Waktu Istirahat (19:00 - 19:30) ATAU Shift A (19:30 - 06:30) ATAU Istirahat Pagi (06:30 - 07:00)
+        // Semua ini akan kita anggap sebagai 'Shift A'
+        else {
+            $currentShift = $shiftA_Value;
         }
 
         // ================= SUMBER DATA HENKATEN =================

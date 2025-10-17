@@ -29,8 +29,8 @@
                             <table class="min-w-full bg-white border">
                                 <thead class="bg-gray-200">
                                     <tr>
-                                        <th class="py-2 px-4 border-b">Nama (Before)</th>
-                                        <th class="py-2 px-4 border-b">Nama (After)</th>
+                                        <th class="py-2 px-4 border-b">Name (Before)</th>
+                                        <th class="py-2 px-4 border-b">Name (After)</th>
                                         <th class="py-2 px-4 border-b">Station</th>
                                         <th class="py-2 px-4 border-b">Shift</th>
                                         <th class="py-2 px-4 border-b text-center">Serial Number Start</th>
