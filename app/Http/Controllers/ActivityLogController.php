@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\ManPowerHenkaten; // <-- 1. PASTIKAN IMPORT INI
+use Illuminate\Http\Request; // <-- 1. PASTIKAN ADA INI
+use App\Models\ManPowerHenkaten; 
 
 class ActivityLogController extends Controller
 {
@@ -12,20 +12,24 @@ class ActivityLogController extends Controller
     /**
      * Menampilkan log untuk Man Power Henkaten.
      */
-    public function manpower()
-    {
-        // 2. Ambil data, sertakan relasi 'station', urutkan terbaru
-        $logs = ManPowerHenkaten::with('station')
-                                ->latest('updated_at') // Tampilkan yang terbaru di atas
-                                ->paginate(10); // Gunakan paginate untuk data banyak
+    public function manpower(Request $request)
+{
+    $created_date = $request->input('created_date');
 
-        // 3. Kirim data ke view
-        // Perhatikan: nama view 'manpower.activity-log' sesuai
-        // dengan lokasi file: /resources/views/manpower/activity-log.blade.php
-        return view('manpower.activity-log', [
-            'logs' => $logs
-        ]);
+    $query = \App\Models\ManPowerHenkaten::with('station');
+
+    if ($created_date) {
+        $query->whereDate('created_at', $created_date);
     }
+
+    $logs = $query->latest('created_at')
+                  ->paginate(10)
+                  ->appends($request->query());
+
+    return view('manpower.activity-log', [
+        'logs' => $logs,
+        'created_date' => $created_date,
+    ]);
+}
     
-    // ... method Anda yang lain ...
 }
