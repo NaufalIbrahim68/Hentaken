@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ManPower;
 use App\Models\ManPowerHenkaten;
-use App\Models\MethodHenkaten; // Pastikan ini di-import
+use App\Models\MethodHenkaten; 
 use App\Models\Station;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -243,4 +243,30 @@ class HenkatenController extends Controller
                             ->get(['id', 'station_name']);
         return response()->json($stations);
     }
+
+    public function showMethodActivityLog(Request $request)
+    {
+        // Ambil tanggal filter dari request
+        $created_date = $request->input('created_date');
+
+        // Mulai query ke model MethodHenkaten (sudah di-import di atas)
+        // Gunakan eager loading 'station'
+        $query = MethodHenkaten::with('station'); 
+
+        // Jika ada filter tanggal, terapkan
+        if ($created_date) {
+            $query->whereDate('created_at', $created_date);
+        }
+
+        // Ambil data, urutkan dari yang terbaru, dan paginasi
+        // 'withQueryString()' akan otomatis menambahkan parameter filter (created_date)
+        // ke link pagination
+        $logs = $query->latest()->paginate(10)->appends($request->query());
+
+        // Kirim data ke view
+        // Pastikan 'activity_log.method' adalah path view blade Anda
+       return view('methods.activity-log', compact('logs', 'created_date'));
+    }
+    
+
 }

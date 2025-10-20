@@ -142,9 +142,9 @@
     <x-dropdown-link href="#">
         {{ __('Material') }}
     </x-dropdown-link>
-    <x-dropdown-link href="#">
-        {{ __('Method') }}
-    </x-dropdown-link>
+   <x-dropdown-link href="{{ route('activity.log.method') }}">
+    {{ __('Method') }}
+</x-dropdown-link>
 </x-dropdown>
 
             {{-- Mobile menu button --}}

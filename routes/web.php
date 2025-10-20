@@ -73,3 +73,6 @@ Route::prefix('activity-log')->name('activity.log.')->group(function () {
     Route::get('/material', [ActivityLogController::class, 'material'])->name('material');
     Route::get('/method', [ActivityLogController::class, 'method'])->name('method');
 });
+
+Route::get('/activity-log/method', [HenkatenController::class, 'showMethodActivityLog'])
+     ->name('activity.log.method');
