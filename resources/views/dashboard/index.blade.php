@@ -462,76 +462,220 @@
         {{ $methods->onEachSide(1)->links('vendor.pagination.compact') }}
     </div>
 
-    {{-- ============================================= --}}
-    {{-- METHOD HENKATEN CARD SECTION (UPDATED) --}}
-    {{-- ============================================= --}}
-    <div class="border-t mt-2 pt-2 overflow-x-auto scrollbar-hide">
-        <div class="flex justify-center gap-3 p-2">
-            {{-- This should be inside a loop like: @foreach($methodHenkatens as $henkaten) --}}
-            @if(isset($methodHenkatens) && $methodHenkatens->isNotEmpty())
-                @foreach($methodHenkatens as $henkaten)
-                    {{-- KOTAK UTAMA UNTUK SETIAP HENKATEN --}}
-                    <div class="flex-shrink-0 flex flex-col space-y-2 p-2 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
-                         style="width: 240px;"
-                         {{-- LOGIC ADDED: This now calls the Man Power modal function --}}
-                         onclick="showHenkatenDetail({{ $henkaten->id }})"
-                         data-henkaten-id="{{ $henkaten->id }}"
-                         {{-- NOTE: These data attributes are placeholders. You will need to map your Method Henkaten data to them. --}}
-                         data-nama="Method Change"
-                         data-nama-after="{{ $henkaten->new_method ?? 'N/A' }}"
-                         data-station="{{ $henkaten->new_station ?? 'N/A' }}"
-                         data-shift="-"
-                         data-keterangan="{{ $henkaten->keterangan ?? 'Method Details' }}"
-                         data-line-area="-"
-                         data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
-                         data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
-                         data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
-                         data-serial-number-start="{{ $henkaten->serial_start ?? '-' }}"
-                         data-serial-number-end="{{ $henkaten->serial_end ?? '-' }}"
-                         data-time-start="-"
-                         data-time-end="-">
+    {{-- ======================================================================= --}}
+{{-- BAGIAN BAWAH: DETAIL HENKATEN (METODE) --}}
+{{-- ======================================================================= --}}
+<div class="border-t mt-2 pt-2">
 
-                        {{-- 1. CURRENT & NEW METHOD --}}
-                        <div class="grid grid-cols-2 gap-1">
-                            {{-- CURRENT --}}
-                            <div class="bg-white shadow rounded p-1 text-center">
-                                <h3 class="text-[9px] font-bold mb-0.5">CURRENT METHOD</h3>
-                                <p class="text-[7px]"><span class="font-semibold">STATION :</span> {{ $henkaten->current_station ?? 'N/A' }}</p>
-                                <p class="text-[7px]"><span class="font-semibold">METHOD :</span> {{ $henkaten->current_method ?? 'N/A' }}</p>
+    <div class="flex items-center gap-1">
+        <button id="scrollLeftMethod" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+
+        <div id="methodChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
+            @if($activeMethodHenkatens->isNotEmpty())
+                <div class="flex justify-center gap-3 min-w-full px-2">
+                    @foreach($activeMethodHenkatens as $henkaten)
+                        @php
+                            $startDate = strtoupper($henkaten->effective_date->format('j/M/y'));
+                            $endDate = $henkaten->end_date ? strtoupper($henkaten->end_date->format('j/M/y')) : 'SELANJUTNYA';
+                        @endphp
+
+                        {{-- KOTAK UTAMA UNTUK SETIAP HENKATEN (METODE) --}}
+                        <div class="method-card flex-shrink-0 flex flex-col space-y-2 p-2 rounded-lg border border-gray-300 shadow-md cursor-pointer hover:bg-orange-50 transition transform hover:scale-[1.02]"
+                            style="width: 240px;"
+                            onclick="showMethodHenkatenDetail({{ $henkaten->id }})"
+                            data-henkaten-id="{{ $henkaten->id }}"
+                            data-keterangan-before="{{ $henkaten->keterangan }}"
+                            data-keterangan-after="{{ $henkaten->keterangan_after }}"
+                            data-station="{{ $henkaten->station->station_name ?? 'N/A' }}"
+                            data-shift="{{ $henkaten->shift }}"
+                            data-keterangan="{{ $henkaten->keterangan }}" {{-- Keterangan ini untuk grid detail --}}
+                            data-line-area="{{ $henkaten->line_area }}"
+                            data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y') : '-' }}"
+                            data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y') : 'Selanjutnya' }}"
+                            data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
+                            data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
+                            data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
+                            data-time-start="{{ $henkaten->time_start ? \Carbon\Carbon::parse($henkaten->time_start)->format('H:i') : '-' }}"
+                            data-time-end="{{ $henkaten->time_end ? \Carbon\Carbon::parse($henkaten->time_end)->format('H:i') : '-' }}"
+                            >
+                            
+                            {{-- Perubahan Metode --}}
+                            <div class="flex items-center justify-center space-x-2">
+                                <div class="text-center">
+                                    <div class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs mx-auto mb-0.5">🔧</div>
+                                    <p class="text-[8px] font-semibold truncate w-20" title="{{ $henkaten->keterangan }}">{{ $henkaten->keterangan }}</p>
+                                    <div class="w-2 h-2 rounded-full bg-red-500 mx-auto mt-0.5" title="Before"></div>
+                                </div>
+                                <div class="text-sm text-gray-400 font-bold">→</div>
+                                <div class="text-center">
+                                    <div class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs mx-auto mb-0.5">🔧</div>
+                                    <p class="text-[8px] font-semibold truncate w-20" title="{{ $henkaten->keterangan_after }}">{{ $henkaten->keterangan_after }}</p>
+                                    <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5" title="After"></div>
+                                </div>
                             </div>
-                            {{-- NEW --}}
-                            <div class="bg-white shadow rounded p-1 text-center">
-                                <h3 class="text-[9px] font-bold mb-0.5 text-red-600">NEW METHOD</h3>
-                                <p class="text-[7px]"><span class="font-semibold">STATION :</span> {{ $henkaten->new_station ?? 'N/A' }}</p>
-                                <p class="text-[7px]"><span class="font-semibold">METHOD :</span> {{ $henkaten->new_method ?? 'N/A' }}</p>
+
+                            {{-- Serial Number --}}
+                            <div class="grid grid-cols-2 gap-1">
+                                <div class="bg-blue-400 text-center py-0.5 rounded">
+                                    <span class="text-[8px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? '-' }}</span>
+                                </div>
+                                <div class="bg-blue-400 text-center py-0.5 rounded">
+                                    <span class="text-[8px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? '-' }}</span>
+                                </div>
+                            </div>
+
+                            {{-- Periode Aktif --}}
+                            <div class="flex justify-center">
+                                <div class="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[9px] font-semibold">
+                                    {{ $startDate }} - {{ $endDate }}
+                                </div>
                             </div>
                         </div>
-
-                        {{-- 2. SERIAL NUMBER --}}
-                        <div class="grid grid-cols-2 gap-1">
-                            <div class="bg-blue-400 text-center py-0.5 rounded">
-                                <span class="text-[8px] text-white font-medium">Start: {{ $henkaten->serial_start ?? 'N/A' }}</span>
-                            </div>
-                            <div class="bg-blue-400 text-center py-0.5 rounded">
-                                <span class="text-[8px] text-white font-medium">End: {{ $henkaten->serial_end ?? 'N/A' }}</span>
-                            </div>
-                        </div>
-
-                        {{-- 3. TANGGAL AKTIF --}}
-                        <div class="flex justify-center">
-                            <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[8px] font-semibold">
-                                ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
             @else
-                <div class="text-center text-xs text-gray-400 py-4">No Active Method Henkaten</div>
+                <div class="text-center text-xs text-gray-400 py-4">No Active Henkaten</div>
             @endif
         </div>
+
+        <button id="scrollRightMethod" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
     </div>
 </div>
 
+{{-- ============================================================= --}}
+{{-- MODAL DETAIL HENKATEN (METODE) --}}
+{{-- ============================================================= --}}
+<div id="methodHenkatenDetailModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform transition-all scale-100">
+
+        {{-- HEADER MODAL --}}
+        <div class="sticky top-0 bg-gradient-to-r from-blue-500 to-indigo-500 px-6 py-4 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white tracking-wide">Detail Henkaten Metode</h3>
+            <button onclick="closeMethodHenkatenModal()" class="text-white hover:text-gray-200 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        
+
+
+        {{-- CONTENT MODAL --}}
+        {{-- Konten ini harus berada DI DALAM panel bg-white --}}
+        <div class="p-4 space-y-4">
+            {{-- PERUBAHAN METODE --}}
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">Perubahan Metode</h4>
+                <div class="flex items-center justify-around">
+                    <div class="text-center">
+                        <div
+                            class="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl mx-auto mb-1">
+                            🔧</div>
+                        <p id="modalKeteranganBefore" class="font-semibold text-sm"></p>
+                        <span class="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">Sebelum</span>
+                    </div>
+                    <div class="text-2xl text-gray-400">→</div>
+                    <div class="text-center">
+                        <div
+                            class="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl mx-auto mb-1">
+                            🔧</div>
+                        <p id="modalKeteranganAfter" class="font-semibold text-sm"></p>
+                        <span class="text-xs bg-green-500 text-white px-2 py-0.5 rounded">Sesudah</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- INFORMASI DETAIL (Dengan layout yang sudah diperbaiki) --}}
+            <div class="space-y-3">
+                {{-- Row 1: Station, Shift, Line Area --}}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Station</p>
+                        <p id="modalStation" class="font-semibold text-sm"></p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Shift</p>
+                        <p id="modalShift" class="font-semibold text-sm"></p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Line Area</p>
+                        <p id="modalLineArea" class="font-semibold text-sm"></p>
+                    </div>
+                </div>
+
+                {{-- Row 2: Keterangan --}}
+                <div class="grid grid-cols-1 gap-3">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Keterangan</p>
+                        <p id="modalKeterangan" class="font-semibold text-sm"></p>
+                    </div>
+                </div>
+
+                {{-- Row 3: Serial Numbers --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Serial Number Start</p>
+                        <p id="modalSerialStart" class="font-semibold text-sm"></p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Serial Number End</p>
+                        <p id="modalSerialEnd" class="font-semibold text-sm"></p>
+                    </div>
+                </div>
+
+                {{-- Row 4: Times --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Time Start</p>
+                        <p id="modalTimeStart" class="font-semibold text-sm"></p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Time End</p>
+                        <p id="modalTimeEnd" class="font-semibold text-sm"></p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- PERIODE --}}
+            <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-xs text-gray-500">Mulai</p>
+                        <p id="modalEffectiveDate" class="font-semibold"></p>
+                    </div>
+                    <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                    <div>
+                        <p class="text-xs text-gray-500">Selesai</p>
+                        <p id="modalEndDate" class="font-semibold"></p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- LAMPIRAN --}}
+            <div id="modalLampiranSection" class="hidden">
+                <h4 class="text-sm font-semibold text-gray-700 mb-2">Lampiran</h4>
+                <a id="modalLampiranLink" href="#" target="_blank"
+                    class="block bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg text-center transition">
+                    Lihat Lampiran
+                </a>
+            </div>
+        </div>
+</div>
+    </div> 
+</div>
         {{-- MACHINE - --}}
         <div class="bg-white shadow rounded p-1 flex flex-col">
             <h2 class="text-xs font-semibold mb-0.5 text-center">MACHINE</h2>
@@ -1016,6 +1160,91 @@ document.getElementById('henkatenDetailModal').addEventListener('click', functio
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeHenkatenModal();
+});
+
+
+// ==================================================
+// SCRIPT UNTUK METHOD HENKATEN MODAL
+// ==================================================
+
+// Fungsi untuk menampilkan modal detail
+function showMethodHenkatenDetail(henkatenId) {
+    // Temukan kartu (card) berdasarkan data-henkaten-id
+    const card = document.querySelector(`.method-card[data-henkaten-id="${henkatenId}"]`);
+    if (!card) {
+        console.error('Elemen card Henkaten Metode tidak ditemukan untuk id:', henkatenId);
+        return;
+    }
+
+    const modal = document.getElementById('methodHenkatenDetailModal');
+    if (!modal) {
+        console.error('Elemen modal Henkaten Metode tidak ditemukan');
+        return;
+    }
+
+    // Ambil data dari atribut data-*
+    const data = card.dataset;
+
+    // Isi bagian "Perubahan Metode"
+    modal.querySelector('#modalKeteranganBefore').textContent = data.keteranganBefore || '-';
+    modal.querySelector('#modalKeteranganAfter').textContent = data.keteranganAfter || '-';
+
+    // Isi bagian "Informasi Detail"
+    modal.querySelector('#modalStation').textContent = data.station || 'N/A';
+    modal.querySelector('#modalShift').textContent = data.shift || '-';
+    modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
+    modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-'; // Ini adalah keterangan umum
+    modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
+    modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
+    modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
+    modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
+
+    // Isi bagian "Periode"
+    modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
+    modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
+
+    // Tangani bagian "Lampiran"
+    const lampiranSection = modal.querySelector('#modalLampiranSection');
+    const lampiranLink = modal.querySelector('#modalLampiranLink');
+    if (data.lampiran) {
+        lampiranLink.href = data.lampiran;
+        lampiranSection.classList.remove('hidden');
+    } else {
+        lampiranSection.classList.add('hidden');
+    }
+
+    // Tampilkan modal
+    modal.classList.remove('hidden');
+}
+
+// Fungsi untuk menutup modal
+function closeMethodHenkatenModal() {
+    const modal = document.getElementById('methodHenkatenDetailModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// ==================================================
+// SCRIPT UNTUK SCROLLING
+// ==================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('methodChangeContainer');
+    const scrollLeftBtn = document.getElementById('scrollLeftMethod');
+    const scrollRightBtn = document.getElementById('scrollRightMethod');
+
+    if (container && scrollLeftBtn && scrollRightBtn) {
+        const scrollAmount = 250; // Jarak scroll (sesuaikan dengan lebar kartu + gap)
+
+        scrollLeftBtn.addEventListener('click', () => {
+            container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        });
+
+        scrollRightBtn.addEventListener('click', () => {
+            container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        });
+    }
 });
 </script>
 

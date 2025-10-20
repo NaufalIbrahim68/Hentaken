@@ -191,4 +191,75 @@ public function getStationsByLine(Request $request)
     return response()->json($stations);
 }
 
+
+ public function createMethodHenkaten()
+    {
+        $stations = Station::all();
+        $lineAreas = Station::whereNotNull('line_area')
+                        ->orderBy('line_area', 'asc')
+                        ->pluck('line_area')
+                        ->unique();
+
+        $stations = [];
+        if ($oldLineArea = old('line_area')) {
+            $stations = Station::where('line_area', $oldLineArea)->get();
+        }
+
+        return view('methods.create_henkaten', compact('stations', 'lineAreas'));
+    }
+
+    public function storeMethodHenkaten(Request $request)
+{
+    // 1. VALIDASI: Aturan disesuaikan dengan input form yang ada sekarang.
+    // 'keterangan' dan 'keterangan_after' dibuat wajib.
+    $validated = $request->validate([
+        'shift'            => 'required|integer',
+        'keterangan'       => 'required|string|max:1000',
+        'keterangan_after' => 'required|string|max:1000',
+        'station_id'       => 'required|integer|exists:stations,id',
+        'line_area'        => 'required|string',
+        'effective_date'   => 'nullable|date',
+        'end_date'         => 'nullable|date|after_or_equal:effective_date',
+        'lampiran'         => 'nullable|image|mimes:jpeg,png|max:2048',
+        'time_start'       => 'nullable|date_format:H:i',
+        'time_end'         => 'nullable|date_format:H:i',
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        $lampiranPath = null;
+        if ($request->hasFile('lampiran')) {
+            $lampiranPath = $request->file('lampiran')->store('lampiran_method_henkaten', 'public');
+        }
+
+        // Siapkan data untuk disimpan
+        $dataToCreate = $validated;
+        $dataToCreate['lampiran'] = $lampiranPath;
+
+        // 2. PENYIMPANAN: Hanya menyimpan ke tabel `methods_henkaten`.
+        // Model yang benar harus digunakan (jika Anda memiliki modelnya)
+        \App\Models\MethodHenkaten::create($dataToCreate);
+
+        // 3. LOGIKA UPDATE DIHAPUS: Bagian kode yang mencari dan mengubah status
+        // Method lama dan baru dihapus karena method_id tidak lagi dikirim.
+        // --- BLOK KODE LAMA YANG DIHAPUS ---
+        // $methodAsli = \App\Models\Method::find($request->method_id);
+        // ...
+        // $methodAfter = \App\Models\Method::find($request->method_id_after);
+        // ...
+        // --- AKHIR BLOK KODE YANG DIHAPUS ---
+
+        DB::commit();
+
+        return redirect()->route('henkaten.method.create')
+            ->with('success', 'Data Method Henkaten berhasil dibuat.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        // Mengembalikan error yang lebih detail untuk debugging
+        return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
+    }
+}
+
 }

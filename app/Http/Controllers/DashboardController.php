@@ -9,50 +9,57 @@ use App\Models\Machine;
 use App\Models\Material;
 use App\Models\Station;
 use App\Models\ManPowerHenkaten;
+use App\Models\MethodHenkaten;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-   public function index()
+    public function index()
     {
         // 1. Tentukan Shift Secara Dinamis berdasarkan waktu saat ini
         $now = Carbon::now();
         $time = $now->format('H:i');
 
         // TENTUKAN NILAI SHIFT SESUAI DATABASE ANDA
-      $shiftA_Value = 'Shift A';
-$shiftB_Value = 'Shift B';
+        $shiftA_Value = 'Shift A';
+        $shiftB_Value = 'Shift B';
 
         // Shift B: 07:00 - 19:00
-        if ($time >= '07:00' && $time < '19:00') { // Gunakan '<'
+        if ($time >= '07:00' && $time < '19:00') {
             $currentShift = $shiftB_Value;
         }
-        // Waktu Istirahat (19:00 - 19:30) ATAU Shift A (19:30 - 06:30) ATAU Istirahat Pagi (06:30 - 07:00)
-        // Semua ini akan kita anggap sebagai 'Shift A'
+        // Waktu di luar itu dianggap Shift A
         else {
             $currentShift = $shiftA_Value;
         }
 
         // ================= SUMBER DATA HENKATEN =================
-        // Ambil Henkaten yang belum berakhir, tanpa peduli kapan mulainya
+        // Ambil Henkaten Man Power yang aktif (casting tanggal ditangani oleh Model)
         $activeManPowerHenkatens = ManPowerHenkaten::with('station')
             ->where(function ($query) use ($now) {
                 $query->where('end_date', '>=', $now)
-                    ->orWhereNull('end_date');
+                      ->orWhereNull('end_date');
             })
             ->latest('effective_date')
             ->get();
 
-        // ================= PENGGUNAAN DATA HENKATEN UNTUK SEMUA SEKSI =================
-        $methodHenkatens   = $activeManPowerHenkatens;
-        $machineHenkatens  = $activeManPowerHenkatens;
+        // Ambil Henkaten Method yang aktif dari tabelnya sendiri (casting tanggal ditangani oleh Model)
+        $activeMethodHenkatens = MethodHenkaten::with('station')
+            ->where(function ($query) use ($now) {
+                $query->where('end_date', '>=', $now)
+                      ->orWhereNull('end_date');
+            })
+            ->latest('effective_date')
+            ->get();
+            
+        // DIUBAH: Nama variabel disesuaikan dengan yang ada di view Blade
+        $machineHenkatens = $activeManPowerHenkatens;
         $materialHenkatens = $activeManPowerHenkatens;
 
-        // ================= PENGAMBILAN & SINKRONISASI DATA MAN POWER =================
-        // Ambil semua Man Power HANYA SEKALI
+
+        // ================= SINKRONISASI DATA MAN POWER =================
         $manPower = ManPower::with('station')->get();
 
-        // Buat daftar ID Man Power yang sedang dalam proses Henkaten
         $henkatenManPowerIds = $activeManPowerHenkatens
             ->pluck('man_power_id')
             ->merge($activeManPowerHenkatens->pluck('man_power_id_after'))
@@ -68,15 +75,12 @@ $shiftB_Value = 'Shift B';
             }
         }
 
-        // ================= PERSIAPAN DATA UNTUK VIEW (SETELAH LOOP) =================
-        // DIPINDAHKAN KELUAR DARI LOOP: Lakukan grouping SETELAH semua status diperbarui
+        // ================= PERSIAPAN DATA UNTUK VIEW =================
         $groupedManPower = $manPower->groupBy('station_id');
-
-        // DIPINDAHKAN KELUAR DARI LOOP: Ambil data lain hanya sekali
         $methods = Method::with('station')->paginate(5);
         $machines = Machine::with('station')->get();
         $materials = Material::all();
-        $stations  = Station::all();
+        $stations = Station::all();
 
         $stationStatuses = $stations->map(function ($station) {
             return [
@@ -86,7 +90,7 @@ $shiftB_Value = 'Shift B';
             ];
         });
 
-        // DIPINDAHKAN KELUAR DARI LOOP: Kirim semua variabel ke view di akhir
+        // Kirim semua variabel ke view di akhir
         return view('dashboard.index', compact(
             'groupedManPower',
             'currentShift',
@@ -96,9 +100,9 @@ $shiftB_Value = 'Shift B';
             'stations',
             'stationStatuses',
             'activeManPowerHenkatens',
-            'methodHenkatens',
-            'machineHenkatens',
-            'materialHenkatens'
+            'activeMethodHenkatens',
+            'machineHenkatens', // DIUBAH
+            'materialHenkatens' // DIUBAH
         ));
     }
 }

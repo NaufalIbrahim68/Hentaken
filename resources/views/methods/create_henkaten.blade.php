@@ -1,7 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{-- PERUBAHAN 1: Judul --}}
             {{ __('Buat Data Henkaten Method') }}
         </h2>
     </x-slot>
@@ -42,8 +41,7 @@
                         </div>
                     @endif
 
-                    {{-- PERUBAHAN 2: Form Action --}}
-                    <form action="{{ route('method.store') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('henkaten.method.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         
                         {{-- Wrapper Alpine untuk dependent dropdowns --}}
@@ -97,16 +95,6 @@
                                            value="{{ old('time_start') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
                                 </div>
-
-                                {{-- PERUBAHAN 3: Field Baru --}}
-                                <div class="mb-4">
-                                    <label for="serial_number_start" class="block text-gray-700 text-sm font-bold mb-2">Serial Number Mulai</label>
-                                    <input type="text" id="serial_number_start" name="serial_number_start"
-                                           value="{{ old('serial_number_start') }}"
-                                           placeholder="Contoh: 12345"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
-                                </div>
-
                             </div>
 
                             {{-- Kolom Kanan --}}
@@ -141,85 +129,31 @@
                                            value="{{ old('time_end') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
                                 </div>
-
-                                {{-- PERUBAHAN 3: Field Baru --}}
-                                <div class="mb-4">
-                                    <label for="serial_number_end" class="block text-gray-700 text-sm font-bold mb-2">Serial Number Selesai</label>
-                                    <input type="text" id="serial_number_end" name="serial_number_end"
-                                           value="{{ old('serial_number_end') }}"
-                                           placeholder="Contoh: 67890"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
-                                </div>
-
                             </div>
                         </div>
 
-                        {{-- PERUBAHAN 4: Before & After untuk Method --}}
+                        {{-- Before & After hanya berisi Keterangan --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
                             {{-- Before --}}
-                            <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md relative"
-                                 {{-- Ganti URL autocomplete --}}
-                                 x-data="autocomplete('/method/search')"> 
-                                <label class="text-gray-700 text-sm font-bold">Method Sebelumnya</label>
-                                <input type="text" name="nama_method_before" x-model="query" @input.debounce.300="search()"
-                                       autocomplete="off" class="w-full py-3 px-4 border rounded"
-                                       placeholder="Masukkan Nama Method...">
-                                {{-- Ganti name ke method_id --}}
-                                <input type="hidden" name="method_id" x-model="selectedId">
-
-                                <ul x-show="results.length > 0"
-                                    class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
-                                    <template x-for="item in results" :key="item.id">
-                                        {{-- Asumsi JSON method juga punya key 'nama' --}}
-                                        <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-blue-100"
-                                            x-text="item.nama"></li> 
-                                    </template>
-                                </ul>
-                                
-                                {{-- Tambahkan textarea keterangan 'before' --}}
-                                <div class="mt-4">
-                                    <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan (Before)</label>
-                                    <textarea id="keterangan" name="keterangan" rows="3"
-                                              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">{{ old('keterangan') }}</textarea>
-                                </div>
-
+                            <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md">
+                                <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sebelum</label>
+                                <textarea id="keterangan" name="keterangan" rows="4"
+                                          placeholder="Jelaskan kondisi method sebelum perubahan..."
+                                          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">{{ old('keterangan') }}</textarea>
                                 <p class="text-xs text-gray-500 mt-2 italic">Data method sebelum perubahan</p>
                             </div>
 
                             {{-- After --}}
-                            <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative"
-                                 {{-- Ganti URL autocomplete --}}
-                                 x-data="autocomplete('/method/search')">
-                                <label class="text-gray-700 text-sm font-bold">Method Sesudah</label>
-                                <input type="text" name="nama_method_after" x-model="query" @input.debounce.300="search()"
-                                       autocomplete="off" class="w-full py-3 px-4 border rounded"
-                                       placeholder="Masukkan Nama Method...">
-                                {{-- Ganti name ke method_id_after --}}
-                                <input type="hidden" name="method_id_after" x-model="selectedId">
-
-                                <ul x-show="results.length > 0"
-                                    class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
-                                    <template x-for="item in results" :key="item.id">
-                                        {{-- Asumsi JSON method juga punya key 'nama' --}}
-                                        <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-green-100"
-                                            x-text="item.nama"></li>
-                                    </template>
-                                </ul>
-
-                                {{-- Tambahkan textarea keterangan 'after' --}}
-                                <div class="mt-4">
-                                    <label for="keterangan_after" class="block text-gray-700 text-sm font-bold mb-2">Keterangan (After)</label>
-                                    <textarea id="keterangan_after" name="keterangan_after" rows="3"
-                                              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">{{ old('keterangan_after') }}</textarea>
-                                </div>
-                                
+                            <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md">
+                                <label for="keterangan_after" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sesudah Pergantian</label>
+                                <textarea id="keterangan_after" name="keterangan_after" rows="4"
+                                          placeholder="Jelaskan kondisi method setelah perubahan..."
+                                          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">{{ old('keterangan_after') }}</textarea>
                                 <p class="text-xs text-green-600 mt-2 italic">Data method setelah perubahan</p>
                             </div>
 
                         </div>
-
-                        {{-- PERUBAHAN 5: Textarea Keterangan tunggal dihapus (sudah ada di atas) --}}
 
                         {{-- Lampiran --}}
                         <div class="mb-6 mt-6">
@@ -229,8 +163,7 @@
                         </div>
 
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
-                            {{-- PERUBAHAN 6: Link Batal --}}
-                            <a href="{{ route('method.index') }}"
+                            <a href="{{ route('methods.index') }}"
                                class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">Batal</a>
                             <button type="submit"
                                     class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
@@ -247,43 +180,21 @@
     {{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
-        // Fungsi Autocomplete (Tidak diubah)
-        function autocomplete(url) {
-            return {
-                query: '',
-                results: [],
-                selectedId: null,
-                search() {
-                    if (this.query.length < 1) { this.results = []; return; }
-                    fetch(`${url}?q=${encodeURIComponent(this.query)}`)
-                        .then(res => res.json())
-                        .then(data => this.results = data);
-                },
-                select(item) {
-                    this.query = item.nama; // Asumsi response JSON memiliki key 'nama'
-                    this.selectedId = item.id;
-                    this.results = [];
-                }
-            }
-        }
-
-        // Fungsi Dependent Dropdown (Tidak diubah)
+        // Fungsi ini tidak perlu diubah
         function dependentDropdowns(oldLineArea, oldStation, initialStations) {
             return {
                 selectedLineArea: oldLineArea || '',
                 selectedStation: oldStation || null,
-                stationList: initialStations || [], // <-- Diisi dari @json($stations)
+                stationList: initialStations || [],
                 
                 fetchStations() {
-                    // Reset pilihan station & list saat line area berubah
                     this.selectedStation = null; 
                     this.stationList = [];
 
                     if (!this.selectedLineArea) {
-                        return; // Jika memilih "-- Pilih Line Area --", biarkan kosong
+                        return;
                     }
 
-                    // Panggil route API untuk mengambil data station
                     fetch(`{{ route('stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
                         .then(res => res.json())
                         .then(data => {
@@ -298,3 +209,4 @@
         }
     </script>
 </x-app-layout>
+

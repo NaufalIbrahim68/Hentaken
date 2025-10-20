@@ -24,45 +24,38 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 // =========================================================================
 // ==== HENKATEN WORKFLOW ==================================================
 // =========================================================================
-Route::prefix('henkaten')->group(function () {
-    // HALAMAN 1: Form untuk membuat data Henkaten baru
-    Route::get('/create', [HenkatenController::class, 'create'])->name('henkaten.create');
-    Route::post('/store', [HenkatenController::class, 'store'])->name('henkaten.store');
-
-    // HALAMAN 2: Halaman untuk mengisi Serial Number (Start/Manpower Page)
-    // View file: resources/views/manpower/create_henkaten_start.blade.php
-    Route::get('/start', [HenkatenController::class, 'showStartPage'])->name('henkaten.start.page');
-    Route::patch('/update-start', [HenkatenController::class, 'updateStartData'])->name('henkaten.start.update');
+Route::prefix('henkaten')->name('henkaten.')->group(function () {
+    // --- Man Power Henkaten ---
+    Route::get('/manpower/create', [HenkatenController::class, 'create'])->name('create');
+    Route::post('/manpower/store', [HenkatenController::class, 'store'])->name('store');
+    
+    // --- Method Henkaten (DISESUAIKAN) ---
+    Route::get('/method/create', [HenkatenController::class, 'createMethodHenkaten'])->name('method.create');
+    Route::post('/method/store', [HenkatenController::class, 'storeMethodHenkaten'])->name('method.store');
+    
+    // HALAMAN START (jika berlaku umum)
+    Route::get('/start', [HenkatenController::class, 'showStartPage'])->name('start.page');
+    Route::patch('/update-start', [HenkatenController::class, 'updateStartData'])->name('start.update');
 });
 
-// API untuk autocomplete pencarian nama Man Power
-Route::get('/manpower/search', [HenkatenController::class, 'searchManPower'])->name('manpower.search');
+// =========================================================================
+// ==== API & AJAX ROUTES ==================================================
+// =========================================================================
 
+// API untuk autocomplete pencarian
+Route::get('/manpower/search', [HenkatenController::class, 'searchManPower'])->name('manpower.search');
+Route::get('/method/search', [HenkatenController::class, 'searchMethod'])->name('method.search'); // BARU: Rute untuk autocomplete method
+
+// Mengambil station berdasarkan line area
+Route::get('/get-stations-by-line', [HenkatenController::class, 'getStationsByLine'])
+     ->name('stations.by_line');
 
 // =========================================================================
 // ==== MASTER DATA ========================================================
 // =========================================================================
 
 // Master Data Man Power
-Route::prefix('manpower')->name('manpower.')->group(function () {
-    Route::get('/', [ManPowerController::class, 'index'])->name('index');
-
-    // CRUD Master Data
-    Route::get('/master/create', [ManPowerController::class, 'createMaster'])->name('master.create');
-    Route::post('/master', [ManPowerController::class, 'storeMaster'])->name('master.store');
-    Route::get('/master/{id}/edit', [ManPowerController::class, 'editMaster'])->name('master.edit');
-    Route::put('/master/{id}', [ManPowerController::class, 'updateMaster'])->name('master.update');
-    Route::delete('/master/{id}', [ManPowerController::class, 'destroyMaster'])->name('master.destroy');
-
-    // Rute Henkaten lama di dalam ManPower (bisa dievaluasi jika masih perlu)
-    Route::get('/{id}/henkaten/create', [ManPowerController::class, 'createHenkaten'])->name('henkaten.create');
-    Route::post('/henkaten/store', [ManPowerController::class, 'storeHenkaten'])->name('henkaten.store');
-    Route::delete('/henkaten/{id}', [ManPowerController::class, 'destroy'])->name('henkaten.destroy');
-});
-
-// Mengambil station berdasarkan line area
-Route::get('/get-stations-by-line', [HenkatenController::class, 'getStationsByLine'])
-     ->name('stations.by_line');
+Route::resource('manpower', ManPowerController::class)->except(['show']);
 
 // Master Data Material
 Route::resource('materials', MaterialController::class);
@@ -73,14 +66,21 @@ Route::resource('machines', MachineController::class);
 // Master Data Method
 Route::resource('methods', MethodController::class);
 
+
 // =========================================================================
-// ==== ACTIVITY LOG ====================================
+// ==== ACTIVITY LOG =======================================================
 // =========================================================================
 
-    Route::prefix('activity-log')->name('activity.log.')->group(function () {
-        Route::get('/manpower', [ActivityLogController::class, 'manpower'])->name('manpower');
-        Route::get('/machine', [ActivityLogController::class, 'machine'])->name('machine');
-        Route::get('/material', [ActivityLogController::class, 'material'])->name('material');
-        Route::get('/method', [ActivityLogController::class, 'method'])->name('method');
-
+Route::prefix('activity-log')->name('activity.log.')->group(function () {
+    Route::get('/manpower', [ActivityLogController::class, 'manpower'])->name('manpower');
+    Route::get('/machine', [ActivityLogController::class, 'machine'])->name('machine');
+    Route::get('/material', [ActivityLogController::class, 'material'])->name('material');
+    Route::get('/method', [ActivityLogController::class, 'method'])->name('method');
 });
+
+// Rute-rute lama yang mungkin sudah tidak relevan bisa dihapus atau dikomentari
+// Route::get('/henkaten/method/create', [HenkatenController::class, 'createMethodHenkaten'])->name('method.henkaten.create');
+// Route::post('/henkaten/method/store', [HenkatenController::class, 'storeMethodHenkaten'])->name('method.henkaten.store');
+
+// Catatan: Pastikan Anda memiliki method 'searchMethod' di dalam HenkatenController
+// yang fungsinya mirip dengan 'searchManPower' tetapi untuk mencari model Method.

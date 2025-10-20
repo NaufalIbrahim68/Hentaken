@@ -77,9 +77,9 @@
         <x-dropdown-link href="#">
             {{ __('Material') }}
         </x-dropdown-link>
-        <x-dropdown-link href="#">
-            {{ __('Method') }}
-        </x-dropdown-link>
+        <x-dropdown-link :href="route('henkaten.method.create')">
+                {{ __('Method') }}
+            </x-dropdown-link>
     </x-dropdown>
 
     {{-- Dropdown Henkaten Start --}}
