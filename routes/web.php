@@ -7,6 +7,7 @@ use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\MachineController;
 use App\Http\Controllers\HenkatenController;
 use App\Http\Controllers\MethodController;
+use App\Http\Controllers\ActivityLogController;
 use App\Models\ManPower;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -59,6 +60,7 @@ Route::prefix('manpower')->name('manpower.')->group(function () {
     Route::delete('/henkaten/{id}', [ManPowerController::class, 'destroy'])->name('henkaten.destroy');
 });
 
+// Mengambil station berdasarkan line area
 Route::get('/get-stations-by-line', [HenkatenController::class, 'getStationsByLine'])
      ->name('stations.by_line');
 
@@ -71,3 +73,14 @@ Route::resource('machines', MachineController::class);
 // Master Data Method
 Route::resource('methods', MethodController::class);
 
+// =========================================================================
+// ==== ACTIVITY LOG ====================================
+// =========================================================================
+
+    Route::prefix('activity-log')->name('activity.log.')->group(function () {
+        Route::get('/manpower', [ActivityLogController::class, 'manpower'])->name('manpower');
+        Route::get('/machine', [ActivityLogController::class, 'machine'])->name('machine');
+        Route::get('/material', [ActivityLogController::class, 'material'])->name('material');
+        Route::get('/method', [ActivityLogController::class, 'method'])->name('method');
+
+});
