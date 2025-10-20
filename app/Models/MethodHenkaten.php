@@ -21,6 +21,8 @@ class MethodHenkaten extends Model
         'lampiran',
         'time_start',
         'time_end',
+        'serial_number_start',
+        'serial_number_end'
     ];
 
     protected $casts = [

@@ -30,7 +30,7 @@
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white">
                             <div class="flex items-center justify-between mb-6">
-                        <a href="{{ route('manpower.master.create') }}" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
+                        <a href="{{ route('manpower.create') }}" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
                             Tambah Data
                         </a>
 
@@ -63,11 +63,11 @@
                                         <td class="py-3 px-4 text-center">
                                             <div class="flex items-center justify-center space-x-2">
                                                
-                                                <a href="{{ route('manpower.master.edit', $man_power->id) }}"
+                                                <a href="{{ route('manpower.edit', $man_power->id) }}"
                                                     class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-1 px-3 rounded-md text-sm transition">
                                                     Edit
                                                 </a>
-                                                <form action="{{ route('manpower.master.destroy', $man_power->id) }}"
+                                                <form action="{{ route('manpower.destroy', $man_power->id) }}"
                                                     method="POST" onsubmit="return confirm('Yakin ingin hapus?');">
                                                     @csrf
                                                     @method('DELETE')

@@ -1,8 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{-- PERUBAHAN 1: Judul --}}
-            {{ __('Buat Data Henkaten Method') }}
+            {{ __('Buat Data Henkaten Man Power') }}
         </h2>
     </x-slot>
 
@@ -42,16 +41,15 @@
                         </div>
                     @endif
 
-                    {{-- PERUBAHAN 2: Form Action --}}
-                    <form action="{{ route('method.store') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('henkaten.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         
                         {{-- Wrapper Alpine untuk dependent dropdowns --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
                              x-data="dependentDropdowns(
-                                '{{ old('line_area') }}', 
-                                {{ old('station_id') ?? 'null' }}, 
-                                @json($stations ?? []) 
+                                 '{{ old('line_area') }}', 
+                                 {{ old('station_id') ?? 'null' }}, 
+                                 @json($stations ?? []) 
                              )">
 
                             {{-- Kolom Kiri --}}
@@ -98,15 +96,7 @@
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
                                 </div>
 
-                                {{-- PERUBAHAN 3: Field Baru --}}
-                                <div class="mb-4">
-                                    <label for="serial_number_start" class="block text-gray-700 text-sm font-bold mb-2">Serial Number Mulai</label>
-                                    <input type="text" id="serial_number_start" name="serial_number_start"
-                                           value="{{ old('serial_number_start') }}"
-                                           placeholder="Contoh: 12345"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
-                                </div>
-
+                              
                             </div>
 
                             {{-- Kolom Kanan --}}
@@ -142,84 +132,68 @@
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
                                 </div>
 
-                                {{-- PERUBAHAN 3: Field Baru --}}
-                                <div class="mb-4">
-                                    <label for="serial_number_end" class="block text-gray-700 text-sm font-bold mb-2">Serial Number Selesai</label>
-                                    <input type="text" id="serial_number_end" name="serial_number_end"
-                                           value="{{ old('serial_number_end') }}"
-                                           placeholder="Contoh: 67890"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
-                                </div>
+                               
 
                             </div>
                         </div>
 
-                        {{-- PERUBAHAN 4: Before & After untuk Method --}}
+                        {{-- Before & After untuk Man Power (Sudah Direvisi) --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
                             {{-- Before --}}
                             <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md relative"
-                                 {{-- Ganti URL autocomplete --}}
-                                 x-data="autocomplete('/method/search')"> 
-                                <label class="text-gray-700 text-sm font-bold">Method Sebelumnya</label>
-                                <input type="text" name="nama_method_before" x-model="query" @input.debounce.300="search()"
+                                 x-data="autocomplete('{{ route('manpower.search') }}')"> 
+                                
+                                <label class="text-gray-700 text-sm font-bold">Nama Karyawan Sebelum</label>
+                                
+                                <input type="text" name="nama_manpower_before" x-model="query" @input.debounce.300="search()"
                                        autocomplete="off" class="w-full py-3 px-4 border rounded"
-                                       placeholder="Masukkan Nama Method...">
-                                {{-- Ganti name ke method_id --}}
-                                <input type="hidden" name="method_id" x-model="selectedId">
+                                       placeholder="Masukkan Nama Man Power...">
+                                <input type="hidden" name="manpower_id" x-model="selectedId">
 
                                 <ul x-show="results.length > 0"
                                     class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
                                     <template x-for="item in results" :key="item.id">
-                                        {{-- Asumsi JSON method juga punya key 'nama' --}}
                                         <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-blue-100"
                                             x-text="item.nama"></li> 
                                     </template>
                                 </ul>
                                 
-                                {{-- Tambahkan textarea keterangan 'before' --}}
-                                <div class="mt-4">
-                                    <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan (Before)</label>
-                                    <textarea id="keterangan" name="keterangan" rows="3"
-                                              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">{{ old('keterangan') }}</textarea>
-                                </div>
-
-                                <p class="text-xs text-gray-500 mt-2 italic">Data method sebelum perubahan</p>
+                                <p class="text-xs text-gray-500 mt-2 italic">Data man power yang diganti</p>
                             </div>
 
                             {{-- After --}}
                             <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative"
-                                 {{-- Ganti URL autocomplete --}}
-                                 x-data="autocomplete('/method/search')">
-                                <label class="text-gray-700 text-sm font-bold">Method Sesudah</label>
-                                <input type="text" name="nama_method_after" x-model="query" @input.debounce.300="search()"
+                                 x-data="autocomplete('{{ route('manpower.search') }}')">
+                                
+                                <label class="text-gray-700 text-sm font-bold">Nama Karyawan Sesudah</label>
+                                
+                                <input type="text" name="nama_manpower_after" x-model="query" @input.debounce.300="search()"
                                        autocomplete="off" class="w-full py-3 px-4 border rounded"
-                                       placeholder="Masukkan Nama Method...">
-                                {{-- Ganti name ke method_id_after --}}
-                                <input type="hidden" name="method_id_after" x-model="selectedId">
+                                       placeholder="Masukkan Nama Man Power...">
+                                <input type="hidden" name="manpower_id_after" x-model="selectedId">
 
                                 <ul x-show="results.length > 0"
                                     class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
                                     <template x-for="item in results" :key="item.id">
-                                        {{-- Asumsi JSON method juga punya key 'nama' --}}
                                         <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-green-100"
                                             x-text="item.nama"></li>
                                     </template>
                                 </ul>
-
-                                {{-- Tambahkan textarea keterangan 'after' --}}
-                                <div class="mt-4">
-                                    <label for="keterangan_after" class="block text-gray-700 text-sm font-bold mb-2">Keterangan (After)</label>
-                                    <textarea id="keterangan_after" name="keterangan_after" rows="3"
-                                              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">{{ old('keterangan_after') }}</textarea>
-                                </div>
                                 
-                                <p class="text-xs text-green-600 mt-2 italic">Data method setelah perubahan</p>
+                                <p class="text-xs text-green-600 mt-2 italic">Data man power pengganti</p>
                             </div>
 
                         </div>
 
-                        {{-- PERUBAHAN 5: Textarea Keterangan tunggal dihapus (sudah ada di atas) --}}
+                        {{-- BLOK KETERANGAN TUNGGAL (Sesuai Revisi) --}}
+                        <div class="mb-6 mt-6">
+                            <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
+                            <textarea id="keterangan" name="keterangan" rows="4"
+                                      class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                      placeholder="Jelaskan alasan perubahan man power...">{{ old('keterangan') }}</textarea>
+                        </div>
+
 
                         {{-- Lampiran --}}
                         <div class="mb-6 mt-6">
@@ -229,8 +203,7 @@
                         </div>
 
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
-                            {{-- PERUBAHAN 6: Link Batal --}}
-                            <a href="{{ route('method.index') }}"
+                            <a href="{{ route('manpower.index') }}"
                                class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">Batal</a>
                             <button type="submit"
                                     class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
@@ -296,5 +269,5 @@
                 }
             }
         }
-    </script>
-</x-app-layout>
+    </script> {{-- <-- REVISI: Ini seharusnya </script> bukan </Ganti> --}}
+</x-app-layout> {{-- <-- REVISI: Ini tag penutup yang benar --}}

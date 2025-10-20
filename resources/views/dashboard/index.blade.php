@@ -551,13 +551,15 @@
 </div>
 
 {{-- ============================================================= --}}
-{{-- MODAL DETAIL HENKATEN (METODE) --}}
+{{-- MODAL DETAIL HENKATEN (METODE) -- PERBAIKAN --}}
 {{-- ============================================================= --}}
 <div id="methodHenkatenDetailModal"
     class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform transition-all scale-100">
+    
+    {{-- 1. UKURAN DISESUAIKAN MENJADI max-w-3xl --}}
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden transform transition-all scale-100">
 
-        {{-- HEADER MODAL --}}
+        {{-- 2. HEADER TETAP BIRU (TEMA METHOD) --}}
         <div class="sticky top-0 bg-gradient-to-r from-blue-500 to-indigo-500 px-6 py-4 flex justify-between items-center">
             <h3 class="text-lg font-bold text-white tracking-wide">Detail Henkaten Metode</h3>
             <button onclick="closeMethodHenkatenModal()" class="text-white hover:text-gray-200 transition">
@@ -567,12 +569,9 @@
             </button>
         </div>
 
-        
-
-
-        {{-- CONTENT MODAL --}}
-        {{-- Konten ini harus berada DI DALAM panel bg-white --}}
-        <div class="p-4 space-y-4">
+        {{-- 3. CONTENT MODAL DENGAN LAYOUT BARU --}}
+        <div class="p-6 space-y-4"> {{-- Padding diubah ke p-6 agar seragam --}}
+            
             {{-- PERUBAHAN METODE --}}
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 class="text-sm font-semibold text-gray-700 mb-3">Perubahan Metode</h4>
@@ -595,13 +594,13 @@
                 </div>
             </div>
 
-            {{-- INFORMASI DETAIL (Dengan layout yang sudah diperbaiki) --}}
+            {{-- 4. INFORMASI DETAIL (LAYOUT GRID BARU 4 KOLOM) --}}
             <div class="space-y-3">
-                {{-- Row 1: Station, Shift, Line Area --}}
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {{-- Row 1: Station, Shift, Line Area, Keterangan --}}
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div class="bg-blue-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Station</p>
-                        <p id="modalStation" class="font-semibold text-sm"></p>
+                        <p id="modalStation" class="font-semibold text-sm truncate"></p>
                     </div>
                     <div class="bg-blue-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Shift</p>
@@ -611,18 +610,14 @@
                         <p class="text-xs text-gray-500">Line Area</p>
                         <p id="modalLineArea" class="font-semibold text-sm"></p>
                     </div>
-                </div>
-
-                {{-- Row 2: Keterangan --}}
-                <div class="grid grid-cols-1 gap-3">
                     <div class="bg-blue-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Keterangan</p>
-                        <p id="modalKeterangan" class="font-semibold text-sm"></p>
+                        <p id="modalKeterangan" class="font-semibold text-sm truncate"></p>
                     </div>
                 </div>
 
-                {{-- Row 3: Serial Numbers --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {{-- Row 2: Serial Numbers & Times --}}
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div class="bg-blue-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Serial Number Start</p>
                         <p id="modalSerialStart" class="font-semibold text-sm"></p>
@@ -631,10 +626,6 @@
                         <p class="text-xs text-gray-500">Serial Number End</p>
                         <p id="modalSerialEnd" class="font-semibold text-sm"></p>
                     </div>
-                </div>
-
-                {{-- Row 4: Times --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div class="bg-blue-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Time Start</p>
                         <p id="modalTimeStart" class="font-semibold text-sm"></p>
@@ -646,26 +637,26 @@
                 </div>
             </div>
 
-            {{-- PERIODE --}}
-            <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="text-xs text-gray-500">Mulai</p>
-                        <p id="modalEffectiveDate" class="font-semibold"></p>
-                    </div>
-                    <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                    </svg>
-                    <div>
-                        <p class="text-xs text-gray-500">Selesai</p>
-                        <p id="modalEndDate" class="font-semibold"></p>
-                    </div>
+            {{-- 5. PERIODE (LAYOUT BARU SEPERTI MAN POWER) --}}
+            <div class="flex justify-between items-center px-4 py-2">
+                <div class="text-left">
+                    <p class="text-xs text-gray-500">Mulai</p>
+                    <p id="modalEffectiveDate" class="font-semibold text-lg"></p>
+                </div>
+                
+                <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                </svg>
+
+                <div class="text-right">
+                    <p class="text-xs text-gray-500">Selesai</p>
+                    <p id="modalEndDate" class="font-semibold text-lg"></p>
                 </div>
             </div>
 
+
             {{-- LAMPIRAN --}}
-            <div id="modalLampiranSection" class="hidden">
+            <div id="modalLampiranSection" class="hidden pt-2">
                 <h4 class="text-sm font-semibold text-gray-700 mb-2">Lampiran</h4>
                 <a id="modalLampiranLink" href="#" target="_blank"
                     class="block bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg text-center transition">
@@ -673,9 +664,10 @@
                 </a>
             </div>
         </div>
+    </div>
 </div>
-    </div> 
 </div>
+
         {{-- MACHINE - --}}
         <div class="bg-white shadow rounded p-1 flex flex-col">
             <h2 class="text-xs font-semibold mb-0.5 text-center">MACHINE</h2>
