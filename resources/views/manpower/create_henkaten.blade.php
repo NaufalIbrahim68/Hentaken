@@ -202,9 +202,11 @@
                                    class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                         </div>
 
-                        <div class="flex items-center justify-end space-x-4 pt-4 border-t">
-                            <a href="{{ route('manpower.index') }}"
-                               class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">Batal</a>
+                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
+    <a href="{{ route('dashboard') }}"
+       class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">
+        Batal
+    </a>
                             <button type="submit"
                                     class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
                                 Simpan Data

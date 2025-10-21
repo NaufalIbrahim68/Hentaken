@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Buat Data Henkaten Method') }}
+            {{ __('Buat Data Henkaten Material') }}
         </h2>
     </x-slot>
 
@@ -41,15 +41,15 @@
                         </div>
                     @endif
 
-                   <form action="{{ route('henkaten.material.store') }}" method="POST" enctype="multipart/form-data">
+                  <form action="{{ route('henkaten.material.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         
                         {{-- Wrapper Alpine untuk dependent dropdowns --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
                              x-data="dependentDropdowns(
-                                '{{ old('line_area') }}', 
-                                {{ old('station_id') ?? 'null' }}, 
-                                @json($stations ?? []) 
+                                 '{{ old('line_area') }}', 
+                                 {{ old('station_id') ?? 'null' }}, 
+                                 @json($stations ?? []) 
                              )">
 
                             {{-- Kolom Kiri --}}
@@ -132,27 +132,60 @@
                             </div>
                         </div>
 
-                        {{-- Before & After hanya berisi Keterangan --}}
+                        {{-- Before & After untuk Material --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
                             {{-- Before --}}
-                            <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md">
-                                <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sebelum</label>
-                                <textarea id="keterangan" name="keterangan" rows="4"
-                                          placeholder="Jelaskan kondisi method sebelum perubahan..."
-                                          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">{{ old('keterangan') }}</textarea>
-                                <p class="text-xs text-gray-500 mt-2 italic">Data method sebelum perubahan</p>
+                            <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md relative"
+                                x-data="autocomplete('{{ route('henkaten.material.search') }}')">
+                                <label class="text-gray-700 text-sm font-bold">Material Sebelum</label>
+                                
+                                <input type="text" name="material_name" x-model="query" @input.debounce.300="search()"
+                                       autocomplete="off" class="w-full py-3 px-4 border rounded"
+                                       placeholder="Masukkan Nama Material...">
+                                <input type="hidden" name="material_id" x-model="selectedId">
+
+                                <ul x-show="results.length > 0"
+                                    class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
+                                    <template x-for="item in results" :key="item.id">
+                                        <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-blue-100"
+                                            x-text="item.material_name"></li> 
+                                    </template>
+                                </ul>
+                                
+                                <p class="text-xs text-gray-500 mt-2 italic">Data material yang diganti</p>
                             </div>
 
                             {{-- After --}}
-                            <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md">
-                                <label for="keterangan_after" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sesudah Pergantian</label>
-                                <textarea id="keterangan_after" name="keterangan_after" rows="4"
-                                          placeholder="Jelaskan kondisi method setelah perubahan..."
-                                          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">{{ old('keterangan_after') }}</textarea>
-                                <p class="text-xs text-green-600 mt-2 italic">Data method setelah perubahan</p>
+                            <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative"
+                                x-data="autocomplete('{{ route('henkaten.material.search') }}')">
+                                
+                                <label class="text-gray-700 text-sm font-bold">Material Sesudah</label>
+                                
+                                <input type="text" name="material_after" x-model="query" @input.debounce.300="search()"
+                                       autocomplete="off" class="w-full py-3 px-4 border rounded"
+                                       placeholder="Masukkan Nama Material...">
+                                <input type="hidden" name="material_id_after" x-model="selectedId">
+
+                                <ul x-show="results.length > 0"
+                                    class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
+                                    <template x-for="item in results" :key="item.id">
+                                        <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-green-100"
+                                            x-text="item.material_name"></li>
+                                    </template>
+                                </ul>
+                                
+                                <p class="text-xs text-green-600 mt-2 italic">Data material pengganti</p>
                             </div>
 
+                        </div>
+
+                        {{-- BLOK KETERANGAN --}}
+                        <div class="mb-6 mt-6">
+                            <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
+                            <textarea id="keterangan" name="keterangan" rows="4"
+                                      class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                      placeholder="Jelaskan alasan perubahan material...">{{ old('keterangan') }}</textarea>
                         </div>
 
                         {{-- Lampiran --}}
@@ -162,16 +195,17 @@
                                    class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                         </div>
 
-                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
+                        <div class="flex items-center justify-end space-x-4 pt-4 border-t">
     <a href="{{ route('dashboard') }}"
        class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">
         Batal
     </a>
-                            <button type="submit"
-                                    class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
-                                Simpan Data
-                            </button>
-                        </div>
+    <button type="submit"
+            class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
+        Simpan Data
+    </button>
+</div>
+
                     </form>
 
                 </div>
@@ -182,7 +216,27 @@
     {{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
-        // Fungsi ini tidak perlu diubah
+        // Autocomplete Material
+        function autocomplete(url) {
+            return {
+                query: '',
+                results: [],
+                selectedId: null,
+                search() {
+                    if (this.query.length < 1) { this.results = []; return; }
+                    fetch(`${url}?q=${encodeURIComponent(this.query)}`)
+                        .then(res => res.json())
+                        .then(data => this.results = data);
+                },
+                select(item) {
+                    this.query = item.material_name;
+                    this.selectedId = item.id;
+                    this.results = [];
+                }
+            }
+        }
+
+        // Dependent Dropdown
         function dependentDropdowns(oldLineArea, oldStation, initialStations) {
             return {
                 selectedLineArea: oldLineArea || '',
@@ -193,15 +247,11 @@
                     this.selectedStation = null; 
                     this.stationList = [];
 
-                    if (!this.selectedLineArea) {
-                        return;
-                    }
+                    if (!this.selectedLineArea) return;
 
                     fetch(`{{ route('stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
                         .then(res => res.json())
-                        .then(data => {
-                            this.stationList = data;
-                        })
+                        .then(data => this.stationList = data)
                         .catch(err => {
                             console.error('Gagal mengambil data station:', err);
                             this.stationList = [];
@@ -211,4 +261,3 @@
         }
     </script>
 </x-app-layout>
-

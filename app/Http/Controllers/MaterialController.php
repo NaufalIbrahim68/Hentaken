@@ -135,4 +135,16 @@ class MaterialController extends Controller
 
         return redirect()->route('materials.index')->with('success', 'Data material berhasil dihapus.');
     }
+
+    public function search(Request $request)
+{
+    $query = $request->get('q');
+
+    $materials = \App\Models\Material::where('material_name', 'LIKE', "%{$query}%")
+        ->limit(10)
+        ->get(['id', 'material_name']);
+
+    return response()->json($materials);
+}
+
 }
