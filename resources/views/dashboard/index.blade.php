@@ -905,339 +905,285 @@
 </div>
 
 
+@push('scripts')
+<script>
+    // ==================================================
+    // FUNGSI UTAMA (DEFINISI)
+    // ==================================================
 
-                  @push('scripts')
-                <script>
-                    // Real-time Clock
-                    function updateDateTime() {
-                        const now = new Date();
+    /**
+     * Update jam, tanggal, dan shift secara real-time.
+     */
+    function updateDateTime() {
+        const now = new Date();
 
-                        // Format tanggal
-                        const options = { day: '2-digit', month: 'long', year: 'numeric' };
-                        document.getElementById("current-date").textContent = now.toLocaleDateString('en-GB', options);
+        // Format tanggal (contoh: 21 October 2025)
+        const dateOptions = { day: '2-digit', month: 'long', year: 'numeric' };
+        document.getElementById("current-date").textContent = now.toLocaleDateString('en-GB', dateOptions);
 
-                        // Format waktu
-                        document.getElementById("current-time").textContent = now.toLocaleTimeString('en-GB');
+        // Format waktu (contoh: 10:13:07)
+        document.getElementById("current-time").textContent = now.toLocaleTimeString('en-GB');
 
-                        // Tentukan shift
-                        const hour = now.getHours();
-                        let shift;
+        // Tentukan shift
+        // Catatan: Ini tidak biasa. Biasanya Shift 1 adalah siang hari.
+        const hour = now.getHours();
+        let shift;
+        if (hour >= 7 && hour < 19) {
+            shift = "Shift 2"; // 07:00 - 18:59
+        } else {
+            shift = "Shift 1"; // 19:00 - 06:59
+        }
+        document.getElementById("current-shift").textContent = shift;
+    }
 
-                        if (hour >= 7 && hour < 19) {
-                            shift = "Shift 2"; // 07:00 - 18:59
-                        } else {
-                            shift = "Shift 1"; // 19:00 - 06:59
-                        }
+    /**
+     * Toggle status mesin secara manual saat di-klik.
+     */
+    function toggleMachine(element) {
+        const statusText = element.querySelector('.status-text');
+        if (element.classList.contains('machine-active')) {
+            element.classList.remove('machine-active');
+            element.classList.add('machine-inactive');
+            statusText.innerText = 'HENKATEN';
+            statusText.className = "status-text text-[10px] font-bold mt-1 px-1 py-0.5 rounded-full bg-red-600 text-white";
+        } else {
+            element.classList.remove('machine-inactive');
+            element.classList.add('machine-active');
+            statusText.innerText = 'NORMAL';
+            statusText.className = "status-text text-[10px] font-bold mt-1 px-1 py-0.5 rounded-full bg-green-700 text-white";
+        }
+    }
 
-                        document.getElementById("current-shift").textContent = shift;
-                    }
-
-                    // Update tiap detik
-                    setInterval(updateDateTime, 1000);
-                    updateDateTime();
-
-
-                    function toggleMachine(element) {
-                        const statusText = element.querySelector('.status-text');
-                        if (element.classList.contains('machine-active')) {
-                            element.classList.remove('machine-active');
-                            element.classList.add('machine-inactive');
-                            statusText.innerText = 'HENKATEN';
-                            statusText.className = "status-text text-[10px] font-bold mt-1 px-1 py-0.5 rounded-full bg-red-600 text-white";
-                        } else {
-                            element.classList.remove('machine-inactive');
-                            element.classList.add('machine-active');
-                            statusText.innerText = 'NORMAL';
-                            statusText.className = "status-text text-[10px] font-bold mt-1 px-1 py-0.5 rounded-full bg-green-700 text-white";
-                        }
-                    }
-
-                    // Auto-update machine status (simulate real-time updates)
-                    function updateMachineStatus() {
-                        const machines = document.querySelectorAll('.machine-status');
-                        machines.forEach((machine) => {
-                            if (Math.random() > 0.95) { // 5% chance to change status
-                                const statusText = machine.querySelector('.status-text');
-
-                                if (machine.classList.contains('machine-active')) {
-                                    machine.classList.remove('machine-active');
-                                    machine.classList.add('machine-inactive');
-                                    statusText.innerText = 'HENKATEN';
-                                    statusText.classList.add('status-henkaten');
-                                } else {
-                                    machine.classList.remove('machine-inactive');
-                                    machine.classList.add('machine-active');
-                                    statusText.innerText = 'NORMAL';
-                                    statusText.classList.remove('status-henkaten');
-                                }
-                            }
-                        });
-                    }
-
-                    // logic materials
-                 document.addEventListener('DOMContentLoaded', () => {
-    const materials = document.querySelectorAll('.material-status');
-
-    materials.forEach((material) => {
-        material.addEventListener('click', () => {
-            const tdMaterial = material.closest('td'); // td untuk kotak
-            const tdStatus = tdMaterial.parentElement.nextElementSibling?.children[tdMaterial.cellIndex]; // td baris bawah
-            const statusText = tdStatus?.querySelector('.status-text');
-
-            // === Jika NORMAL → ubah jadi HENKATEN ===
-            if (!material.classList.contains('bg-red-500')) {
-                // Ubah box
-                material.classList.remove('bg-white');
-                  material.classList.add('bg-red-500', 'text-white');
-                material.innerText = 'HENKATEN';
-
-                // Ubah status text
-                if (statusText) {
+    /**
+     * Simulasi update status mesin secara acak.
+     */
+    function updateMachineStatus() {
+        const machines = document.querySelectorAll('.machine-status');
+        machines.forEach((machine) => {
+            if (Math.random() > 0.95) { // 5% kemungkinan ganti status
+                const statusText = machine.querySelector('.status-text');
+                if (machine.classList.contains('machine-active')) {
+                    machine.classList.remove('machine-active');
+                    machine.classList.add('machine-inactive');
                     statusText.innerText = 'HENKATEN';
-                    statusText.classList.remove('text-white');
-                    statusText.classList.add('text-white');
-                }
-
-                // Warnai seluruh cell merah
-                tdMaterial.classList.add('bg-red-500', 'text-white');
-                tdStatus.classList.add('bg-red-500', 'text-white');
-            } 
-            // === Jika sudah HENKATEN → balik NORMAL ===
-            else {
-                // Ubah box
-                material.classList.remove('bg-red-500', 'text-white');
-                material.classList.add('bg-white');
-                material.innerText = '';
-
-                // Ubah status text
-                if (statusText) {
+                    statusText.className = "status-text text-[10px] font-bold mt-1 px-1 py-0.5 rounded-full bg-red-600 text-white";
+                } else {
+                    machine.classList.remove('machine-inactive');
+                    machine.classList.add('machine-active');
                     statusText.innerText = 'NORMAL';
-                    statusText.classList.remove('text-white');
-                    statusText.classList.add('text-green-500');
+                    statusText.className = "status-text text-[10px] font-bold mt-1 px-1 py-0.5 rounded-full bg-green-700 text-white";
                 }
-
-                // Kembalikan cell ke default
-                tdMaterial.classList.remove('bg-red-500', 'text-white');
-                tdStatus.classList.remove('bg-red-500', 'text-white');
             }
-        });
-    });
-});
-
-                  document.addEventListener("DOMContentLoaded", function () {
-    function setupScroll(containerId, leftBtnId, rightBtnId) {
-        const container = document.getElementById(containerId);
-        const btnLeft = document.getElementById(leftBtnId);
-        const btnRight = document.getElementById(rightBtnId);
-
-        if (!container || !btnLeft || !btnRight) return;
-
-        btnLeft.addEventListener("click", () => {
-            container.scrollBy({ left: -200, behavior: "smooth" });
-        });
-
-        btnRight.addEventListener("click", () => {
-            container.scrollBy({ left: 200, behavior: "smooth" });
         });
     }
 
-    // Setup scroll untuk semua section
-    setupScroll("materialTableContainer", "scrollLeftMaterial", "scrollRightMaterial");
-    setupScroll("manPowerTableContainer", "scrollLeftManPower", "scrollRightManPower");
-    setupScroll("machineTableContainer", "scrollLeftMachine", "scrollRightMachine");
-});
+    // --- FUNGSI MODAL MAN POWER ---
+
+    function showHenkatenDetail(henkatenId) {
+        const card = document.querySelector(`[data-henkaten-id="${henkatenId}"]`);
+        if (!card) return;
+
+        document.getElementById('modalNamaBefore').textContent = card.dataset.nama;
+        document.getElementById('modalNamaAfter').textContent = card.dataset.namaAfter;
+        document.getElementById('modalStation').textContent = card.dataset.station;
+        document.getElementById('modalShift').textContent = 'Shift ' + card.dataset.shift;
+        document.getElementById('modalLineArea').textContent = card.dataset.lineArea;
+        document.getElementById('modalKeterangan').textContent = card.dataset.keterangan;
+        document.getElementById('modalEffectiveDate').textContent = card.dataset.effectiveDate;
+        document.getElementById('modalEndDate').textContent = card.dataset.endDate;
+        document.getElementById('modalSerialStart').textContent = card.dataset.serialNumberStart || '-';
+        document.getElementById('modalSerialEnd').textContent = card.dataset.serialNumberEnd || '-';
+        document.getElementById('modalTimeStart').textContent = card.dataset.timeStart || '-';
+        document.getElementById('modalTimeEnd').textContent = card.dataset.timeEnd || '-';
+
+        const lampiran = card.dataset.lampiran;
+        const section = document.getElementById('modalLampiranSection');
+        const link = document.getElementById('modalLampiranLink');
+
+        if (lampiran) {
+            section.classList.remove('hidden');
+            link.href = lampiran;
+        } else {
+            section.classList.add('hidden');
+        }
+
+        document.getElementById('henkatenDetailModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeHenkatenModal() {
+        document.getElementById('henkatenDetailModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    // --- FUNGSI MODAL METHOD ---
+
+    function showMethodHenkatenDetail(henkatenId) {
+        const card = document.querySelector(`.method-card[data-henkaten-id="${henkatenId}"]`);
+        if (!card) {
+            console.error('Elemen card Henkaten Metode tidak ditemukan untuk id:', henkatenId);
+            return;
+        }
+        const modal = document.getElementById('methodHenkatenDetailModal');
+        if (!modal) {
+            console.error('Elemen modal Henkaten Metode tidak ditemukan');
+            return;
+        }
+
+        const data = card.dataset;
+        modal.querySelector('#modalKeteranganBefore').textContent = data.keteranganBefore || '-';
+        modal.querySelector('#modalKeteranganAfter').textContent = data.keteranganAfter || '-';
+        modal.querySelector('#modalStation').textContent = data.station || 'N/A';
+        modal.querySelector('#modalShift').textContent = data.shift || '-';
+        modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
+        modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
+        modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
+        modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
+        modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
+        modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
+        modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
+        modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
+
+        const lampiranSection = modal.querySelector('#modalLampiranSection');
+        const lampiranLink = modal.querySelector('#modalLampiranLink');
+        if (data.lampiran) {
+            lampiranLink.href = data.lampiran;
+            lampiranSection.classList.remove('hidden');
+        } else {
+            lampiranSection.classList.add('hidden');
+        }
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Tambahkan ini
+    }
+
+    function closeMethodHenkatenModal() {
+        const modal = document.getElementById('methodHenkatenDetailModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        document.body.style.overflow = 'auto'; // Tambahkan ini
+    }
 
 
-// Man Power
-document.addEventListener('DOMContentLoaded', function() {
-        
+    // ==================================================
+    // INISIALISASI SAAT HALAMAN DIMUAT
+    // ==================================================
+
+    // Jalankan jam
+    setInterval(updateDateTime, 1000);
+    updateDateTime(); // Panggil sekali saat muat
+
+    // Gabungkan semua listener dalam satu 'DOMContentLoaded'
+    document.addEventListener('DOMContentLoaded', function() {
+
         /**
-         * Fungsi untuk menginisialisasi scroll horizontal pada sebuah elemen.
-         * @param {string} containerId - ID dari elemen container yang bisa di-scroll.
-         * @param {string} leftBtnId - ID dari tombol scroll ke kiri.
-         * @param {string} rightBtnId - ID dari tombol scroll ke kanan.
+         * Fungsi scroll horizontal TERKONSOLIDASI.
+         * Mengatur tombol kiri/kanan dan menyembunyikannya di ujung.
          */
-        function initializeHorizontalScroll(containerId, leftBtnId, rightBtnId) {
+        function setupHorizontalScroll(containerId, leftBtnId, rightBtnId) {
             const scrollContainer = document.getElementById(containerId);
             const scrollLeftBtn = document.getElementById(leftBtnId);
             const scrollRightBtn = document.getElementById(rightBtnId);
             
-            // Hentikan eksekusi jika salah satu elemen tidak ditemukan
             if (!scrollContainer || !scrollLeftBtn || !scrollRightBtn) {
-                // console.error('One or more elements not found for scrollable section:', containerId);
+                // console.warn('Elemen scroll tidak ditemukan untuk:', containerId);
                 return;
             }
 
-            const scrollAmount = 250; // Jarak scroll dalam piksel
+            const scrollAmount = 250; 
 
             scrollLeftBtn.addEventListener('click', function() {
-                scrollContainer.scrollBy({
-                    left: -scrollAmount,
-                    behavior: 'smooth'
-                });
+                scrollContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
             });
 
             scrollRightBtn.addEventListener('click', function() {
-                scrollContainer.scrollBy({
-                    left: scrollAmount,
-                    behavior: 'smooth'
-                });
+                scrollContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
             });
 
-            // Fungsi untuk menyembunyikan/menampilkan tombol berdasarkan posisi scroll
             function updateButtons() {
-                // Sedikit toleransi (misal 1px) untuk perhitungan yang lebih akurat
                 const isAtStart = scrollContainer.scrollLeft <= 0;
                 const isAtEnd = scrollContainer.scrollLeft + scrollContainer.clientWidth >= scrollContainer.scrollWidth - 1;
-
                 scrollLeftBtn.style.visibility = isAtStart ? 'hidden' : 'visible';
                 scrollRightBtn.style.visibility = isAtEnd ? 'hidden' : 'visible';
             }
 
-            // Panggil fungsi saat ada event scroll dan saat halaman pertama kali dimuat
             scrollContainer.addEventListener('scroll', updateButtons);
             updateButtons(); // Pengecekan awal
+
+            // Tambahkan ini untuk scroll ke kanan (item terlama) saat dimuat
+            // Hapus komentar jika Anda ingin scroll otomatis ke paling kanan
+            scrollContainer.scrollLeft = scrollContainer.scrollWidth;
         }
 
-        // Inisialisasi untuk bagian ATAS (Man Power List)
-        initializeHorizontalScroll('manPowerTableContainer', 'scrollLeftManPower', 'scrollRightManPower');
+        // Inisialisasi SEMUA bagian scroll
+        setupHorizontalScroll('materialTableContainer', 'scrollLeftMaterial', 'scrollRightMaterial');
+        setupHorizontalScroll('manPowerTableContainer', 'scrollLeftManPower', 'scrollRightManPower');
+        setupHorizontalScroll('machineTableContainer', 'scrollLeftMachine', 'scrollRightMachine');
+        setupHorizontalScroll('shiftChangeContainer', 'scrollLeftShift', 'scrollRightShift');
+        setupHorizontalScroll('methodChangeContainer', 'scrollLeftMethod', 'scrollRightMethod');
 
-        // Inisialisasi untuk bagian BAWAH (Shift / Henkaten Details)
-        initializeHorizontalScroll('shiftChangeContainer', 'scrollLeftShift', 'scrollRightShift');
+
+        // --- Logika klik untuk Material ---
+        const materials = document.querySelectorAll('.material-status');
+        materials.forEach((material) => {
+            material.addEventListener('click', () => {
+                const tdMaterial = material.closest('td');
+                const tdStatus = tdMaterial.parentElement.nextElementSibling?.children[tdMaterial.cellIndex];
+                const statusText = tdStatus?.querySelector('.status-text');
+
+                if (!material.classList.contains('bg-red-500')) {
+                    // Normal -> Henkaten
+                    material.classList.remove('bg-white');
+                    material.classList.add('bg-red-500', 'text-white');
+                    material.innerText = 'HENKATEN';
+                    if (statusText) {
+                        statusText.innerText = 'HENKATEN';
+                        statusText.classList.remove('text-green-500'); // Hapus hijau jika ada
+                        statusText.classList.add('text-white');
+                    }
+                    tdMaterial.classList.add('bg-red-500', 'text-white');
+                    if (tdStatus) tdStatus.classList.add('bg-red-500', 'text-white');
+                } else {
+                    // Henkaten -> Normal
+                    material.classList.remove('bg-red-500', 'text-white');
+                    material.classList.add('bg-white');
+                    material.innerText = '';
+                    if (statusText) {
+                        statusText.innerText = 'NORMAL';
+                        statusText.classList.remove('text-white');
+                        statusText.classList.add('text-green-500'); // Kembali ke hijau
+                    }
+                    tdMaterial.classList.remove('bg-red-500', 'text-white');
+                    if (tdStatus) tdStatus.classList.remove('bg-red-500', 'text-white');
+                }
+            });
+        });
+
+        // --- Event Listener untuk Modal Man Power ---
+        const manPowerModal = document.getElementById('henkatenDetailModal');
+        if (manPowerModal) {
+            manPowerModal.addEventListener('click', function(e) {
+                if (e.target === this) closeHenkatenModal();
+            });
+        }
+        
+        // --- Event Listener untuk Modal Method (DITAMBAHKAN) ---
+        const methodModal = document.getElementById('methodHenkatenDetailModal');
+        if (methodModal) {
+            methodModal.addEventListener('click', function(e) {
+                if (e.target === this) closeMethodHenkatenModal();
+            });
+        }
+
+        // --- Event Listener Global untuk Tombol 'Escape' ---
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeHenkatenModal();
+                closeMethodHenkatenModal(); // Tutup kedua modal
+            }
+        });
 
     });
-
-    // Detail Henkaten Man power
-
-    function showHenkatenDetail(henkatenId) {
-    const card = document.querySelector(`[data-henkaten-id="${henkatenId}"]`);
-    if (!card) return;
-
-    document.getElementById('modalNamaBefore').textContent = card.dataset.nama;
-    document.getElementById('modalNamaAfter').textContent = card.dataset.namaAfter;
-    document.getElementById('modalStation').textContent = card.dataset.station;
-    document.getElementById('modalShift').textContent = 'Shift ' + card.dataset.shift;
-    document.getElementById('modalLineArea').textContent = card.dataset.lineArea;
-    document.getElementById('modalKeterangan').textContent = card.dataset.keterangan;
-    document.getElementById('modalEffectiveDate').textContent = card.dataset.effectiveDate;
-    document.getElementById('modalEndDate').textContent = card.dataset.endDate;
-    document.getElementById('modalSerialStart').textContent = card.dataset.serialNumberStart || '-';
-    document.getElementById('modalSerialEnd').textContent = card.dataset.serialNumberEnd || '-';
-    document.getElementById('modalTimeStart').textContent = card.dataset.timeStart || '-';
-    document.getElementById('modalTimeEnd').textContent = card.dataset.timeEnd || '-';
-
-    const lampiran = card.dataset.lampiran;
-    const section = document.getElementById('modalLampiranSection');
-    const link = document.getElementById('modalLampiranLink');
-
-    if (lampiran) {
-        section.classList.remove('hidden');
-        link.href = lampiran;
-    } else {
-        section.classList.add('hidden');
-    }
-
-    document.getElementById('henkatenDetailModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeHenkatenModal() {
-    document.getElementById('henkatenDetailModal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
-}
-
-document.getElementById('henkatenDetailModal').addEventListener('click', function(e) {
-    if (e.target === this) closeHenkatenModal();
-});
-
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeHenkatenModal();
-});
-
-
-// ==================================================
-// SCRIPT UNTUK METHOD HENKATEN MODAL
-// ==================================================
-
-// Fungsi untuk menampilkan modal detail
-function showMethodHenkatenDetail(henkatenId) {
-    // Temukan kartu (card) berdasarkan data-henkaten-id
-    const card = document.querySelector(`.method-card[data-henkaten-id="${henkatenId}"]`);
-    if (!card) {
-        console.error('Elemen card Henkaten Metode tidak ditemukan untuk id:', henkatenId);
-        return;
-    }
-
-    const modal = document.getElementById('methodHenkatenDetailModal');
-    if (!modal) {
-        console.error('Elemen modal Henkaten Metode tidak ditemukan');
-        return;
-    }
-
-    // Ambil data dari atribut data-*
-    const data = card.dataset;
-
-    // Isi bagian "Perubahan Metode"
-    modal.querySelector('#modalKeteranganBefore').textContent = data.keteranganBefore || '-';
-    modal.querySelector('#modalKeteranganAfter').textContent = data.keteranganAfter || '-';
-
-    // Isi bagian "Informasi Detail"
-    modal.querySelector('#modalStation').textContent = data.station || 'N/A';
-    modal.querySelector('#modalShift').textContent = data.shift || '-';
-    modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
-    modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-'; // Ini adalah keterangan umum
-    modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
-    modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
-    modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
-    modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
-
-    // Isi bagian "Periode"
-    modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
-    modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
-
-    // Tangani bagian "Lampiran"
-    const lampiranSection = modal.querySelector('#modalLampiranSection');
-    const lampiranLink = modal.querySelector('#modalLampiranLink');
-    if (data.lampiran) {
-        lampiranLink.href = data.lampiran;
-        lampiranSection.classList.remove('hidden');
-    } else {
-        lampiranSection.classList.add('hidden');
-    }
-
-    // Tampilkan modal
-    modal.classList.remove('hidden');
-}
-
-// Fungsi untuk menutup modal
-function closeMethodHenkatenModal() {
-    const modal = document.getElementById('methodHenkatenDetailModal');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-}
-
-// ==================================================
-// SCRIPT UNTUK SCROLLING
-// ==================================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('methodChangeContainer');
-    const scrollLeftBtn = document.getElementById('scrollLeftMethod');
-    const scrollRightBtn = document.getElementById('scrollRightMethod');
-
-    if (container && scrollLeftBtn && scrollRightBtn) {
-        const scrollAmount = 250; // Jarak scroll (sesuaikan dengan lebar kartu + gap)
-
-        scrollLeftBtn.addEventListener('click', () => {
-            container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-        });
-
-        scrollRightBtn.addEventListener('click', () => {
-            container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-        });
-    }
-});
 </script>
 
 

@@ -170,7 +170,7 @@ class HenkatenController extends Controller
             $dataToCreate['lampiran'] = $lampiranPath;
             MethodHenkaten::create($dataToCreate);
             DB::commit();
-            return redirect()->route('henkaten.methods.create')
+            return redirect()->route('henkaten.method.create')
                 ->with('success', 'Data Method Henkaten berhasil dibuat.');
         } catch (\Exception $e) {
             DB::rollBack();

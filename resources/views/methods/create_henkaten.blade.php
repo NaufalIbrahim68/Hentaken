@@ -163,7 +163,7 @@
                         </div>
 
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
-                            <a href="{{ route('methods.index') }}"
+                           <a href="{{ route('activity.log.method') }}"
                                class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">Batal</a>
                             <button type="submit"
                                     class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
