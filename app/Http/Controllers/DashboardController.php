@@ -10,13 +10,18 @@ use App\Models\Material;
 use App\Models\Station;
 use App\Models\ManPowerHenkaten;
 use App\Models\MethodHenkaten;
+use App\Models\MachineHenkaten;  // Diasumsikan Anda memiliki model ini
+use App\Models\MaterialHenkaten; // Diambil dari konteks sebelumnya
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    /**
+     * Menampilkan data dashboard utama.
+     */
     public function index()
     {
-        // 1. Tentukan Shift Secara Dinamis berdasarkan waktu saat ini
+        // ================= 1. SETUP WAKTU & SHIFT =================
         $now = Carbon::now();
         $time = $now->format('H:i');
 
@@ -27,46 +32,64 @@ class DashboardController extends Controller
         // Shift B: 07:00 - 19:00
         if ($time >= '07:00' && $time < '19:00') {
             $currentShift = $shiftB_Value;
-        }
-        // Waktu di luar itu dianggap Shift A
-        else {
+        } else {
+            // Waktu di luar itu dianggap Shift A
             $currentShift = $shiftA_Value;
         }
 
-        // ================= SUMBER DATA HENKATEN =================
-        // Ambil Henkaten Man Power yang aktif (casting tanggal ditangani oleh Model)
+        // ================= 2. PENGAMBILAN DATA HENKATEN AKTIF =================
+        
+        // Kueri dasar untuk menemukan henkaten yang 'sedang aktif'
+        // (dimulai di masa lalu/sekarang, DAN belum berakhir / tidak punya tanggal akhir)
+        $baseHenkatenQuery = function ($query) use ($now) {
+            $query->where('effective_date', '<=', $now)
+                  ->where(function ($subQuery) use ($now) {
+                      $subQuery->where('end_date', '>=', $now)
+                               ->orWhereNull('end_date');
+                  });
+        };
+
+        // Ambil Henkaten Man Power yang aktif
         $activeManPowerHenkatens = ManPowerHenkaten::with('station')
-            ->where(function ($query) use ($now) {
-                $query->where('end_date', '>=', $now)
-                      ->orWhereNull('end_date');
-            })
+            ->where($baseHenkatenQuery)
             ->latest('effective_date')
             ->get();
 
-        // Ambil Henkaten Method yang aktif dari tabelnya sendiri (casting tanggal ditangani oleh Model)
+        // Ambil Henkaten Method yang aktif
         $activeMethodHenkatens = MethodHenkaten::with('station')
-            ->where(function ($query) use ($now) {
-                $query->where('end_date', '>=', $now)
-                      ->orWhereNull('end_date');
-            })
+            ->where($baseHenkatenQuery)
             ->latest('effective_date')
             ->get();
             
-        // DIUBAH: Nama variabel disesuaikan dengan yang ada di view Blade
+        // Ambil Henkaten Machine yang aktif (MEMPERBAIKI LOGIKA)
+        // Asumsi nama model adalah 'MachineHenkaten'
         $machineHenkatens = $activeManPowerHenkatens;
-        $materialHenkatens = $activeManPowerHenkatens;
+
+        // Ambil Henkaten Material yang aktif (MEMPERBAIKI ERROR)
+        $materialHenkatens = MaterialHenkaten::with('station') // <-- BUG FIX: Menggunakan Model
+            ->where($baseHenkatenQuery) // <-- BUG FIX: Menggunakan $now (via closure)
+            ->orderBy('effective_date', 'desc')
+            ->get();
 
 
-        // ================= SINKRONISASI DATA MAN POWER =================
+        // ================= 3. PENGAMBILAN DATA MASTER =================
         $manPower = ManPower::with('station')->get();
+        $methods = Method::with('station')->paginate(5);
+        $machines = Machine::with('station')->get();
+        $materials = Material::all();
+        $stations = Station::all();
 
+
+        // ================= 4. SINKRONISASI DATA MAN POWER =================
+        // Dapatkan semua ID Man Power yang terlibat di henkaten (sebelum & sesudah)
         $henkatenManPowerIds = $activeManPowerHenkatens
             ->pluck('man_power_id')
             ->merge($activeManPowerHenkatens->pluck('man_power_id_after'))
-            ->filter()
-            ->unique()
+            ->filter() // Hapus nilai null/kosong
+            ->unique() // Ambil ID unik
             ->toArray();
 
+        // Tandai status Man Power berdasarkan henkaten
         foreach ($manPower as $person) {
             if (in_array($person->id, $henkatenManPowerIds)) {
                 $person->setAttribute('status', 'Henkaten');
@@ -75,13 +98,10 @@ class DashboardController extends Controller
             }
         }
 
-        // ================= PERSIAPAN DATA UNTUK VIEW =================
+        // ================= 5. PERSIAPAN DATA UNTUK VIEW =================
         $groupedManPower = $manPower->groupBy('station_id');
-        $methods = Method::with('station')->paginate(5);
-        $machines = Machine::with('station')->get();
-        $materials = Material::all();
-        $stations = Station::all();
 
+        // Siapkan status default untuk setiap stasiun
         $stationStatuses = $stations->map(function ($station) {
             return [
                 'id'     => $station->id,
@@ -89,8 +109,11 @@ class DashboardController extends Controller
                 'status' => 'NORMAL', // default
             ];
         });
-
-        // Kirim semua variabel ke view di akhir
+        
+        // ================= 6. KIRIM SEMUA DATA KE VIEW =================
+        
+        // BUG FIX: Menghapus return view() yang salah tempat 
+        // dan menggabungkan semua variabel di sini.
         return view('dashboard.index', compact(
             'groupedManPower',
             'currentShift',
@@ -101,9 +124,8 @@ class DashboardController extends Controller
             'stationStatuses',
             'activeManPowerHenkatens',
             'activeMethodHenkatens',
-            'machineHenkatens', // DIUBAH
-            'materialHenkatens' // DIUBAH
+            'machineHenkatens',
+            'materialHenkatens'
         ));
     }
 }
-

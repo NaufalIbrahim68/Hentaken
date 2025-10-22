@@ -843,65 +843,64 @@
                 </div>
             </div>
 
-          {{-- ============================================= --}}
-    {{-- MATERIAL HENKATEN CARD SECTION (UPDATED) --}}
-    {{-- ============================================= --}}
-    <div class="border-t mt-2 pt-2 overflow-x-auto scrollbar-hide">
-        <div class="flex justify-center gap-3 p-2">
-            {{-- This should be inside a loop like: @foreach($materialHenkatens as $henkaten) --}}
-            @if(isset($materialHenkatens) && $materialHenkatens->isNotEmpty())
-                @foreach($materialHenkatens as $henkaten)
-                    <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
-                         style="width: 220px;"
-                         {{-- LOGIC ADDED: This now calls the Man Power modal function --}}
-                         onclick="showHenkatenDetail({{ $henkaten->id }})"
-                         data-henkaten-id="{{ $henkaten->id }}"
-                         {{-- NOTE: These data attributes are placeholders. --}}
-                         data-nama="Part No: {{ $henkaten->current_part_no ?? 'N/A' }}"
-                         data-nama-after="Part No: {{ $henkaten->new_part_no ?? 'N/A' }}"
-                         data-station="{{ $henkaten->station->station_name ?? 'Material Station' }}"
-                         data-shift="-"
-                         data-keterangan="{{ $henkaten->new_part_desc ?? 'Material Change' }}"
-                         data-line-area="-"
-                         data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
-                         data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
-                         data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
-                         data-serial-number-start="{{ $henkaten->serial_start ?? '-' }}"
-                         data-serial-number-end="{{ $henkaten->serial_end ?? '-' }}"
-                         data-time-start="-"
-                         data-time-end="-">
-                         
-                        {{-- 1. CURRENT & NEW PART --}}
-                        <div class="grid grid-cols-2 gap-1">
-                            <div class="bg-white shadow rounded p-1 text-center">
-                                <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
-                                <p class="text-[7px]"><span class="font-semibold">PART NO:</span> {{ $henkaten->current_part_no ?? 'N/A' }}</p>
-                                <p class="text-[7px]"><span class="font-semibold">DESC:</span> {{ $henkaten->current_part_desc ?? 'N/A' }}</p>
-                            </div>
-                            <div class="bg-white shadow rounded p-1 text-center">
-                                <h3 class="text-[8px] font-bold mb-0.5 text-red-600">NEW PART</h3>
-                                <p class="text-[7px]"><span class="font-semibold">PART NO:</span> {{ $henkaten->new_part_no ?? 'N/A' }}</p>
-                                <p class="text-[7px]"><span class="font-semibold">DESC:</span> {{ $henkaten->new_part_desc ?? 'N/A' }}</p>
-                            </div>
+       {{-- ============================================= --}}
+{{--     MATERIAL HENKATEN CARD SECTION (UPDATED)  --}}
+{{-- ============================================= --}}
+<div class="border-t mt-2 pt-2 overflow-x-auto scrollbar-hide">
+    <div class="flex justify-center gap-3 p-2">
+        
+        @if(isset($materialHenkatens) && $materialHenkatens->isNotEmpty())
+            @foreach($materialHenkatens as $henkaten)
+                <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
+                     style="width: 220px;"
+                     onclick="showHenkatenDetail({{ $henkaten->id }})"
+                     data-henkaten-id="{{ $henkaten->id }}"
+                     {{-- Data attributes diperbarui sesuai skema tabel --}}
+                    data-nama="{{ $henkaten->material_name ?? 'N/A' }}"
+                     data-nama-after="{{ $henkaten->material_after ?? 'N/A' }}"
+                     data-station="{{ $henkaten->station->station_name ?? 'Material Station' }}"
+                     data-shift="{{ $henkaten->shift ?? '-' }}"
+                     data-keterangan="{{ $henkaten->keterangan ?? ($henkaten->material_after ?? 'Material Change') }}"
+                     data-line-area="{{ $henkaten->line_area ?? '-' }}"
+                     data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
+                     data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
+                     data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
+                     data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
+                     data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
+                     data-time-start="{{ $henkaten->time_start ?? '-' }}"
+                     data-time-end="{{ $henkaten->time_end ?? '-' }}">
+                    
+                   {{-- 1. CURRENT & NEW PART (UPDATED) --}}
+                    <div class="grid grid-cols-2 gap-1">
+                        <div class="bg-white shadow rounded p-1 text-center">
+                            <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
+                            {{-- Hanya tampilkan Nama Material, hapus label PART NO & DESC --}}
+                            <p class="text-xs font-medium py-1">{{ $henkaten->material_name ?? 'N/A' }}</p>
                         </div>
-                        {{-- 2. SERIAL NUMBER --}}
-                        <div class="grid grid-cols-2 gap-1">
-                            <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_start ?? 'N/A' }}</span></div>
-                            <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_end ?? 'N/A' }}</span></div>
-                        </div>
-                        {{-- 3. TANGGAL AKTIF --}}
-                        <div class="flex justify-center">
-                            <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
-                                ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
-                            </div>
+                        <div class="bg-white shadow rounded p-1 text-center">
+                            <h3 class="text-[8px] font-bold mb-0.5 text-red-600">NEW PART</h3>
+                            {{-- Hanya tampilkan Nama Material After, hapus label PART NO & DESC --}}
+                            <p class="text-xs font-medium py-1">{{ $henkaten->material_after ?? 'N/A' }}</p>
                         </div>
                     </div>
-                @endforeach
-            @else
-                <div class="text-center text-xs text-gray-400 py-4">No Active Material Henkaten</div>
-            @endif
-        </div>
+                    {{-- 2. SERIAL NUMBER (Variabel disesuaikan) --}}
+                    <div class="grid grid-cols-2 gap-1">
+                        <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? 'N/A' }}</span></div>
+                        <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? 'N/A' }}</span></div>
+                    </div>
+                    {{-- 3. TANGGAL AKTIF (Ditambahkan pengecekan null) --}}
+                    <div class="flex justify-center">
+                        <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
+                            ACTIVE: {{ $henkaten->effective_date ? $henkaten->effective_date->format('j/M/y') : 'N/A' }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        @else
+            <div class="text-center text-xs text-gray-400 py-4">No Active Material Henkaten</div>
+        @endif
     </div>
+</div>
 </div>
 
 
@@ -957,25 +956,7 @@
     /**
      * Simulasi update status mesin secara acak.
      */
-    function updateMachineStatus() {
-        const machines = document.querySelectorAll('.machine-status');
-        machines.forEach((machine) => {
-            if (Math.random() > 0.95) { // 5% kemungkinan ganti status
-                const statusText = machine.querySelector('.status-text');
-                if (machine.classList.contains('machine-active')) {
-                    machine.classList.remove('machine-active');
-                    machine.classList.add('machine-inactive');
-                    statusText.innerText = 'HENKATEN';
-                    statusText.className = "status-text text-[10px] font-bold mt-1 px-1 py-0.5 rounded-full bg-red-600 text-white";
-                } else {
-                    machine.classList.remove('machine-inactive');
-                    machine.classList.add('machine-active');
-                    statusText.innerText = 'NORMAL';
-                    statusText.className = "status-text text-[10px] font-bold mt-1 px-1 py-0.5 rounded-full bg-green-700 text-white";
-                }
-            }
-        });
-    }
+    
 
     // --- FUNGSI MODAL MAN POWER ---
 

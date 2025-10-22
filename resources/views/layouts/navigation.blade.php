@@ -106,9 +106,9 @@
             {{ __('Machine') }}
         </x-dropdown-link>
         
-        <x-dropdown-link href="#">
-            {{ __('Material') }}
-        </x-dropdown-link>
+     <x-dropdown-link href="{{ route('henkaten.material.start.page') }}">
+    {{ __('Material') }}
+</x-dropdown-link>
 
         <x-dropdown-link :href="route('henkaten.method.start.page')">
             {{ __('Method') }}

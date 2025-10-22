@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\ManPower;
 use App\Models\ManPowerHenkaten;
 use App\Models\MethodHenkaten;
-use App\Models\MaterialHenkaten; // <-- Model baru untuk Material
+use App\Models\MaterialHenkaten; 
 use App\Models\Station;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\View\View;
 
 class HenkatenController extends Controller
 {
@@ -189,6 +190,54 @@ class HenkatenController extends Controller
         }
     }
 
+
+
+  
+
+
+       public function showMethodStartPage(): View
+    {
+        // Ambil data Henkaten Method yang 'serial_number_start'-nya masih kosong
+        $methodsHenkatens = MethodHenkaten::with('station')
+                                ->whereNull('serial_number_start')
+                                ->get();
+
+        // Menggunakan path view yang Anda berikan:
+        // 'resource/views/methods/create_henkaten_start.blade.php'
+        // menjadi 'methods.create_henkaten_start'
+        return view('methods.create_henkaten_start', [
+            'methodsHenkatens' => $methodsHenkatens
+        ]);
+    }
+
+    /**
+     * INI ADALAH METHOD UNTUK MENANGANI SUBMIT FORM
+     * (Dibutuhkan oleh form Anda yang memiliki action 'henkaten.method.start.update')
+     */
+    public function updateMethodStart(Request $request)
+    {
+        $updates = $request->input('updates', []);
+
+        foreach ($updates as $id => $data) {
+            // Hanya update jika serial_number_start diisi
+            if (!empty($data['serial_number_start'])) {
+                $henkaten = MethodHenkaten::find($id);
+                if ($henkaten) {
+                    $henkaten->update([
+                        'serial_number_start' => $data['serial_number_start'],
+                        'serial_number_end' => $data['serial_number_end'] ?? null,
+                        'status' => 'on_progress', // Anda bisa update status di sini
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->back()->with('success', 'Serial number Henkaten Method berhasil diupdate.');
+    }
+
+
+
+
    // ==============================================================  
 // BAGIAN 4: FORM PEMBUATAN HENKATEN MATERIAL  
 // ==============================================================
@@ -300,4 +349,51 @@ public function storeMaterialHenkaten(Request $request)
                             ->get(['id', 'station_name']);
         return response()->json($stations);
     }
+
+    public function showMaterialStartPage(): View
+    {
+        // Ambil data Henkaten Material yang 'serial_number_start'-nya masih kosong
+        // (Pastikan nama model 'MaterialHenkaten' sudah benar)
+        $materialHenkatens = MaterialHenkaten::with('station')
+                                ->whereNull('serial_number_start')
+                                ->get();
+
+        // Menggunakan path view Anda:
+        // 'resource/views/material/create_henkaten_start.blade.php'
+        return view('materials.create_henkaten_start', [
+            'materialHenkatens' => $materialHenkatens
+        ]);
+    }
+
+    /**
+     * ===================================================================
+     * MATERIAL HENKATEN - UPDATE START DATA (INI UNTUK SUBMIT FORM)
+     * ===================================================================
+     * Menyimpan data serial number start & end dari form Henkaten Material.
+     * Method ini dipanggil dari route 'henkaten.material.start.update'
+     */
+    public function updateMaterialStartData(Request $request)
+    {
+        $updates = $request->input('updates', []);
+
+        foreach ($updates as $id => $data) {
+            // Hanya update jika serial_number_start diisi
+            if (!empty($data['serial_number_start'])) {
+                
+                // (Pastikan nama model 'MaterialHenkaten' sudah benar)
+                $henkaten = MaterialHenkaten::find($id);
+                
+                if ($henkaten) {
+                    $henkaten->update([
+                        'serial_number_start' => $data['serial_number_start'],
+                        'serial_number_end' => $data['serial_number_end'] ?? null,
+                        'status' => 'on_progress', // Update status jika perlu
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->back()->with('success', 'Serial number Henkaten Material berhasil diupdate.');
+    }
+
 }
