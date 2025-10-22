@@ -72,6 +72,6 @@ Route::resource('methods', MethodController::class);
 Route::prefix('activity-log')->name('activity.log.')->group(function () {
     Route::get('/manpower', [ActivityLogController::class, 'manpower'])->name('manpower');
     Route::get('/machine', [ActivityLogController::class, 'machine'])->name('machine');
-    Route::get('/material', [ActivityLogController::class, 'material'])->name('material');
-    Route::get('/method', [HenkatenController::class, 'showMethodActivityLog'])->name('method'); // pakai controller Henkaten
+    Route::get('/material', [HenkatenController::class, 'showMaterialActivityLog'])->name('material');
+    Route::get('/method', [HenkatenController::class, 'showMethodActivityLog'])->name('method'); 
 });

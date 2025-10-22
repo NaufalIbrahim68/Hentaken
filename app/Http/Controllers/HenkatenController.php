@@ -235,6 +235,30 @@ class HenkatenController extends Controller
         return redirect()->back()->with('success', 'Serial number Henkaten Method berhasil diupdate.');
     }
 
+    public function showMethodActivityLog(Request $request): View
+    {
+        $created_date = $request->input('created_date');
+        
+        // Query builder
+        $query = MethodHenkaten::with('station')
+                                ->latest(); // Mengurutkan dari yang terbaru
+
+        // Terapkan filter tanggal jika ada
+        if ($created_date) {
+            $query->whereDate('created_at', $created_date);
+        }
+
+        // Ambil data dengan pagination (withQueryString() dihapus)
+        $logs = $query->paginate(15);
+
+        // Kembalikan view (sesuai Blade yang Anda berikan sebelumnya)
+        // (Asumsi view Anda ada di resources/views/activity_log/method.blade.php)
+        return view('methods.activity-log', [
+            'logs' => $logs,
+            'created_date' => $created_date
+        ]);
+    }
+
 
 
 
@@ -394,6 +418,30 @@ public function storeMaterialHenkaten(Request $request)
         }
 
         return redirect()->back()->with('success', 'Serial number Henkaten Material berhasil diupdate.');
+    }
+
+    public function showMaterialActivityLog(Request $request): View
+    {
+        $created_date = $request->input('created_date');
+        
+        // Query builder (menggunakan model MaterialHenkaten)
+        $query = MaterialHenkaten::with('station')
+                                 ->latest(); // Mengurutkan dari yang terbaru
+
+        // Terapkan filter tanggal jika ada
+        if ($created_date) {
+            $query->whereDate('created_at', $created_date);
+        }
+
+        // Ambil data dengan pagination (withQueryString() dihapus)
+        $logs = $query->paginate(15);
+
+        // Kembalikan view (sesuai path yang Anda tentukan)
+        // 'resource/views/materials/activity-log.blade.php' -> 'materials.activity-log'
+        return view('materials.activity-log', [
+            'logs' => $logs,
+            'created_date' => $created_date
+        ]);
     }
 
 }

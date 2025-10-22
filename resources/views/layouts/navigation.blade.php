@@ -140,9 +140,9 @@
     <x-dropdown-link href="#">
         {{ __('Machine') }}
     </x-dropdown-link>
-    <x-dropdown-link href="#">
-        {{ __('Material') }}
-    </x-dropdown-link>
+    <x-dropdown-link href="{{ route('activity.log.material') }}">
+    {{ __('Material') }}
+</x-dropdown-link>
    <x-dropdown-link href="{{ route('activity.log.method') }}">
     {{ __('Method') }}
 </x-dropdown-link>
