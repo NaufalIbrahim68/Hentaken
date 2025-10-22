@@ -43,6 +43,7 @@
 
                   <form action="{{ route('henkaten.material.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        <input type="hidden" name="redirect_to" value="{{ route('henkaten.material.create') }}">
                         
                         {{-- Wrapper Alpine untuk dependent dropdowns --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
@@ -63,42 +64,23 @@
                                     </select>
                                 </div>
 
-                                <div>
-                                    <div class="mb-4">
-                                        <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
-                                        <select id="line_area" name="line_area" required
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
-                                                x-model="selectedLineArea"
-                                                @change="fetchStations()">
-                                            <option value="">-- Pilih Line Area --</option>
-                                            
-                                            @foreach ($lineAreas as $area)
-                                                <option value="{{ $area }}" :selected="'{{ $area }}' === selectedLineArea">
-                                                    {{ $area }}
-                                                </option>
-                                            @endforeach
-                                            
-                                        </select>
-                                    </div>
-                                </div>
-
                                 <div class="mb-4">
-                                    <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
-                                    <input type="date" id="effective_date" name="effective_date"
-                                           value="{{ old('effective_date') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                    <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
+                                    <select id="line_area" name="line_area" required
+                                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
+                                            x-model="selectedLineArea"
+                                            @change="fetchStations()">
+                                        <option value="">-- Pilih Line Area --</option>
+                                        
+                                        @foreach ($lineAreas as $area)
+                                            <option value="{{ $area }}" :selected="'{{ $area }}' === selectedLineArea">
+                                                {{ $area }}
+                                            </option>
+                                        @endforeach
+                                        
+                                    </select>
                                 </div>
 
-                                <div class="mb-4">
-                                    <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
-                                    <input type="time" id="time_start" name="time_start"
-                                           value="{{ old('time_start') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
-                                </div>
-                            </div>
-
-                            {{-- Kolom Kanan --}}
-                            <div>
                                 <div class="mb-4">
                                     <label for="station_id" class="block text-sm font-medium text-gray-700">Station</label>
                                     <select id="station_id" name="station_id" required
@@ -116,10 +98,27 @@
                                         
                                     </select>
                                 </div>
+                            </div>
+
+                            {{-- Kolom Kanan --}}
+                            <div>
+                                <div class="mb-4">
+                                    <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
+                                    <input type="date" id="effective_date" name="effective_date"
+                                           value="{{ old('effective_date') }}"
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                </div>
 
                                 <div class="mb-4">
                                     <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
                                     <input type="date" id="end_date" name="end_date" value="{{ old('end_date') }}"
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
+                                    <input type="time" id="time_start" name="time_start"
+                                           value="{{ old('time_start') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
                                 </div>
 
@@ -196,16 +195,15 @@
                         </div>
 
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
-    <a href="{{ route('dashboard') }}"
-       class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">
-        Batal
-    </a>
-    <button type="submit"
-            class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
-        Simpan Data
-    </button>
-</div>
-
+                            <a href="{{ route('dashboard') }}"
+                               class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">
+                                Batal
+                            </a>
+                            <button type="submit"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
+                                Simpan Data
+                            </button>
+                        </div>
                     </form>
 
                 </div>

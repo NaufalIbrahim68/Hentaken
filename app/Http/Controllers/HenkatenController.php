@@ -79,7 +79,7 @@ class HenkatenController extends Controller
             DB::commit();
 
             return redirect()->route('henkaten.create')
-                ->with('success', 'Data Henkaten berhasil dibuat. Selanjutnya isi Serial Number di halaman Man Power Start.');
+                ->with('success', 'Data Henkaten berhasil dibuat');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()]);

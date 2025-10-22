@@ -551,7 +551,7 @@
 </div>
 
 {{-- ============================================================= --}}
-{{-- MODAL DETAIL HENKATEN (METODE) -- PERBAIKAN --}}
+{{-- MODAL DETAIL HENKATEN (METODE) 
 {{-- ============================================================= --}}
 <div id="methodHenkatenDetailModal"
     class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -719,14 +719,10 @@
             </div>
 
         {{-- ============================================= --}}
-{{-- MACHINE HENKATEN CARD SECTION (UPDATED) --}}
+{{-- MACHINE HENKATEN CARD SECTION--}}
 {{-- ============================================= --}}
 <div class="border-t mt-2 pt-2 overflow-x-auto scrollbar-hide">
     <div class="flex justify-center gap-3 p-2">
-        
-        {{-- ======================================================== --}}
-        {{-- LOGIKA IF/ELSE DIHAPUS, HANYA MENYISAKAN FOREACH --}}
-        {{-- ======================================================== --}}
         @foreach($machineHenkatens as $henkaten)
             <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
                  style="width: 220px;"
@@ -753,7 +749,6 @@
                     <div class="text-center">
                         <div class="text-[8px] font-bold">OLD JIG</div>
                         <div class="text-xl my-0.5">⚙️</div>
-                        {{-- Karena data dari Man Power Henkaten, ini akan tampil N/A --}}
                         <p class="text-[7px] font-semibold">{{ $henkaten->old_jig ?? 'N/A' }}</p>
                     </div>
                     <div class="text-blue-500">
@@ -762,7 +757,6 @@
                     <div class="text-center">
                         <div class="text-[8px] font-bold text-red-600">NEW JIG</div>
                         <div class="text-xl my-0.5">⚙️</div>
-                        {{-- Karena data dari Man Power Henkaten, ini akan tampil N/A --}}
                         <p class="text-[7px] font-semibold">{{ $henkaten->new_jig ?? 'N/A' }}</p>
                     </div>
                 </div>
@@ -785,7 +779,7 @@
 </div>
         </div>
 
-        {{-- MATERIAL - . --}}
+       {{-- MATERIAL --}}
         <div class="bg-white shadow rounded p-1 flex flex-col">
             <h2 class="text-xs font-semibold mb-0.5 text-center">MATERIAL</h2>
 
@@ -832,8 +826,7 @@
                         </tbody>
                     </table>
                 </div>
-
-                {{-- Tombol Navigasi di Kanan - . --}}
+                {{-- Tombol Navigasi di Kanan --}}
                 <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
                     <button id="scrollRightMaterial" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -844,87 +837,101 @@
             </div>
 
        {{-- ============================================= --}}
-{{--     MATERIAL HENKATEN CARD SECTION (UPDATED)  --}}
+{{--     MATERIAL HENKATEN CARD SECTION (UPDATED)  --}}
 {{-- ============================================= --}}
-<div class="border-t mt-2 pt-2 overflow-x-auto scrollbar-hide">
-    <div class="flex justify-center gap-3 p-2">
-        
-        @if(isset($materialHenkatens) && $materialHenkatens->isNotEmpty())
-            @foreach($materialHenkatens as $henkaten)
-                <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
-                     style="width: 220px;"
-                     onclick="showHenkatenDetail({{ $henkaten->id }})"
-                     data-henkaten-id="{{ $henkaten->id }}"
-                     {{-- Data attributes diperbarui sesuai skema tabel --}}
-                    data-nama="{{ $henkaten->material_name ?? 'N/A' }}"
-                     data-nama-after="{{ $henkaten->material_after ?? 'N/A' }}"
-                     data-station="{{ $henkaten->station->station_name ?? 'Material Station' }}"
-                     data-shift="{{ $henkaten->shift ?? '-' }}"
-                     data-keterangan="{{ $henkaten->keterangan ?? ($henkaten->material_after ?? 'Material Change') }}"
-                     data-line-area="{{ $henkaten->line_area ?? '-' }}"
-                     data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
-                     data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
-                     data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
-                     data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
-                     data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
-                     data-time-start="{{ $henkaten->time_start ?? '-' }}"
-                     data-time-end="{{ $henkaten->time_end ?? '-' }}">
-                    
-                   {{-- 1. CURRENT & NEW PART (UPDATED) --}}
-                    <div class="grid grid-cols-2 gap-1">
-                        <div class="bg-white shadow rounded p-1 text-center">
-                            <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
-                            {{-- Hanya tampilkan Nama Material, hapus label PART NO & DESC --}}
-                            <p class="text-xs font-medium py-1">{{ $henkaten->material_name ?? 'N/A' }}</p>
+<div class="border-t mt-2 pt-2">
+    <div class="relative">
+        {{-- Tombol Scroll Kiri --}}
+        <button 
+            onclick="scrollMaterialHenkaten('left')" 
+           class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-100 text-gray-700 rounded-full p-2 shadow-md border border-gray-200 transition"
+            id="scrollLeftBtnMaterial">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+
+        {{-- Container Scroll --}}
+        <div class="overflow-x-auto scrollbar-hide scroll-smooth" id="materialHenkatenContainer">
+            <div class="flex justify-start gap-3 p-2">
+                
+                @if(isset($materialHenkatens) && $materialHenkatens->isNotEmpty())
+                    @foreach($materialHenkatens as $henkaten)
+                        <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
+                             style="width: 220px;"
+                             onclick="showHenkatenDetail({{ $henkaten->id }})"
+                             data-henkaten-id="{{ $henkaten->id }}"
+                             data-nama="{{ $henkaten->material_name ?? 'N/A' }}"
+                             data-nama-after="{{ $henkaten->material_after ?? 'N/A' }}"
+                             data-station="{{ $henkaten->station->station_name ?? 'Material Station' }}"
+                             data-shift="{{ $henkaten->shift ?? '-' }}"
+                             data-keterangan="{{ $henkaten->keterangan ?? ($henkaten->material_after ?? 'Material Change') }}"
+                             data-line-area="{{ $henkaten->line_area ?? '-' }}"
+                             data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
+                             data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
+                             data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
+                             data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
+                             data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
+                             data-time-start="{{ $henkaten->time_start ?? '-' }}"
+                             data-time-end="{{ $henkaten->time_end ?? '-' }}">
+                            
+                           {{-- 1. CURRENT & NEW PART (UPDATED) --}}
+                            <div class="grid grid-cols-2 gap-1">
+                                <div class="bg-white shadow rounded p-1 text-center">
+                                    <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
+                                    <p class="text-xs font-medium py-1">{{ $henkaten->material_name ?? 'N/A' }}</p>
+                                </div>
+                                <div class="bg-white shadow rounded p-1 text-center">
+                                    <h3 class="text-[8px] font-bold mb-0.5 text-red-600">NEW PART</h3>
+                                    <p class="text-xs font-medium py-1">{{ $henkaten->material_after ?? 'N/A' }}</p>
+                                </div>
+                            </div>
+                            {{-- 2. SERIAL NUMBER --}}
+                            <div class="grid grid-cols-2 gap-1">
+                                <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? 'N/A' }}</span></div>
+                                <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? 'N/A' }}</span></div>
+                            </div>
+                            {{-- 3. TANGGAL AKTIF --}}
+                            <div class="flex justify-center">
+                                <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
+                                    ACTIVE: {{ $henkaten->effective_date ? $henkaten->effective_date->format('j/M/y') : 'N/A' }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+                                </div>
+                            </div>
                         </div>
-                        <div class="bg-white shadow rounded p-1 text-center">
-                            <h3 class="text-[8px] font-bold mb-0.5 text-red-600">NEW PART</h3>
-                            {{-- Hanya tampilkan Nama Material After, hapus label PART NO & DESC --}}
-                            <p class="text-xs font-medium py-1">{{ $henkaten->material_after ?? 'N/A' }}</p>
-                        </div>
-                    </div>
-                    {{-- 2. SERIAL NUMBER (Variabel disesuaikan) --}}
-                    <div class="grid grid-cols-2 gap-1">
-                        <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? 'N/A' }}</span></div>
-                        <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? 'N/A' }}</span></div>
-                    </div>
-                    {{-- 3. TANGGAL AKTIF (Ditambahkan pengecekan null) --}}
-                    <div class="flex justify-center">
-                        <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
-                            ACTIVE: {{ $henkaten->effective_date ? $henkaten->effective_date->format('j/M/y') : 'N/A' }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        @else
-            <div class="text-center text-xs text-gray-400 py-4">No Active Material Henkaten</div>
-        @endif
+                    @endforeach
+                @else
+                    <div class="text-center text-xs text-gray-400 py-4 w-full">No Active Material Henkaten</div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Tombol Scroll Kanan --}}
+        <button 
+            onclick="scrollMaterialHenkaten('right')" 
+          class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-100 text-gray-700 rounded-full p-2 shadow-md border border-gray-200 transition"
+            id="scrollRightBtnMaterial">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
     </div>
 </div>
-</div>
-
 
 @push('scripts')
 <script>
     // ==================================================
-    // FUNGSI UTAMA (DEFINISI)
-    // ==================================================
+    // FUNGSI UTAMA (DEFINISI GLOBAL)
+    // =l=================================================
 
     /**
      * Update jam, tanggal, dan shift secara real-time.
      */
     function updateDateTime() {
         const now = new Date();
-
-        // Format tanggal (contoh: 21 October 2025)
         const dateOptions = { day: '2-digit', month: 'long', year: 'numeric' };
         document.getElementById("current-date").textContent = now.toLocaleDateString('en-GB', dateOptions);
-
-        // Format waktu (contoh: 10:13:07)
         document.getElementById("current-time").textContent = now.toLocaleTimeString('en-GB');
 
-        // Tentukan shift
-        // Catatan: Ini tidak biasa. Biasanya Shift 1 adalah siang hari.
         const hour = now.getHours();
         let shift;
         if (hour >= 7 && hour < 19) {
@@ -935,59 +942,23 @@
         document.getElementById("current-shift").textContent = shift;
     }
 
-    /**
-     * Toggle status mesin secara manual saat di-klik.
-     */
-    function toggleMachine(element) {
-        const statusText = element.querySelector('.status-text');
-        if (element.classList.contains('machine-active')) {
-            element.classList.remove('machine-active');
-            element.classList.add('machine-inactive');
-            statusText.innerText = 'HENKATEN';
-            statusText.className = "status-text text-[10px] font-bold mt-1 px-1 py-0.5 rounded-full bg-red-600 text-white";
-        } else {
-            element.classList.remove('machine-inactive');
-            element.classList.add('machine-active');
-            statusText.innerText = 'NORMAL';
-            statusText.className = "status-text text-[10px] font-bold mt-1 px-1 py-0.5 rounded-full bg-green-700 text-white";
-        }
-    }
-
-    /**
-     * Simulasi update status mesin secara acak.
-     */
-    
-
     // --- FUNGSI MODAL MAN POWER ---
-
     function showHenkatenDetail(henkatenId) {
         const card = document.querySelector(`[data-henkaten-id="${henkatenId}"]`);
         if (!card) return;
-
         document.getElementById('modalNamaBefore').textContent = card.dataset.nama;
         document.getElementById('modalNamaAfter').textContent = card.dataset.namaAfter;
-        document.getElementById('modalStation').textContent = card.dataset.station;
-        document.getElementById('modalShift').textContent = 'Shift ' + card.dataset.shift;
-        document.getElementById('modalLineArea').textContent = card.dataset.lineArea;
-        document.getElementById('modalKeterangan').textContent = card.dataset.keterangan;
-        document.getElementById('modalEffectiveDate').textContent = card.dataset.effectiveDate;
-        document.getElementById('modalEndDate').textContent = card.dataset.endDate;
-        document.getElementById('modalSerialStart').textContent = card.dataset.serialNumberStart || '-';
-        document.getElementById('modalSerialEnd').textContent = card.dataset.serialNumberEnd || '-';
-        document.getElementById('modalTimeStart').textContent = card.dataset.timeStart || '-';
+        // ... (sisa kode modal Anda) ...
         document.getElementById('modalTimeEnd').textContent = card.dataset.timeEnd || '-';
-
         const lampiran = card.dataset.lampiran;
         const section = document.getElementById('modalLampiranSection');
         const link = document.getElementById('modalLampiranLink');
-
         if (lampiran) {
             section.classList.remove('hidden');
             link.href = lampiran;
         } else {
             section.classList.add('hidden');
         }
-
         document.getElementById('henkatenDetailModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }
@@ -998,7 +969,6 @@
     }
 
     // --- FUNGSI MODAL METHOD ---
-
     function showMethodHenkatenDetail(henkatenId) {
         const card = document.querySelector(`.method-card[data-henkaten-id="${henkatenId}"]`);
         if (!card) {
@@ -1010,21 +980,9 @@
             console.error('Elemen modal Henkaten Metode tidak ditemukan');
             return;
         }
-
         const data = card.dataset;
-        modal.querySelector('#modalKeteranganBefore').textContent = data.keteranganBefore || '-';
-        modal.querySelector('#modalKeteranganAfter').textContent = data.keteranganAfter || '-';
-        modal.querySelector('#modalStation').textContent = data.station || 'N/A';
-        modal.querySelector('#modalShift').textContent = data.shift || '-';
-        modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
-        modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
-        modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
-        modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
-        modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
-        modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
-        modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
+        // ... (sisa kode modal Anda) ...
         modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
-
         const lampiranSection = modal.querySelector('#modalLampiranSection');
         const lampiranLink = modal.querySelector('#modalLampiranLink');
         if (data.lampiran) {
@@ -1034,7 +992,7 @@
             lampiranSection.classList.add('hidden');
         }
         modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden'; // Tambahkan ini
+        document.body.style.overflow = 'hidden';
     }
 
     function closeMethodHenkatenModal() {
@@ -1042,12 +1000,27 @@
         if (modal) {
             modal.classList.add('hidden');
         }
-        document.body.style.overflow = 'auto'; // Tambahkan ini
+        document.body.style.overflow = 'auto';
     }
 
+    // ==================================================
+    // FUNGSI SCROLL UNTUK CARD HENKATEN (GLOBAL)
+    // ==================================================
+    // **PINDAHKAN FUNGSI INI KE LUAR (GLOBAL)** agar 'onclick' bisa menemukannya
+    function scrollMaterialHenkaten(direction) {
+        const container = document.getElementById('materialHenkatenContainer');
+        if (!container) return; 
+        const scrollAmount = 240; // Lebar card + gap
+        
+        if (direction === 'left') {
+            container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        } else {
+            container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+    }
 
     // ==================================================
-    // INISIALISASI SAAT HALAMAN DIMUAT
+    // INISIALISASI SAAT HALAMAN DIMUAT (DOMContentLoaded)
     // ==================================================
 
     // Jalankan jam
@@ -1058,8 +1031,7 @@
     document.addEventListener('DOMContentLoaded', function() {
 
         /**
-         * Fungsi scroll horizontal TERKONSOLIDASI.
-         * Mengatur tombol kiri/kanan dan menyembunyikannya di ujung.
+         * Fungsi scroll horizontal TERKONSOLIDASI (Untuk tabel-tabel).
          */
         function setupHorizontalScroll(containerId, leftBtnId, rightBtnId) {
             const scrollContainer = document.getElementById(containerId);
@@ -1067,36 +1039,27 @@
             const scrollRightBtn = document.getElementById(rightBtnId);
             
             if (!scrollContainer || !scrollLeftBtn || !scrollRightBtn) {
-                // console.warn('Elemen scroll tidak ditemukan untuk:', containerId);
                 return;
             }
-
             const scrollAmount = 250; 
-
             scrollLeftBtn.addEventListener('click', function() {
                 scrollContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
             });
-
             scrollRightBtn.addEventListener('click', function() {
                 scrollContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
             });
-
             function updateButtons() {
                 const isAtStart = scrollContainer.scrollLeft <= 0;
                 const isAtEnd = scrollContainer.scrollLeft + scrollContainer.clientWidth >= scrollContainer.scrollWidth - 1;
                 scrollLeftBtn.style.visibility = isAtStart ? 'hidden' : 'visible';
                 scrollRightBtn.style.visibility = isAtEnd ? 'hidden' : 'visible';
             }
-
             scrollContainer.addEventListener('scroll', updateButtons);
-            updateButtons(); // Pengecekan awal
-
-            // Tambahkan ini untuk scroll ke kanan (item terlama) saat dimuat
-            // Hapus komentar jika Anda ingin scroll otomatis ke paling kanan
+            updateButtons(); 
             scrollContainer.scrollLeft = scrollContainer.scrollWidth;
         }
 
-        // Inisialisasi SEMUA bagian scroll
+        // Inisialisasi SEMUA bagian scroll tabel
         setupHorizontalScroll('materialTableContainer', 'scrollLeftMaterial', 'scrollRightMaterial');
         setupHorizontalScroll('manPowerTableContainer', 'scrollLeftManPower', 'scrollRightManPower');
         setupHorizontalScroll('machineTableContainer', 'scrollLeftMachine', 'scrollRightMachine');
@@ -1104,41 +1067,34 @@
         setupHorizontalScroll('methodChangeContainer', 'scrollLeftMethod', 'scrollRightMethod');
 
 
-        // --- Logika klik untuk Material ---
-        const materials = document.querySelectorAll('.material-status');
-        materials.forEach((material) => {
-            material.addEventListener('click', () => {
-                const tdMaterial = material.closest('td');
-                const tdStatus = tdMaterial.parentElement.nextElementSibling?.children[tdMaterial.cellIndex];
-                const statusText = tdStatus?.querySelector('.status-text');
+        // ================================================================
+        // INISIALISASI SCROLL UNTUK CARD (BAGIAN YANG DIPERBAIKI)
+        // ================================================================
+        // **HAPUS 'window.addEventListener' YANG BERSARANG**
+        
+        const container = document.getElementById('materialHenkatenContainer');
+        const leftBtn = document.getElementById('scrollLeftBtnMaterial');
+        const rightBtn = document.getElementById('scrollRightBtnMaterial');
 
-                if (!material.classList.contains('bg-red-500')) {
-                    // Normal -> Henkaten
-                    material.classList.remove('bg-white');
-                    material.classList.add('bg-red-500', 'text-white');
-                    material.innerText = 'HENKATEN';
-                    if (statusText) {
-                        statusText.innerText = 'HENKATEN';
-                        statusText.classList.remove('text-green-500'); // Hapus hijau jika ada
-                        statusText.classList.add('text-white');
-                    }
-                    tdMaterial.classList.add('bg-red-500', 'text-white');
-                    if (tdStatus) tdStatus.classList.add('bg-red-500', 'text-white');
-                } else {
-                    // Henkaten -> Normal
-                    material.classList.remove('bg-red-500', 'text-white');
-                    material.classList.add('bg-white');
-                    material.innerText = '';
-                    if (statusText) {
-                        statusText.innerText = 'NORMAL';
-                        statusText.classList.remove('text-white');
-                        statusText.classList.add('text-green-500'); // Kembali ke hijau
-                    }
-                    tdMaterial.classList.remove('bg-red-500', 'text-white');
-                    if (tdStatus) tdStatus.classList.remove('bg-red-500', 'text-white');
-                }
-            });
-        });
+        if (container && leftBtn && rightBtn) {
+            
+            function checkScrollButtons() {
+                const isAtStart = container.scrollLeft <= 0;
+                const isAtEnd = container.scrollLeft >= (container.scrollWidth - container.clientWidth - 1); 
+
+                leftBtn.style.display = isAtStart ? 'none' : 'block';
+                rightBtn.style.display = isAtEnd ? 'none' : 'block';
+            }
+
+            // Pasang event listener-nya di sini
+            container.addEventListener('scroll', checkScrollButtons);
+
+            // Atur visibilitas awal
+            setTimeout(checkScrollButtons, 100); 
+        }
+        // ================================================================
+        // AKHIR BAGIAN YANG DIPERBAIKI
+        // ================================================================
 
         // --- Event Listener untuk Modal Man Power ---
         const manPowerModal = document.getElementById('henkatenDetailModal');
@@ -1148,7 +1104,7 @@
             });
         }
         
-        // --- Event Listener untuk Modal Method (DITAMBAHKAN) ---
+        // --- Event Listener untuk Modal Method ---
         const methodModal = document.getElementById('methodHenkatenDetailModal');
         if (methodModal) {
             methodModal.addEventListener('click', function(e) {
@@ -1164,10 +1120,9 @@
             }
         });
 
+    
     });
 </script>
+@endpush
 
-
-
-  @endpush
 </x-app-layout>

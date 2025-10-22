@@ -102,13 +102,18 @@ class DashboardController extends Controller
         $groupedManPower = $manPower->groupBy('station_id');
 
         // Siapkan status default untuk setiap stasiun
-        $stationStatuses = $stations->map(function ($station) {
-            return [
-                'id'     => $station->id,
-                'name'   => $station->station_name,
-                'status' => 'NORMAL', // default
-            ];
-        });
+       $stationStatuses = $stations->map(function ($station) {
+    // Ambil material terkait station (sesuaikan dengan relasi Anda)
+    $material = $station->material; // atau $station->materials()->first() jika many-to-many
+    
+    return [
+        'id'            => $station->id,
+        'name'          => $station->station_name,
+        'status'        => 'NORMAL', // default
+        'material_name' => $material ? $material->material_name : null,
+        'is_henkaten'   => $material ? $material->is_henkaten : false, // atau field lain yang menandakan henkaten
+    ];
+});
         
         // ================= 6. KIRIM SEMUA DATA KE VIEW =================
         

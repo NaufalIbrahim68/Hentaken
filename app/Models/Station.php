@@ -15,4 +15,9 @@ class Station extends Model
         'station_name',
          'station_code',
     ];
+
+    public function materials()
+    {
+        return $this->hasMany(Material::class, 'station_id');
+    }
 }
