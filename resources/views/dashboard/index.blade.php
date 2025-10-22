@@ -695,10 +695,10 @@
                                     ST {{ $mc->station_id }}
                                 </div>
 
-                                {{-- Ikon mesin - . --}}
+                                {{-- Ikon mesin  --}}
                                 <div style="font-size: 16px;">🏭</div>
 
-                                {{-- Status Text - . --}}
+                                {{-- Status Text --}}
                                 <div class="status-text text-[7px] font-bold mt-0.5 px-0.5 py-0.5 rounded-full 
                                     {{ $isHenkaten ? 'bg-red-600 text-white ' : 'bg-green-700 text-white' }}">
                                     {{ $isHenkaten ? 'HENKATEN' : 'NORMAL' }}
@@ -919,10 +919,7 @@
 
 @push('scripts')
 <script>
-    // ==================================================
-    // FUNGSI UTAMA (DEFINISI GLOBAL)
-    // =l=================================================
-
+    
     /**
      * Update jam, tanggal, dan shift secara real-time.
      */
@@ -942,58 +939,105 @@
         document.getElementById("current-shift").textContent = shift;
     }
 
-    // --- FUNGSI MODAL MAN POWER ---
-    function showHenkatenDetail(henkatenId) {
-        const card = document.querySelector(`[data-henkaten-id="${henkatenId}"]`);
-        if (!card) return;
-        document.getElementById('modalNamaBefore').textContent = card.dataset.nama;
-        document.getElementById('modalNamaAfter').textContent = card.dataset.namaAfter;
-        // ... (sisa kode modal Anda) ...
-        document.getElementById('modalTimeEnd').textContent = card.dataset.timeEnd || '-';
-        const lampiran = card.dataset.lampiran;
-        const section = document.getElementById('modalLampiranSection');
-        const link = document.getElementById('modalLampiranLink');
-        if (lampiran) {
-            section.classList.remove('hidden');
-            link.href = lampiran;
-        } else {
-            section.classList.add('hidden');
-        }
-        document.getElementById('henkatenDetailModal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
+    // --- FUNGSI MODAL MAN POWER (DIPERBAIKI) ---
+function showHenkatenDetail(henkatenId) {
+    const card = document.querySelector(`[data-henkaten-id="${henkatenId}"]`);
+    if (!card) {
+        console.error('Card Man Power Henkaten tidak ditemukan!');
+        return;
+    }
+    
+    const data = card.dataset; // Ambil semua data- attributes
+
+    // Mengisi bagian "Perubahan Pekerja"
+    document.getElementById('modalNamaBefore').textContent = data.nama || '-';
+    document.getElementById('modalNamaAfter').textContent = data.namaAfter || '-';
+
+    
+    // Mengisi bagian "Informasi Detail" (Grid)
+    document.getElementById('modalStation').textContent = data.station || '-';
+    document.getElementById('modalShift').textContent = data.shift || '-';
+    document.getElementById('modalLineArea').textContent = data.lineArea || '-';
+    document.getElementById('modalKeterangan').textContent = data.keterangan || '-';
+    document.getElementById('modalSerialStart').textContent = data.serialNumberStart || '-';
+    document.getElementById('modalSerialEnd').textContent = data.serialNumberEnd || '-';
+    document.getElementById('modalTimeStart').textContent = data.timeStart || '-';
+    document.getElementById('modalTimeEnd').textContent = data.timeEnd || '-'; // Anda sudah punya ini
+
+    // Mengisi bagian "Periode"
+    document.getElementById('modalEffectiveDate').textContent = data.effectiveDate || '-';
+    document.getElementById('modalEndDate').textContent = data.endDate || 'Selanjutnya';
+   
+
+    // Mengurus Lampiran
+    const lampiran = data.lampiran;
+    const section = document.getElementById('modalLampiranSection');
+    const link = document.getElementById('modalLampiranLink');
+    
+    if (lampiran) {
+        section.classList.remove('hidden');
+        link.href = lampiran;
+    } else {
+        section.classList.add('hidden');
     }
 
-    function closeHenkatenModal() {
+    // Tampilkan Modal
+    document.getElementById('henkatenDetailModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    }
+
+   function closeHenkatenModal() {
         document.getElementById('henkatenDetailModal').classList.add('hidden');
         document.body.style.overflow = 'auto';
     }
 
-    // --- FUNGSI MODAL METHOD ---
-    function showMethodHenkatenDetail(henkatenId) {
-        const card = document.querySelector(`.method-card[data-henkaten-id="${henkatenId}"]`);
-        if (!card) {
-            console.error('Elemen card Henkaten Metode tidak ditemukan untuk id:', henkatenId);
-            return;
-        }
-        const modal = document.getElementById('methodHenkatenDetailModal');
-        if (!modal) {
-            console.error('Elemen modal Henkaten Metode tidak ditemukan');
-            return;
-        }
-        const data = card.dataset;
-        // ... (sisa kode modal Anda) ...
-        modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
-        const lampiranSection = modal.querySelector('#modalLampiranSection');
-        const lampiranLink = modal.querySelector('#modalLampiranLink');
-        if (data.lampiran) {
-            lampiranLink.href = data.lampiran;
-            lampiranSection.classList.remove('hidden');
-        } else {
-            lampiranSection.classList.add('hidden');
-        }
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
+   // --- FUNGSI MODAL METHOD (DIPERBAIKI) ---
+function showMethodHenkatenDetail(henkatenId) {
+    const card = document.querySelector(`.method-card[data-henkaten-id="${henkatenId}"]`);
+    if (!card) {
+        console.error('Elemen card Henkaten Metode tidak ditemukan untuk id:', henkatenId);
+        return;
     }
+    
+    const modal = document.getElementById('methodHenkatenDetailModal');
+    if (!modal) {
+        console.error('Elemen modal Henkaten Metode tidak ditemukan');
+        return;
+    }
+
+    const data = card.dataset; // Ambil semua data- attributes
+
+   
+    // Mengisi bagian "Informasi Detail" (Grid)
+    modal.querySelector('#modalStation').textContent = data.station || '-';
+    modal.querySelector('#modalShift').textContent = data.shift || '-';
+    modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
+    modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
+    modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
+    modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
+    modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
+    modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
+
+    // Mengisi bagian "Periode"
+    modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
+    modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya'; // Anda sudah punya ini
+    
+    // Mengurus Lampiran
+    const lampiranSection = modal.querySelector('#modalLampiranSection');
+    const lampiranLink = modal.querySelector('#modalLampiranLink');
+    
+    if (data.lampiran) {
+        lampiranLink.href = data.lampiran;
+        lampiranSection.classList.remove('hidden');
+    } else {
+        lampiranSection.classList.add('hidden');
+    }
+
+    // Tampilkan Modal
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
 
     function closeMethodHenkatenModal() {
         const modal = document.getElementById('methodHenkatenDetailModal');
@@ -1003,14 +1047,77 @@
         document.body.style.overflow = 'auto';
     }
 
+
+    // ---  MODAL MATERIAL  ---
+function showMaterialHenkatenDetail(henkatenId) {
+    
+    const card = document.querySelector(`.material-card[data-henkaten-id="${henkatenId}"]`); 
+    if (!card) {
+        console.error('Elemen card Henkaten Material tidak ditemukan untuk id:', henkatenId);
+        return;
+    }
+    
+  
+    const modal = document.getElementById('materialHenkatenDetailModal'); 
+    if (!modal) {
+        console.error('Elemen modal Henkaten Material tidak ditemukan');
+        return;
+    }
+
+    const data = card.dataset;
+
+    // 3. Isi semua data (sesuaikan ID elemen di dalam modal jika perlu)
+    modal.querySelector('#modalStation').textContent = data.station || '-';
+    modal.querySelector('#modalShift').textContent = data.shift || '-';
+    modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
+    modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
+    modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
+    modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
+    modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
+    modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
+    modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
+    modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
+    
+    const lampiranSection = modal.querySelector('#modalLampiranSection');
+    const lampiranLink = modal.querySelector('#modalLampiranLink');
+    
+    if (data.lampiran) {
+        lampiranLink.href = data.lampiran;
+        lampiranSection.classList.remove('hidden');
+    } else {
+        lampiranSection.classList.add('hidden');
+    }
+
+    // Tampilkan Modal
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+
+function closeMaterialHenkatenModal() {
+    const modal = document.getElementById('materialHenkatenDetailModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    document.body.style.overflow = 'auto';
+}
+
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeHenkatenModal();
+        closeMethodHenkatenModal();
+        closeMaterialHenkatenModal(); // <--- TAMBAHKAN INI
+    }
+});
     // ==================================================
     // FUNGSI SCROLL UNTUK CARD HENKATEN (GLOBAL)
     // ==================================================
-    // **PINDAHKAN FUNGSI INI KE LUAR (GLOBAL)** agar 'onclick' bisa menemukannya
+   
     function scrollMaterialHenkaten(direction) {
         const container = document.getElementById('materialHenkatenContainer');
         if (!container) return; 
-        const scrollAmount = 240; // Lebar card + gap
+        const scrollAmount = 240; 
         
         if (direction === 'left') {
             container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
@@ -1070,7 +1177,7 @@
         // ================================================================
         // INISIALISASI SCROLL UNTUK CARD (BAGIAN YANG DIPERBAIKI)
         // ================================================================
-        // **HAPUS 'window.addEventListener' YANG BERSARANG**
+        
         
         const container = document.getElementById('materialHenkatenContainer');
         const leftBtn = document.getElementById('scrollLeftBtnMaterial');
@@ -1092,10 +1199,7 @@
             // Atur visibilitas awal
             setTimeout(checkScrollButtons, 100); 
         }
-        // ================================================================
-        // AKHIR BAGIAN YANG DIPERBAIKI
-        // ================================================================
-
+        
         // --- Event Listener untuk Modal Man Power ---
         const manPowerModal = document.getElementById('henkatenDetailModal');
         if (manPowerModal) {
