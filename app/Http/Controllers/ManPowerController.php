@@ -8,6 +8,8 @@ use Carbon\Carbon;
 use App\Models\Station;
 use App\Models\ManPower;
 use App\Models\ManPowerHenkaten; 
+use Illuminate\View\View; 
+
 
 class ManPowerController extends Controller
 {
@@ -22,27 +24,51 @@ class ManPowerController extends Controller
 }
 
 
-  public function createMaster()
-    {
-        $stations = Station::all(); // Mengambil semua data station untuk dropdown
-        return view('manpower.create', compact('stations'));
+ public function create()
+{
+    $lineAreas = Station::select('line_area')->distinct()->pluck('line_area');
+    $stations = Station::all(); // untuk inisialisasi awal
+
+    return view('manpower.create', compact('lineAreas', 'stations'));
+}
+
+public function getStationsByLine(Request $request)
+{
+    $lineArea = $request->query('line_area');
+
+    if (!$lineArea) {
+        return response()->json([]);
     }
+
+    $stations = \App\Models\Station::where('line_area', $lineArea)
+        ->select('id', 'station_name', 'station_code')
+        ->orderBy('station_name', 'asc')
+        ->get();
+
+    return response()->json($stations);
+}
+
 
     /**
      * Menyimpan data Man Power baru ke database.
      */
     public function storeMaster(Request $request)
     {
+        // ==========================================================
+        // PENYESUAIAN: Menambahkan 'grup'
+        // ==========================================================
         $request->validate([
             'nama' => 'required|string|max:255',
             'station_id' => 'required|exists:stations,id',
             'shift' => 'required|in:1,2',
+            'grup' => 'required|in:A,B', // <-- DITAMBAHKAN
         ]);
 
         ManPower::create([
             'nama' => $request->nama,
             'station_id' => $request->station_id,
             'shift' => $request->shift,
+            'grup' => $request->grup, // <-- DITAMBAHKAN
         ]);
 
         return redirect()->route('manpower.index')
@@ -50,29 +76,39 @@ class ManPowerController extends Controller
     }
 
 
-    public function editMaster($id)
-    {
-        $man_power = ManPower::findOrFail($id);
-        $stations = Station::all();
-        
-        return view('manpower.edit_master', compact('man_power', 'stations'));
-    }
+   public function edit($id)
+{
+    // Ambil data man power berdasarkan ID
+    $man_power = ManPower::findOrFail($id);
+
+    // Ambil semua line_area unik (untuk dropdown line)
+    $lineAreas = Station::select('line_area')->distinct()->pluck('line_area');
+
+    // Ambil semua station (untuk inisialisasi dropdown station)
+    $stations = Station::all();
+
+    // Kirim semua data ke view
+    return view('manpower.edit_master', compact('man_power', 'lineAreas', 'stations'));
+}
+
 
     public function updateMaster(Request $request, $id)
 {
-   
     
+    // ==========================================================
+    // PENYESUAIAN: Menambahkan 'grup' dan memperbaiki validasi 'shift'
+    // ==========================================================
     $validatedData = $request->validate([
         'nama' => 'required|string|max:255',
         'station_id' => 'required|exists:stations,id',
-        'shift' => 'required|in:Shift A,Shift B', 
+        'shift' => 'required|in:1,2', // <-- DIPERBAIKI (sebelumnya 'Shift A,Shift B')
+        'grup' => 'required|in:A,B',  // <-- DITAMBAHKAN
     ]);
 
     // 2. Cari data ManPower yang akan di-update
     $man_power = ManPower::findOrFail($id);
     
     // 3. Update data dengan data yang sudah tervalidasi
-    // Menggunakan $validatedData lebih aman daripada $request->all()
     $man_power->update($validatedData);
 
     // 4. Redirect kembali ke halaman index dengan pesan sukses
@@ -107,9 +143,9 @@ class ManPowerController extends Controller
         $man_power = ManPower::findOrFail($id);
         $stations = Station::all();
         $lineAreas = Station::whereNotNull('line_area')
-                        ->orderBy('line_area', 'asc')
-                        ->pluck('line_area')
-                        ->unique();
+                             ->orderBy('line_area', 'asc')
+                             ->pluck('line_area')
+                             ->unique();
         
         return view('manpower.create_henkaten', compact('man_power', 'stations','lineAreas'));
     }
@@ -150,7 +186,7 @@ class ManPowerController extends Controller
             'man_power_id_after.exists'   => 'Karyawan sesudah tidak valid.',
         ]);
 
-       
+        
         // Upload lampiran jika ada
         $lampiranPath = null;
         if ($request->hasFile('lampiran')) {
@@ -163,7 +199,7 @@ class ManPowerController extends Controller
             'man_power_id'       => $validated['man_power_id'],       // Gunakan ID langsung
             'man_power_id_after' => $validated['man_power_id_after'], // Gunakan ID langsung
             
-           
+            
             'shift'              => $validated['shift'],
             'line_area'          => $validated['line_area'],
             'effective_date'     => $validated['effective_date'],
@@ -185,4 +221,12 @@ class ManPowerController extends Controller
         return redirect()->route('manpower.index')
             ->with('success', 'Data Henkaten berhasil dihapus.');
     }
+
+    public function createManpowerScheduler(Request $request): View
+    {
+        // Kita hanya menampilkan view-nya saja
+       return view('manpower.schedulers');
+    }
+
 }
+

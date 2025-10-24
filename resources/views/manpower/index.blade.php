@@ -27,71 +27,72 @@
 
                       
                     {{-- Tabel Data --}}
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white">
-                            <div class="flex items-center justify-between mb-6">
-                        <a href="{{ route('manpower.create') }}" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
-                            Tambah Data
-                        </a>
+                  <div class="overflow-x-auto">
+    <div class="flex items-center justify-between mb-6">
+        <a href="{{ route('manpower.create') }}" 
+           class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
+            Tambah Data
+        </a>
+    </div>
 
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th
-                                        class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                                        ID</th>
-                                    <th
-                                        class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                                        Nama</th>
-                                    <th
-                                        class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                                        Station</th>
-                                    <th
-                                        class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                                        Shift</th>
-                                    <th
-                                        class="py-3 px-4 border-b text-center text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                                        Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
-                                @forelse ($man_powers as $man_power)
-                                    <tr class="hover:bg-gray-50 transition duration-200">
-                                      <td class="py-3 px-4">{{ $man_power->station_id }}</td>
-                                        <td class="py-3 px-4 font-medium">{{ $man_power->nama }}</td>
-                                        <td class="py-3 px-4">{{ $man_power->station?->station_code }}</td>
-                                        <td class="py-3 px-4">{{ $man_power->shift }}</td>
-                                        <td class="py-3 px-4 text-center">
-                                            <div class="flex items-center justify-center space-x-2">
-                                               
-                                                <a href="{{ route('manpower.edit', $man_power->id) }}"
-                                                    class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-1 px-3 rounded-md text-sm transition">
-                                                    Edit
-                                                </a>
-                                                <form action="{{ route('manpower.destroy', $man_power->id) }}"
-                                                    method="POST" onsubmit="return confirm('Yakin ingin hapus?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                        class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md text-sm transition">
-                                                        Hapus
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="text-center py-4 text-gray-500">Tidak ada data master man
-                                            power.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+    <table class="min-w-full bg-white">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">No</th>
+                <th class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Nama</th>
+                <th class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Line Area</th>
+                <th class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Station</th>
+                <th class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Grup</th>
+                <th class="py-3 px-4 border-b text-center text-sm font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
+            </tr>
+        </thead>
 
+        <tbody class="divide-y divide-gray-200">
+            @foreach ($man_powers as $man_power)
+                <tr class="hover:bg-gray-50 transition duration-200">
+                    <td class="py-3 px-4">
+                        {{ $loop->iteration + ($man_powers->currentPage() - 1) * $man_powers->perPage() }}
+                    </td>
+                    <td class="py-3 px-4 font-medium">{{ $man_power->nama }}</td>
+                    <td class="py-3 px-4 font-medium">{{ $man_power->line_area }}</td>
+                    <td class="py-3 px-4">{{ $man_power->station?->station_name }}</td>
+                    <td class="py-3 px-4">{{ $man_power->grup }}</td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex items-center justify-center space-x-2">
+                            <a href="{{ route('manpower.edit', $man_power->id) }}"
+                               class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-1 px-3 rounded-md text-sm transition">
+                                Edit
+                            </a>
+                            <form action="{{ route('manpower.destroy', $man_power->id) }}"
+                                  method="POST"
+                                  onsubmit="return confirm('Yakin ingin hapus?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                        class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md text-sm transition">
+                                    Hapus
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            @endforeach
 
-<div class="mt-6">
-    {{ $man_powers->links('vendor.pagination.tailwind-index-mp') }}
+            @if ($man_powers->isEmpty())
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-gray-500">
+                        Tidak ada data master man power.
+                    </td>
+                </tr>
+            @endif
+        </tbody>
+    </table>
+
+    <div class="mt-6">
+        {{ $man_powers->links('vendor.pagination.tailwind-index-mp') }}
+    </div>
 </div>
+
                     </div>
                 </div>
             </div>

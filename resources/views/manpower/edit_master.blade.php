@@ -26,9 +26,11 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('manpower.master.update', $man_power->id) }}" method="POST">
-                        @csrf
-                        @method('PUT')
+                  <form action="{{ route('manpower.update', $man_power->id) }}" method="POST"
+      x-data="dependentDropdowns('{{ old('line_area', $man_power->line_area) }}', '{{ old('station_id', $man_power->station_id) }}')"
+      x-init="init()">
+    @csrf
+    @method('PUT')
 
                         <div class="mb-4">
                             <label for="nama" class="block text-gray-700 text-sm font-bold mb-2">Nama Karyawan</label>
@@ -43,53 +45,41 @@
                             @enderror
                         </div>
 
-                       {{-- Dropdown untuk Station Code, hanya muncul jika ada data station --}}
-@if($stations->count() > 0)
+                      {{-- Dropdown Line Area --}}
     <div class="mb-4">
-        <label for="station_id" class="block text-gray-700 text-sm font-bold mb-2">Station Code</label>
-        <select id="station_id" 
-                name="station_id" 
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required>
-            {{-- Jika station_id null atau tidak ada, tampilkan opsi 'Pilih Station' --}}
-            @if(is_null($man_power->station_id))
-                <option value="" selected>Pilih Station</option>
-            @endif
-            
-            {{-- Loop melalui semua stasiun yang tersedia --}}
-            @foreach($stations as $station)
-                <option value="{{ $station->id }}" 
-                        {{ old('station_id', $man_power->station_id) == $station->id ? 'selected' : '' }}>
-                    {{ $station->station_code }}
-                </option>
+        <label for="line_area" class="block text-gray-700 text-sm font-bold mb-2">Line Area</label>
+        <select 
+            id="line_area" 
+            name="line_area" 
+            x-model="selectedLineArea"
+            @change="fetchStations()" 
+            class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+        >
+            <option value="">Pilih Line Area</option>
+            @foreach ($lineAreas as $line)
+                <option value="{{ $line }}">{{ $line }}</option>
             @endforeach
         </select>
-        @error('station_id') 
-            <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p> 
-        @enderror
     </div>
 
-  
-@endif
-
-
-                        <div class="mb-6">
-                            <label for="shift" class="block text-gray-700 text-sm font-bold mb-2">Shift</label>
-                            <select id="shift" 
-                                    name="shift" 
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    required>
-                                <option value="Shift A" {{ old('shift', $man_power->shift) == 'Shift A' ? 'selected' : '' }}>
-                                    Shift A
-                                </option>
-                                <option value="Shift B" {{ old('shift', $man_power->shift) == 'Shift B' ? 'selected' : '' }}>
-                                    Shift B
-                                </option>
-                            </select>
-                            @error('shift') 
-                                <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p> 
-                            @enderror
-                        </div>
+    {{-- Dropdown Station Name --}}
+    <div class="mb-4">
+        <label for="station_id" class="block text-gray-700 text-sm font-bold mb-2">Station Name</label>
+        <select 
+            id="station_id" 
+            name="station_id" 
+            x-model="selectedStation"
+            class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+        >
+            <option value="">Pilih Station</option>
+            <template x-for="station in stationList" :key="station.id">
+                <option :value="station.id" x-text="station.station_name"></option>
+            </template>
+        </select>
+    </div>
+</div>
 
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
                             <a href="{{ route('manpower.index') }}" 
@@ -107,16 +97,47 @@
             </div>
         </div>
     </div>
-    <script>
-        // Script untuk memperbarui tampilan Station ID saat pilihan di dropdown berubah
-        document.addEventListener('DOMContentLoaded', function() {
-            const stationSelect = document.getElementById('station_id');
-            const stationIdDisplay = document.getElementById('station_id_display');
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
-            stationSelect.addEventListener('change', function() {
-                // Update station ID display dengan nilai yang dipilih
-                stationIdDisplay.value = this.value || '';
-            });
-        });
-    </script>
+   <script>
+    // Alpine Component untuk Dependent Dropdown (reusable)
+    function dependentDropdowns(oldLineArea = '', oldStation = null) {
+        return {
+            selectedLineArea: oldLineArea,
+            selectedStation: oldStation,
+            stationList: [],
+
+            init() {
+                // Jika sudah ada line_area lama (saat edit), ambil daftar station
+                if (this.selectedLineArea) {
+                    this.fetchStations();
+                }
+            },
+
+            fetchStations() {
+                if (!this.selectedLineArea) {
+                    this.stationList = [];
+                    this.selectedStation = null;
+                    return;
+                }
+
+                fetch(`{{ route('stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        this.stationList = data;
+
+                        // Jika ada station lama dari DB, pertahankan pilihannya
+                        if (this.selectedStation) {
+                            const exists = this.stationList.some(s => s.id == this.selectedStation);
+                            if (!exists) this.selectedStation = null;
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Gagal mengambil data station:', err);
+                        this.stationList = [];
+                    });
+            }
+        }
+    }
+</script>
 </x-app-layout>

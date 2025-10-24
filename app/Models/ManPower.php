@@ -18,10 +18,13 @@ class ManPower extends Model
      */
     protected $fillable = [
         'station_id',
+        'grup', // <-- WAJIB DITAMBAHKAN
         'shift',
         'nama',
         'line_area',
         'status', // Kolom status yang penting
+          'time_scheduler_id', 
+
     ];
 
     /**
@@ -31,4 +34,10 @@ class ManPower extends Model
     {
         return $this->belongsTo(Station::class);
     }
+
+    public function timeScheduler()
+{
+    return $this->belongsTo(TimeScheduler::class, 'time_scheduler_id');
+}
+
 }

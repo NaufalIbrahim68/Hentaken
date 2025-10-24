@@ -192,45 +192,71 @@
 
         <div id="manPowerTableContainer" class="mx-8 overflow-x-auto scrollbar-hide scroll-smooth">
             <div class="flex gap-6 py-2">
+
+                {{-- ================================================================== --}}
+                {{-- PERBAIKAN LOGIKA BESAR DI SINI --}}
+                {{-- ================================================================== --}}
+
+                {{-- Loop 1: Berdasarkan Stasiun (Hasil dari groupBy di Controller) --}}
                 @foreach($groupedManPower as $stationId => $stationWorkers)
-                 @php
-    // Cari pekerja untuk shift saat ini
-    $currentWorker = $stationWorkers->where('shift', $currentShift)->first();
-    
-    // Jika tidak ada pekerja di shift ini untuk stasiun ini, lewati
-    if (!$currentWorker) continue;
 
-    // ==========================================================
-    // PERBAIKAN: Gunakan status yang sudah dihitung di Controller
-    // Tidak perlu query database baru
-    // ==========================================================
-    $isHenkaten = ($currentWorker->status == 'Henkaten'); 
-    
-    $displayName = $currentWorker->nama; 
-    $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
-    $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-    $stationCode = $currentWorker->station ? $currentWorker->station->station_code : 'ST-' . $stationId;
-@endphp
+                    {{-- Loop 2: Tampilkan SEMUA pekerja di stasiun ini --}}
+                    {{-- ($stationWorkers adalah collection, jadi kita loop lagi) --}}
+                    @foreach($stationWorkers as $currentWorker)
 
-                    <div class="flex-shrink-0 text-center" style="min-width: 80px;">
-                        <p class="text-[10px] font-bold text-gray-800 mb-1">{{ $stationCode }}</p>
+                        @php
+                        // TIDAK ADA FILTER SHIFT LAGI.
+                        // $currentWorker sudah pasti dari grup yang benar (misal 'B')
+                        // karena sudah difilter oleh Controller.
+                        
+                        // Status 'Henkaten'/'NORMAL' sudah di-set di Controller
+                        $isHenkaten = ($currentWorker->status == 'Henkaten'); 
+                        
+                        $displayName = $currentWorker->nama; 
+                        $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
+                        $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500'; // Merah untuk Henkaten, Hijau untuk Normal
+                        $stationCode = $currentWorker->station ? $currentWorker->station->station_code : 'ST-' . $stationId;
+                        @endphp
 
-                        <div class="relative mx-auto mb-2 w-8 h-8">
-                            <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                                👤
+                        {{-- Ini adalah HTML untuk 1 ikon orang --}}
+                        <div class="flex-shrink-0 text-center" style="min-width: 80px;">
+                            <p class="text-[10px] font-bold text-gray-800 mb-1">{{ $stationCode }}</p>
+
+                            {{-- ================================================================ --}}
+                            {{-- PERUBAHAN TAMPILAN IKON & STATUS --}}
+                            {{-- ================================================================ --}}
+
+                            {{-- IKON (Ukuran w-8 h-8, tanpa overlay dot) --}}
+                            <div class="relative mx-auto mb-2 w-8 h-8">
+                                <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                      <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                {{-- DIV UNTUK DOT OVERLAY (DIHAPUS) --}}
                             </div>
-                            <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full {{ $statusColor }} border-2 border-white"></div>
-                        </div>
 
-                        <p class="text-[10px] font-medium mb-1 truncate px-1" title="{{ $displayName }}">{{ $displayName }}</p>
+                            {{-- NAMA PEKERJA (Tetap sama) --}}
+                            <p class="text-[10px] font-medium mb-1 truncate px-1" title="{{ $displayName }}">{{ $displayName }}</p>
 
-                        <div>
-                            <span class="inline-block px-2 py-1 text-[9px] font-semibold rounded text-white {{ $statusColor }}">
-                                {{ $statusText }}
-                            </span>
+                            {{-- STATUS (Diubah dari text box menjadi dot di bawah nama) --}}
+                            <div>
+                                <div class="w-3 h-3 rounded-full {{ $statusColor }} mx-auto" title="{{ $statusText }}"></div>
+                            </div>
+                            
+                            {{-- BLOK SPAN STATUS (DIHAPUS) --}}
+                            {{-- ================================================================ --}}
+                            {{-- AKHIR PERUBAHAN TAMPILAN --}}
+                            {{-- ================================================================ --}}
+
                         </div>
-                    </div>
-                @endforeach
+                    
+                    @endforeach {{-- Akhir dari loop $stationWorkers --}}
+
+                @endforeach {{-- Akhir dari loop $groupedManPower --}}
+                {{-- ================================================================== --}}
+                {{-- AKHIR DARI PERBAIKAN LOGIKA --}}
+                {{-- ================================================================== --}}
             </div>
         </div>
 
@@ -242,6 +268,8 @@
             </button>
         </div>
     </div>
+
+
 
     {{-- ======================================================================= --}}
     {{-- BAGIAN BAWAH: DETAIL HENKATEN (SATU KOTAK PER HENKATEN) --}}
@@ -366,7 +394,7 @@
                 </div>
 
                 {{-- INFORMASI DETAIL --}}
-                {{-- DIUBAH: Grid diubah dari 2 kolom (grid-cols-2) menjadi 4 kolom (grid-cols-4) --}}
+             
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div class="bg-blue-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Station</p>
@@ -837,7 +865,7 @@
             </div>
 
        {{-- ============================================= --}}
-{{--     MATERIAL HENKATEN CARD SECTION (UPDATED)  --}}
+{{--  MATERIAL HENKATEN CARD SECTION --}}
 {{-- ============================================= --}}
 <div class="border-t mt-2 pt-2">
     <div class="relative">
@@ -853,7 +881,7 @@
 
         {{-- Container Scroll --}}
         <div class="overflow-x-auto scrollbar-hide scroll-smooth" id="materialHenkatenContainer">
-            <div class="flex justify-start gap-3 p-2">
+            <div class="flex justify-center gap-3 p-2">
                 
                 @if(isset($materialHenkatens) && $materialHenkatens->isNotEmpty())
                     @foreach($materialHenkatens as $henkaten)
@@ -872,9 +900,9 @@
                              data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
                              data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
                              data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
-                             data-time-start="{{ $henkaten->time_start ?? '-' }}"
-                             data-time-end="{{ $henkaten->time_end ?? '-' }}">
-                            
+                              data-time-start="{{ $henkaten->time_start ? \Carbon\Carbon::parse($henkaten->time_start)->format('H:i') : '-' }}"
+                            data-time-end="{{ $henkaten->time_end ? \Carbon\Carbon::parse($henkaten->time_end)->format('H:i') : '-' }}"
+                            >
                            {{-- 1. CURRENT & NEW PART (UPDATED) --}}
                             <div class="grid grid-cols-2 gap-1">
                                 <div class="bg-white shadow rounded p-1 text-center">
@@ -962,7 +990,7 @@ function showHenkatenDetail(henkatenId) {
     document.getElementById('modalSerialStart').textContent = data.serialNumberStart || '-';
     document.getElementById('modalSerialEnd').textContent = data.serialNumberEnd || '-';
     document.getElementById('modalTimeStart').textContent = data.timeStart || '-';
-    document.getElementById('modalTimeEnd').textContent = data.timeEnd || '-'; // Anda sudah punya ini
+    document.getElementById('modalTimeEnd').textContent = data.timeEnd || '-'; 
 
     // Mengisi bagian "Periode"
     document.getElementById('modalEffectiveDate').textContent = data.effectiveDate || '-';
@@ -1107,7 +1135,7 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeHenkatenModal();
         closeMethodHenkatenModal();
-        closeMaterialHenkatenModal(); // <--- TAMBAHKAN INI
+        closeMaterialHenkatenModal(); 
     }
 });
     // ==================================================

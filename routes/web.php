@@ -61,6 +61,10 @@ Route::get('/get-stations-by-line', [HenkatenController::class, 'getStationsByLi
 // ======================================================================
 // MASTER DATA
 // ======================================================================
+Route::prefix('manpower')->name('manpower.master.')->group(function () {
+    Route::get('/create-master', [ManPowerController::class, 'createMaster'])->name('create');
+    Route::post('/store-master', [ManPowerController::class, 'storeMaster'])->name('store');
+});
 Route::resource('manpower', ManPowerController::class)->except(['show']);
 Route::resource('materials', MaterialController::class);
 Route::resource('machines', MachineController::class);
@@ -74,4 +78,12 @@ Route::prefix('activity-log')->name('activity.log.')->group(function () {
     Route::get('/machine', [ActivityLogController::class, 'machine'])->name('machine');
     Route::get('/material', [HenkatenController::class, 'showMaterialActivityLog'])->name('material');
     Route::get('/method', [HenkatenController::class, 'showMethodActivityLog'])->name('method'); 
+});
+
+// ======================================================================
+// TIME SCHEDULER (BARU DITAMBAHKAN)
+// ======================================================================
+Route::prefix('time-scheduler')->name('scheduler.')->group(function () {
+    Route::get('/manpower/create', [ManPowerController::class, 'createManpowerScheduler'])->name('manpower.create');
+
 });
