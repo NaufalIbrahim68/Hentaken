@@ -22,7 +22,19 @@ class DashboardController extends Controller
         // ======================================================================
         // SECTION 1: AMBIL INPUT DARI FORM TIME SCHEDULER
         // ======================================================================
-        $now = Carbon::now();
+       $now = Carbon::now();
+
+
+TimeScheduler::where(function ($q) use ($now) {
+    $q->where(function ($sub) use ($now) {
+        // Jika tanggal berakhir di masa lalu
+        $sub->whereDate('tanggal_berakhir', '<', $now->toDateString());
+    })->orWhere(function ($sub) use ($now) {
+        // Jika tanggal berakhir hari ini tapi waktu sudah lewat
+        $sub->whereDate('tanggal_berakhir', '=', $now->toDateString())
+            ->whereTime('waktu_berakhir', '<', $now->toTimeString());
+    });
+})->delete();
 
         $tanggalMulai = $request->query('tanggal_mulai');
         $tanggalBerakhir = $request->query('tanggal_berakhir');
@@ -196,6 +208,21 @@ class DashboardController extends Controller
             ];
         });
 
+        $timeSchedulerAktif = TimeScheduler::whereIn('id', $activeSchedulerIds)
+    ->where(function ($q) use ($now) {
+        $q->whereDate('tanggal_berakhir', '>=', $now->toDateString())
+          ->whereTime('waktu_berakhir', '>=', $now->toTimeString());
+    })
+    ->exists();
+// Jika tidak ada scheduler aktif atau waktu sudah lewat,
+// kosongkan data manpower
+if (!$timeSchedulerAktif) {
+    $groupedManPower = collect(); // kosong
+    $dataManPowerKosong = true;
+} else {
+    $dataManPowerKosong = false;
+}
+
         return view('dashboard.index', compact(
             'groupedManPower',
             'currentShift',
@@ -207,7 +234,8 @@ class DashboardController extends Controller
             'activeManPowerHenkatens',
             'activeMethodHenkatens',
             'machineHenkatens',
-            'materialHenkatens'
+            'materialHenkatens',
+            'dataManPowerKosong' 
         ));
     }
 }

@@ -444,4 +444,32 @@ public function storeMaterialHenkaten(Request $request)
         ]);
     }
 
+ public function getManPower(Request $request)
+{
+    // 1. Validasi input
+    $data = $request->validate([
+        'grup' => 'required|string',
+        'line_area' => 'required|string',
+        'station_id' => 'required', // Tetap 'required' (bukan 'integer')
+    ]);
+
+    // 2. Cari SATU KARYAWAN SPESIFIK berdasarkan TIGA kriteria
+    $employeeToReplace = ManPower::where('line_area', $data['line_area'])
+        ->where('station_id', $data['station_id'])
+        ->where('grup', $data['grup']) // <-- Filter grup ditambahkan di query utama
+        ->first(['id', 'nama']); // Kita hanya butuh ->first()
+
+    // 3. Kirim respons JSON
+    if ($employeeToReplace) {
+        // Karyawan ditemukan (misal: Nurul Z)
+        // Kirim datanya: {"id": 8, "nama": "Nurul Z"}
+        return response()->json($employeeToReplace);
+    }
+        
+    // 4. Jika tidak ada karyawan yang cocok sama sekali
+    return response()->json([
+        'id' => null,
+        'nama' => 'Man power tidak ditemukan'
+    ]);
+}
 }

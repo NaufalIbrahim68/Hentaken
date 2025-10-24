@@ -27,8 +27,8 @@
                     @endif
 
                   <form action="{{ route('manpower.update', $man_power->id) }}" method="POST"
-      x-data="dependentDropdowns('{{ old('line_area', $man_power->line_area) }}', '{{ old('station_id', $man_power->station_id) }}')"
-      x-init="init()">
+    x-data="dependentDropdowns('{{ old('line_area', $man_power->line_area) }}', '{{ old('station_id', $man_power->station_id) }}')"
+    x-init="init()">
     @csrf
     @method('PUT')
 
@@ -79,6 +79,23 @@
             </template>
         </select>
     </div>
+{{-- </div> <-- DIV YANG SALAH POSISI SUDAH DIHAPUS DARI SINI --}}
+
+<div class="mb-4">
+    <label for="group" class="block text-gray-700 text-sm font-bold mb-2">Group</label>
+    <select 
+        id="group" 
+        name="group" 
+        class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+    >
+        <option value="">Pilih Group</option>
+        <option value="A" {{ old('group', $man_power->group) == 'A' ? 'selected' : '' }}>A</option>
+        <option value="B" {{ old('group', $man_power->group) == 'B' ? 'selected' : '' }}>B</option>
+    </select>
+    @error('group')
+        <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
+    @enderror
 </div>
 
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
@@ -139,5 +156,6 @@
             }
         }
     }
+
 </script>
 </x-app-layout>

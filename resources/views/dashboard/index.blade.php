@@ -179,176 +179,172 @@
     <h2 class="text-xs font-semibold mb-2 text-center">MAN POWER</h2>
 
     {{-- ======================================================================= --}}
-    {{-- BAGIAN ATAS: DAFTAR SEMUA MAN POWER PADA SHIFT SAAT INI (DINAMIS) --}}
-    {{-- ======================================================================= --}}
-    <div class="relative">
-        <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-            <button id="scrollLeftManPower" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </button>
-        </div>
+{{-- BAGIAN ATAS: DAFTAR SEMUA MAN POWER PADA SHIFT SAAT INI (DINAMIS) --}}
+{{-- ======================================================================= --}}
+<div class="relative">
 
-        <div id="manPowerTableContainer" class="mx-8 overflow-x-auto scrollbar-hide scroll-smooth">
-            <div class="flex gap-6 py-2">
+    {{-- Tombol Scroll Kiri --}}
+    <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+        <button id="scrollLeftManPower" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+    </div>
 
-                {{-- ================================================================== --}}
-                {{-- PERBAIKAN LOGIKA BESAR DI SINI --}}
-                {{-- ================================================================== --}}
+    <div id="manPowerTableContainer" class="mx-8 overflow-x-auto scrollbar-hide scroll-smooth">
+        <div class="flex gap-6 py-2">
 
-                {{-- Loop 1: Berdasarkan Stasiun (Hasil dari groupBy di Controller) --}}
+            {{-- ============================================================ --}}
+            {{-- CEK: APAKAH DATA MAN POWER KOSONG --}}
+            {{-- ============================================================ --}}
+            @if (isset($dataManPowerKosong) && $dataManPowerKosong)
+                <div class="w-full text-center text-gray-500 py-10">
+                    <p class="text-sm font-medium">Data Man Power belum di filter</p>
+                </div>
+            @else
+                {{-- ============================================================ --}}
+                {{-- LOOP STASIUN & PEKERJA --}}
+                {{-- ============================================================ --}}
                 @foreach($groupedManPower as $stationId => $stationWorkers)
-
-                    {{-- Loop 2: Tampilkan SEMUA pekerja di stasiun ini --}}
-                    {{-- ($stationWorkers adalah collection, jadi kita loop lagi) --}}
                     @foreach($stationWorkers as $currentWorker)
 
                         @php
-                        // TIDAK ADA FILTER SHIFT LAGI.
-                        // $currentWorker sudah pasti dari grup yang benar (misal 'B')
-                        // karena sudah difilter oleh Controller.
-                        
-                        // Status 'Henkaten'/'NORMAL' sudah di-set di Controller
-                        $isHenkaten = ($currentWorker->status == 'Henkaten'); 
-                        
-                        $displayName = $currentWorker->nama; 
-                        $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
-                        $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500'; // Merah untuk Henkaten, Hijau untuk Normal
-                        $stationCode = $currentWorker->station ? $currentWorker->station->station_code : 'ST-' . $stationId;
+                            $isHenkaten = ($currentWorker->status == 'Henkaten');
+                            $displayName = $currentWorker->nama;
+                            $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
+                            $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
+                            $stationCode = $currentWorker->station ? $currentWorker->station->station_code : 'ST-' . $stationId;
                         @endphp
 
-                        {{-- Ini adalah HTML untuk 1 ikon orang --}}
+                        {{-- ============================================================ --}}
+                        {{-- TAMPILAN IKON PEKERJA --}}
+                        {{-- ============================================================ --}}
                         <div class="flex-shrink-0 text-center" style="min-width: 80px;">
                             <p class="text-[10px] font-bold text-gray-800 mb-1">{{ $stationCode }}</p>
 
-                            {{-- ================================================================ --}}
-                            {{-- PERUBAHAN TAMPILAN IKON & STATUS --}}
-                            {{-- ================================================================ --}}
-
-                            {{-- IKON (Ukuran w-8 h-8, tanpa overlay dot) --}}
                             <div class="relative mx-auto mb-2 w-8 h-8">
                                 <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                      <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                                     </svg>
                                 </div>
-                                {{-- DIV UNTUK DOT OVERLAY (DIHAPUS) --}}
                             </div>
 
-                            {{-- NAMA PEKERJA (Tetap sama) --}}
-                            <p class="text-[10px] font-medium mb-1 truncate px-1" title="{{ $displayName }}">{{ $displayName }}</p>
+                            <p class="text-[10px] font-medium mb-1 truncate px-1" title="{{ $displayName }}">
+                                {{ $displayName }}
+                            </p>
 
-                            {{-- STATUS (Diubah dari text box menjadi dot di bawah nama) --}}
                             <div>
                                 <div class="w-3 h-3 rounded-full {{ $statusColor }} mx-auto" title="{{ $statusText }}"></div>
                             </div>
-                            
-                            {{-- BLOK SPAN STATUS (DIHAPUS) --}}
-                            {{-- ================================================================ --}}
-                            {{-- AKHIR PERUBAHAN TAMPILAN --}}
-                            {{-- ================================================================ --}}
-
                         </div>
-                    
-                    @endforeach {{-- Akhir dari loop $stationWorkers --}}
 
-                @endforeach {{-- Akhir dari loop $groupedManPower --}}
-                {{-- ================================================================== --}}
-                {{-- AKHIR DARI PERBAIKAN LOGIKA --}}
-                {{-- ================================================================== --}}
-            </div>
-        </div>
-
-        <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-            <button id="scrollRightManPower" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-            </button>
+                    @endforeach
+                @endforeach
+            @endif
         </div>
     </div>
 
+    {{-- Tombol Scroll Kanan --}}
+    <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+        <button id="scrollRightManPower" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
+    </div>
+</div>
+
 
 
     {{-- ======================================================================= --}}
-    {{-- BAGIAN BAWAH: DETAIL HENKATEN (SATU KOTAK PER HENKATEN) --}}
-    {{-- ======================================================================= --}}
-    <div class="border-t mt-2 pt-2">
-    
-        <div class="flex items-center gap-1">
-            <button id="scrollLeftShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </button>
+{{-- BAGIAN BAWAH: DETAIL HENKATEN (SATU KOTAK PER HENKATEN) --}}
+{{-- ======================================================================= --}}
+<div class="border-t mt-2 pt-2">
+    <div class="flex items-center gap-1">
+        <button id="scrollLeftShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
 
-            <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
-            @if($activeManPowerHenkatens->isNotEmpty())
-                    <div class="flex justify-center gap-3 min-w-full px-2">
-                    @foreach($activeManPowerHenkatens as $henkaten)
-                            @php
-                                $startDate = strtoupper($henkaten->effective_date->format('j/M/y'));
-                                $endDate = $henkaten->end_date ? strtoupper($henkaten->end_date->format('j/M/y')) : 'SELANJUTNYA';
-                            @endphp
+        <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
+            @php
+                $currentGroup = $currentGroup ?? 'A';
+                $filteredHenkatens = $activeManPowerHenkatens->where('grup', $currentGroup);
+            @endphp
+
+            @if($filteredHenkatens->isNotEmpty())
+                <div class="flex justify-center gap-3 min-w-full px-2">
+                    @foreach($filteredHenkatens as $henkaten)
+                        @php
+                            $startDate = strtoupper($henkaten->effective_date->format('j/M/y'));
+                            $endDate = $henkaten->end_date ? strtoupper($henkaten->end_date->format('j/M/y')) : 'SELANJUTNYA';
+                        @endphp
 
                         {{-- KOTAK UTAMA UNTUK SETIAP HENKATEN --}}
-    <div class="flex-shrink-0 flex flex-col space-y-2 p-2 rounded-lg border border-gray-300 shadow-md cursor-pointer hover:bg-orange-50 transition transform hover:scale-[1.02]"
-        style="width: 240px;"
-        onclick="showHenkatenDetail({{ $henkaten->id }})"
-        data-henkaten-id="{{ $henkaten->id }}"
-        data-nama="{{ $henkaten->nama }}"
-        data-nama-after="{{ $henkaten->nama_after }}"
-        data-station="{{ $henkaten->station->station_name ?? 'N/A' }}"
-        data-shift="{{ $henkaten->shift }}"
-        data-keterangan="{{ $henkaten->keterangan }}"
-        data-line-area="{{ $henkaten->line_area }}"
-        data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y') : '-' }}"
-    data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y') : 'Selanjutnya' }}"
-        data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
-        data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
-        data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
-        data-time-start="{{ $henkaten->time_start ? \Carbon\Carbon::parse($henkaten->time_start)->format('H:i') : '-' }}"
-        data-time-end="{{ $henkaten->time_end ? \Carbon\Carbon::parse($henkaten->time_end)->format('H:i') : '-' }}"
-    >
-        {{-- Perubahan Pekerja --}}
-        <div class="flex items-center justify-center space-x-2">
-            <div class="text-center">
-                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
-                <p class="text-[8px] font-semibold truncate w-20">{{ $henkaten->nama }}</p>
-                <div class="w-2 h-2 rounded-full bg-red-500 mx-auto mt-0.5" title="Before"></div>
-            </div>
-            <div class="text-sm text-gray-400 font-bold">→</div>
-            <div class="text-center">
-                <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
-                <p class="text-[8px] font-semibold truncate w-20">{{ $henkaten->nama_after }}</p>
-                <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5" title="After"></div>
-            </div>
-        </div>
+                        <div class="flex-shrink-0 flex flex-col space-y-2 p-2 rounded-lg border border-gray-300 shadow-md cursor-pointer hover:bg-orange-50 transition transform hover:scale-[1.02]"
+                            style="width: 240px;"
+                            onclick="showHenkatenDetail({{ $henkaten->id }})"
+                            data-henkaten-id="{{ $henkaten->id }}"
+                            data-nama="{{ $henkaten->nama }}"
+                            data-nama-after="{{ $henkaten->nama_after }}"
+                            data-station="{{ $henkaten->station->station_name ?? 'N/A' }}"
+                            data-shift="{{ $henkaten->shift }}"
+                            data-keterangan="{{ $henkaten->keterangan }}"
+                            data-line-area="{{ $henkaten->line_area }}"
+                            data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y') : '-' }}"
+                            data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y') : 'Selanjutnya' }}"
+                            data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
+                            data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
+                            data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
+                            data-time-start="{{ $henkaten->time_start ? \Carbon\Carbon::parse($henkaten->time_start)->format('H:i') : '-' }}"
+                            data-time-end="{{ $henkaten->time_end ? \Carbon\Carbon::parse($henkaten->time_end)->format('H:i') : '-' }}"
+                        >
+                            {{-- Perubahan Pekerja --}}
+                            <div class="flex items-center justify-center space-x-2">
+                                <div class="text-center">
+                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
+                                    <p class="text-[8px] font-semibold truncate w-20">{{ $henkaten->nama }}</p>
+                                    <div class="w-2 h-2 rounded-full bg-red-500 mx-auto mt-0.5" title="Before"></div>
+                                </div>
+                                <div class="text-sm text-gray-400 font-bold">→</div>
+                                <div class="text-center">
+                                    <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-white text-[8px] mx-auto mb-0.5">👤</div>
+                                    <p class="text-[8px] font-semibold truncate w-20">{{ $henkaten->nama_after }}</p>
+                                    <div class="w-2 h-2 rounded-full bg-green-500 mx-auto mt-0.5" title="After"></div>
+                                </div>
+                            </div>
 
-        {{-- Serial Number --}}
-        <div class="grid grid-cols-2 gap-1">
-            <div class="bg-blue-400 text-center py-0.5 rounded">
-                <span class="text-[8px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? '-' }}</span>
-            </div>
-            <div class="bg-blue-400 text-center py-0.5 rounded">
-                <span class="text-[8px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? '-' }}</span>
-            </div>
-        </div>
+                            {{-- Serial Number --}}
+                            <div class="grid grid-cols-2 gap-1">
+                                <div class="bg-blue-400 text-center py-0.5 rounded">
+                                    <span class="text-[8px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? '-' }}</span>
+                                </div>
+                                <div class="bg-blue-400 text-center py-0.5 rounded">
+                                    <span class="text-[8px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? '-' }}</span>
+                                </div>
+                            </div>
 
-        {{-- Periode Aktif --}}
-        <div class="flex justify-center">
-            <div class="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[9px] font-semibold">
-                {{ $startDate }} - {{ $endDate }}
-            </div>
+                            {{-- Periode Aktif --}}
+                            <div class="flex justify-center">
+                                <div class="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[9px] font-semibold">
+                                    {{ $startDate }} - {{ $endDate }}
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="text-center text-xs text-gray-400 py-4">
+                    No Actived Henkaten In this Group
+                </div>
+            @endif
         </div>
-    </div>
-    @endforeach
-    </div>
-    @else
-        <div class="text-center text-xs text-gray-400 py-4">No Active Henkaten</div>
-    @endif
-    </div>
+    
+
+                    
 
     <button id="scrollRightShift" class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
