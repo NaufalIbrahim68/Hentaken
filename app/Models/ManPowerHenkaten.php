@@ -63,4 +63,10 @@ class ManPowerHenkaten extends Model
     {
         return $this->belongsTo(Station::class, 'station_id');
     }
+
+    public function manPower()
+{
+    return $this->belongsTo(ManPower::class, 'man_power_id');
+}
+
 }

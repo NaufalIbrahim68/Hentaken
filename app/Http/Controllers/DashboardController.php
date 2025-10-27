@@ -20,47 +20,32 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         // ======================================================================
-        // SECTION 1: AMBIL INPUT DARI FORM TIME SCHEDULER
+        // SECTION 1: HAPUS SCHEDULER YANG SUDAH LEWAT
         // ======================================================================
-       $now = Carbon::now();
+        $now = Carbon::now();
 
+        TimeScheduler::where(function ($q) use ($now) {
+            $q->whereDate('tanggal_berakhir', '<', $now->toDateString())
+              ->orWhere(function ($sub) use ($now) {
+                  $sub->whereDate('tanggal_berakhir', '=', $now->toDateString())
+                      ->whereTime('waktu_berakhir', '<', $now->toTimeString());
+              });
+        })->delete();
 
-TimeScheduler::where(function ($q) use ($now) {
-    $q->where(function ($sub) use ($now) {
-        // Jika tanggal berakhir di masa lalu
-        $sub->whereDate('tanggal_berakhir', '<', $now->toDateString());
-    })->orWhere(function ($sub) use ($now) {
-        // Jika tanggal berakhir hari ini tapi waktu sudah lewat
-        $sub->whereDate('tanggal_berakhir', '=', $now->toDateString())
-            ->whereTime('waktu_berakhir', '<', $now->toTimeString());
-    });
-})->delete();
-
-        $tanggalMulai = $request->query('tanggal_mulai');
+        // ======================================================================
+        // SECTION 2: INPUT TIME SCHEDULER DARI FORM
+        // ======================================================================
+        $tanggalMulai   = $request->query('tanggal_mulai');
         $tanggalBerakhir = $request->query('tanggal_berakhir');
-        $waktuMulai = $request->query('waktu_mulai');
-        $waktuBerakhir = $request->query('waktu_berakhir');
-        $inputShiftNum = $request->query('shift'); // 1 atau 2
-        $inputGrup = $request->query('grup'); // A atau B
+        $waktuMulai     = $request->query('waktu_mulai');
+        $waktuBerakhir  = $request->query('waktu_berakhir');
+        $inputShiftNum  = $request->query('shift');
+        $inputGrup      = $request->query('grup');
 
-        $shiftDisplay_1 = 'Shift 1';
-        $shiftDisplay_2 = 'Shift 2';
-
-        $grupForQuery = null;
-        $shiftNumForQuery = null;
-        $currentShift = null;
-
-        // Jika user mengisi form Time Scheduler
+        // Jika user mengisi form scheduler, simpan atau gunakan yang sudah ada
         if ($inputShiftNum && $inputGrup) {
-            $grupForQuery = $inputGrup;
-            $shiftNumForQuery = $inputShiftNum;
-            $currentShift = ($inputShiftNum == '1') ? $shiftDisplay_1 : $shiftDisplay_2;
-
-            // ======================================================================
-            // ⏳ Tambahkan Bagian Simpan Data ke Tabel TimeScheduler
-            // ======================================================================
-            $existingScheduler = TimeScheduler::where('grup', $grupForQuery)
-                ->where('shift', $shiftNumForQuery)
+            $existingScheduler = TimeScheduler::where('grup', $inputGrup)
+                ->where('shift', $inputShiftNum)
                 ->whereDate('tanggal_mulai', $tanggalMulai)
                 ->whereDate('tanggal_berakhir', $tanggalBerakhir)
                 ->whereTime('waktu_mulai', $waktuMulai)
@@ -68,32 +53,62 @@ TimeScheduler::where(function ($q) use ($now) {
                 ->first();
 
             if (!$existingScheduler) {
-                TimeScheduler::create([
-                    'grup' => $grupForQuery,
-                    'shift' => $shiftNumForQuery,
+                $existingScheduler = TimeScheduler::create([
+                    'grup' => $inputGrup,
+                    'shift' => $inputShiftNum,
                     'tanggal_mulai' => $tanggalMulai,
                     'tanggal_berakhir' => $tanggalBerakhir,
                     'waktu_mulai' => $waktuMulai,
                     'waktu_berakhir' => $waktuBerakhir,
                 ]);
             }
-        } else {
-            // Jika belum ada input form, pakai logika waktu default
-            $time = $now->format('H:i');
-            if ($time >= '07:00' && $time < '19:00') {
-                $grupForQuery = 'B';
-                $shiftNumForQuery = '1';
-                $currentShift = $shiftDisplay_1;
+
+            // Simpan ke session
+            session([
+                'active_scheduler_id' => $existingScheduler->id,
+                'active_grup' => $inputGrup,
+                'active_shift' => $inputShiftNum,
+            ]);
+        }
+
+        // ======================================================================
+        // SECTION 3: CEK SCHEDULER AKTIF (PASTIKAN PAKAI YANG DARI DB)
+        // ======================================================================
+        $activeSchedulerId = session('active_scheduler_id');
+        $grupForQuery      = session('active_grup');
+        $shiftNumForQuery  = session('active_shift');
+
+        if (!$activeSchedulerId) {
+            // 🔍 Cari scheduler yang aktif berdasarkan waktu sekarang
+            $currentScheduler = TimeScheduler::where(function ($q) use ($now) {
+                    $q->whereDate('tanggal_mulai', '<=', $now->toDateString())
+                      ->whereDate('tanggal_berakhir', '>=', $now->toDateString())
+                      ->whereTime('waktu_mulai', '<=', $now->toTimeString())
+                      ->whereTime('waktu_berakhir', '>=', $now->toTimeString());
+                })
+                ->latest('tanggal_mulai')
+                ->first();
+
+            if ($currentScheduler) {
+                $activeSchedulerId = $currentScheduler->id;
+                $grupForQuery = $currentScheduler->grup;
+                $shiftNumForQuery = $currentScheduler->shift;
+
+                session([
+                    'active_scheduler_id' => $activeSchedulerId,
+                    'active_grup' => $grupForQuery,
+                    'active_shift' => $shiftNumForQuery,
+                ]);
             } else {
+                // fallback ke default jika belum ada jadwal aktif
                 $grupForQuery = 'A';
-                $shiftNumForQuery = '2';
-                $currentShift = $shiftDisplay_2;
+                $shiftNumForQuery = '1';
             }
         }
 
-        // ===================================================================
-        // SECTION 2: FILTER TIME SCHEDULER BERDASARKAN INPUT
-        // ===================================================================
+        // ======================================================================
+        // SECTION 4: AMBIL ID SCHEDULER AKTIF
+        // ======================================================================
         $activeSchedulers = TimeScheduler::where('grup', $grupForQuery)
             ->where('shift', $shiftNumForQuery)
             ->where(function ($q) use ($now) {
@@ -105,32 +120,14 @@ TimeScheduler::where(function ($q) use ($now) {
             ->pluck('id')
             ->toArray();
 
-        $activeSchedulerIds = $activeSchedulers;
+        $activeSchedulerIds = !empty($activeSchedulers) ? $activeSchedulers : [$activeSchedulerId];
 
-        if ($tanggalMulai && $tanggalBerakhir && $waktuMulai && $waktuBerakhir) {
-            $activeSchedulers = TimeScheduler::where('grup', $grupForQuery)
-                ->where('shift', $shiftNumForQuery)
-                ->where(function ($q) use ($tanggalMulai, $tanggalBerakhir, $waktuMulai, $waktuBerakhir) {
-                    $q->whereDate('tanggal_mulai', '<=', $tanggalBerakhir)
-                        ->whereDate('tanggal_berakhir', '>=', $tanggalMulai)
-                        ->whereTime('waktu_mulai', '<=', $waktuBerakhir)
-                        ->whereTime('waktu_berakhir', '>=', $waktuMulai);
-                })
-                ->pluck('id')
-                ->toArray();
-
-            $activeSchedulerIds = $activeSchedulers;
-        }
-
-        // ===================================================================
-        // SECTION 3: DATA HENKATEN (TIDAK DIUBAH)
-        // ===================================================================
+        // ======================================================================
+        // SECTION 5: AMBIL DATA HENKATEN
+        // ======================================================================
         $baseHenkatenQuery = function ($query) use ($now) {
-            $query->where('effective_date', '<=', $now)
-                ->where(function ($subQuery) use ($now) {
-                    $subQuery->where('end_date', '>=', $now)
-                        ->orWhereNull('end_date');
-                });
+            $query->whereDate('effective_date', '<=', $now->toDateString())
+                  ->whereDate('end_date', '>=', $now->toDateString());
         };
 
         $activeManPowerHenkatens = ManPowerHenkaten::with('station')
@@ -145,21 +142,22 @@ TimeScheduler::where(function ($q) use ($now) {
             ->latest('effective_date')
             ->get();
 
-        $machineHenkatens = ManPowerHenkaten::with('station') 
+       $machineHenkatens = ManPowerHenkaten::with('station') 
             ->where($baseHenkatenQuery)
             ->where('shift', $shiftNumForQuery)
             ->latest('effective_date')
             ->get();
 
+            
         $materialHenkatens = MaterialHenkaten::with('station')
             ->where($baseHenkatenQuery)
             ->where('shift', $shiftNumForQuery)
-            ->orderBy('effective_date', 'desc')
+            ->latest('effective_date')
             ->get();
 
-        // ===================================================================
-        // SECTION 4: FILTER MANPOWER BERDASARKAN SCHEDULER
-        // ===================================================================
+        // ======================================================================
+        // SECTION 6: DATA MAN POWER BERDASARKAN SCHEDULER
+        // ======================================================================
         $manPower = ManPower::with('station', 'timeScheduler')
             ->where('grup', $grupForQuery)
             ->where('shift', $shiftNumForQuery)
@@ -172,7 +170,7 @@ TimeScheduler::where(function ($q) use ($now) {
             $manPower = ManPower::with('station')->where('grup', $grupForQuery)->get();
         }
 
-        // Tandai status manpower berdasarkan henkaten
+        // Tandai status Henkaten
         $henkatenManPowerIds = $activeManPowerHenkatens
             ->pluck('man_power_id')
             ->merge($activeManPowerHenkatens->pluck('man_power_id_after'))
@@ -181,61 +179,64 @@ TimeScheduler::where(function ($q) use ($now) {
             ->toArray();
 
         foreach ($manPower as $person) {
-            if (in_array($person->id, $henkatenManPowerIds)) {
-                $person->setAttribute('status', 'Henkaten');
-            } else {
-                $person->setAttribute('status', 'NORMAL');
-            }
+            $person->setAttribute('status', in_array($person->id, $henkatenManPowerIds) ? 'Henkaten' : 'NORMAL');
         }
 
-        // ===================================================================
-        // SECTION 5 & 6: (TIDAK DIUBAH)
-        // ===================================================================
+        // ======================================================================
+        // SECTION 7: DATA TAMBAHAN
+        // ======================================================================
         $groupedManPower = $manPower->groupBy('station_id');
         $methods = Method::with('station')->paginate(5);
         $machines = Machine::with('station')->get();
         $materials = Material::all();
         $stations = Station::all();
 
-        $stationStatuses = $stations->map(function ($station) {
-            $material = $station->material;
+        $activeMaterialStationIds = $materialHenkatens->pluck('station_id')->unique()->toArray();
+
+        $stationStatuses = $stations->map(function ($station) use ($activeMaterialStationIds) {
+            $status = in_array($station->id, $activeMaterialStationIds) ? 'HENKATEN' : 'NORMAL';
             return [
                 'id' => $station->id,
                 'name' => $station->station_name,
-                'status' => 'NORMAL',
-                'material_name' => $material ? $material->material_name : null,
-                'is_henkaten' => $material ? $material->is_henkaten : false,
+                'status' => $status,
             ];
         });
 
+        // ======================================================================
+        // SECTION 8: VALIDASI SCHEDULER AKTIF
+        // ======================================================================
         $timeSchedulerAktif = TimeScheduler::whereIn('id', $activeSchedulerIds)
-    ->where(function ($q) use ($now) {
-        $q->whereDate('tanggal_berakhir', '>=', $now->toDateString())
-          ->whereTime('waktu_berakhir', '>=', $now->toTimeString());
-    })
-    ->exists();
-// Jika tidak ada scheduler aktif atau waktu sudah lewat,
-// kosongkan data manpower
-if (!$timeSchedulerAktif) {
-    $groupedManPower = collect(); // kosong
-    $dataManPowerKosong = true;
-} else {
-    $dataManPowerKosong = false;
-}
+            ->where(function ($q) use ($now) {
+                $q->whereDate('tanggal_berakhir', '>=', $now->toDateString())
+                  ->whereTime('waktu_berakhir', '>=', $now->toTimeString());
+            })
+            ->exists();
 
-        return view('dashboard.index', compact(
-            'groupedManPower',
-            'currentShift',
-            'methods',
-            'machines',
-            'materials',
-            'stations',
-            'stationStatuses',
-            'activeManPowerHenkatens',
-            'activeMethodHenkatens',
-            'machineHenkatens',
-            'materialHenkatens',
-            'dataManPowerKosong' 
-        ));
+        if (!$timeSchedulerAktif) {
+            session()->forget(['active_scheduler_id', 'active_grup', 'active_shift']);
+            $groupedManPower = collect();
+            $dataManPowerKosong = true;
+        } else {
+            $dataManPowerKosong = false;
+        }
+
+        // ======================================================================
+        // SECTION 9: RETURN VIEW
+        // ======================================================================
+        return view('dashboard.index', [
+            'groupedManPower' => $groupedManPower,
+            'currentGroup' => $grupForQuery,       // ✅ untuk filter henkaten di Blade
+            'currentShift' => $shiftNumForQuery,
+            'methods' => $methods,
+            'machines' => $machines,
+            'materials' => $materials,
+            'stations' => $stations,
+            'stationStatuses' => $stationStatuses,
+            'activeManPowerHenkatens' => $activeManPowerHenkatens,
+            'activeMethodHenkatens' => $activeMethodHenkatens,
+            'machineHenkatens' => $machineHenkatens,
+            'materialHenkatens' => $materialHenkatens,
+            'dataManPowerKosong' => $dataManPowerKosong,
+        ]);
     }
 }

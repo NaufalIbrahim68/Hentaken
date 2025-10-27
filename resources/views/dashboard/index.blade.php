@@ -269,11 +269,16 @@
             </svg>
         </button>
 
+        
+
         <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
-            @php
-                $currentGroup = $currentGroup ?? 'A';
-                $filteredHenkatens = $activeManPowerHenkatens->where('grup', $currentGroup);
-            @endphp
+           @php
+    $currentGroup = $currentGroup ?? 'A';
+    $filteredHenkatens = $activeManPowerHenkatens->filter(function ($henkaten) use ($currentGroup) {
+        return optional($henkaten->manPower)->grup === $currentGroup;
+    });
+@endphp
+
 
             @if($filteredHenkatens->isNotEmpty())
                 <div class="flex justify-center gap-3 min-w-full px-2">
@@ -692,175 +697,164 @@
 </div>
 </div>
 
-        {{-- MACHINE - --}}
-        <div class="bg-white shadow rounded p-1 flex flex-col">
-            <h2 class="text-xs font-semibold mb-0.5 text-center">MACHINE</h2>
-
-            {{-- Machine Status Bar with Navigation - . --}}
-            <div class="relative">
-                {{-- Tombol Navigasi di Kiri - . --}}
-                <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-                    <button id="scrollLeftMachine" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </button>
-                </div>
-                {{-- Machine Status Container - . --}}
-                <div class="bg-white p-2 mx-8">
-                    <div class="flex justify-center items-center space-x-1">
-                        @foreach ($machines as $mc)
-                            @php
-                                $isHenkaten = ($mc->keterangan === 'HENKATEN');
-                            @endphp
-                            <div class="machine-status {{ $isHenkaten ? 'machine-inactive' : 'machine-active' }}" onclick="toggleMachine(this)">
-                                {{-- Station ID - . --}}
-                                <div class="station-id text-[8px] font-bold text-black mb-0.5">
-                                    ST {{ $mc->station_id }}
-                                </div>
-
-                                {{-- Ikon mesin  --}}
-                                <div style="font-size: 16px;">🏭</div>
-
-                                {{-- Status Text --}}
-                                <div class="status-text text-[7px] font-bold mt-0.5 px-0.5 py-0.5 rounded-full 
-                                    {{ $isHenkaten ? 'bg-red-600 text-white ' : 'bg-green-700 text-white' }}">
-                                    {{ $isHenkaten ? 'HENKATEN' : 'NORMAL' }}
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                {{-- Tombol Navigasi di Kanan - . --}}
-                <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-                    <button id="scrollRightMachine" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-        {{-- ============================================= --}}
-{{-- MACHINE HENKATEN CARD SECTION--}}
+    {{-- ============================================= --}}
+{{-- MACHINE SECTION --}}
 {{-- ============================================= --}}
-<div class="border-t mt-2 pt-2 overflow-x-auto scrollbar-hide">
-    <div class="flex justify-center gap-3 p-2">
-        @foreach($machineHenkatens as $henkaten)
-            <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
-                 style="width: 220px;"
-                 {{-- Logika ini tetap berfungsi karena loop hanya berjalan jika ada data --}}
-                 onclick="showHenkatenDetail({{ $henkaten->id }})"
-                 data-henkaten-id="{{ $henkaten->id }}"
-                 {{-- Data ini akan mengambil dari Man Power Henkaten sesuai controller --}}
-                 data-nama="Old Jig: {{ $henkaten->old_jig ?? 'N/A' }}"
-                 data-nama-after="New Jig: {{ $henkaten->new_jig ?? 'N/A' }}"
-                 data-station="{{ $henkaten->station->station_name ?? 'Machine Station' }}"
-                 data-shift="-"
-                 data-keterangan="{{ $henkaten->keterangan ?? 'Jig/Machine Change' }}"
-                 data-line-area="-"
-                 data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
-                 data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
-                 data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
-                 data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
-                 data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
-                 data-time-start="-"
-                 data-time-end="-">
-                
-                {{-- 1. JIG CHANGE --}}
-                <div class="flex items-center justify-center space-x-1.5">
-                    <div class="text-center">
-                        <div class="text-[8px] font-bold">OLD JIG</div>
-                        <div class="text-xl my-0.5">⚙️</div>
-                        <p class="text-[7px] font-semibold">{{ $henkaten->old_jig ?? 'N/A' }}</p>
-                    </div>
-                    <div class="text-blue-500">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-[8px] font-bold text-red-600">NEW JIG</div>
-                        <div class="text-xl my-0.5">⚙️</div>
-                        <p class="text-[7px] font-semibold">{{ $henkaten->new_jig ?? 'N/A' }}</p>
-                    </div>
-                </div>
-                {{-- 2. SERIAL NUMBER --}}
-                <div class="grid grid-cols-2 gap-1">
-                    {{-- Ini akan menampilkan serial number dari Man Power Henkaten --}}
-                    <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? 'N/A' }}</span></div>
-                    <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? 'N/A' }}</span></div>
-                </div>
-                {{-- 3. TANGGAL AKTIF --}}
-                <div class="flex justify-center">
-                    <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
-                        ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
-                    </div>
-                </div>
-            </div>
-        @endforeach
+<div class="bg-white shadow rounded p-1 flex flex-col">
+    <h2 class="text-xs font-semibold mb-0.5 text-center">MACHINE</h2>
 
-    </div>
-</div>
+    {{-- Machine Status Bar with Navigation --}}
+    <div class="relative">
+        {{-- Tombol Navigasi di Kiri --}}
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+            <button id="scrollLeftMachine" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-blue-600 rounded-full text-black shadow transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
         </div>
 
-       {{-- MATERIAL --}}
-        <div class="bg-white shadow rounded p-1 flex flex-col">
-            <h2 class="text-xs font-semibold mb-0.5 text-center">MATERIAL</h2>
-
-            <div class="relative flex-1">
-                {{-- Tombol Navigasi di Kiri - . --}}
-                <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-                    <button id="scrollLeftMaterial" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </button>
-                </div>
-
-                {{-- Material Table Container - . --}}
-                <div id="materialTableContainer" class="mx-8 overflow-hidden">
-                    <table class="table-auto border-collapse border border-gray-300 w-full text-center text-[10px]">
-                        <thead>
-                            <tr>
-                                @foreach($stationStatuses as $station)
-                                    <th class="border border-gray-300 px-1 py-1 bg-green-600 text-white text-[8px] font-semibold">
-                                        {{ $station['name'] }}
-                                    </th>
-                                @endforeach
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                @foreach($stationStatuses as $station)
-                                    <td class="border border-gray-300 px-1 py-1">
-                                        <div class="material-status flex items-center justify-center bg-white text-gray-800 font-bold cursor-pointer" data-id="{{ $station['id'] }}">
-                                        </div>
-                                    </td>
-                                @endforeach
-                            </tr>
-                            <tr>
-                                @foreach($stationStatuses as $station)
-                                    <td class="border border-gray-300 px-1 py-0.5 text-[8px] font-bold">
-                                        <div class="status-text text-green-600">
-                                            {{ $station['status'] }}
-                                        </div>
-                                    </td>
-                                @endforeach
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                {{-- Tombol Navigasi di Kanan --}}
-                <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-                    <button id="scrollRightMaterial" class="w-6 h-6 flex items-center justify-center bg-white-500 hover:bg-blue-600 rounded-full text-black shadow transition">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                </div>
+        {{-- Machine Status Container --}}
+        <div class="bg-white p-2 mx-8">
+            <div class="flex justify-center items-center space-x-1">
+                @foreach ($machines as $mc)
+                    @php $isHenkaten = ($mc->keterangan === 'HENKATEN'); @endphp
+                    <div class="machine-status {{ $isHenkaten ? 'machine-inactive' : 'machine-active' }}" onclick="toggleMachine(this)">
+                        <div class="station-id text-[8px] font-bold text-black mb-0.5">
+                            ST {{ $mc->station_id }}
+                        </div>
+                        <div style="font-size: 16px;">🏭</div>
+                        <div class="status-text text-[7px] font-bold mt-0.5 px-0.5 py-0.5 rounded-full 
+                            {{ $isHenkaten ? 'bg-red-600 text-white' : 'bg-green-700 text-white' }}">
+                            {{ $isHenkaten ? 'HENKATEN' : 'NORMAL' }}
+                        </div>
+                    </div>
+                @endforeach
             </div>
+        </div>
 
-       {{-- ============================================= --}}
+        {{-- Tombol Navigasi di Kanan --}}
+        <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+            <button id="scrollRightMachine" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-blue-600 rounded-full text-black shadow transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    {{-- MACHINE HENKATEN CARD SECTION --}}
+    <div class="border-t mt-2 pt-2 overflow-x-auto scrollbar-hide">
+        <div class="flex justify-center gap-3 p-2">
+            @forelse($machineHenkatens as $henkaten)
+                <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 shadow-md cursor-pointer hover:bg-gray-100 transition"
+                     style="width: 220px;"
+                     onclick="showHenkatenDetail({{ $henkaten->id }})"
+                     data-henkaten-id="{{ $henkaten->id }}"
+                     data-nama="Old Jig: {{ $henkaten->old_jig ?? 'N/A' }}"
+                     data-nama-after="New Jig: {{ $henkaten->new_jig ?? 'N/A' }}"
+                     data-station="{{ $henkaten->station->station_name ?? 'Machine Station' }}"
+                     data-keterangan="{{ $henkaten->keterangan ?? 'Jig/Machine Change' }}"
+                     data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
+                     data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}">
+                    <div class="flex items-center justify-center space-x-1.5">
+                        <div class="text-center">
+                            <div class="text-[8px] font-bold">OLD JIG</div>
+                            <div class="text-xl my-0.5">⚙️</div>
+                            <p class="text-[7px] font-semibold">{{ $henkaten->old_jig ?? 'N/A' }}</p>
+                        </div>
+                        <div class="text-blue-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            </svg>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-[8px] font-bold text-red-600">NEW JIG</div>
+                            <div class="text-xl my-0.5">⚙️</div>
+                            <p class="text-[7px] font-semibold">{{ $henkaten->new_jig ?? 'N/A' }}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1">
+                        <div class="bg-blue-400 text-center py-0.5 rounded">
+                            <span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? 'N/A' }}</span>
+                        </div>
+                        <div class="bg-blue-400 text-center py-0.5 rounded">
+                            <span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? 'N/A' }}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-center">
+                        <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
+                            ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="text-center text-xs text-gray-400 py-4 w-full">No Active Machine Henkaten</div>
+            @endforelse
+        </div>
+    </div>
+</div>
+
+{{-- ============================================= --}}
+{{-- MATERIAL SECTION --}}
+{{-- ============================================= --}}
+<div class="bg-white shadow rounded p-1 flex flex-col mt-2">
+    <h2 class="text-xs font-semibold mb-0.5 text-center">MATERIAL</h2>
+
+    {{-- Material Table --}}
+    <div class="relative flex-1">
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+            <button id="scrollLeftMaterial" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-blue-600 rounded-full text-black shadow transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="materialTableContainer" class="mx-8 overflow-hidden">
+            <table class="table-auto border-collapse border border-gray-300 w-full text-center text-[10px]">
+                <thead>
+                    <tr>
+                        @foreach($stationStatuses as $station)
+                            @php $isHenkaten = $station['status'] !== 'NORMAL'; @endphp
+                            <th class="border border-gray-300 px-1 py-1 {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }} text-white text-[8px] font-semibold">
+                                {{ $station['name'] }}
+                            </th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        @foreach($stationStatuses as $station)
+                            <td class="border border-gray-300 px-1 py-1">
+                                <div class="material-status flex items-center justify-center bg-white text-gray-800 font-bold cursor-pointer" data-id="{{ $station['id'] }}"></div>
+                            </td>
+                        @endforeach
+                    </tr>
+                    <tr>
+                        @foreach($stationStatuses as $station)
+                            @php $isHenkaten = $station['status'] !== 'NORMAL'; @endphp
+                            <td class="border border-gray-300 px-1 py-0.5 text-[8px] font-bold">
+                                <div class="{{ $isHenkaten ? 'text-red-600' : 'text-green-600' }}">
+                                    {{ $station['status'] }}
+                                </div>
+                            </td>
+                        @endforeach
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+            <button id="scrollRightMaterial" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-blue-600 rounded-full text-black shadow transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    {{-- ============================================= --}}
 {{--  MATERIAL HENKATEN CARD SECTION --}}
 {{-- ============================================= --}}
 <div class="border-t mt-2 pt-2">
