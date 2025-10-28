@@ -195,7 +195,7 @@
                         return;
                     }
 
-                    fetch(`{{ route('stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
+                    fetch(`{{ route('henkaten.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
                         .then(res => res.json())
                         .then(data => {
                             this.stationList = data;

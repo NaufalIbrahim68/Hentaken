@@ -5,18 +5,35 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
+
+    @php
+    // Ambil ID dari relasi 'stations'
+    $stationIds = $man_power->stations->pluck('station_id');
+    
+    // Cek: Jika koleksi $stationIds kosong DAN $man_power->station_id ada isinya,
+    // maka gunakan $man_power->station_id sebagai fallback.
+    if ($stationIds->isEmpty() && $man_power->station_id) {
+        $stationIds = [$man_power->station_id];
+    }
+@endphp
+    <div 
+      x-data="manpowerEdit(
+    '{{ $man_power->line_area }}',
+    {{ json_encode($stationIds) }} 
+)"
+        x-init="init()"
+        class="py-12"
+    >
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-
                     <h3 class="text-2xl font-bold text-gray-900 mb-6">
                         Edit Man Power: <span class="text-blue-600">{{ $man_power->nama }}</span>
                     </h3>
 
-                    {{-- Menampilkan error validasi jika ada --}}
+                    {{-- Pesan Error --}}
                     @if ($errors->any())
-                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md">
                             <p class="font-bold">Terjadi Kesalahan</p>
                             <ul class="list-disc list-inside mt-2">
                                 @foreach ($errors->all() as $error)
@@ -26,136 +43,220 @@
                         </div>
                     @endif
 
-                  <form action="{{ route('manpower.update', $man_power->id) }}" method="POST"
-    x-data="dependentDropdowns('{{ old('line_area', $man_power->line_area) }}', '{{ old('station_id', $man_power->station_id) }}')"
-    x-init="init()">
-    @csrf
-    @method('PUT')
+                    {{-- FORM EDIT --}}
+                    <form action="{{ route('manpower.update', $man_power->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
 
+                        {{-- Nama --}}
                         <div class="mb-4">
                             <label for="nama" class="block text-gray-700 text-sm font-bold mb-2">Nama Karyawan</label>
-                            <input type="text" 
-                                   id="nama" 
-                                   name="nama" 
-                                   value="{{ old('nama', $man_power->nama) }}" 
-                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            <input type="text" id="nama" name="nama"
+                                   value="{{ old('nama', $man_power->nama) }}"
+                                   class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-blue-500"
                                    required>
-                            @error('nama') 
-                                <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p> 
-                            @enderror
                         </div>
 
-                      {{-- Dropdown Line Area --}}
-    <div class="mb-4">
-        <label for="line_area" class="block text-gray-700 text-sm font-bold mb-2">Line Area</label>
-        <select 
-            id="line_area" 
-            name="line_area" 
-            x-model="selectedLineArea"
-            @change="fetchStations()" 
-            class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-        >
-            <option value="">Pilih Line Area</option>
-            @foreach ($lineAreas as $line)
-                <option value="{{ $line }}">{{ $line }}</option>
-            @endforeach
-        </select>
-    </div>
+                        {{-- Line Area --}}
+                        <div class="mb-4">
+                            <label for="line_area" class="block text-gray-700 text-sm font-bold mb-2">Line Area</label>
+                            <select id="line_area" name="line_area" x-model="selectedLineArea"
+                                    @change="fetchStations()"
+                                    class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-blue-500"
+                                    required>
+                                <option value="">Pilih Line Area</option>
+                                @foreach ($lineAreas as $line)
+                                    <option value="{{ $line }}">{{ $line }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-    {{-- Dropdown Station Name --}}
-    <div class="mb-4">
-        <label for="station_id" class="block text-gray-700 text-sm font-bold mb-2">Station Name</label>
-        <select 
-            id="station_id" 
-            name="station_id" 
-            x-model="selectedStation"
-            class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-        >
-            <option value="">Pilih Station</option>
-            <template x-for="station in stationList" :key="station.id">
-                <option :value="station.id" x-text="station.station_name"></option>
-            </template>
-        </select>
-    </div>
-{{-- </div> <-- DIV YANG SALAH POSISI SUDAH DIHAPUS DARI SINI --}}
+                        {{-- Station --}}
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-semibold mb-2">Station Name</label>
 
-<div class="mb-4">
-    <label for="group" class="block text-gray-700 text-sm font-bold mb-2">Group</label>
-    <select 
-        id="group" 
-        name="group" 
-        class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        required
-    >
-        <option value="">Pilih Group</option>
-        <option value="A" {{ old('group', $man_power->group) == 'A' ? 'selected' : '' }}>A</option>
-        <option value="B" {{ old('group', $man_power->group) == 'B' ? 'selected' : '' }}>B</option>
-    </select>
-    @error('group')
-        <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
-    @enderror
-</div>
+                            <div class="flex flex-col gap-2">
+                                <template x-if="currentStations.length === 0">
+                                    <p class="text-gray-500 text-sm italic">Belum ada station yang dipegang.</p>
+                                </template>
 
-                        <div class="flex items-center justify-end space-x-4 pt-4 border-t">
-                            <a href="{{ route('manpower.index') }}" 
-                               class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md transition duration-200">
+                                <template x-for="station in currentStations" :key="station.id">
+                                    <div class="flex items-center justify-between border rounded px-3 py-2 bg-gray-50">
+                                        <span x-text="station.station_name" class="text-sm text-gray-800"></span>
+                                        <button type="button" @click="deleteStation(station.id)"
+                                                class="bg-red-500 text-white text-xs px-3 py-1 rounded hover:bg-red-600">
+                                            Hapus
+                                        </button>
+                                    </div>
+                                </template>
+
+                                <div class="mt-2">
+                                    <button type="button" @click="openStationModal()"
+                                            class="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600">
+                                        Kelola
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Group --}}
+                        <div class="mb-4">
+                            <label for="group" class="block text-gray-700 text-sm font-bold mb-2">Group</label>
+                            <select id="group" name="group"
+                                    class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-blue-500"
+                                    required>
+                                <option value="">Pilih Group</option>
+                                <option value="A" {{ old('group', $man_power->group) == 'A' ? 'selected' : '' }}>A</option>
+                                <option value="B" {{ old('group', $man_power->group) == 'B' ? 'selected' : '' }}>B</option>
+                            </select>
+                        </div>
+
+                        <div class="flex justify-end space-x-4 border-t pt-4">
+                            <a href="{{ route('manpower.index') }}"
+                               class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">
                                 Batal
                             </a>
-                            <button type="submit" 
-                                    class="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md transition duration-200">
+                            <button type="submit"
+                                    class="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md">
                                 Update Data
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
 
+        {{-- ============================ --}}
+        {{-- MODAL TAMBAH STATION --}}
+        {{-- ============================ --}}
+        <div x-show="isStationModalOpen"
+             x-cloak
+             x-transition.opacity
+             @keydown.escape.window="isStationModalOpen = false"
+             @click.self="isStationModalOpen = false"
+             class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+
+            <div class="bg-white rounded-lg p-6 w-full max-w-lg shadow-lg" @click.stop>
+                <h2 class="text-lg font-semibold mb-4 text-gray-800">
+                    Tambah Station Baru di <span x-text="selectedLineArea"></span>
+                </h2>
+
+                <div class="flex gap-2 mb-4">
+                    <select x-model="newStationId"
+                            class="flex-1 border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Pilih Station --</option>
+                        <template x-for="station in stationList" :key="station.id">
+                            <option :value="station.id" x-text="station.station_name"></option>
+                        </template>
+                    </select>
+
+                    <button type="button" @click="addStation()"
+                            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                        Simpan
+                    </button>
+                </div>
+
+                <div class="text-right">
+                    <button type="button" @click="isStationModalOpen = false"
+                            class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
+                        Tutup
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+
+    {{-- AlpineJS --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
-   <script>
-    // Alpine Component untuk Dependent Dropdown (reusable)
-    function dependentDropdowns(oldLineArea = '', oldStation = null) {
+    <script>
+    function manpowerEdit(oldLineArea = '', oldStationIds = []) {
         return {
             selectedLineArea: oldLineArea,
-            selectedStation: oldStation,
+            oldStationIds: oldStationIds,
             stationList: [],
+            currentStations: [],
+            isStationModalOpen: false,
+            newStationId: '',
 
-            init() {
-                // Jika sudah ada line_area lama (saat edit), ambil daftar station
-                if (this.selectedLineArea) {
-                    this.fetchStations();
+           async init() {
+    if (this.selectedLineArea) {
+        await this.fetchStations();
+        await this.loadCurrentStations();
+    }
+},
+
+async fetchStations() {
+    try {
+        const res = await fetch(`{{ route('manpower.master.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
+        this.stationList = await res.json();
+    } catch (err) {
+        console.error('Fetch stations failed:', err);
+    }
+},
+
+loadCurrentStations() {
+    if (!Array.isArray(this.oldStationIds)) return;
+
+    // Ubah semua 'oldStationIds' menjadi Angka (Number)
+    const numericOldIds = this.oldStationIds.map(id => parseInt(id, 10));
+
+    this.currentStations = this.stationList.filter(st =>
+        // Sekarang kita membandingkan Angka dengan Angka
+        numericOldIds.includes(st.id) 
+    );
+},
+
+            openStationModal() {
+                if (!this.selectedLineArea) {
+                    alert('Pilih Line Area terlebih dahulu!');
+                    return;
                 }
+                this.isStationModalOpen = true;
             },
 
-            fetchStations() {
-                if (!this.selectedLineArea) {
-                    this.stationList = [];
-                    this.selectedStation = null;
+            async addStation() {
+                if (!this.newStationId) return alert('Pilih station baru terlebih dahulu.');
+
+                const selected = this.stationList.find(s => s.id == this.newStationId);
+                if (!selected) return;
+                if (this.currentStations.some(st => st.id === selected.id)) {
+                    alert('Station ini sudah ditambahkan.');
                     return;
                 }
 
-                fetch(`{{ route('stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        this.stationList = data;
+                this.currentStations.push(selected);
+                this.newStationId = '';
+                this.isStationModalOpen = false;
 
-                        // Jika ada station lama dari DB, pertahankan pilihannya
-                        if (this.selectedStation) {
-                            const exists = this.stationList.some(s => s.id == this.selectedStation);
-                            if (!exists) this.selectedStation = null;
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Gagal mengambil data station:', err);
-                        this.stationList = [];
+                try {
+                    await fetch(`/manpower/{{ $man_power->id }}/stations`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ station_id: selected.id })
                     });
-            }
-        }
-    }
+                } catch (err) {
+                    console.error('Gagal menyimpan station:', err);
+                }
+            },
 
-</script>
+            async deleteStation(id) {
+                if (!confirm('Yakin ingin menghapus station ini?')) return;
+                this.currentStations = this.currentStations.filter(s => s.id !== id);
+
+                try {
+                    await fetch(`/manpower/{{ $man_power->id }}/stations/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                    });
+                } catch (err) {
+                    console.error('Gagal menghapus station:', err);
+                }
+            }
+        };
+    }
+    </script>
 </x-app-layout>

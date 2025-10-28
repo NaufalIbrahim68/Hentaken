@@ -68,7 +68,7 @@
         findManpowerUrl: '{{ route('henkaten.getManPower') }}',
         
         searchManpowerUrl: '{{ route('manpower.search') }}',
-        findStationsUrl: '{{ route('stations.by_line') }}'
+       findStationsUrl: '{{ route('henkaten.stations.by_line') }}'
     })"
     x-init="init()"
 >

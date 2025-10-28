@@ -40,4 +40,10 @@ class ManPower extends Model
     return $this->belongsTo(TimeScheduler::class, 'time_scheduler_id');
 }
 
+public function stations()
+{
+    return $this->belongsToMany(Station::class, 'man_power_stations', 'man_power_id', 'station_id');
+}
+
+
 }
