@@ -175,7 +175,7 @@
 
     {{-- 4 SECTION GRID - . --}}
     <div class="grid grid-cols-2 gap-3 h-[92vh]">
-  {{-- MAN POWER --}}
+ {{-- MAN POWER --}}
 <div class="bg-white shadow rounded p-1 flex flex-col">
     <h2 class="text-xs font-semibold mb-2 text-center">MAN POWER</h2>
 
@@ -186,15 +186,15 @@
 
     {{-- Tombol Scroll Kiri --}}
     <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-        <button id="scrollLeftManPower" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button id="scrollLeftManPower" class="w-4 h-4 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+            <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
         </button>
     </div>
 
-    <div id="manPowerTableContainer" class="mx-8 overflow-x-auto scrollbar-hide scroll-smooth">
-        <div class="flex gap-6 py-2">
+    <div id="manPowerTableContainer" class="mx-6 overflow-x-auto scrollbar-hide scroll-smooth">
+        <div class="flex gap-2 py-2">
 
             {{-- ============================================================ --}}
             {{-- CEK: APAKAH DATA MAN POWER KOSONG --}}
@@ -220,25 +220,25 @@
         @endphp
 
         {{-- ============================================================ --}}
-        {{-- TAMPILAN IKON PEKERJA --}}
+        {{-- TAMPILAN IKON PEKERJA (DIPERKECIL) --}}
         {{-- ============================================================ --}}
-        <div class="flex-shrink-0 text-center" style="min-width: 80px;">
-            <p class="text-[10px] font-bold text-gray-800 mb-1">{{ $stationName }}</p>
+        <div class="flex-shrink-0 text-center" style="min-width: 45px;">
+            <p class="text-[8px] font-bold text-gray-800 mb-0.5 truncate" style="max-width: 45px;">{{ $stationName }}</p>
 
-            <div class="relative mx-auto mb-2 w-8 h-8">
-                <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <div class="relative mx-auto mb-1 w-6 h-6">
+                <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                     </svg>
                 </div>
             </div>
 
-            <p class="text-[10px] font-medium mb-1 truncate px-1" title="{{ $displayName }}">
+            <p class="text-[7px] font-medium mb-0.5 truncate px-0.5" style="max-width: 45px;" title="{{ $displayName }}">
                 {{ $displayName }}
             </p>
 
             <div>
-                <div class="w-3 h-3 rounded-full {{ $statusColor }} mx-auto" title="{{ $statusText }}"></div>
+                <div class="w-2 h-2 rounded-full {{ $statusColor }} mx-auto" title="{{ $statusText }}"></div>
             </div>
         </div>
 
@@ -250,15 +250,13 @@
 
     {{-- Tombol Scroll Kanan --}}
     <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-        <button id="scrollRightManPower" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button id="scrollRightManPower" class="w-4 h-4 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
+            <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
         </button>
     </div>
 </div>
-
-
 
     {{-- ======================================================================= --}}
 {{-- BAGIAN BAWAH: DETAIL HENKATEN (SATU KOTAK PER HENKATEN) --}}
@@ -467,61 +465,59 @@
 <div class="bg-white shadow rounded p-4 flex flex-col">
     <h2 class="text-sm font-semibold mb-3 text-center">METHOD</h2>
 
-    {{-- Icon Carousel Wrapper --}}
-    <div class="relative mb-4">
-        {{-- Left Arrow --}}
-        <button id="scrollLeftMethodIcon" class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded p-1 hover:bg-gray-100">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-        </button>
+   {{-- Icon Carousel Wrapper --}}
+<div class="relative mb-4">
+    {{-- Left Arrow --}}
+    <button id="scrollLeftMethodIcon" class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded p-0.5 hover:bg-gray-100">
+        <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+    </button>
 
-        {{-- Icon Container - Scrollable --}}
-        <div id="methodScrollContainer" class="overflow-x-auto px-8 scrollbar-hide">
-            {{-- HAPUS justify-center, TAMBAHKAN justify-start --}}
-            <div class="flex gap-3 justify-start flex-nowrap min-w-max">
-                @foreach ($methods as $m)
-                    
-                    {{-- Logika untuk Henkaten --}}
-                  @php
-    $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
-    $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-    $statusText = $m->status ?? 'NORMAL';
+    {{-- Icon Container - Scrollable --}}
+    <div id="methodScrollContainer" class="overflow-x-auto px-8 scrollbar-hide">
+        {{-- TETAP flex-nowrap agar satu baris --}}
+        <div class="flex gap-2 justify-start flex-nowrap">
+            @foreach ($methods as $m)
+                
+                {{-- Logika untuk Henkaten --}}
+              @php
+$isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
+$bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
+$statusText = $m->status ?? 'NORMAL';
 @endphp
 
-                    <div class="flex flex-col items-center flex-shrink-0">
-                        {{-- Station Label --}}
-                        <div class="mb-1 text-[10px] font-medium text-center text-gray-800">
-                            {{ $m->station->station_name ?? 'N/A' }}
-                        </div>
-                        
-                        {{-- Station Icon --}}
-                        <div class="relative">
-                            <div class="w-16 h-16 bg-white rounded border-2 border-gray-300 flex items-center justify-center shadow-sm">
-                                <svg class="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                            </div>
-                        </div>
-                        
-                        {{-- Status Badge --}}
-                        <div class="mt-1 px-2 py-0.5 {{ $bgColor }} text-white text-[9px] rounded font-medium">
-                            {{ $statusText }}
+                <div class="flex flex-col items-center flex-shrink-0">
+                    {{-- Station Label --}}
+                    <div class="mb-0.5 text-[8px] font-medium text-center text-gray-800 truncate" style="max-width: 45px;">
+                        {{ $m->station->station_name ?? 'N/A' }}
+                    </div>
+                    
+                    {{-- Station Icon --}}
+                    <div class="relative">
+                        <div class="w-8 h-8 bg-white rounded border border-gray-300 flex items-center justify-center shadow-sm">
+                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
                         </div>
                     </div>
-                @endforeach
-            </div>
+                    
+                    {{-- Status Badge --}}
+                    <div class="mt-0.5 px-1.5 py-0.5 {{ $bgColor }} text-white text-[7px] rounded font-medium whitespace-nowrap">
+                        {{ $statusText }}
+                    </div>
+                </div>
+            @endforeach
         </div>
-
-        {{-- Right Arrow --}}
-        <button id="scrollRightMethodIcon" class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded p-1 hover:bg-gray-100">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-        </button>
     </div>
 
-
+    {{-- Right Arrow --}}
+    <button id="scrollRightMethodIcon" class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded p-0.5 hover:bg-gray-100">
+        <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+    </button>
+</div>
 
     
     {{-- ======================================================================= --}}
