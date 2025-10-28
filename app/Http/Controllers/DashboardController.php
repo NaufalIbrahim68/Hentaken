@@ -14,14 +14,14 @@ use App\Models\MachineHenkaten;
 use App\Models\MaterialHenkaten;
 use App\Models\TimeScheduler;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
+
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // ======================================================================
-        // SECTION 1: HAPUS SCHEDULER YANG SUDAH LEWAT
-        // ======================================================================
+        
         // -----------------------------------------------------------------
         // PERBAIKAN: Paksa timezone ke Asia/Jakarta (WIB)
         // -----------------------------------------------------------------
@@ -75,7 +75,7 @@ class DashboardController extends Controller
         }
 
         // ======================================================================
-        // SECTION 3: CEK SCHEDULER AKTIF (PASTIKAN PAKAI YANG DARI DB)
+        // SECTION 3: CEK SCHEDULER AKTIF 
         // ======================================================================
         // -----------------------------------------------------------------
         // PERBAIKAN: Logika validasi session
@@ -114,8 +114,6 @@ class DashboardController extends Controller
 
         // 2. JIKA SESSION TIDAK VALID, CARI DI DB
         if (!$schedulerIsValid) { 
-            // 🔍 Cari scheduler yang aktif berdasarkan waktu sekarang
-            // Ini akan menemukan data 'id: 8, shift: 2' Anda
             $currentScheduler = TimeScheduler::where(function ($q) use ($now) {
                     $q->whereDate('tanggal_mulai', '<=', $now->toDateString())
                         ->whereDate('tanggal_berakhir', '>=', $now->toDateString())
@@ -172,26 +170,46 @@ class DashboardController extends Controller
         // ======================================================================
         // SECTION 5: AMBIL DATA HENKATEN
         // ======================================================================
-      $baseHenkatenQuery = function ($query) use ($now) {
-    $query->where('effective_date', '<=', $now)
-          ->where(function ($q) use ($now) {
-              $q->where('end_date', '>=', $now)
-                ->orWhereNull('end_date');
+$baseHenkatenQuery = function ($query) use ($now) {
+    $query->where(function ($q) use ($now) {
+        $q->where('effective_date', '<=', $now)
+          ->where(function ($sub) use ($now) {
+              $sub->where('end_date', '>=', $now)
+                  ->orWhereNull('end_date');
           });
+    });
+
+    try {
+        $columns = Schema::getColumnListing($query->getModel()->getTable());
+
+        if (in_array('time_start', $columns) && in_array('time_end', $columns)) {
+            $query->orWhere(function ($sameDay) use ($now) {
+                $sameDay->whereDate('effective_date', '=', $now->toDateString())
+                        ->whereDate('end_date', '=', $now->toDateString())
+                        ->whereTime('time_start', '<=', $now->toTimeString())
+                        ->whereTime('time_end', '>=', $now->toTimeString());
+            });
+        }
+    } catch (\Exception $e) {
+        // Abaikan jika tidak bisa cek struktur tabel
+    }
 };
 
-        $activeManPowerHenkatens = ManPowerHenkaten::with('station')
-            ->where($baseHenkatenQuery)
-            ->where('shift', $shiftNumForQuery)
-            ->latest('effective_date')
-            ->get();
+    // Jika tabel memiliki kolom waktu (dynamic check pakai try-catch)
+   
 
-        // ✅ Logika METHOD Anda sudah benar
-        $activeMethodHenkatens = MethodHenkaten::with('station')
-            ->where($baseHenkatenQuery)
-            ->where('shift', $shiftNumForQuery) // $shiftNumForQuery sekarang = '2'
-            ->latest('effective_date')
-            ->get();
+      $activeManPowerHenkatens = ManPowerHenkaten::with('station')
+    ->where($baseHenkatenQuery)
+    ->where('shift', $shiftNumForQuery)
+    ->latest('effective_date')
+    ->get();
+
+$activeMethodHenkatens = MethodHenkaten::with('station')
+    ->where($baseHenkatenQuery)
+    ->where('shift', $shiftNumForQuery)
+    ->latest('effective_date')
+    ->get();
+
 
         // (Perbaikan bug copy-paste)
      $machineHenkatens = ManPowerHenkaten::with('station') 
@@ -201,11 +219,11 @@ class DashboardController extends Controller
             ->get();
 
 
-        $materialHenkatens = MaterialHenkaten::with('station')
-            ->where($baseHenkatenQuery)
-            ->where('shift', $shiftNumForQuery)
-            ->latest('effective_date')
-            ->get();
+      $materialHenkatens = MaterialHenkaten::with('station')
+    ->where($baseHenkatenQuery)
+    ->where('shift', $shiftNumForQuery)
+    ->latest('effective_date')
+    ->get();
 
         // ======================================================================
         // SECTION 6: DATA MAN POWER (SAYA ABAIKAN)
@@ -242,37 +260,41 @@ class DashboardController extends Controller
         $methods = Method::with('station')->get(); 
         
         $machines = Machine::with('station')->get();
-        $materials = Material::all();
+       $materials = Material::all()->groupBy('station_id');
         $stations = Station::all();
 
-        // ✅ Logika METHOD Anda sudah benar
         $henkatenMethodStationIds = $activeMethodHenkatens // Ini akan berisi data Henkaten shift 2
             ->pluck('station_id') // Ini akan berisi [120]
             ->filter()
             ->unique()
             ->toArray();
 
-        // ✅ Logika METHOD Anda sudah benar
         foreach ($methods as $method) {
-            // Untuk EOL #2 (station_id: 120), $isHenkaten akan TRUE
             $isHenkaten = in_array($method->station_id, $henkatenMethodStationIds); 
             $method->setAttribute('status', $isHenkaten ? 'HENKATEN' : ($method->keterangan ?? 'NORMAL'));
         }
 
-        // (Logika lain saya abaikan)
         $activeMaterialStationIds = $materialHenkatens->pluck('station_id')->unique()->toArray();
 
-        $stationStatuses = $stations->map(function ($station) use ($activeMaterialStationIds) {
-            $status = in_array($station->id, $activeMaterialStationIds) ? 'HENKATEN' : 'NORMAL';
-            return [
-                'id' => $station->id,
-                'name' => $station->station_name,
-                'status' => $status,
-            ];
-        });
+
+        $stationWithMaterialIds = Material::pluck('station_id')->unique()->toArray();
+
+// Filter stations berdasarkan data material
+$stations = Station::whereIn('id', $stationWithMaterialIds)->get();
+
+        
+       // Buat status tiap station
+$stationStatuses = $stations->map(function ($station) use ($activeMaterialStationIds) {
+    $status = in_array($station->id, $activeMaterialStationIds) ? 'HENKATEN' : 'NORMAL';
+    return [
+        'id' => $station->id,
+        'name' => $station->station_name,
+        'status' => $status,
+    ];
+});
 
         // ======================================================================
-        // SECTION 8: VALIDASI SCHEDULER AKTIF (SAYA ABAIKAN)
+        // SECTION 8: VALIDASI SCHEDULER AKTIF 
         // ======================================================================
         $timeSchedulerAktif = TimeScheduler::whereIn('id', $activeSchedulerIds)
             ->where(function ($q) use ($now) {
@@ -298,13 +320,13 @@ class DashboardController extends Controller
             'groupedManPower' => $groupedManPower,
             'currentGroup' => $grupForQuery,
             'currentShift' => $shiftNumForQuery,
-            'methods' => $methods, // ✅ Siap dikirim
+            'methods' => $methods,
             'machines' => $machines,
             'materials' => $materials,
             'stations' => $stations,
             'stationStatuses' => $stationStatuses,
             'activeManPowerHenkatens' => $activeManPowerHenkatens,
-            'activeMethodHenkatens' => $activeMethodHenkatens, // ✅ Siap dikirim
+            'activeMethodHenkatens' => $activeMethodHenkatens, 
             'machineHenkatens' => $machineHenkatens,
             'materialHenkatens' => $materialHenkatens,
             'dataManPowerKosong' => $dataManPowerKosong,

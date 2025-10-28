@@ -207,43 +207,44 @@
                 {{-- ============================================================ --}}
                 {{-- LOOP STASIUN & PEKERJA --}}
                 {{-- ============================================================ --}}
-                @foreach($groupedManPower as $stationId => $stationWorkers)
-                    @foreach($stationWorkers as $currentWorker)
+               @foreach($groupedManPower as $stationId => $stationWorkers)
+    @foreach($stationWorkers as $currentWorker)
 
-                        @php
-                            $isHenkaten = ($currentWorker->status == 'Henkaten');
-                            $displayName = $currentWorker->nama;
-                            $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
-                            $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-                            $stationCode = $currentWorker->station ? $currentWorker->station->station_code : 'ST-' . $stationId;
-                        @endphp
+        @php
+            $isHenkaten = ($currentWorker->status == 'Henkaten');
+            $displayName = $currentWorker->nama;
+            $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
+            $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
+            // Ganti ke station_name
+            $stationName = $currentWorker->station ? $currentWorker->station->station_name : 'Station ' . $stationId;
+        @endphp
 
-                        {{-- ============================================================ --}}
-                        {{-- TAMPILAN IKON PEKERJA --}}
-                        {{-- ============================================================ --}}
-                        <div class="flex-shrink-0 text-center" style="min-width: 80px;">
-                            <p class="text-[10px] font-bold text-gray-800 mb-1">{{ $stationCode }}</p>
+        {{-- ============================================================ --}}
+        {{-- TAMPILAN IKON PEKERJA --}}
+        {{-- ============================================================ --}}
+        <div class="flex-shrink-0 text-center" style="min-width: 80px;">
+            <p class="text-[10px] font-bold text-gray-800 mb-1">{{ $stationName }}</p>
 
-                            <div class="relative mx-auto mb-2 w-8 h-8">
-                                <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                            </div>
+            <div class="relative mx-auto mb-2 w-8 h-8">
+                <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
 
-                            <p class="text-[10px] font-medium mb-1 truncate px-1" title="{{ $displayName }}">
-                                {{ $displayName }}
-                            </p>
+            <p class="text-[10px] font-medium mb-1 truncate px-1" title="{{ $displayName }}">
+                {{ $displayName }}
+            </p>
 
-                            <div>
-                                <div class="w-3 h-3 rounded-full {{ $statusColor }} mx-auto" title="{{ $statusText }}"></div>
-                            </div>
-                        </div>
+            <div>
+                <div class="w-3 h-3 rounded-full {{ $statusColor }} mx-auto" title="{{ $statusText }}"></div>
+            </div>
+        </div>
 
-                    @endforeach
-                @endforeach
-            @endif
+    @endforeach
+@endforeach            
+@endif
         </div>
     </div>
 
