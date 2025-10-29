@@ -31,6 +31,8 @@ Route::prefix('henkaten')->name('henkaten.')->group(function () {
     Route::post('/manpower/store', [HenkatenController::class, 'store'])->name('store');
     Route::get('/manpower/start', [HenkatenController::class, 'showStartPage'])->name('manpower.start.page');
     Route::patch('/manpower/start/update', [HenkatenController::class, 'updateStartData'])->name('manpower.start.update');
+    Route::get('/manpower/search', [ManPowerController::class, 'search'])->name('manpower.search');
+
 
     // METHOD HENKATEN
     Route::get('/method/create', [HenkatenController::class, 'createMethodHenkaten'])->name('method.create');

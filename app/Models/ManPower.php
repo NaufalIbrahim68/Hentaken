@@ -46,4 +46,10 @@ public function stations()
 }
 
 
+public function troubleshooting()
+{
+    return $this->belongsTo(Troubleshooting::class, 'troubleshooting_id', 'id');
+}
+
+
 }

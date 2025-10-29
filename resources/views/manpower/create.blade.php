@@ -66,16 +66,18 @@
                                 </select>
                             </div>
 
-                            {{-- Grup --}}
-                            <div>
-                                <label for="grup" class="block text-gray-700 text-sm font-bold mb-2">Grup</label>
-                                <select id="grup" name="grup"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline">
-                                    <option value="">-- Pilih Grup --</option>
-                                    <option value="A" {{ old('grup') == 'A' ? 'selected' : '' }}>A</option>
-                                    <option value="B" {{ old('grup') == 'B' ? 'selected' : '' }}>B</option>
-                                </select>
-                            </div>
+                           {{-- Grup --}}
+<div>
+    <label for="grup" class="block text-gray-700 text-sm font-bold mb-2">Grup</label>
+    <select id="grup" name="grup"
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline">
+        <option value="">-- Pilih Grup --</option>
+        <option value="A" {{ old('grup') == 'A' ? 'selected' : '' }}>A</option>
+        <option value="B" {{ old('grup') == 'B' ? 'selected' : '' }}>B</option>
+        <option value="A(Troubleshooting)" {{ old('grup') == 'A(Troubleshooting)' ? 'selected' : '' }}>A(Troubleshooting)</option>
+        <option value="B(Troubleshooting)" {{ old('grup') == 'B(Troubleshooting)' ? 'selected' : '' }}>B(Troubleshooting)</option>
+    </select>
+</div>
 
                             {{-- Tombol --}}
                             <div class="flex items-center justify-end space-x-4 mt-6">
@@ -122,7 +124,7 @@
                         return;
                     }
 
-                    fetch(`{{ route('stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
+                    fetch(`{{ route('henkaten.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
                         .then(res => res.json())
                         .then(data => {
                             this.stationList = data;

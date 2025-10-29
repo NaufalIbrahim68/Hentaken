@@ -244,112 +244,125 @@
     </div>
 
     {{-- Alpine.js --}}
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script>
-        // Logika Alpine.js dipindahkan ke sini agar rapi
-        function henkatenForm(initialData) {
-            return {
-                // URLs
-                findManpowerUrl: initialData.findManpowerUrl,
-                searchManpowerUrl: initialData.searchManpowerUrl,
-                findStationsUrl: initialData.findStationsUrl,
-                
-                // State untuk Dropdown
-                selectedShift: initialData.oldShift,
-                selectedGrup: initialData.oldGrup,
-                selectedLineArea: initialData.oldLineArea,
-                selectedStation: initialData.oldStation,
-                stationList: [],
-                
-                // State untuk "Manpower Before" (Otomatis)
-                manpowerBefore: {
-                    id: initialData.oldManPowerBeforeId,
-                    nama: initialData.oldManPowerBeforeName || ''
-                },
-                
-                // State untuk "Manpower After" (Autocomplete)
-                autocompleteQuery: initialData.oldManPowerAfterName || '',
-                autocompleteResults: [],
-                selectedManpowerAfter: {
-                    id: initialData.oldManPowerAfterId
-                },
+   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script>
+function henkatenForm(initialData) {
+    return {
+        // URLs
+        findManpowerUrl: initialData.findManpowerUrl,
+        searchManpowerUrl: initialData.searchManpowerUrl,
+        findStationsUrl: initialData.findStationsUrl,
 
-                // Inisialisasi: jika ada old data, fetch station list
-                init() {
-                    if (this.selectedLineArea) {
-                        this.fetchStations(false); // false = jangan reset station
-                    }
-                },
+        // State untuk Dropdown
+        selectedShift: initialData.oldShift,
+        selectedGrup: initialData.oldGrup,
+        selectedLineArea: initialData.oldLineArea,
+        selectedStation: initialData.oldStation,
+        stationList: [],
 
-                // --- Logika Dependent Dropdown ---
-                fetchStations(resetStation = true) {
-                    if (resetStation) {
-                        this.selectedStation = null;
-                        this.manpowerBefore = { id: null, nama: '' };
-                    }
-                    this.stationList = [];
-                    if (!this.selectedLineArea) return;
+        // State untuk "Manpower Before" (Otomatis)
+        manpowerBefore: {
+            id: initialData.oldManPowerBeforeId,
+            nama: initialData.oldManPowerBeforeName || ''
+        },
 
-                    fetch(`${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            this.stationList = data;
-                            // Jika ada oldStation, pastikan nilainya tetap (untuk kasus validation error)
-                            // Note: this.selectedStation sudah di-set oleh 'initialData'
-                        })
-                        .catch(err => console.error('Gagal mengambil data station:', err));
-                },
+        // State untuk "Manpower After" (Autocomplete)
+        autocompleteQuery: initialData.oldManPowerAfterName || '',
+        autocompleteResults: [],
+        selectedManpowerAfter: {
+            id: initialData.oldManPowerAfterId
+        },
 
-                // --- Logika Auto-populate "Before" ---
-                fetchManpowerBefore() {
-                    // Hanya fetch jika semua data terisi
-                    if (!this.selectedGrup || !this.selectedLineArea || !this.selectedStation) {
-                        this.manpowerBefore = { id: null, nama: '' };
-                        return;
-                    }
-
-                    const params = new URLSearchParams({
-                        grup: this.selectedGrup,
-                        line_area: this.selectedLineArea,
-                        station_id: this.selectedStation
-                    });
-
-                    fetch(`${this.findManpowerUrl}?${params.toString()}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data && data.id) {
-                                this.manpowerBefore = data; // data = { id: 123, nama: 'John Doe' }
-                            } else {
-                                this.manpowerBefore = { id: null, nama: 'Man power tidak ditemukan' };
-                            }
-                        })
-                        .catch(err => {
-                            console.error('Gagal mengambil data man power:', err);
-                            this.manpowerBefore = { id: null, nama: 'Error mengambil data' };
-                        });
-                },
-
-                // --- Logika Autocomplete "After" ---
-                searchAfter() {
-                    if (this.autocompleteQuery.length < 1) {
-                        this.autocompleteResults = [];
-                        return;
-                    }
-                    fetch(`${this.searchManpowerUrl}?q=${encodeURIComponent(this.autocompleteQuery)}`)
-                        .then(res => res.json())
-                        .then(data => this.autocompleteResults = data);
-                },
-                selectAfter(item) {
-                    this.autocompleteQuery = item.nama;
-                    this.selectedManpowerAfter.id = item.id;
-                    this.autocompleteResults = [];
-                }
+        // Inisialisasi: jika ada old data, fetch station list
+        init() {
+            if (this.selectedLineArea) {
+                this.fetchStations(false); // false = jangan reset station
             }
-        }
+        },
 
-        // Daftarkan komponen Alpine
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('henkatenForm', henkatenForm);
-        });
-    </script>
+        // --- Dependent Dropdown ---
+        fetchStations(resetStation = true) {
+            if (resetStation) {
+                this.selectedStation = null;
+                this.manpowerBefore = { id: null, nama: '' };
+            }
+            this.stationList = [];
+            if (!this.selectedLineArea) return;
+
+            fetch(`${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
+                .then(res => res.json())
+                .then(data => {
+                    this.stationList = data;
+                })
+                .catch(err => console.error('Gagal mengambil data station:', err));
+        },
+
+        // --- Auto-populate "Before" ---
+        fetchManpowerBefore() {
+            if (!this.selectedGrup || !this.selectedLineArea || !this.selectedStation) {
+                this.manpowerBefore = { id: null, nama: '' };
+                return;
+            }
+
+            const params = new URLSearchParams({
+                grup: this.selectedGrup,
+                line_area: this.selectedLineArea,
+                station_id: this.selectedStation
+            });
+
+            fetch(`${this.findManpowerUrl}?${params.toString()}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.id) {
+                        this.manpowerBefore = data;
+                    } else {
+                        this.manpowerBefore = { id: null, nama: 'Man power tidak ditemukan' };
+                    }
+                })
+                .catch(err => {
+                    console.error('Gagal mengambil data man power:', err);
+                    this.manpowerBefore = { id: null, nama: 'Error mengambil data' };
+                });
+        },
+
+        // --- Autocomplete "After" ---
+       searchAfter() {
+            if (this.autocompleteQuery.length < 1) {
+                this.autocompleteResults = [];
+                return;
+            }
+
+            // PASTIKAN ANDA MENGECEK GRUP, BUKAN STATION
+            if (!this.selectedGrup) { 
+                this.autocompleteResults = [];
+                return;
+            }
+
+            const params = new URLSearchParams({
+                q: this.autocompleteQuery,
+                grup: this.selectedGrup // <-- KIRIM GRUP, BUKAN station_id
+            });
+
+            fetch(`${this.searchManpowerUrl}?${params.toString()}`)
+                .then(res => res.json())
+                .then(data => {
+                    this.autocompleteResults = data;
+                })
+                .catch(err => console.error('Gagal mencari man power:', err));
+        },
+
+        selectAfter(item) {
+            this.autocompleteQuery = item.nama;
+            this.selectedManpowerAfter.id = item.id;
+            this.autocompleteResults = [];
+        }
+    };
+}
+
+// Daftarkan komponen Alpine
+document.addEventListener('alpine:init', () => {
+    Alpine.data('henkatenForm', henkatenForm);
+});
+</script>
+
 </x-app-layout>
