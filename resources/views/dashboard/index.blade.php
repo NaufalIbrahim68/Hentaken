@@ -727,14 +727,14 @@ $statusText = $m->status ?? 'NORMAL';
 </div>
 </div>
 
-    {{-- ============================================= --}}
+ {{-- ============================================= --}}
 {{-- MACHINE SECTION --}}
 {{-- ============================================= --}}
 <div class="bg-white shadow rounded p-1 flex flex-col">
-    <h2 class="text-xs font-semibold mb-0.5 text-center">MACHINE</h2>
+    <h2 class="text-xs font-semibold mb-2 text-center">MACHINE</h2>
 
     {{-- Machine Status Bar with Navigation --}}
-    <div class="relative">
+    <div class="relative mt-2">
         {{-- Tombol Navigasi di Kiri --}}
         <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
             <button id="scrollLeftMachine" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-blue-600 rounded-full text-black shadow transition">
@@ -745,16 +745,18 @@ $statusText = $m->status ?? 'NORMAL';
         </div>
 
         {{-- Machine Status Container --}}
-        <div class="bg-white p-2 mx-8">
-            <div class="flex justify-center items-center space-x-1">
+        <div class="bg-white p-3 mx-8">
+            <div class="flex justify-center items-center gap-4">
                 @foreach ($machines as $mc)
                     @php $isHenkaten = ($mc->keterangan === 'HENKATEN'); @endphp
-                    <div class="machine-status {{ $isHenkaten ? 'machine-inactive' : 'machine-active' }}" onclick="toggleMachine(this)">
-                        <div class="station-id text-[8px] font-bold text-black mb-0.5">
-                            ST {{ $mc->station_id }}
+                    <div class="machine-status {{ $isHenkaten ? 'machine-inactive' : 'machine-active' }} flex flex-col items-center" 
+                         style="width: 80px;"
+                         onclick="toggleMachine(this)">
+                        <div class="text-[9px] font-bold text-black mb-3 text-center">
+                            {{ $mc->station->station_name ?? '-' }}
                         </div>
-                        <div style="font-size: 16px;">🏭</div>
-                        <div class="status-text text-[7px] font-bold mt-0.5 px-0.5 py-0.5 rounded-full 
+                        <div class="text-2xl mb-2">🏭</div>
+                        <div class="text-[8px] font-bold px-2 py-1 rounded-full text-center whitespace-nowrap
                             {{ $isHenkaten ? 'bg-red-600 text-white' : 'bg-green-700 text-white' }}">
                             {{ $isHenkaten ? 'HENKATEN' : 'NORMAL' }}
                         </div>
@@ -772,9 +774,8 @@ $statusText = $m->status ?? 'NORMAL';
             </button>
         </div>
     </div>
-
-    {{-- MACHINE HENKATEN CARD SECTION --}}
-    <div class="border-t mt-2 pt-2 overflow-x-auto scrollbar-hide">
+ {{-- MACHINE HENKATEN CARD SECTION --}}
+    <div class="border-t mt-4 pt-4 overflow-x-auto scrollbar-hide">
         <div class="flex justify-center gap-3 p-2">
             @forelse($machineHenkatens as $henkaten)
                 <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 shadow-md cursor-pointer hover:bg-gray-100 transition"

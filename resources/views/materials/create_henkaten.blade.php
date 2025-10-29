@@ -247,8 +247,8 @@
 
                     if (!this.selectedLineArea) return;
 
-                    fetch(`{{ route('henkaten.stations.by_line') }}' }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
-                        .then(res => res.json())
+
+fetch(`{{ route('henkaten.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)                        .then(res => res.json())
                         .then(data => this.stationList = data)
                         .catch(err => {
                             console.error('Gagal mengambil data station:', err);
