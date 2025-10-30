@@ -28,6 +28,7 @@
                             x-data="{ show: true }"
                             x-show="show"
                             x-transition
+                            x-init="setTimeout(() => show = false, 3000)"
                             class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md relative"
                             role="alert"
                         >
@@ -41,7 +42,7 @@
                         </div>
                     @endif
 
-                <form action="{{ route('henkaten.method.store') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('henkaten.method.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         
                         {{-- Wrapper Alpine untuk dependent dropdowns --}}
@@ -57,7 +58,8 @@
                                 <div class="mb-4">
                                     <label for="shift" class="block text-gray-700 text-sm font-bold mb-2">Shift</label>
                                     <select id="shift" name="shift"
-                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                            required> {{-- DITAMBAHKAN --}}
                                         <option value="1" {{ old('shift') == '1' ? 'selected' : '' }}>Shift 1</option>
                                         <option value="2" {{ old('shift') == '2' ? 'selected' : '' }}>Shift 2</option>
                                     </select>
@@ -105,27 +107,31 @@
                                     <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
                                     <input type="date" id="effective_date" name="effective_date"
                                            value="{{ old('effective_date') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                           required> {{-- DITAMBAHKAN --}}
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
                                     <input type="date" id="end_date" name="end_date" value="{{ old('end_date') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                           required> {{-- DITAMBAHKAN --}}
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
                                     <input type="time" id="time_start" name="time_start"
                                            value="{{ old('time_start') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                           required> {{-- DITAMBAHKAN --}}
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
                                     <input type="time" id="time_end" name="time_end"
                                            value="{{ old('time_end') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                           required> {{-- DITAMBAHKAN --}}
                                 </div>
                             </div>
                         </div>
@@ -138,7 +144,8 @@
                                 <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sebelum</label>
                                 <textarea id="keterangan" name="keterangan" rows="4"
                                           placeholder="Jelaskan kondisi method sebelum perubahan..."
-                                          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">{{ old('keterangan') }}</textarea>
+                                          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                          required>{{ old('keterangan') }}</textarea> {{-- DITAMBAHKAN --}}
                                 <p class="text-xs text-gray-500 mt-2 italic">Data method sebelum perubahan</p>
                             </div>
 
@@ -147,19 +154,20 @@
                                 <label for="keterangan_after" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sesudah Pergantian</label>
                                 <textarea id="keterangan_after" name="keterangan_after" rows="4"
                                           placeholder="Jelaskan kondisi method setelah perubahan..."
-                                          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">{{ old('keterangan_after') }}</textarea>
+                                          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                          required>{{ old('keterangan_after') }}</textarea> {{-- DITAMBAHKAN --}}
                                 <p class="text-xs text-green-600 mt-2 italic">Data method setelah perubahan</p>
                             </div>
 
                         </div>
 
-                        {{-- Lampiran --}}
+                       {{-- Lampiran --}}
                         <div class="mb-6 mt-6">
                             <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran</label>
                             <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
-                                   class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                required> {{-- SUDAH ADA --}}
                         </div>
-
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
                             <a href="{{ route('dashboard') }}"
                                class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">

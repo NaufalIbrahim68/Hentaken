@@ -35,57 +35,75 @@ class HenkatenController extends Controller
         return view('manpower.create_henkaten', compact('stations', 'lineAreas'));
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'shift'              => 'required|string',
-            'nama'               => 'required|string',
-            'nama_after'         => 'required|string',
-            'man_power_id'       => 'required|integer|exists:man_power,id',
-            'man_power_id_after' => 'required|integer|exists:man_power,id',
-            'station_id'         => 'required|integer|exists:stations,id',
-            'keterangan'         => 'nullable|string',
-            'line_area'          => 'required|string',
-            'effective_date'     => 'nullable|date',
-            'end_date'           => 'nullable|date|after_or_equal:effective_date',
-            'lampiran'           => 'nullable|image|mimes:jpeg,png|max:2048',
-            'time_start'         => 'nullable|date_format:H:i',
-            'time_end'           => 'nullable|date_format:H:i|after_or_equal:time_start',
-        ]);
+   public function store(Request $request)
+{
+    $validated = $request->validate([
+        'shift'              => 'required|string',
+        'man_power_id'       => 'required|integer|exists:man_power,id', // <-- 'nama' dihapus
+        'man_power_id_after' => 'required|integer|exists:man_power,id', // <-- 'nama_after' dihapus
+        'station_id'         => 'required|integer|exists:stations,id',
+        'keterangan'         => 'nullable|string', // Sesuai dengan form, 'required' jika wajib
+        'line_area'          => 'required|string',
+        'effective_date'     => 'nullable|date',
+        'end_date'           => 'nullable|date|after_or_equal:effective_date',
+'lampiran'           => 'required|image|mimes:jpeg,png|max:2048',        
+ 'time_start'         => 'nullable|date_format:H:i',
+        'time_end'           => 'nullable|date_format:H:i|after_or_equal:time_start',
+    ]);
 
-        try {
-            DB::beginTransaction();
+    try {
+        DB::beginTransaction();
 
-            $lampiranPath = null;
-            if ($request->hasFile('lampiran')) {
-                $lampiranPath = $request->file('lampiran')->store('lampiran_henkaten', 'public');
-            }
+        // 1. Ambil data Man Power yang valid dari database
+        $manPowerAsli = ManPower::find($validated['man_power_id']);
+        $manPowerAfter = ManPower::find($validated['man_power_id_after']);
 
-            $dataToCreate = $validated;
-            $dataToCreate['lampiran'] = $lampiranPath;
-            $henkaten = ManPowerHenkaten::create($dataToCreate);
-
-            $manPowerAsli = ManPower::find($request->man_power_id);
-            if ($manPowerAsli) {
-                $manPowerAsli->status = 'henkaten';
-                $manPowerAsli->save();
-            }
-
-            $manPowerAfter = ManPower::find($request->man_power_id_after);
-            if ($manPowerAfter) {
-                $manPowerAfter->status = 'aktif';
-                $manPowerAfter->save();
-            }
-
-            DB::commit();
-
-            return redirect()->route('henkaten.create')
-                ->with('success', 'Data Henkaten berhasil dibuat');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()]);
+        // Jika karena satu dan lain hal data tidak ditemukan, batalkan.
+        if (!$manPowerAsli || !$manPowerAfter) {
+            throw new \Exception('Data Man Power tidak ditemukan.');
         }
+
+        // 2. Handle file upload
+        $lampiranPath = null;
+        if ($request->hasFile('lampiran')) {
+            $lampiranPath = $request->file('lampiran')->store('lampiran_henkaten', 'public');
+        }
+
+        // 3. Siapkan data untuk tabel log Henkaten
+        $dataToCreate = $validated;
+        $dataToCreate['lampiran'] = $lampiranPath;
+        $dataToCreate['nama'] = $manPowerAsli->nama; // <-- Ambil nama asli dari DB
+        $dataToCreate['nama_after'] = $manPowerAfter->nama; // <-- Ambil nama asli dari DB
+        
+        // Buat log henkaten
+        ManPowerHenkaten::create($dataToCreate);
+
+        // 4. Update Man Power Asli (yang diganti)
+        // Set status dan lepas dari station
+        $manPowerAsli->status = 'henkaten';
+        $manPowerAsli->station_id = null; // <-- Asumsi: 'null' berarti tidak ditugaskan
+        $manPowerAsli->save();
+
+        // 5. Update Man Power After (pengganti)
+        // Set status dan tugaskan ke station yang baru
+        $manPowerAfter->status = 'aktif';
+        $manPowerAfter->station_id = $validated['station_id']; // <-- Tugaskan ke station
+        $manPowerAfter->save();
+
+        DB::commit();
+
+        return redirect()->route('henkaten.create')
+            ->with('success', 'Data Henkaten berhasil dibuat. ' . $manPowerAfter->nama . ' sekarang ditugaskan di station tersebut.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        // Hapus file yang terlanjur di-upload jika terjadi error
+        if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
+            Storage::disk('public')->delete($lampiranPath);
+        }
+        return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
     }
+}
 
     // ==============================================================  
     // BAGIAN 2: START PAGE HENKATEN MAN POWER  
@@ -158,16 +176,17 @@ class HenkatenController extends Controller
     public function storeMethodHenkaten(Request $request)
     {
         $validated = $request->validate([
-            'shift'            => 'required|integer',
-            'keterangan'       => 'required|string|max:1000',
-            'keterangan_after' => 'required|string|max:1000',
-            'station_id'       => 'required|integer|exists:stations,id',
-            'line_area'        => 'required|string',
-            'effective_date'   => 'nullable|date',
-            'end_date'         => 'nullable|date|after_or_equal:effective_date',
-            'lampiran'         => 'nullable|image|mimes:jpeg,png|max:2048',
-            'time_start'       => 'nullable|date_format:H:i',
-            'time_end'         => 'nullable|date_format:H:i',
+            'shift'              => 'required|string',
+        'line_area'          => 'required|string',
+        'station_id'         => 'required|integer|exists:stations,id',
+        'effective_date'     => 'required|date',
+        'end_date'           => 'required|date|after_or_equal:effective_date',
+        'time_start'         => 'required|date_format:H:i',
+        'time_end'           => 'required|date_format:H:i|after_or_equal:time_start',
+        'keterangan'         => 'required|string',
+        'keterangan_after'   => 'required|string',
+        'lampiran'           => 'required|image|mimes:jpeg,png|max:2048',
+    
         ]);
 
         try {
@@ -293,25 +312,22 @@ public function storeMaterialHenkaten(Request $request)
     {
         // 1. VALIDASI FINAL (Sesuai DB baru dan Form baru)
         $validatedData = $request->validate([
-            'shift'              => 'required|integer',
-            'line_area'          => 'required|string',
-            'station_id'         => 'required|integer|exists:stations,id',
-            'material_id'        => 'required|integer|exists:materials,id', // <-- DARI DROPDOWN
-            
-            // Kolom baru untuk teks "Sebelum" dan "Sesudah"
-            'description_before' => 'required|string|max:255', 
-            'description_after'  => 'required|string|max:255',
+          'shift'              => 'required|string',
+        'line_area'          => 'required|string',
+        'station_id'         => 'required|integer|exists:stations,id',
+        'material_id'        => 'required|integer|exists:materials,id', // Pastikan 'materials' adalah nama tabel Anda
+        'effective_date'     => 'required|date',
+        'end_date'           => 'required|date|after_or_equal:effective_date',
+        'time_start'         => 'required|date_format:H:i',
+        'time_end'           => 'required|date_format:H:i|after_or_equal:time_start',
+        'description_before' => 'required|string|max:255',
+        'description_after'  => 'required|string|max:255',
+        'keterangan'         => 'required|string',
+        'lampiran'           => 'required|image|mimes:jpeg,png|max:2048',
+        'redirect_to'        => 'nullable|string' // Ini 'nullable' karena hidden input
+    ]);
 
-            'keterangan'         => 'nullable|string|max:1000',
-            'effective_date'     => 'nullable|date',
-            'end_date'           => 'nullable|date|after_or_equal:effective_date',
-            'lampiran'           => 'nullable|image|mimes:jpeg,png|max:2048',
-            'serial_number_start' => 'nullable|string|max:255',
-            'serial_number_end'   => 'nullable|string|max:255',
-            'time_start'         => 'nullable|date_format:H:i',
-            'time_end'           => 'nullable|date_format:H:i',
-        ]);
-
+    
         try {
             DB::beginTransaction();
 

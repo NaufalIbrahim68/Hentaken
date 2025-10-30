@@ -28,6 +28,7 @@
                             x-data="{ show: true }"
                             x-show="show"
                             x-transition
+                            x-init="setTimeout(() => show = false, 3000)"
                             class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md relative"
                             role="alert"
                         >
@@ -60,7 +61,8 @@
                                 <div class="mb-4">
                                     <label for="shift" class="block text-gray-700 text-sm font-bold mb-2">Shift</label>
                                     <select id="shift" name="shift"
-                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                            required> {{-- DITAMBAHKAN --}}
                                         <option value="1" {{ old('shift') == '1' ? 'selected' : '' }}>Shift 1</option>
                                         <option value="2" {{ old('shift') == '2' ? 'selected' : '' }}>Shift 2</option>
                                     </select>
@@ -128,32 +130,36 @@
                                     <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
                                     <input type="date" id="effective_date" name="effective_date"
                                            value="{{ old('effective_date') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                           required> {{-- DITAMBAHKAN --}}
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
                                     <input type="date" id="end_date" name="end_date" value="{{ old('end_date') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                           required> {{-- DITAMBAHKAN --}}
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
                                     <input type="time" id="time_start" name="time_start"
                                            value="{{ old('time_start') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                           required> {{-- DITAMBAHKAN --}}
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
                                     <input type="time" id="time_end" name="time_end"
                                            value="{{ old('time_end') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                           required> {{-- DITAMBAHKAN --}}
                                 </div>
                             </div>
                         </div>
 
-                   {{-- Before & After untuk Material --}}
+                       {{-- Before & After untuk Material --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
                             {{-- DIUBAH: Blok "Sebelum" --}}
@@ -162,7 +168,8 @@
                                 
                                 <input type="text" name="description_before" value="{{ old('description_before') }}"
                                        class="w-full py-3 px-4 border rounded"
-                                       placeholder="Deskripsi kondisi/part sebelum perubahan...">
+                                       placeholder="Deskripsi kondisi/part sebelum perubahan..."
+                                       required> {{-- DITAMBAHKAN --}}
                                 
                                 <p class="text-xs text-gray-500 mt-2 italic">Deskripsi kondisi sebelum perubahan</p>
                             </div>
@@ -174,28 +181,31 @@
                                 
                                 <input type="text" name="description_after" value="{{ old('description_after') }}"
                                        class="w-full py-3 px-4 border rounded"
-                                       placeholder="Deskripsi kondisi/part setelah perubahan...">
+                                       placeholder="Deskripsi kondisi/part setelah perubahan..."
+                                       required> {{-- DITAMBAHKAN --}}
                                 
                                 <p class="text-xs text-green-600 mt-2 italic">Deskripsi kondisi setelah perubahan</p>
                             </div>
 
                         </div>
-                        </div>
+                        </div> {{-- Penutup div grid pertama yang salah tempat --}}
+                        
                         {{-- BLOK KETERANGAN --}}
                         <div class="mb-6 mt-6">
                             <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
                             <textarea id="keterangan" name="keterangan" rows="4"
                                       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                      placeholder="Jelaskan alasan perubahan material...">{{ old('keterangan') }}</textarea>
+                                      placeholder="Jelaskan alasan perubahan material..."
+                                      required>{{ old('keterangan') }}</textarea> {{-- DITAMBAHKAN --}}
                         </div>
 
                         {{-- Lampiran --}}
                         <div class="mb-6 mt-6">
                             <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran</label>
                             <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
-                                   class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                required>
                         </div>
-
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
                             <a href="{{ route('dashboard') }}"
                                class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">
@@ -216,8 +226,7 @@
    {{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
-        // Fungsi autocomplete ini sekarang tidak terpakai oleh form "Sebelum" dan "Sesudah",
-        // tapi mungkin masih Anda gunakan di tempat lain. Bisa dihapus jika tidak perlu.
+        // Fungsi autocomplete (bisa dihapus jika tidak terpakai)
         function autocomplete(url) {
             return {
                 query: '',
@@ -237,7 +246,7 @@
             }
         }
 
-        // DIUBAH: Dependent Dropdown untuk Line -> Station -> Material
+        // Dependent Dropdown untuk Line -> Station -> Material
         function dependentDropdowns(oldLineArea, oldStation, initialStations, oldMaterial, initialMaterials) {
             return {
                 selectedLineArea: oldLineArea || '',
@@ -262,20 +271,15 @@
                             this.stationList = [];
                         });
                 },
-
-                // ==========================================================
-                // FUNGSI YANG SUDAH DIPERBAIKI
-                // ==========================================================
+                
                 fetchMaterials() {
                     this.selectedMaterial = null;
                     this.materialList = [];
 
                     if (!this.selectedStation) return;
-
-                    // 1. URL diubah ke route material yang baru Anda buat
-                    // 2. Parameter diubah ke station_id
+                    
                     fetch(`{{ route('henkaten.materials.by_station') }}?station_id=${this.selectedStation}`) 
-                        .then(res => res.json()) // 3. Hanya SATU kali .json()
+                        .then(res => res.json()) 
                         .then(data => {
                             this.materialList = data;
                         })
