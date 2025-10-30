@@ -66,23 +66,37 @@
                                 </select>
                             </div>
 
-                           {{-- Grup --}}
-<div>
-    <label for="grup" class="block text-gray-700 text-sm font-bold mb-2">Grup</label>
-    <select id="grup" name="grup"
-        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline">
-        <option value="">-- Pilih Grup --</option>
-        <option value="A" {{ old('grup') == 'A' ? 'selected' : '' }}>A</option>
-        <option value="B" {{ old('grup') == 'B' ? 'selected' : '' }}>B</option>
-        <option value="A(Troubleshooting)" {{ old('grup') == 'A(Troubleshooting)' ? 'selected' : '' }}>A(Troubleshooting)</option>
-        <option value="B(Troubleshooting)" {{ old('grup') == 'B(Troubleshooting)' ? 'selected' : '' }}>B(Troubleshooting)</option>
-    </select>
-</div>
+                            {{-- Grup --}}
+                            <div>
+                                <label for="grup" class="block text-gray-700 text-sm font-bold mb-2">Grup</label>
+                                <select id="grup" name="grup"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline">
+                                    <option value="">-- Pilih Grup --</option>
+                                    <option value="A" {{ old('grup') == 'A' ? 'selected' : '' }}>A</option>
+                                    <option value="B" {{ old('grup') == 'B' ? 'selected' : '' }}>B</option>
+                                    <option value="A(Troubleshooting)" {{ old('grup') == 'A(Troubleshooting)' ? 'selected' : '' }}>A(Troubleshooting)</option>
+                                    <option value="B(Troubleshooting)" {{ old('grup') == 'B(Troubleshooting)' ? 'selected' : '' }}>B(Troubleshooting)</option>
+                                </select>
+                            </div>
+
+                            {{-- Tanggal Mulai  --}}
+                            <div>
+                                <label for="tanggal_mulai" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Mulai</label>
+                                <input type="date" id="tanggal_mulai" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline">
+                            </div>
+                            
+                            {{-- Waktu Mulai (BARU DITAMBAHKAN) --}}
+                            <div>
+                                <label for="waktu_mulai" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
+                                <input type="time" id="waktu_mulai" name="waktu_mulai" value="{{ old('waktu_mulai') }}"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline">
+                            </div>
 
                             {{-- Tombol --}}
                             <div class="flex items-center justify-end space-x-4 mt-6">
                                 <a href="{{ route('manpower.index') }}"
-                                   class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md">
+                                    class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md">
                                     Batal
                                 </a>
                                 <button type="submit"

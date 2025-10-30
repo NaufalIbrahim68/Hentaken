@@ -23,7 +23,8 @@ class ManPower extends Model
         'nama',
         'line_area',
         'status', // Kolom status yang penting
-          'time_scheduler_id', 
+          'waktu_mulai',
+          'tanggal_mulai',
 
     ];
 
