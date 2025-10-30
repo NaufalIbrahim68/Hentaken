@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
+use App\Models\Material;     
 
 class HenkatenController extends Controller
 {
@@ -266,89 +267,84 @@ class HenkatenController extends Controller
 // BAGIAN 4: FORM PEMBUATAN HENKATEN MATERIAL  
 // ==============================================================
 public function createMaterialHenkaten()
-{
-    $stations = Station::all();
-    $lineAreas = Station::whereNotNull('line_area')
-                        ->orderBy('line_area', 'asc')
-                        ->pluck('line_area')
-                        ->unique();
+    {
+        $lineAreas = Station::whereNotNull('line_area')
+                            ->orderBy('line_area', 'asc')
+                            ->pluck('line_area')
+                            ->unique();
 
-    $stations = [];
-    if ($oldLineArea = old('line_area')) {
-        $stations = Station::where('line_area', $oldLineArea)->get();
+        // Inisialisasi untuk dropdown dependent
+        $stations = [];
+        $materials = []; // <-- Penting untuk di-pass ke view
+
+        // Jika ada error validasi, isi ulang dropdown berdasarkan old input
+        if ($oldLineArea = old('line_area')) {
+            $stations = Station::where('line_area', $oldLineArea)->get();
+        }
+        
+        if ($oldStation = old('station_id')) {
+            $materials = Material::where('station_id', $oldStation)->get(); 
+        }
+
+        return view('materials.create_henkaten', compact('lineAreas', 'stations', 'materials'));
     }
-
-    return view('materials.create_henkaten', compact('stations', 'lineAreas'));
-}
 
 public function storeMaterialHenkaten(Request $request)
-{
-    $validated = $request->validate([
-        'shift'            => 'required|integer',
-        'material_name'    => 'required|string|max:255',
-        'material_after'   => 'required|string|max:255',
-        'keterangan'       => 'nullable|string|max:1000',
-        'station_id'       => 'required|integer|exists:stations,id',
-        'line_area'        => 'required|string',
-        'effective_date'   => 'nullable|date',
-        'end_date'         => 'nullable|date|after_or_equal:effective_date',
-        'lampiran'         => 'nullable|image|mimes:jpeg,png|max:2048',
-        'serial_number_start' => 'nullable|string|max:255',
-        'serial_number_end'   => 'nullable|string|max:255',
-        'time_start'       => 'nullable|date_format:H:i',
-        'time_end'         => 'nullable|date_format:H:i',
-    ]);
+    {
+        // 1. VALIDASI FINAL (Sesuai DB baru dan Form baru)
+        $validatedData = $request->validate([
+            'shift'              => 'required|integer',
+            'line_area'          => 'required|string',
+            'station_id'         => 'required|integer|exists:stations,id',
+            'material_id'        => 'required|integer|exists:materials,id', // <-- DARI DROPDOWN
+            
+            // Kolom baru untuk teks "Sebelum" dan "Sesudah"
+            'description_before' => 'required|string|max:255', 
+            'description_after'  => 'required|string|max:255',
 
-    try {
-        DB::beginTransaction();
+            'keterangan'         => 'nullable|string|max:1000',
+            'effective_date'     => 'nullable|date',
+            'end_date'           => 'nullable|date|after_or_equal:effective_date',
+            'lampiran'           => 'nullable|image|mimes:jpeg,png|max:2048',
+            'serial_number_start' => 'nullable|string|max:255',
+            'serial_number_end'   => 'nullable|string|max:255',
+            'time_start'         => 'nullable|date_format:H:i',
+            'time_end'           => 'nullable|date_format:H:i',
+        ]);
 
-        // ============================================================
-        // Cari ID material berdasarkan nama
-        // ============================================================
-        $materialBefore = DB::table('materials')
-            ->where('material_name', $request->material_name)
-            ->first();
+        try {
+            DB::beginTransaction();
 
-        $materialAfter = DB::table('materials')
-            ->where('material_name', $request->material_after)
-            ->first();
+            // 2. LOGIKA LAMA (Mencari material_name) SUDAH DIHAPUS
 
-        // Jika tidak ditemukan, bisa diberi fallback error
-        if (!$materialBefore || !$materialAfter) {
-            throw new \Exception('Nama material tidak ditemukan di tabel materials.');
+            // 3. Simpan lampiran jika ada
+            $lampiranPath = null;
+            if ($request->hasFile('lampiran')) {
+                $lampiranPath = $request->file('lampiran')->store('lampiran_materials_henkaten', 'public');
+            }
+
+            // 4. Buat data baru untuk disimpan
+            $dataToCreate = $validatedData; 
+            $dataToCreate['lampiran'] = $lampiranPath;
+            
+            // $dataToCreate sudah berisi semua kolom yang divalidasi
+            // (material_id, description_before, description_after, dll)
+            MaterialHenkaten::create($dataToCreate);
+
+            DB::commit();
+
+            // Arahkan ke route 'create' lagi agar bisa input baru
+            return redirect()->route('henkaten.material.create') 
+                ->with('success', 'Data Material Henkaten berhasil disimpan!');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()
+                ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
+                ->withInput();
         }
-
-        // ============================================================
-        // Simpan lampiran jika ada
-        // ============================================================
-        $lampiranPath = null;
-        if ($request->hasFile('lampiran')) {
-            $lampiranPath = $request->file('lampiran')->store('lampiran_materials_henkaten', 'public');
-        }
-
-        // ============================================================
-        // Buat data baru untuk disimpan
-        // ============================================================
-        $dataToCreate = $validated;
-        $dataToCreate['lampiran'] = $lampiranPath;
-        $dataToCreate['material_id'] = $materialBefore->id;
-        $dataToCreate['material_id_after'] = $materialAfter->id;
-
-        MaterialHenkaten::create($dataToCreate);
-
-        DB::commit();
-
-        return redirect()->route('dashboard')
-            ->with('success', 'Data Material Henkaten berhasil disimpan!');
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        return back()
-            ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
-            ->withInput();
     }
-}
-
 
     // ==============================================================  
     // BAGIAN 5: API BANTUAN  
@@ -387,6 +383,21 @@ public function storeMaterialHenkaten(Request $request)
         return view('materials.create_henkaten_start', [
             'materialHenkatens' => $materialHenkatens
         ]);
+    }
+
+    public function getMaterialsByStation(Request $request)
+    {
+        $request->validate([
+            'station_id' => 'required|integer|exists:stations,id' // Asumsi tabel 'stations'
+        ]);
+
+        // Asumsi Model Material Anda memiliki relasi atau kolom 'station_id'
+        // Sesuaikan 'material_name' jika nama kolomnya berbeda
+        $materials = Material::where('station_id', $request->station_id)
+                            ->select('id', 'material_name') 
+                            ->get();
+
+        return response()->json($materials);
     }
 
     /**

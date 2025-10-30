@@ -41,7 +41,7 @@
                         </div>
                     @endif
 
-                  <form action="{{ route('henkaten.material.store') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('henkaten.material.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="redirect_to" value="{{ route('henkaten.material.create') }}">
                         
@@ -50,7 +50,9 @@
                              x-data="dependentDropdowns(
                                  '{{ old('line_area') }}', 
                                  {{ old('station_id') ?? 'null' }}, 
-                                 @json($stations ?? []) 
+                                 @json($stations ?? []),
+                                 {{ old('material_id') ?? 'null' }},
+                                 @json($materials ?? []) 
                              )">
 
                             {{-- Kolom Kiri --}}
@@ -86,6 +88,7 @@
                                     <select id="station_id" name="station_id" required
                                             class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
                                             x-model="selectedStation"
+                                            @change="fetchMaterials()"
                                             :disabled="stationList.length === 0">
                                         
                                         <option value="">-- Pilih Station --</option>
@@ -94,6 +97,25 @@
                                             <option :value="station.id" 
                                                     :selected="station.id == selectedStation" 
                                                     x-text="station.station_name"></option>
+                                        </template>
+                                        
+                                    </select>
+                                </div>
+
+                                {{-- BARU: Dropdown Material berdasarkan Station --}}
+                                <div class="mb-4">
+                                    <label for="material_id" class="block text-sm font-medium text-gray-700">Material</label>
+                                    <select id="material_id" name="material_id" required
+                                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
+                                            x-model="selectedMaterial"
+                                            :disabled="materialList.length === 0">
+                                        
+                                        <option value="">-- Pilih Material --</option>
+                                        
+                                        <template x-for="material in materialList" :key="material.id">
+                                            <option :value="material.id" 
+                                                    :selected="material.id == selectedMaterial" 
+                                                    x-text="material.material_name"></option> {{-- Ganti 'material_name' jika nama kolom beda --}}
                                         </template>
                                         
                                     </select>
@@ -131,54 +153,34 @@
                             </div>
                         </div>
 
-                        {{-- Before & After untuk Material --}}
+                   {{-- Before & After untuk Material --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
-                            {{-- Before --}}
-                            <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md relative"
-                                x-data="autocomplete('{{ route('henkaten.material.search') }}')">
-                                <label class="text-gray-700 text-sm font-bold">Material Sebelum</label>
+                            {{-- DIUBAH: Blok "Sebelum" --}}
+                            <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md relative">
+                                <label class="text-gray-700 text-sm font-bold mb-2 block">Sebelum</label>
                                 
-                                <input type="text" name="material_name" x-model="query" @input.debounce.300="search()"
-                                       autocomplete="off" class="w-full py-3 px-4 border rounded"
-                                       placeholder="Masukkan Nama Material...">
-                                <input type="hidden" name="material_id" x-model="selectedId">
-
-                                <ul x-show="results.length > 0"
-                                    class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
-                                    <template x-for="item in results" :key="item.id">
-                                        <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-blue-100"
-                                            x-text="item.material_name"></li> 
-                                    </template>
-                                </ul>
+                                <input type="text" name="description_before" value="{{ old('description_before') }}"
+                                       class="w-full py-3 px-4 border rounded"
+                                       placeholder="Deskripsi kondisi/part sebelum perubahan...">
                                 
-                                <p class="text-xs text-gray-500 mt-2 italic">Data material yang diganti</p>
+                                <p class="text-xs text-gray-500 mt-2 italic">Deskripsi kondisi sebelum perubahan</p>
                             </div>
 
-                            {{-- After --}}
-                            <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative"
-                                x-data="autocomplete('{{ route('henkaten.material.search') }}')">
+                            {{-- DIUBAH: Blok "Sesudah" --}}
+                            <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative">
                                 
-                                <label class="text-gray-700 text-sm font-bold">Material Sesudah</label>
+                                <label class="text-gray-700 text-sm font-bold mb-2 block">Sesudah</label>
                                 
-                                <input type="text" name="material_after" x-model="query" @input.debounce.300="search()"
-                                       autocomplete="off" class="w-full py-3 px-4 border rounded"
-                                       placeholder="Masukkan Nama Material...">
-                                <input type="hidden" name="material_id_after" x-model="selectedId">
-
-                                <ul x-show="results.length > 0"
-                                    class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
-                                    <template x-for="item in results" :key="item.id">
-                                        <li @click="select(item)" class="px-4 py-2 cursor-pointer hover:bg-green-100"
-                                            x-text="item.material_name"></li>
-                                    </template>
-                                </ul>
+                                <input type="text" name="description_after" value="{{ old('description_after') }}"
+                                       class="w-full py-3 px-4 border rounded"
+                                       placeholder="Deskripsi kondisi/part setelah perubahan...">
                                 
-                                <p class="text-xs text-green-600 mt-2 italic">Data material pengganti</p>
+                                <p class="text-xs text-green-600 mt-2 italic">Deskripsi kondisi setelah perubahan</p>
                             </div>
 
                         </div>
-
+                        </div>
                         {{-- BLOK KETERANGAN --}}
                         <div class="mb-6 mt-6">
                             <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
@@ -211,10 +213,11 @@
         </div>
     </div>
 
-    {{-- Alpine.js --}}
+   {{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
-        // Autocomplete Material
+        // Fungsi autocomplete ini sekarang tidak terpakai oleh form "Sebelum" dan "Sesudah",
+        // tapi mungkin masih Anda gunakan di tempat lain. Bisa dihapus jika tidak perlu.
         function autocomplete(url) {
             return {
                 query: '',
@@ -227,32 +230,58 @@
                         .then(data => this.results = data);
                 },
                 select(item) {
-                    this.query = item.material_name;
+                    this.query = item.material_name; // Sesuaikan 'material_name' jika perlu
                     this.selectedId = item.id;
                     this.results = [];
                 }
             }
         }
 
-        // Dependent Dropdown
-        function dependentDropdowns(oldLineArea, oldStation, initialStations) {
+        // DIUBAH: Dependent Dropdown untuk Line -> Station -> Material
+        function dependentDropdowns(oldLineArea, oldStation, initialStations, oldMaterial, initialMaterials) {
             return {
                 selectedLineArea: oldLineArea || '',
                 selectedStation: oldStation || null,
                 stationList: initialStations || [],
+                selectedMaterial: oldMaterial || null,
+                materialList: initialMaterials || [],
                 
                 fetchStations() {
                     this.selectedStation = null; 
                     this.stationList = [];
+                    this.selectedMaterial = null; // Reset material
+                    this.materialList = [];     // Reset material list
 
                     if (!this.selectedLineArea) return;
 
-
-fetch(`{{ route('henkaten.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)                        .then(res => res.json())
+                    fetch(`{{ route('henkaten.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
+                        .then(res => res.json())
                         .then(data => this.stationList = data)
                         .catch(err => {
                             console.error('Gagal mengambil data station:', err);
                             this.stationList = [];
+                        });
+                },
+
+                // ==========================================================
+                // FUNGSI YANG SUDAH DIPERBAIKI
+                // ==========================================================
+                fetchMaterials() {
+                    this.selectedMaterial = null;
+                    this.materialList = [];
+
+                    if (!this.selectedStation) return;
+
+                    // 1. URL diubah ke route material yang baru Anda buat
+                    // 2. Parameter diubah ke station_id
+                    fetch(`{{ route('henkaten.materials.by_station') }}?station_id=${this.selectedStation}`) 
+                        .then(res => res.json()) // 3. Hanya SATU kali .json()
+                        .then(data => {
+                            this.materialList = data;
+                        })
+                        .catch(err => {
+                            console.error('Gagal mengambil data material:', err);
+                            this.materialList = [];
                         });
                 }
             }

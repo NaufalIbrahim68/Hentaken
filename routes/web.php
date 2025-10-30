@@ -54,7 +54,8 @@ Route::prefix('henkaten')->name('henkaten.')->group(function () {
 Route::get('/manpower/search', [HenkatenController::class, 'searchManPower'])->name('manpower.search');
 Route::get('/get-stations-by-line', [HenkatenController::class, 'getStationsByLine'])
     ->name('henkaten.stations.by_line');
-
+    Route::get('/get-materials-by-station', [HenkatenController::class, 'getMaterialsByStation'])
+    ->name('henkaten.materials.by_station');
 Route::get('/henkaten/get-manpower', [HenkatenController::class, 'getManPower'])->name('henkaten.getManPower');
 
 // ======================================================================

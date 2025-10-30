@@ -11,22 +11,21 @@ class MaterialHenkaten extends Model
 
     protected $table = 'material_henkaten';
 
-    protected $fillable = [
-        'station_id',
+   protected $fillable = [
         'shift',
-        'keterangan',
         'line_area',
+        'station_id',
+        'material_id', // Ini sudah ada dari form dropdown
+        'keterangan',
         'effective_date',
         'end_date',
+        'time_start',
+        'time_end',
         'lampiran',
         'serial_number_start',
         'serial_number_end',
-        'time_start',
-        'time_end',
-        'material_name',
-        'material_after',
-        'material_id',          // ✅ tambahkan ini
-        'material_id_after',    // ✅ tambahkan ini
+        'description_before', 
+        'description_after'
     ];
 
     protected $casts = [
@@ -46,8 +45,5 @@ class MaterialHenkaten extends Model
         return $this->belongsTo(Material::class, 'material_id'); // ✅ material sebelum
     }
 
-    public function materialAfter()
-    {
-        return $this->belongsTo(Material::class, 'material_id_after'); // ✅ material sesudah
-    }
+    
 }

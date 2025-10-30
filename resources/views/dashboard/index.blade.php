@@ -175,7 +175,8 @@
 
     {{-- 4 SECTION GRID - . --}}
     <div class="grid grid-cols-2 gap-3 h-[92vh]">
- {{-- MAN POWER --}}
+ 
+{{-- MAN POWER --}}
 <div class="bg-white shadow rounded p-1 flex flex-col">
     <h2 class="text-xs font-semibold mb-2 text-center">MAN POWER</h2>
 
@@ -194,7 +195,7 @@
     </div>
 
     <div id="manPowerTableContainer" class="mx-6 overflow-x-auto scrollbar-hide scroll-smooth">
-        <div class="flex gap-2 py-2">
+        <div class="flex gap-3 py-2">
 
             {{-- ============================================================ --}}
             {{-- CEK: APAKAH DATA MAN POWER KOSONG --}}
@@ -220,25 +221,33 @@
         @endphp
 
         {{-- ============================================================ --}}
-        {{-- TAMPILAN IKON PEKERJA (DIPERKECIL) --}}
+        {{-- TAMPILAN IKON PEKERJA (KONSISTEN) --}}
         {{-- ============================================================ --}}
-        <div class="flex-shrink-0 text-center" style="min-width: 45px;">
-            <p class="text-[8px] font-bold text-gray-800 mb-0.5 truncate" style="max-width: 45px;">{{ $stationName }}</p>
+        <div class="flex-shrink-0 flex flex-col items-center" style="width: 65px;">
+            {{-- Station Name - Fixed Height --}}
+            <div class="h-8 flex items-center justify-center mb-1">
+                <p class="text-[10px] font-bold text-gray-800 break-words leading-tight text-center w-full px-0.5">{{ $stationName }}</p>
+            </div>
 
-            <div class="relative mx-auto mb-1 w-6 h-6">
-                <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            {{-- Icon --}}
+            <div class="relative mx-auto mb-1 w-8 h-8">
+                <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                     </svg>
                 </div>
             </div>
 
-            <p class="text-[7px] font-medium mb-0.5 truncate px-0.5" style="max-width: 45px;" title="{{ $displayName }}">
-                {{ $displayName }}
-            </p>
+            {{-- Name - Fixed Height --}}
+            <div class="h-6 flex items-center justify-center mb-1">
+                <p class="text-[9px] font-semibold truncate px-0.5 text-center" style="max-width: 65px;" title="{{ $displayName }}">
+                    {{ $displayName }}
+                </p>
+            </div>
 
-            <div>
-                <div class="w-2 h-2 rounded-full {{ $statusColor }} mx-auto" title="{{ $statusText }}"></div>
+            {{-- Status Dot --}}
+            <div class="flex items-center justify-center h-3">
+                <div class="w-2.5 h-2.5 rounded-full {{ $statusColor }}" title="{{ $statusText }}"></div>
             </div>
         </div>
 
@@ -257,6 +266,7 @@
         </button>
     </div>
 </div>
+
 
     {{-- ======================================================================= --}}
 {{-- BAGIAN BAWAH: DETAIL HENKATEN (SATU KOTAK PER HENKATEN) --}}
@@ -461,7 +471,7 @@
     </div>
 
       
-  {{-- METHOD - Icon View --}}
+{{-- METHOD - Icon View --}}
 <div class="bg-white shadow rounded p-4 flex flex-col">
     <h2 class="text-sm font-semibold mb-3 text-center">METHOD</h2>
 
@@ -476,8 +486,7 @@
 
     {{-- Icon Container - Scrollable --}}
     <div id="methodScrollContainer" class="overflow-x-auto px-8 scrollbar-hide">
-        {{-- TETAP flex-nowrap agar satu baris --}}
-        <div class="flex gap-2 justify-start flex-nowrap">
+        <div class="flex gap-3 justify-start flex-nowrap">
             @foreach ($methods as $m)
                 
                 {{-- Logika untuk Henkaten --}}
@@ -487,14 +496,16 @@ $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
 $statusText = $m->status ?? 'NORMAL';
 @endphp
 
-                <div class="flex flex-col items-center flex-shrink-0">
-                    {{-- Station Label --}}
-                    <div class="mb-0.5 text-[8px] font-medium text-center text-gray-800 truncate" style="max-width: 45px;">
-                        {{ $m->station->station_name ?? 'N/A' }}
+                <div class="flex flex-col items-center flex-shrink-0" style="width: 65px;">
+                    {{-- Station Label - Increased Height --}}
+                    <div class="min-h-[2.5rem] flex items-center justify-center mb-1">
+                        <div class="text-[10px] font-bold text-center text-gray-800 break-words leading-tight w-full px-0.5">
+                            {{ $m->station->station_name ?? 'N/A' }}
+                        </div>
                     </div>
                     
                     {{-- Station Icon --}}
-                    <div class="relative">
+                    <div class="relative mb-1">
                         <div class="w-8 h-8 bg-white rounded border border-gray-300 flex items-center justify-center shadow-sm">
                             <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -503,8 +514,10 @@ $statusText = $m->status ?? 'NORMAL';
                     </div>
                     
                     {{-- Status Badge --}}
-                    <div class="mt-0.5 px-1.5 py-0.5 {{ $bgColor }} text-white text-[7px] rounded font-medium whitespace-nowrap">
-                        {{ $statusText }}
+                    <div class="flex items-center justify-center mt-1">
+                        <div class="px-2 py-0.5 {{ $bgColor }} text-white text-[8px] rounded font-semibold whitespace-nowrap">
+                            {{ $statusText }}
+                        </div>
                     </div>
                 </div>
             @endforeach
@@ -519,7 +532,6 @@ $statusText = $m->status ?? 'NORMAL';
     </button>
 </div>
 
-    
     {{-- ======================================================================= --}}
 {{-- BAGIAN BAWAH: DETAIL HENKATEN (METODE) --}}
 {{-- ======================================================================= --}}
@@ -885,15 +897,15 @@ $statusText = $m->status ?? 'NORMAL';
         </div>
     </div>
 
-    {{-- ============================================= --}}
-{{--  MATERIAL HENKATEN CARD SECTION --}}
+   {{-- ============================================= --}}
+{{--  MATERIAL HENKATEN CARD SECTION (DIPERBARUI) --}}
 {{-- ============================================= --}}
 <div class="border-t mt-2 pt-2">
     <div class="relative">
         {{-- Tombol Scroll Kiri --}}
         <button 
             onclick="scrollMaterialHenkaten('left')" 
-           class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-100 text-gray-700 rounded-full p-2 shadow-md border border-gray-200 transition"
+            class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-100 text-gray-700 rounded-full p-2 shadow-md border border-gray-200 transition"
             id="scrollLeftBtnMaterial">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -902,62 +914,78 @@ $statusText = $m->status ?? 'NORMAL';
 
         {{-- Container Scroll --}}
         <div class="overflow-x-auto scrollbar-hide scroll-smooth" id="materialHenkatenContainer">
-            <div class="flex justify-center gap-3 p-2">
-                
-                @if(isset($materialHenkatens) && $materialHenkatens->isNotEmpty())
-                    @foreach($materialHenkatens as $henkaten)
-                        <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition" 
-                             style="width: 220px;"
-                             onclick="showHenkatenDetail({{ $henkaten->id }})"
-                             data-henkaten-id="{{ $henkaten->id }}"
-                             data-nama="{{ $henkaten->material_name ?? 'N/A' }}"
-                             data-nama-after="{{ $henkaten->material_after ?? 'N/A' }}"
-                             data-station="{{ $henkaten->station->station_name ?? 'Material Station' }}"
-                             data-shift="{{ $henkaten->shift ?? '-' }}"
-                             data-keterangan="{{ $henkaten->keterangan ?? ($henkaten->material_after ?? 'Material Change') }}"
-                             data-line-area="{{ $henkaten->line_area ?? '-' }}"
-                             data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
-                             data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}"
-                             data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
-                             data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
-                             data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
-                              data-time-start="{{ $henkaten->time_start ? \Carbon\Carbon::parse($henkaten->time_start)->format('H:i') : '-' }}"
-                            data-time-end="{{ $henkaten->time_end ? \Carbon\Carbon::parse($henkaten->time_end)->format('H:i') : '-' }}"
-                            >
-                           {{-- 1. CURRENT & NEW PART (UPDATED) --}}
-                            <div class="grid grid-cols-2 gap-1">
-                                <div class="bg-white shadow rounded p-1 text-center">
-                                    <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
-                                    <p class="text-xs font-medium py-1">{{ $henkaten->material_name ?? 'N/A' }}</p>
-                                </div>
-                                <div class="bg-white shadow rounded p-1 text-center">
-                                    <h3 class="text-[8px] font-bold mb-0.5 text-red-600">NEW PART</h3>
-                                    <p class="text-xs font-medium py-1">{{ $henkaten->material_after ?? 'N/A' }}</p>
-                                </div>
-                            </div>
-                            {{-- 2. SERIAL NUMBER --}}
-                            <div class="grid grid-cols-2 gap-1">
-                                <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? 'N/A' }}</span></div>
-                                <div class="bg-blue-400 text-center py-0.5 rounded"><span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? 'N/A' }}</span></div>
-                            </div>
-                            {{-- 3. TANGGAL AKTIF --}}
-                            <div class="flex justify-center">
-                                <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
-                                    ACTIVE: {{ $henkaten->effective_date ? $henkaten->effective_date->format('j/M/y') : 'N/A' }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
-                                </div>
-                            </div>
+    <div class="flex justify-center gap-3 p-2">
+        @if(isset($materialHenkatens) && $materialHenkatens->isNotEmpty())
+            @foreach($materialHenkatens as $henkaten)
+                <div 
+                    class="material-card flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 border-shadow-500 shadow-md cursor-pointer hover:bg-gray-100 transition"
+                    style="width: 220px;"
+                    onclick="showMaterialHenkatenDetail(this)" 
+                    
+                    {{-- ====== Data Lengkap Untuk Modal ====== --}}
+                    data-nama="{{ $henkaten->description_before ?? '-' }}"
+                    data-nama-after="{{ $henkaten->description_after ?? '-' }}"
+                    data-station="{{ $henkaten->station->station_name ?? '-' }}"
+                    data-shift="{{ $henkaten->shift ?? '-' }}"
+                    data-line-area="{{ $henkaten->line_area ?? '-' }}"
+                    data-keterangan="{{ $henkaten->keterangan ?? '-' }}"
+                    data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
+                    data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
+                    data-time-start="{{ $henkaten->time_start ? \Carbon\Carbon::parse($henkaten->time_start)->format('H:i') : '-' }}"
+                    data-time-end="{{ $henkaten->time_end ? \Carbon\Carbon::parse($henkaten->time_end)->format('H:i') : '-' }}"
+                    data-effective-date="{{ $henkaten->effective_date ? \Carbon\Carbon::parse($henkaten->effective_date)->format('d M Y') : '-' }}"
+                    data-end-date="{{ $henkaten->end_date ? \Carbon\Carbon::parse($henkaten->end_date)->format('d M Y') : 'Selanjutnya' }}"
+                    data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
+                >
+
+                    {{-- CURRENT & NEW PART --}}
+                    <div class="grid grid-cols-2 gap-1">
+                        <div class="bg-white shadow rounded p-1 text-center">
+                            <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
+                            <p class="text-xs font-medium py-1">{{ $henkaten->description_before ?? 'N/A' }}</p>
                         </div>
-                    @endforeach
-                @else
-                    <div class="text-center text-xs text-gray-400 py-4 w-full">No Active Material Henkaten</div>
-                @endif
-            </div>
-        </div>
+                        <div class="bg-white shadow rounded p-1 text-center">
+                            <h3 class="text-[8px] font-bold mb-0.5 text-red-600">NEW PART</h3>
+                            <p class="text-xs font-medium py-1">{{ $henkaten->description_after ?? 'N/A' }}</p>
+                        </div>
+                    </div>
+
+                    {{-- SERIAL NUMBER --}}
+                    <div class="grid grid-cols-2 gap-1">
+                        <div class="bg-blue-400 text-center py-0.5 rounded">
+                            <span class="text-[7px] text-white font-medium">
+                                Start: {{ $henkaten->serial_number_start ?? 'N/A' }}
+                            </span>
+                        </div>
+                        <div class="bg-blue-400 text-center py-0.5 rounded">
+                            <span class="text-[7px] text-white font-medium">
+                                End: {{ $henkaten->serial_number_end ?? 'N/A' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- ACTIVE DATE --}}
+                    <div class="flex justify-center">
+                        <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
+                            ACTIVE:
+                            {{ $henkaten->effective_date ? \Carbon\Carbon::parse($henkaten->effective_date)->format('d/M/y') : 'N/A' }}
+                            -
+                            {{ $henkaten->end_date ? \Carbon\Carbon::parse($henkaten->end_date)->format('d/M/y') : '...' }}
+                        </div>
+                    </div>
+
+                </div>
+            @endforeach
+        @else
+            <div class="text-center text-xs text-gray-400 py-4 w-full">No Active Material Henkaten</div>
+        @endif
+    </div>
+</div>
 
         {{-- Tombol Scroll Kanan --}}
         <button 
             onclick="scrollMaterialHenkaten('right')" 
-          class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-100 text-gray-700 rounded-full p-2 shadow-md border border-gray-200 transition"
+            class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-100 text-gray-700 rounded-full p-2 shadow-md border border-gray-200 transition"
             id="scrollRightBtnMaterial">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -965,6 +993,131 @@ $statusText = $m->status ?? 'NORMAL';
         </button>
     </div>
 </div>
+{{-- ============================================================= --}}
+{{-- MODAL DETAIL HENKATEN (MATERIAL) --}}
+{{-- ============================================================= --}}
+<div id="materialHenkatenDetailModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+
+    {{-- 1️⃣ CARD UTAMA --}}
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden transform transition-all scale-100">
+
+        {{-- 2️⃣ HEADER WARNA ORANGE --}}
+        <div class="sticky top-0 bg-gradient-to-r from-orange-500 to-yellow-500 px-6 py-4 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white tracking-wide">Detail Henkaten Material</h3>
+            <button onclick="closeMaterialHenkatenModal()" class="text-white hover:text-gray-200 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        {{-- 3️⃣ ISI MODAL --}}
+        <div class="p-6 space-y-4">
+
+            {{-- PERUBAHAN MATERIAL --}}
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">Perubahan Material</h4>
+                <div class="flex items-center justify-around">
+                    <div class="text-center">
+                        <span class="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">Sebelum</span>
+                        
+                        {{-- TAMBAHAN: IKON OBENG --}}
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-gray-400 mx-auto my-2">
+                            <path fill-rule="evenodd" d="M12 6.75a5.25 5.25 0 015.25 5.25v.75H18a.75.75 0 01.75.75v3a.75.75 0 01-.75.75H6a.75.75 0 01-.75-.75v-3A.75.75 0 016 12.75h.75v-.75A5.25 5.25 0 0112 6.75zM12 8.25a3.75 3.75 0 00-3.75 3.75v.75h7.5v-.75A3.75 3.75 0 0012 8.25zM3 15a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 15z" clip-rule="evenodd" />
+                            <path d="M.75 18a.75.75 0 01.75-.75h13.5a.75.75 0 010 1.5H1.5a.75.75 0 01-.75-.75zM3 21a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75z" />
+                        </svg>
+
+                        <p id="modalMaterialBefore" class="font-semibold text-sm mt-1">-</p>
+                    </div>
+
+                    <div class="text-2xl text-gray-400">→</div>
+
+                    <div class="text-center">
+                        <span class="text-xs bg-green-500 text-white px-2 py-0.5 rounded">Sesudah</span>
+                        
+                        {{-- TAMBAHAN: IKON OBENG --}}
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-gray-400 mx-auto my-2">
+                            <path fill-rule="evenodd" d="M12 6.75a5.25 5.25 0 015.25 5.25v.75H18a.75.75 0 01.75.75v3a.75.75 0 01-.75.75H6a.75.75 0 01-.75-.75v-3A.75.75 0 016 12.75h.75v-.75A5.25 5.25 0 0112 6.75zM12 8.25a3.75 3.75 0 00-3.75 3.75v.75h7.5v-.75A3.75 3.75 0 0012 8.25zM3 15a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 15z" clip-rule="evenodd" />
+                            <path d="M.75 18a.75.75 0 01.75-.75h13.5a.75.75 0 010 1.5H1.5a.75.75 0 01-.75-.75zM3 21a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75z" />
+                        </svg>
+                        
+                        <p id="modalMaterialAfter" class="font-semibold text-sm mt-1">-</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- DETAIL INFORMASI --}}
+            <div class="space-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Station</p>
+                        <p id="modalStation" class="font-semibold text-sm truncate">-</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Shift</p>
+                        <p id="modalShift" class="font-semibold text-sm">-</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Line Area</p>
+                        <p id="modalLineArea" class="font-semibold text-sm">-</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Keterangan</p>
+                        <p id="modalKeterangan" class="font-semibold text-sm">-</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Serial Number Start</p>
+                        <p id="modalSerialStart" class="font-semibold text-sm">-</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Serial Number End</p>
+                        <p id="modalSerialEnd" class="font-semibold text-sm">-</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Time Start</p>
+                        <p id="modalTimeStart" class="font-semibold text-sm">-</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Time End</p>
+                        <p id="modalTimeEnd" class="font-semibold text-sm">-</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- PERIODE --}}
+            <div class="flex justify-between items-center px-4 py-2">
+                <div class="text-left">
+                    <p class="text-xs text-gray-500">Mulai</p>
+                    <p id="modalEffectiveDate" class="font-semibold text-lg">-</p>
+                </div>
+
+                <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                           d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                </svg>
+
+                <div class="text-right">
+                    <p class="text-xs text-gray-500">Selesai</p>
+                    <p id="modalEndDate" class="font-semibold text-lg">-</p>
+                </div>
+            </div>
+
+            {{-- LAMPIRAN --}}
+            <div id="modalLampiranSection" class="hidden pt-2">
+                <a id="modalLampiranLink" href="#" target="_blank"
+                    class="block bg-orange-600 hover:bg-orange-700 text-white text-sm px-4 py-2 rounded-lg text-center transition">
+                    Lihat Lampiran
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 @push('scripts')
 <script>
@@ -1098,68 +1251,75 @@ function showMethodHenkatenDetail(henkatenId) {
     }
 
 
-    // ---  MODAL MATERIAL  ---
-function showMaterialHenkatenDetail(henkatenId) {
-    
-    const card = document.querySelector(`.material-card[data-henkaten-id="${henkatenId}"]`); 
-    if (!card) {
-        console.error('Elemen card Henkaten Material tidak ditemukan untuk id:', henkatenId);
-        return;
-    }
-    
-  
-    const modal = document.getElementById('materialHenkatenDetailModal'); 
-    if (!modal) {
-        console.error('Elemen modal Henkaten Material tidak ditemukan');
-        return;
-    }
+ // ==================================================
+// FUNGSI MENAMPILKAN MODAL DETAIL MATERIAL HENKATEN
+// ==================================================
+function showMaterialHenkatenDetail(element) {
+    // 1️⃣ Ambil semua atribut data-* dari elemen card yang diklik
+    const data = element.dataset;
+    console.log('Data dari card:', data);
 
-    const data = card.dataset;
+    const modal = document.getElementById('materialHenkatenDetailModal');
+    if (!modal) return;
 
-    // 3. Isi semua data (sesuaikan ID elemen di dalam modal jika perlu)
-    modal.querySelector('#modalStation').textContent = data.station || '-';
-    modal.querySelector('#modalShift').textContent = data.shift || '-';
-    modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
-    modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
-    modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
-    modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
-    modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
-    modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
-    modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
-    modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
-    
-    const lampiranSection = modal.querySelector('#modalLampiranSection');
-    const lampiranLink = modal.querySelector('#modalLampiranLink');
-    
-    if (data.lampiran) {
+    // 2️⃣ Bagian Perubahan Material
+    document.getElementById('modalMaterialBefore').textContent = data.descriptionBefore || '-';
+    document.getElementById('modalMaterialAfter').textContent = data.descriptionAfter || '-';
+
+    // 3️⃣ Bagian Detail Informasi
+    document.getElementById('modalStation').textContent = data.station || '-';
+    document.getElementById('modalShift').textContent = data.shift || '-';
+    document.getElementById('modalLineArea').textContent = data.lineArea || '-';
+    document.getElementById('modalKeterangan').textContent = data.keterangan || '-';
+    document.getElementById('modalSerialStart').textContent = data.serialNumberStart || '-';
+    document.getElementById('modalSerialEnd').textContent = data.serialNumberEnd || '-';
+    document.getElementById('modalTimeStart').textContent = data.timeStart || '-';
+    document.getElementById('modalTimeEnd').textContent = data.timeEnd || '-';
+
+    // 4️⃣ Bagian Periode
+    document.getElementById('modalEffectiveDate').textContent =
+        data.effectiveDate ? `${data.effectiveDate} ${data.timeStart || ''}` : '-';
+    document.getElementById('modalEndDate').textContent =
+        data.endDate && data.endDate !== 'Selanjutnya'
+            ? `${data.endDate} ${data.timeEnd || ''}`
+            : 'Selanjutnya';
+
+    // 5️⃣ Bagian Lampiran
+    const lampiranSection = document.getElementById('modalLampiranSection');
+    const lampiranLink = document.getElementById('modalLampiranLink');
+
+    if (data.lampiran && data.lampiran.trim() !== '') {
         lampiranLink.href = data.lampiran;
         lampiranSection.classList.remove('hidden');
     } else {
         lampiranSection.classList.add('hidden');
     }
 
-    // Tampilkan Modal
+    // 6️⃣ Tampilkan modal
     modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
 }
 
-
+// ==================================================
+// FUNGSI MENUTUP MODAL MATERIAL HENKATEN
+// ==================================================
 function closeMaterialHenkatenModal() {
     const modal = document.getElementById('materialHenkatenDetailModal');
     if (modal) {
         modal.classList.add('hidden');
     }
-    document.body.style.overflow = 'auto';
 }
 
-
-document.addEventListener('keydown', function(e) {
+// ==================================================
+// ESC UNTUK MENUTUP SEMUA MODAL
+// ==================================================
+document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
-        closeHenkatenModal();
-        closeMethodHenkatenModal();
-        closeMaterialHenkatenModal(); 
+        closeHenkatenModal?.();
+        closeMethodHenkatenModal?.();
+        closeMaterialHenkatenModal?.();
     }
 });
+
     // ==================================================
     // FUNGSI SCROLL UNTUK CARD HENKATEN (GLOBAL)
     // ==================================================
