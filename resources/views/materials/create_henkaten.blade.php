@@ -45,6 +45,11 @@
                     <form action="{{ route('henkaten.material.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="redirect_to" value="{{ route('henkaten.material.create') }}">
+
+                        {{-- ========================================================== --}}
+                        {{-- BARU: Input tersembunyi untuk Shift dari Session --}}
+                        {{-- ========================================================== --}}
+                        <input type="hidden" name="shift" value="{{ $currentShift }}">
                         
                         {{-- Wrapper Alpine untuk dependent dropdowns --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
@@ -58,15 +63,13 @@
 
                             {{-- Kolom Kiri --}}
                             <div>
-                                <div class="mb-4">
+                                {{-- =================================== --}}
+                                {{-- DIHAPUS: Dropdown Shift --}}
+                                {{-- =================================== --}}
+                                {{-- <div class="mb-4">
                                     <label for="shift" class="block text-gray-700 text-sm font-bold mb-2">Shift</label>
-                                    <select id="shift" name="shift"
-                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                            required> {{-- DITAMBAHKAN --}}
-                                        <option value="1" {{ old('shift') == '1' ? 'selected' : '' }}>Shift 1</option>
-                                        <option value="2" {{ old('shift') == '2' ? 'selected' : '' }}>Shift 2</option>
-                                    </select>
-                                </div>
+                                    <select id="shift" name="shift" ...> ... </select>
+                                </div> --}}
 
                                 <div class="mb-4">
                                     <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
@@ -124,21 +127,21 @@
                                 </div>
                             </div>
 
-                            {{-- Kolom Kanan --}}
+                            {{-- Kolom Kanan (Tidak berubah) --}}
                             <div>
                                 <div class="mb-4">
                                     <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
                                     <input type="date" id="effective_date" name="effective_date"
                                            value="{{ old('effective_date') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                           required> {{-- DITAMBAHKAN --}}
+                                           required>
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
                                     <input type="date" id="end_date" name="end_date" value="{{ old('end_date') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                           required> {{-- DITAMBAHKAN --}}
+                                           required>
                                 </div>
 
                                 <div class="mb-4">
@@ -146,7 +149,7 @@
                                     <input type="time" id="time_start" name="time_start"
                                            value="{{ old('time_start') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                           required> {{-- DITAMBAHKAN --}}
+                                           required>
                                 </div>
 
                                 <div class="mb-4">
@@ -154,27 +157,24 @@
                                     <input type="time" id="time_end" name="time_end"
                                            value="{{ old('time_end') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                           required> {{-- DITAMBAHKAN --}}
-                                </div>
+                                           required>
+                        </div>
                             </div>
                         </div>
 
-                       {{-- Before & After untuk Material --}}
+                        {{-- Before & After untuk Material (Tidak berubah) --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-
-                            {{-- DIUBAH: Blok "Sebelum" --}}
                             <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md relative">
                                 <label class="text-gray-700 text-sm font-bold mb-2 block">Sebelum</label>
                                 
                                 <input type="text" name="description_before" value="{{ old('description_before') }}"
                                        class="w-full py-3 px-4 border rounded"
                                        placeholder="Deskripsi kondisi/part sebelum perubahan..."
-                                       required> {{-- DITAMBAHKAN --}}
+                                       required>
                                 
                                 <p class="text-xs text-gray-500 mt-2 italic">Deskripsi kondisi sebelum perubahan</p>
                             </div>
 
-                            {{-- DIUBAH: Blok "Sesudah" --}}
                             <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative">
                                 
                                 <label class="text-gray-700 text-sm font-bold mb-2 block">Sesudah</label>
@@ -182,30 +182,30 @@
                                 <input type="text" name="description_after" value="{{ old('description_after') }}"
                                        class="w-full py-3 px-4 border rounded"
                                        placeholder="Deskripsi kondisi/part setelah perubahan..."
-                                       required> {{-- DITAMBAHKAN --}}
+                                       required>
                                 
                                 <p class="text-xs text-green-600 mt-2 italic">Deskripsi kondisi setelah perubahan</p>
                             </div>
-
                         </div>
-                        </div> {{-- Penutup div grid pertama yang salah tempat --}}
                         
-                        {{-- BLOK KETERANGAN --}}
+                        {{-- BLOK KETERANGAN (Tidak berubah) --}}
                         <div class="mb-6 mt-6">
                             <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
                             <textarea id="keterangan" name="keterangan" rows="4"
                                       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                       placeholder="Jelaskan alasan perubahan material..."
-                                      required>{{ old('keterangan') }}</textarea> {{-- DITAMBAHKAN --}}
+                                      required>{{ old('keterangan') }}</textarea>
                         </div>
 
-                        {{-- Lampiran --}}
+                        {{-- Lampiran (Tidak berubah) --}}
                         <div class="mb-6 mt-6">
                             <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran</label>
                             <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
-                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                required>
+                                   class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                   required>
                         </div>
+
+                        {{-- Tombol (Tidak berubah) --}}
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
                             <a href="{{ route('dashboard') }}"
                                class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">
@@ -223,7 +223,7 @@
         </div>
     </div>
 
-   {{-- Alpine.js --}}
+   {{-- Alpine.js (Tidak berubah) --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
         // Fungsi autocomplete (bisa dihapus jika tidak terpakai)
@@ -259,7 +259,7 @@
                     this.selectedStation = null; 
                     this.stationList = [];
                     this.selectedMaterial = null; // Reset material
-                    this.materialList = [];     // Reset material list
+                    this.materialList = [];      // Reset material list
 
                     if (!this.selectedLineArea) return;
 

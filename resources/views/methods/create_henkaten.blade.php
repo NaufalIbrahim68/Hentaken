@@ -45,25 +45,30 @@
                     <form action="{{ route('henkaten.method.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         
+                        {{-- ============================================= --}}
+                        {{-- BARU: Input tersembunyi untuk Shift --}}
+                        {{-- ============================================= --}}
+                        <input type="hidden" name="shift" value="{{ $currentShift }}">
+                        
                         {{-- Wrapper Alpine untuk dependent dropdowns --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
                              x-data="dependentDropdowns(
-                                '{{ old('line_area') }}', 
-                                {{ old('station_id') ?? 'null' }}, 
-                                @json($stations ?? []) 
+                                 '{{ old('line_area') }}', 
+                                 {{ old('station_id') ?? 'null' }}, 
+                                 @json($stations ?? []) 
                              )">
 
                             {{-- Kolom Kiri --}}
                             <div>
-                                <div class="mb-4">
+                                {{-- =================================== --}}
+                                {{-- DIHAPUS: Dropdown Shift --}}
+                                {{-- =================================== --}}
+                                {{-- <div class="mb-4">
                                     <label for="shift" class="block text-gray-700 text-sm font-bold mb-2">Shift</label>
-                                    <select id="shift" name="shift"
-                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                            required> {{-- DITAMBAHKAN --}}
-                                        <option value="1" {{ old('shift') == '1' ? 'selected' : '' }}>Shift 1</option>
-                                        <option value="2" {{ old('shift') == '2' ? 'selected' : '' }}>Shift 2</option>
+                                    <select id="shift" name="shift" ... >
+                                        ...
                                     </select>
-                                </div>
+                                </div> --}}
 
                                 <div class="mb-4">
                                     <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
@@ -108,14 +113,14 @@
                                     <input type="date" id="effective_date" name="effective_date"
                                            value="{{ old('effective_date') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                           required> {{-- DITAMBAHKAN --}}
+                                           required>
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
                                     <input type="date" id="end_date" name="end_date" value="{{ old('end_date') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                           required> {{-- DITAMBAHKAN --}}
+                                           required>
                                 </div>
 
                                 <div class="mb-4">
@@ -123,7 +128,7 @@
                                     <input type="time" id="time_start" name="time_start"
                                            value="{{ old('time_start') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                           required> {{-- DITAMBAHKAN --}}
+                                           required>
                                 </div>
 
                                 <div class="mb-4">
@@ -131,7 +136,7 @@
                                     <input type="time" id="time_end" name="time_end"
                                            value="{{ old('time_end') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                           required> {{-- DITAMBAHKAN --}}
+                                           required>
                                 </div>
                             </div>
                         </div>
@@ -145,7 +150,7 @@
                                 <textarea id="keterangan" name="keterangan" rows="4"
                                           placeholder="Jelaskan kondisi method sebelum perubahan..."
                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                          required>{{ old('keterangan') }}</textarea> {{-- DITAMBAHKAN --}}
+                                          required>{{ old('keterangan') }}</textarea>
                                 <p class="text-xs text-gray-500 mt-2 italic">Data method sebelum perubahan</p>
                             </div>
 
@@ -155,7 +160,7 @@
                                 <textarea id="keterangan_after" name="keterangan_after" rows="4"
                                           placeholder="Jelaskan kondisi method setelah perubahan..."
                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                          required>{{ old('keterangan_after') }}</textarea> {{-- DITAMBAHKAN --}}
+                                          required>{{ old('keterangan_after') }}</textarea>
                                 <p class="text-xs text-green-600 mt-2 italic">Data method setelah perubahan</p>
                             </div>
 
@@ -165,8 +170,8 @@
                         <div class="mb-6 mt-6">
                             <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran</label>
                             <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
-                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                required> {{-- SUDAH ADA --}}
+                                   class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                   required>
                         </div>
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
                             <a href="{{ route('dashboard') }}"

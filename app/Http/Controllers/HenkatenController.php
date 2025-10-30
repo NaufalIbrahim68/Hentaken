@@ -20,20 +20,33 @@ class HenkatenController extends Controller
     // BAGIAN 1: FORM PEMBUATAN HENKATEN MAN POWER  
     // ==============================================================
     public function create()
-    {
-        $stations = Station::all();
-        $lineAreas = Station::whereNotNull('line_area')
-                            ->orderBy('line_area', 'asc')
-                            ->pluck('line_area')
-                            ->unique();
+{
+    // 1. Ambil data shift & grup dari session
+    $currentGroup = session('active_grup');
+    $currentShift = session('active_shift', 1); // Beri default '1' jika session shift kosong
 
-        $stations = [];
-        if ($oldLineArea = old('line_area')) {
-            $stations = Station::where('line_area', $oldLineArea)->get();
-        }
-
-        return view('manpower.create_henkaten', compact('stations', 'lineAreas'));
+    // 2. [WAJIB] Cek jika grup belum dipilih, paksa kembali ke dashboard
+    if (!$currentGroup) {
+        // Ganti 'dashboard.index' jika nama route dashboard Anda berbeda
+        return redirect()->route('dashboard') 
+                         ->with('error', 'Silakan pilih Grup di Dashboard terlebih dahulu.');
     }
+
+    // 3. Ambil line_areas (Ini dari kode Anda dan sudah benar)
+    $lineAreas = Station::whereNotNull('line_area')
+                         ->orderBy('line_area', 'asc')
+                         ->pluck('line_area')
+                         ->unique();
+
+   
+
+    // 5. Kirim data yang diperlukan ke view
+    return view('manpower.create_henkaten', compact(
+        'lineAreas', 
+        'currentGroup', 
+        'currentShift'
+    ));
+}
 
    public function store(Request $request)
 {
@@ -157,21 +170,31 @@ class HenkatenController extends Controller
     // ==============================================================  
     // BAGIAN 3: FORM PEMBUATAN HENKATEN METHOD  
     // ==============================================================
-    public function createMethodHenkaten()
-    {
-        $stations = Station::all();
-        $lineAreas = Station::whereNotNull('line_area')
-                            ->orderBy('line_area', 'asc')
-                            ->pluck('line_area')
-                            ->unique();
+  public function createMethodHenkaten()
+{
+    // 1. BARU: Ambil data shift dari session
+    $currentShift = session('active_shift', 1); // Default '1' jika session shift kosong
 
-        $stations = [];
-        if ($oldLineArea = old('line_area')) {
-            $stations = Station::where('line_area', $oldLineArea)->get();
-        }
+    // 2. Ambil line_areas (Logika Anda sudah benar)
+    $lineAreas = Station::whereNotNull('line_area')
+                         ->orderBy('line_area', 'asc')
+                         ->pluck('line_area')
+                         ->unique();
 
-        return view('methods.create_henkaten', compact('stations', 'lineAreas'));
+    // 3. Logika 'old' data untuk station (Logika Anda sudah benar)
+    //    Ini diperlukan agar dropdown station terisi jika validasi gagal
+    $stations = [];
+    if ($oldLineArea = old('line_area')) {
+        $stations = Station::where('line_area', $oldLineArea)->get();
     }
+
+    // 4. Kirim semua data yang diperlukan ke view
+    return view('methods.create_henkaten', compact(
+        'stations',     // Untuk 'old' data Alpine
+        'lineAreas',
+        'currentShift'  // Kirim shift saat ini ke view
+    ));
+}
 
     public function storeMethodHenkaten(Request $request)
     {
@@ -286,28 +309,36 @@ class HenkatenController extends Controller
 // BAGIAN 4: FORM PEMBUATAN HENKATEN MATERIAL  
 // ==============================================================
 public function createMaterialHenkaten()
-    {
-        $lineAreas = Station::whereNotNull('line_area')
-                            ->orderBy('line_area', 'asc')
-                            ->pluck('line_area')
-                            ->unique();
+{
+    // 1. TAMBAHKAN INI: Ambil shift dari session
+    $currentShift = session('active_shift', 1); // Default '1' jika session kosong
 
-        // Inisialisasi untuk dropdown dependent
-        $stations = [];
-        $materials = []; // <-- Penting untuk di-pass ke view
+    $lineAreas = Station::whereNotNull('line_area')
+                        ->orderBy('line_area', 'asc')
+                        ->pluck('line_area')
+                        ->unique();
 
-        // Jika ada error validasi, isi ulang dropdown berdasarkan old input
-        if ($oldLineArea = old('line_area')) {
-            $stations = Station::where('line_area', $oldLineArea)->get();
-        }
-        
-        if ($oldStation = old('station_id')) {
-            $materials = Material::where('station_id', $oldStation)->get(); 
-        }
+    // Inisialisasi untuk dropdown dependent
+    $stations = [];
+    $materials = []; // <-- Penting untuk di-pass ke view
 
-        return view('materials.create_henkaten', compact('lineAreas', 'stations', 'materials'));
+    // Jika ada error validasi, isi ulang dropdown berdasarkan old input
+    if ($oldLineArea = old('line_area')) {
+        $stations = Station::where('line_area', $oldLineArea)->get();
+    }
+    
+    if ($oldStation = old('station_id')) {
+        $materials = Material::where('station_id', $oldStation)->get(); 
     }
 
+    // 2. TAMBAHKAN 'currentShift' DI SINI:
+    return view('materials.create_henkaten', compact(
+        'lineAreas', 
+        'stations', 
+        'materials', 
+        'currentShift' // <-- Variabel yang hilang sudah ditambahkan
+    ));
+}
 public function storeMaterialHenkaten(Request $request)
     {
         // 1. VALIDASI FINAL (Sesuai DB baru dan Form baru)
@@ -327,7 +358,7 @@ public function storeMaterialHenkaten(Request $request)
         'redirect_to'        => 'nullable|string' // Ini 'nullable' karena hidden input
     ]);
 
-    
+
         try {
             DB::beginTransaction();
 

@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Route;
 // DASHBOARD
 // ======================================================================
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+Route::post('/dashboard/set-grup', [DashboardController::class, 'setGrup'])->name('dashboard.setGrup');
+Route::get('/dashboard/reset-grup', [DashboardController::class, 'resetGrup'])->name('dashboard.resetGrup');
 
 // ======================================================================
 // HENKATEN WORKFLOW

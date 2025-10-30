@@ -10,12 +10,10 @@ use App\Models\Material;
 use App\Models\Station;
 use App\Models\ManPowerHenkaten;
 use App\Models\MethodHenkaten;
-use App\Models\MachineHenkaten;
+use App\Models\MachineHenkaten; 
 use App\Models\MaterialHenkaten;
-use App\Models\TimeScheduler;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
-
 
 class DashboardController extends Controller
 {
@@ -24,60 +22,41 @@ class DashboardController extends Controller
         $now = Carbon::now('Asia/Jakarta');
 
         // ======================================================================
-        // SECTION 1: HAPUS SCHEDULER LAMA
+        // SECTION 1: TENTUKAN SHIFT SAAT INI
         // ======================================================================
-        TimeScheduler::where(function ($q) use ($now) {
-            $q->whereDate('tanggal_berakhir', '<', $now->toDateString())
-                ->orWhere(function ($sub) use ($now) {
-                    $sub->whereDate('tanggal_berakhir', '=', $now->toDateString())
-                        ->whereTime('waktu_berakhir', '<', $now->toTimeString());
-                });
-        })->delete();
+        $currentTime = $now->toTimeString(); // Format 'HH:MM:SS'
+        $shiftNumForQuery = 1; // Default Shift 1 (Malam: 19:00 - 06:59:59)
 
-        // ======================================================================
-        // SECTION 3: BACA SESSION
-        // ======================================================================
-        $grupForQuery      = session('active_grup');
-        $shiftNumForQuery  = session('active_shift');
-        $activeSchedulerId = session('active_scheduler_id');
-
-        // JIKA SESSION KOSONG, jalankan auto-detect
-      if (!$activeSchedulerId) {
- $currentScheduler = TimeScheduler::where(function ($q) use ($now) {
-                // PERBAIKAN: Gunakan DATEADD untuk menggabungkan tanggal dan waktu
- $q->whereRaw('(DATEADD(second, DATEDIFF(second, 0, waktu_mulai), CAST(tanggal_mulai AS DATETIME))) <= ?', [$now->toDateTimeString()])
- ->whereRaw('(DATEADD(second, DATEDIFF(second, 0, waktu_berakhir), CAST(tanggal_berakhir AS DATETIME))) >= ?', [$now->toDateTimeString()]);
- })
- ->latest('tanggal_mulai')
- ->first();
-
-            if ($currentScheduler) {
-                $activeSchedulerId = $currentScheduler->id;
-                $grupForQuery = $currentScheduler->grup;
-                $shiftNumForQuery = $currentScheduler->shift;
-                session([
-                    'active_scheduler_id' => $activeSchedulerId,
-                    'active_grup' => $grupForQuery,
-                    'active_shift' => $shiftNumForQuery,
-                ]);
-            }
+        // Cek apakah masuk jam Shift 2 (Siang: 07:00:00 - 18:59:59)
+        if ($currentTime >= '07:00:00' && $currentTime <= '18:59:59') {
+            $shiftNumForQuery = 2;
         }
+        
+        // Simpan shift aktif ke session untuk konsistensi (opsional, tapi bagus)
+        session(['active_shift' => $shiftNumForQuery]);
+
 
         // ======================================================================
-        // SECTION 4: TENTUKAN ID
+        // SECTION 2: BACA SESSION GRUP
         // ======================================================================
-        $activeSchedulerIds = $activeSchedulerId ? [$activeSchedulerId] : [];
+        // $shiftNumForQuery sudah didapat dari logika di atas, bukan dari session
+        $grupForQuery = session('active_grup');
+        
+        // TimeScheduler tidak lagi digunakan
+        // $activeSchedulerId = session('active_scheduler_id'); // Dihapus
+        // Blok 'if (!$activeSchedulerId)' dihapus seluruhnya
+
 
         // ======================================================================
-        // SECTION 5: AMBIL DATA HENKATEN
+        // SECTION 3: AMBIL DATA HENKATEN
         // ======================================================================
         $baseHenkatenQuery = function ($query) use ($now) {
             $query->where(function ($q) use ($now) {
                 $q->where('effective_date', '<=', $now)
-                  ->where(function ($sub) use ($now) {
-                      $sub->where('end_date', '>=', $now)
-                          ->orWhereNull('end_date');
-                  });
+                    ->where(function ($sub) use ($now) {
+                        $sub->where('end_date', '>=', $now)
+                            ->orWhereNull('end_date');
+                    });
             });
 
             try {
@@ -86,9 +65,9 @@ class DashboardController extends Controller
                 if (in_array('time_start', $columns) && in_array('time_end', $columns)) {
                     $query->orWhere(function ($sameDay) use ($now) {
                         $sameDay->whereDate('effective_date', '=', $now->toDateString())
-                                ->whereDate('end_date', '=', $now->toDateString())
-                                ->whereTime('time_start', '<=', $now->toTimeString())
-                                ->whereTime('time_end', '>=', $now->toTimeString());
+                            ->whereDate('end_date', '=', $now->toDateString())
+                            ->whereTime('time_start', '<=', $now->toTimeString())
+                            ->whereTime('time_end', '>=', $now->toTimeString());
                     });
                 }
             } catch (\Exception $e) {
@@ -112,14 +91,14 @@ class DashboardController extends Controller
             ->latest('effective_date')
             ->get();
 
-        $machineHenkatens = ManPowerHenkaten::with('station')
+        // **PERBAIKAN BUG:** Menggunakan model MachineHenkaten, bukan ManPowerHenkaten
+      $machineHenkatens = ManPowerHenkaten::with('station')
             ->where(function ($query) use ($baseHenkatenQuery) {
                 $baseHenkatenQuery($query);
             })
             ->where('shift', $shiftNumForQuery)
             ->latest('effective_date')
             ->get();
-
         $materialHenkatens = MaterialHenkaten::with('station')
             ->where(function ($query) use ($baseHenkatenQuery) {
                 $baseHenkatenQuery($query);
@@ -129,19 +108,24 @@ class DashboardController extends Controller
             ->get();
 
         // ======================================================================
-        // SECTION 6: DATA MAN POWER
+        // SECTION 4: DATA MAN POWER
         // ======================================================================
-        $manPower = ManPower::with('station', 'timeScheduler')
-            ->where('grup', $grupForQuery)
-            ->where('shift', $shiftNumForQuery)
-            ->when(!empty($activeSchedulerIds), function ($query) use ($activeSchedulerIds) {
-                $query->whereIn('time_scheduler_id', $activeSchedulerIds);
-            })
-            ->get();
+        
+        // Inisialisasi $manPower sebagai collection kosong
+        $manPower = collect();
 
-        if ($manPower->isEmpty()) {
-            $manPower = ManPower::with('station')->where('grup', $grupForQuery)->get();
+        // Hanya ambil data ManPower JIKA GRUP SUDAH DIPILIH di session
+       // ...
+        // Hanya ambil data ManPower JIKA GRUP SUDAH DIPILIH di session
+        if ($grupForQuery) {
+            $manPower = ManPower::with('station')
+                ->where('grup', $grupForQuery)
+                ->get();
         }
+// ...
+
+        // Fallback 'if ($manPower->isEmpty())' dihapus karena
+        // kita memang ingin datanya kosong jika tidak ada grup/shift yg cocok.
 
         $henkatenManPowerIds = $activeManPowerHenkatens
             ->pluck('man_power_id')
@@ -155,7 +139,7 @@ class DashboardController extends Controller
         }
 
         // ======================================================================
-        // SECTION 7: DATA TAMBAHAN
+        // SECTION 5: DATA TAMBAHAN (METHOD, MACHINE, MATERIAL)
         // ======================================================================
         $methods = Method::with('station')->get();
         $machines = Machine::with('station')->get();
@@ -189,23 +173,28 @@ class DashboardController extends Controller
         });
 
         // ======================================================================
-        // SECTION 8: CEK DATA MANPOWER KOSONG
+        // SECTION 6: CEK DATA MANPOWER KOSONG
         // ======================================================================
-        if (!$grupForQuery || !$shiftNumForQuery) {
-            // Session KOSONG dan auto-detect GAGAL
+        
+        // Logika disederhanakan: $shiftNumForQuery akan selalu ada.
+        // Kita hanya perlu cek apakah $grupForQuery sudah dipilih.
+        
+        if (!$grupForQuery) {
+            // Session KOSONG (Grup belum dipilih)
             $groupedManPower = collect();
             $dataManPowerKosong = true;
         } else if ($manPower->isEmpty()) {
-            // Session ADA, tapi data man power-nya KOSONG
+            // Session Grup ADA, tapi data man power-nya KOSONG (untuk grup & shift tsb)
             $groupedManPower = collect();
             $dataManPowerKosong = true;
         } else {
+            // Data ada dan siap ditampilkan
             $dataManPowerKosong = false;
             $groupedManPower = $manPower->groupBy('station_id');
         }
 
         // ======================================================================
-        // SECTION 9: RETURN VIEW
+        // SECTION 7: RETURN VIEW
         // ======================================================================
         return view('dashboard.index', [
             'groupedManPower' => $groupedManPower,
@@ -223,4 +212,29 @@ class DashboardController extends Controller
             'dataManPowerKosong' => $dataManPowerKosong,
         ]);
     }
+
+    public function setGrup(Request $request)
+    {
+        $request->validate([
+            'grup' => 'required|string|in:A,B',
+        ]);
+
+        // Simpan grup ke session
+        session(['active_grup' => $request->grup]);
+
+        return response()->json([
+            'status' => 'success',
+            'grup' => $request->grup
+        ]);
+    }
+
+    public function resetGrup()
+    {
+        // Hapus 'active_grup' dari session
+        session()->forget('active_grup');
+
+        // Kembali ke halaman dashboard
+        return redirect()->route('dashboard');
+    }
+
 }
