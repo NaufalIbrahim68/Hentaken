@@ -38,6 +38,7 @@ class HenkatenController extends Controller
                          ->pluck('line_area')
                          ->unique();
 
+
    
 
     // 5. Kirim data yang diperlukan ke view

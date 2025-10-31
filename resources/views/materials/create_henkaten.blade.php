@@ -63,13 +63,7 @@
 
                             {{-- Kolom Kiri --}}
                             <div>
-                                {{-- =================================== --}}
-                                {{-- DIHAPUS: Dropdown Shift --}}
-                                {{-- =================================== --}}
-                                {{-- <div class="mb-4">
-                                    <label for="shift" class="block text-gray-700 text-sm font-bold mb-2">Shift</label>
-                                    <select id="shift" name="shift" ...> ... </select>
-                                </div> --}}
+                                
 
                                 <div class="mb-4">
                                     <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
@@ -127,7 +121,7 @@
                                 </div>
                             </div>
 
-                            {{-- Kolom Kanan (Tidak berubah) --}}
+                            {{-- Kolom Kanan  --}}
                             <div>
                                 <div class="mb-4">
                                     <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
