@@ -99,13 +99,14 @@ class DashboardController extends Controller
             ->where('shift', $shiftNumForQuery)
             ->latest('effective_date')
             ->get();
-        $materialHenkatens = MaterialHenkaten::with('station')
-            ->where(function ($query) use ($baseHenkatenQuery) {
-                $baseHenkatenQuery($query);
-            })
-            ->where('shift', $shiftNumForQuery)
-            ->latest('effective_date')
-            ->get();
+      $materialHenkatens = MaterialHenkaten::with(['station', 'material'])
+    ->where(function ($query) use ($baseHenkatenQuery) {
+        $baseHenkatenQuery($query);
+    })
+    ->where('shift', $shiftNumForQuery)
+    ->latest('effective_date')
+    ->get();
+
 
         // ======================================================================
         // SECTION 4: DATA MAN POWER

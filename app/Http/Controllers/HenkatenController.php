@@ -398,16 +398,21 @@ public function storeMaterialHenkaten(Request $request)
     // BAGIAN 5: API BANTUAN  
     // ==============================================================
     public function searchManPower(Request $request)
-    {
-        $query = $request->get('q', '');
-        $results = ManPower::where('nama', 'like', "%{$query}%")
-            ->select('id', 'nama')
-            ->orderBy('nama', 'asc')
-            ->limit(10)
-            ->get();
+{
+    $query = $request->get('query', ''); // ubah dari 'q' jadi 'query'
 
-        return response()->json($results);
+    if (strlen($query) < 2) {
+        return response()->json([]);
     }
+
+    $results = ManPower::where('nama', 'like', "%{$query}%")
+        ->select('id', 'nama')
+        ->orderBy('nama', 'asc')
+        ->limit(10)
+        ->get();
+
+    return response()->json($results);
+}
 
     public function getStationsByLine(Request $request)
     {

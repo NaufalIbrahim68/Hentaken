@@ -29,4 +29,10 @@ class Material extends Model
         // 'station' adalah NAMA RELASI yang akan kita panggil
         return $this->belongsTo(Station::class, 'station_id');
     }
+
+    public function materialHenkaten()
+{
+    return $this->hasMany(MaterialHenkaten::class, 'material_id');
+}
+
 }

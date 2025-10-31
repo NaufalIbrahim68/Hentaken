@@ -15,7 +15,7 @@ class MaterialHenkaten extends Model
         'shift',
         'line_area',
         'station_id',
-        'material_id', // Ini sudah ada dari form dropdown
+        'material_id', 
         'keterangan',
         'effective_date',
         'end_date',
