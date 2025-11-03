@@ -115,18 +115,12 @@ class DashboardController extends Controller
         // Inisialisasi $manPower sebagai collection kosong
         $manPower = collect();
 
-        // Hanya ambil data ManPower JIKA GRUP SUDAH DIPILIH di session
-       // ...
-        // Hanya ambil data ManPower JIKA GRUP SUDAH DIPILIH di session
         if ($grupForQuery) {
             $manPower = ManPower::with('station')
                 ->where('grup', $grupForQuery)
                 ->get();
         }
-// ...
 
-        // Fallback 'if ($manPower->isEmpty())' dihapus karena
-        // kita memang ingin datanya kosong jika tidak ada grup/shift yg cocok.
 
         $henkatenManPowerIds = $activeManPowerHenkatens
             ->pluck('man_power_id')
@@ -177,26 +171,19 @@ class DashboardController extends Controller
         // SECTION 6: CEK DATA MANPOWER KOSONG
         // ======================================================================
         
-        // Logika disederhanakan: $shiftNumForQuery akan selalu ada.
-        // Kita hanya perlu cek apakah $grupForQuery sudah dipilih.
+        
         
         if (!$grupForQuery) {
-            // Session KOSONG (Grup belum dipilih)
             $groupedManPower = collect();
             $dataManPowerKosong = true;
         } else if ($manPower->isEmpty()) {
-            // Session Grup ADA, tapi data man power-nya KOSONG (untuk grup & shift tsb)
             $groupedManPower = collect();
             $dataManPowerKosong = true;
         } else {
-            // Data ada dan siap ditampilkan
             $dataManPowerKosong = false;
             $groupedManPower = $manPower->groupBy('station_id');
         }
 
-        // ======================================================================
-        // SECTION 7: RETURN VIEW
-        // ======================================================================
         return view('dashboard.index', [
             'groupedManPower' => $groupedManPower,
             'currentGroup' => $grupForQuery,

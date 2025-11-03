@@ -48,6 +48,15 @@ Route::prefix('henkaten')->name('henkaten.')->group(function () {
     Route::get('/material/start', [HenkatenController::class, 'showMaterialStartPage'])->name('material.start.page');
     Route::patch('/material/start/update', [HenkatenController::class, 'updateMaterialStartData'])->name('material.start.update');
     Route::get('/material/search', [MaterialController::class, 'search'])->name('material.search');
+
+
+ // ==================================================
+    // BARU: MACHINE HENKATEN
+    // ==================================================
+    Route::get('/machine/create', [HenkatenController::class, 'createMachineHenkaten'])->name('machine.create');
+    Route::post('/machine/store', [HenkatenController::class, 'storeMachineHenkaten'])->name('machine.store');
+    Route::get('/machine/start', [HenkatenController::class, 'showMachineStartPage'])->name('machine.start.page');
+    Route::patch('/machine/start/update', [HenkatenController::class, 'updateMachineStartData'])->name('machine.start.update');
 });
 
 // ======================================================================
@@ -95,7 +104,7 @@ Route::resource('methods', MethodController::class);
 // ======================================================================
 Route::prefix('activity-log')->name('activity.log.')->group(function () {
     Route::get('/manpower', [ActivityLogController::class, 'manpower'])->name('manpower');
-    Route::get('/machine', [ActivityLogController::class, 'machine'])->name('machine');
+    Route::get('/machine', [HenkatenController::class, 'showMachineActivityLog'])->name('machine');
     Route::get('/material', [HenkatenController::class, 'showMaterialActivityLog'])->name('material');
     Route::get('/method', [HenkatenController::class, 'showMethodActivityLog'])->name('method'); 
 });
