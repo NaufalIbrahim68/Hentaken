@@ -10,13 +10,16 @@ use App\Models\Material;
 use App\Models\Station;
 use App\Models\ManPowerHenkaten;
 use App\Models\MethodHenkaten;
-use App\Models\MachineHenkaten; 
+use App\Models\MachineHenkaten; // Pastikan ini di-use
 use App\Models\MaterialHenkaten;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
+    /**
+     * Ganti seluruh fungsi index() Anda dengan ini.
+     */
     public function index()
     {
         $now = Carbon::now('Asia/Jakarta');
@@ -39,13 +42,8 @@ class DashboardController extends Controller
         // ======================================================================
         // SECTION 2: BACA SESSION GRUP
         // ======================================================================
-        // $shiftNumForQuery sudah didapat dari logika di atas, bukan dari session
         $grupForQuery = session('active_grup');
         
-        // TimeScheduler tidak lagi digunakan
-        // $activeSchedulerId = session('active_scheduler_id'); // Dihapus
-        // Blok 'if (!$activeSchedulerId)' dihapus seluruhnya
-
 
         // ======================================================================
         // SECTION 3: AMBIL DATA HENKATEN
@@ -91,36 +89,34 @@ class DashboardController extends Controller
             ->latest('effective_date')
             ->get();
 
-        // **PERBAIKAN BUG:** Menggunakan model MachineHenkaten, bukan ManPowerHenkaten
-      $machineHenkatens = ManPowerHenkaten::with('station')
+        // **PERBAIKAN BUG:** Menggunakan model MachineHenkaten
+        $machineHenkatens = MachineHenkaten::with('station') // <-- DIPERBAIKI
             ->where(function ($query) use ($baseHenkatenQuery) {
                 $baseHenkatenQuery($query);
             })
             ->where('shift', $shiftNumForQuery)
             ->latest('effective_date')
             ->get();
-      $materialHenkatens = MaterialHenkaten::with(['station', 'material'])
-    ->where(function ($query) use ($baseHenkatenQuery) {
-        $baseHenkatenQuery($query);
-    })
-    ->where('shift', $shiftNumForQuery)
-    ->latest('effective_date')
-    ->get();
+            
+        $materialHenkatens = MaterialHenkaten::with(['station', 'material'])
+            ->where(function ($query) use ($baseHenkatenQuery) {
+                $baseHenkatenQuery($query);
+            })
+            ->where('shift', $shiftNumForQuery)
+            ->latest('effective_date')
+            ->get();
 
 
         // ======================================================================
         // SECTION 4: DATA MAN POWER
         // ======================================================================
         
-        // Inisialisasi $manPower sebagai collection kosong
         $manPower = collect();
-
         if ($grupForQuery) {
             $manPower = ManPower::with('station')
                 ->where('grup', $grupForQuery)
                 ->get();
         }
-
 
         $henkatenManPowerIds = $activeManPowerHenkatens
             ->pluck('man_power_id')
@@ -136,10 +132,9 @@ class DashboardController extends Controller
         // ======================================================================
         // SECTION 5: DATA TAMBAHAN (METHOD, MACHINE, MATERIAL)
         // ======================================================================
-        $methods = Method::with('station')->get();
-        $machines = Machine::with('station')->get();
-        $materials = Material::all()->groupBy('station_id');
         
+        // --- 5.A: Data Method ---
+        $methods = Method::with('station')->get();
         $henkatenMethodStationIds = $activeMethodHenkatens
             ->pluck('station_id')
             ->filter()
@@ -151,13 +146,31 @@ class DashboardController extends Controller
             $method->setAttribute('status', $isHenkaten ? 'HENKATEN' : ($method->keterangan ?? 'NORMAL'));
         }
 
+        // --- 5.B: Data Machine (LOGIKA BARU DITAMBAHKAN) ---
+        $machines = Machine::with('station')->get();
+        
+        // Ambil semua station_id unik dari machine henkaten yang aktif
+        $henkatenMachineStationIds = $machineHenkatens
+            ->pluck('station_id')
+            ->filter()
+            ->unique()
+            ->toArray();
+
+        // Loop data master machine dan set status 'keterangan'
+        foreach ($machines as $machine) {
+            $isHenkaten = in_array($machine->station_id, $henkatenMachineStationIds);
+            // Kita set 'keterangan' karena blade $mc->keterangan
+            $machine->setAttribute('keterangan', $isHenkaten ? 'HENKATEN' : ($machine->keterangan ?? 'NORMAL'));
+        }
+
+
+        // --- 5.C: Data Material ---
+        $materials = Material::all()->groupBy('station_id');
         $activeMaterialStationIds = $materialHenkatens->pluck('station_id')->unique()->toArray();
         $stationWithMaterialIds = Material::pluck('station_id')->unique()->toArray();
 
-        // Filter stations berdasarkan data material
         $stations = Station::whereIn('id', $stationWithMaterialIds)->get();
 
-        // Buat status tiap station
         $stationStatuses = $stations->map(function ($station) use ($activeMaterialStationIds) {
             $status = in_array($station->id, $activeMaterialStationIds) ? 'HENKATEN' : 'NORMAL';
             return [
@@ -170,8 +183,6 @@ class DashboardController extends Controller
         // ======================================================================
         // SECTION 6: CEK DATA MANPOWER KOSONG
         // ======================================================================
-        
-        
         
         if (!$grupForQuery) {
             $groupedManPower = collect();
@@ -189,17 +200,20 @@ class DashboardController extends Controller
             'currentGroup' => $grupForQuery,
             'currentShift' => $shiftNumForQuery,
             'methods' => $methods,
-            'machines' => $machines,
+            'machines' => $machines, // Variabel $machines sekarang sudah punya status 'keterangan'
             'materials' => $materials,
             'stations' => $stations,
             'stationStatuses' => $stationStatuses,
             'activeManPowerHenkatens' => $activeManPowerHenkatens,
             'activeMethodHenkatens' => $activeMethodHenkatens,
-            'machineHenkatens' => $machineHenkatens,
+            'machineHenkatens' => $machineHenkatens, // Variabel ini sekarang berisi data MachineHenkaten
             'materialHenkatens' => $materialHenkatens,
             'dataManPowerKosong' => $dataManPowerKosong,
         ]);
     }
+
+    // ... (fungsi setGrup dan resetGrup Anda tetap sama) ...
+    // ... (pastikan Anda tidak menghapusnya) ...
 
     public function setGrup(Request $request)
     {

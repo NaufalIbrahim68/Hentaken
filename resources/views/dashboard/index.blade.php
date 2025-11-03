@@ -226,83 +226,104 @@
     
 </div>
 
-    {{-- ======================================================================= --}}
-    {{-- BAGIAN ATAS: DAFTAR MAN POWER (IKON) --}}
-    {{-- ======================================================================= --}}
-    <div class="relative">
-        {{-- Tombol Scroll Kiri --}}
-        <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-            <button id="scrollLeftManPower" class="w-4 h-4 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
-                <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </button>
+ {{-- ======================================================================= --}}
+{{-- BAGIAN ATAS: DAFTAR MAN POWER (TABEL HORIZONTAL) --}}
+{{-- ======================================================================= --}}
+<div class="bg-white rounded-lg shadow-sm overflow-hidden">
+    {{-- CEK: JIKA GRUP BELUM DIPILIH ATAU DATA KOSONG --}}
+    @if (isset($dataManPowerKosong) && $dataManPowerKosong)
+        <div class="w-full text-center text-gray-500 py-10">
+            @if (!$currentGroup)
+                <p class="text-sm font-medium">Silakan pilih Grup di atas</p>
+            @else
+                <p class="text-sm font-medium">Tidak ada Man Power untuk Grup {{ $currentGroup }}</p>
+            @endif
         </div>
-
-        <div id="manPowerTableContainer" class="mx-6 overflow-x-auto scrollbar-hide scroll-smooth">
-            <div class="flex gap-3 py-2">
-
-                {{-- CEK: JIKA GRUP BELUM DIPILIH ATAU DATA KOSONG --}}
-                @if (isset($dataManPowerKosong) && $dataManPowerKosong)
-                    <div class="w-full text-center text-gray-500 py-10">
-                        {{-- Pesan dinamis berdasarkan apakah grup sudah dipilih --}}
-                       @if (!$currentGroup)
-    <p class="text-sm font-medium">Silakan pilih Grup di atas</p>
-@else
-    {{-- HAPUS "/ Shift..." DARI PESAN INI --}}
-    <p class="text-sm font-medium">Tidak ada Man Power untuk Grup {{ $currentGroup }}</p>
-@endif
-                    </div>
-                @else
-                    {{-- LOOP STASIUN & PEKERJA (Sudah otomatis terfilter oleh controller) --}}
-                    @foreach($groupedManPower as $stationId => $stationWorkers)
-                        @foreach($stationWorkers as $currentWorker)
-                            @php
-                                $isHenkaten = ($currentWorker->status == 'Henkaten');
-                                $displayName = $currentWorker->nama;
-                                $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
-                                $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-                                $stationName = $currentWorker->station ? $currentWorker->station->station_name : 'Station ' . $stationId;
-                            @endphp
-
-                            {{-- TAMPILAN IKON PEKERJA --}}
-                            <div class="flex-shrink-0 flex flex-col items-center" style="width: 65px;">
-                                <div class="h-8 flex items-center justify-center mb-1">
-                                    <p class="text-[10px] font-bold text-gray-800 break-words leading-tight text-center w-full px-0.5">{{ $stationName }}</p>
-                                </div>
-                                <div class="relative mx-auto mb-1 w-8 h-8">
-                                    <div class="w-full h-full rounded-full bg-purple-600 flex items-center justify-center text-white">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                        </svg>
+    @else
+        {{-- TABEL MAN POWER FORMAT HORIZONTAL --}}
+        <div class="w-full">
+            <table class="w-full border-collapse table-fixed">
+                <thead>
+                    <tr class="bg-gray-50">
+                        {{-- Header untuk setiap station --}}
+                        @foreach($groupedManPower as $stationId => $stationWorkers)
+                            @foreach($stationWorkers as $currentWorker)
+                                @php
+                                    $stationName = $currentWorker->station ? $currentWorker->station->station_name : 'Station ' . $stationId;
+                                    $isHenkaten = ($currentWorker->status == 'Henkaten');
+                                    $bgColorHeader = $isHenkaten ? 'bg-red-500' : 'bg-gray-50';
+                                @endphp
+                                <th class="border border-gray-300 px-1 py-1.5 text-[9px] font-bold text-gray-800 text-center {{ $bgColorHeader }}">
+                                    <div class="break-words leading-tight">{{ $stationName }}</div>
+                                </th>
+                            @endforeach
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    {{-- Row untuk Icon/Avatar --}}
+                    <tr>
+                        @foreach($groupedManPower as $stationId => $stationWorkers)
+                            @foreach($stationWorkers as $currentWorker)
+                                @php
+                                    $isHenkaten = ($currentWorker->status == 'Henkaten');
+                                    $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
+                                @endphp
+                                <td class="border border-gray-300 px-1 py-2 text-center {{ $bgColorCell }}">
+                                    <div class="flex justify-center">
+                                        <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="h-6 flex items-center justify-center mb-1">
-                                    <p class="text-[9px] font-semibold truncate px-0.5 text-center" style="max-width: 65px;" title="{{ $displayName }}">
+                                </td>
+                            @endforeach
+                        @endforeach
+                    </tr>
+                    
+                    {{-- Row untuk Nama --}}
+                    <tr>
+                        @foreach($groupedManPower as $stationId => $stationWorkers)
+                            @foreach($stationWorkers as $currentWorker)
+                                @php
+                                    $displayName = $currentWorker->nama;
+                                    $isHenkaten = ($currentWorker->status == 'Henkaten');
+                                    $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
+                                @endphp
+                                <td class="border border-gray-300 px-1 py-1.5 text-center {{ $bgColorCell }}">
+                                    <p class="text-[9px] font-semibold text-gray-700 break-words leading-tight" title="{{ $displayName }}">
                                         {{ $displayName }}
                                     </p>
-                                </div>
-                                <div class="flex items-center justify-center h-3">
-                                    <div class="w-2.5 h-2.5 rounded-full {{ $statusColor }}" title="{{ $statusText }}"></div>
-                                </div>
-                            </div>
+                                </td>
+                            @endforeach
                         @endforeach
-                    @endforeach
-                @endif
-            </div>
+                    </tr>
+                    
+                    {{-- Row untuk Status --}}
+                    <tr>
+                        @foreach($groupedManPower as $stationId => $stationWorkers)
+                            @foreach($stationWorkers as $currentWorker)
+                                @php
+                                    $isHenkaten = ($currentWorker->status == 'Henkaten');
+                                    $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
+                                    $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
+                                    $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
+                                @endphp
+                                <td class="border border-gray-300 px-1 py-1.5 text-center {{ $bgColorCell }}">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <div class="w-2 h-2 rounded-full {{ $statusColor }}" title="{{ $statusText }}"></div>
+                                        <span class="text-[8px] font-semibold {{ $isHenkaten ? 'text-red-700' : 'text-green-700' }}">{{ $statusText }}</span>
+                                    </div>
+                                </td>
+                            @endforeach
+                        @endforeach
+                    </tr>
+                </tbody>
+            </table>
         </div>
-
-        {{-- Tombol Scroll Kanan --}}
-        <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-            <button id="scrollRightManPower" class="w-4 h-4 flex items-center justify-center bg-white hover:bg-gray-100 rounded-full text-black shadow transition">
-                <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-            </button>
-        </div>
-    </div>
-
-
+    @endif
+</div>
     {{-- ======================================================================= --}}
     {{-- BAGIAN BAWAH: DETAIL HENKATEN (OTOMATIS TERFILTER) --}}
     {{-- ======================================================================= --}}
@@ -509,69 +530,51 @@
     </div>
 </div>
       
-{{-- METHOD - Icon View --}}
+{{-- METHOD - Auto Fit Horizontal (Tanpa Scroll, Tanpa Wrap) --}}
 <div class="bg-white shadow rounded p-4 flex flex-col">
     <h2 class="text-sm font-semibold mb-3 text-center">METHOD</h2>
 
-   {{-- Icon Carousel Wrapper --}}
-<div class="relative mb-4">
-    {{-- Left Arrow --}}
-    <button id="scrollLeftMethodIcon" class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded p-0.5 hover:bg-gray-100">
-        <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-    </button>
+    <div class="w-full overflow-hidden">
+        <div class="flex justify-between items-start gap-1"
+             style="flex-wrap: nowrap;">
 
-    {{-- Icon Container - Scrollable --}}
-    <div id="methodScrollContainer" class="overflow-x-auto px-8 scrollbar-hide">
-        <div class="flex gap-3 justify-start flex-nowrap">
             @foreach ($methods as $m)
-                
-                {{-- Logika untuk Henkaten --}}
-              @php
-$isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
-$bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-$statusText = $m->status ?? 'NORMAL';
-@endphp
+                @php
+                    $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
+                    $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
+                    $statusText = $m->status ?? 'NORMAL';
+                @endphp
 
-                <div class="flex flex-col items-center flex-shrink-0" style="width: 65px;">
-                    {{-- Station Label - Increased Height --}}
+                <div class="flex-1 min-w-0 flex flex-col items-center justify-between border border-gray-200 rounded-lg p-2 mx-0.5">
+                    
+                    {{-- Station Label --}}
                     <div class="min-h-[2.5rem] flex items-center justify-center mb-1">
-                        <div class="text-[10px] font-bold text-center text-gray-800 break-words leading-tight w-full px-0.5">
+                        <div class="text-[10px] font-bold text-center text-gray-800 break-words leading-tight w-full">
                             {{ $m->station->station_name ?? 'N/A' }}
                         </div>
                     </div>
-                    
-                    {{-- Station Icon --}}
-                    <div class="relative mb-1">
-                        <div class="w-8 h-8 bg-white rounded border border-gray-300 flex items-center justify-center shadow-sm">
-                            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                        </div>
+
+                    {{-- Icon --}}
+                    <div class="w-7 h-7 bg-white rounded border border-gray-300 flex items-center justify-center shadow-sm mb-1">
+                        <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
                     </div>
-                    
+
                     {{-- Status Badge --}}
-                    <div class="flex items-center justify-center mt-1">
-                        <div class="px-2 py-0.5 {{ $bgColor }} text-white text-[8px] rounded font-semibold whitespace-nowrap">
-                            {{ $statusText }}
-                        </div>
+                    <div class="px-2 py-0.5 {{ $bgColor }} text-white text-[8px] rounded font-semibold whitespace-nowrap">
+                        {{ $statusText }}
                     </div>
                 </div>
             @endforeach
+
         </div>
     </div>
 
-    {{-- Right Arrow --}}
-    <button id="scrollRightMethodIcon" class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded p-0.5 hover:bg-gray-100">
-        <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-        </svg>
-    </button>
-</div>
 
     {{-- ======================================================================= --}}
-{{-- BAGIAN BAWAH: DETAIL HENKATEN (METODE) --}}
+{{-- BAGIAN BAWAH: DETAIL HENKATEN (METODE) 
 {{-- ======================================================================= --}}
 <div class="border-t mt-2 pt-2">
 
@@ -712,7 +715,7 @@ $statusText = $m->status ?? 'NORMAL';
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div class="bg-blue-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Station</p>
-                        <p id="modalStation" class="font-semibold text-sm truncate"></p>
+                        <p id="modalStation" class="font-semibold text-sm"></p>
                     </div>
                     <div class="bg-blue-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Shift</p>
@@ -785,27 +788,23 @@ $statusText = $m->status ?? 'NORMAL';
 
     {{-- Machine Status Bar with Navigation --}}
     <div class="relative mt-2">
-        {{-- Tombol Navigasi di Kiri --}}
-        <div class="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-            <button id="scrollLeftMachine" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-blue-600 rounded-full text-black shadow transition">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </button>
-        </div>
+       
 
         {{-- Machine Status Container --}}
         <div class="bg-white p-3 mx-8">
             <div class="flex justify-center items-center gap-4">
                 @foreach ($machines as $mc)
                     @php $isHenkaten = ($mc->keterangan === 'HENKATEN'); @endphp
+                    
                     <div class="machine-status {{ $isHenkaten ? 'machine-inactive' : 'machine-active' }} flex flex-col items-center" 
                          style="width: 80px;"
                          onclick="toggleMachine(this)">
                         <div class="text-[9px] font-bold text-black mb-3 text-center">
                             {{ $mc->station->station_name ?? '-' }}
                         </div>
-                        <div class="text-2xl mb-2">🏭</div>
+                        
+                        <div class="text-2xl mb-2 {{ $isHenkaten ? 'text-red-600' : '' }}">🏭</div> 
+                        
                         <div class="text-[8px] font-bold px-2 py-1 rounded-full text-center whitespace-nowrap
                             {{ $isHenkaten ? 'bg-red-600 text-white' : 'bg-green-700 text-white' }}">
                             {{ $isHenkaten ? 'HENKATEN' : 'NORMAL' }}
@@ -815,67 +814,198 @@ $statusText = $m->status ?? 'NORMAL';
             </div>
         </div>
 
-        {{-- Tombol Navigasi di Kanan --}}
-        <div class="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-            <button id="scrollRightMachine" class="w-6 h-6 flex items-center justify-center bg-white hover:bg-blue-600 rounded-full text-black shadow transition">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-            </button>
-        </div>
     </div>
- {{-- MACHINE HENKATEN CARD SECTION --}}
+    {{-- MACHINE HENKATEN CARD SECTION --}}
     <div class="border-t mt-4 pt-4 overflow-x-auto scrollbar-hide">
         <div class="flex justify-center gap-3 p-2">
-            @forelse($machineHenkatens as $henkaten)
-                <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 shadow-md cursor-pointer hover:bg-gray-100 transition"
-                     style="width: 220px;"
-                     onclick="showHenkatenDetail({{ $henkaten->id }})"
-                     data-henkaten-id="{{ $henkaten->id }}"
-                     data-nama="Old Jig: {{ $henkaten->old_jig ?? 'N/A' }}"
-                     data-nama-after="New Jig: {{ $henkaten->new_jig ?? 'N/A' }}"
-                     data-station="{{ $henkaten->station->station_name ?? 'Machine Station' }}"
-                     data-keterangan="{{ $henkaten->keterangan ?? 'Jig/Machine Change' }}"
-                     data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d/m/Y H:i') : '-' }}"
-                     data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d/m/Y H:i') : 'Selanjutnya' }}">
-                    <div class="flex items-center justify-center space-x-1.5">
-                        <div class="text-center">
-                            <div class="text-[8px] font-bold">OLD JIG</div>
-                            <div class="text-xl my-0.5">⚙️</div>
-                            <p class="text-[7px] font-semibold">{{ $henkaten->old_jig ?? 'N/A' }}</p>
-                        </div>
-                        <div class="text-blue-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                            </svg>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-[8px] font-bold text-red-600">NEW JIG</div>
-                            <div class="text-xl my-0.5">⚙️</div>
-                            <p class="text-[7px] font-semibold">{{ $henkaten->new_jig ?? 'N/A' }}</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-1">
-                        <div class="bg-blue-400 text-center py-0.5 rounded">
-                            <span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? 'N/A' }}</span>
-                        </div>
-                        <div class="bg-blue-400 text-center py-0.5 rounded">
-                            <span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? 'N/A' }}</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-center">
-                        <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
-                            ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <div class="text-center text-xs text-gray-400 py-4 w-full">No Active Machine Henkaten</div>
-            @endforelse
+{{-- GANTI KARTU LAMA ANDA DENGAN INI --}}
+@forelse($machineHenkatens as $henkaten)
+    <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 shadow-md cursor-pointer hover:bg-gray-100 transition"
+         style="width: 220px;"
+         onclick="showMachineHenkatenDetail(this)"
+         
+         {{-- Data untuk "Perubahan" --}}
+         data-description-before="{{ $henkaten->description_before ?? 'N/A' }}"
+         data-description-after="{{ $henkaten->description_after ?? 'N/A' }}"
+
+         {{-- Data untuk Grid 1 --}}
+         data-station="{{ $henkaten->station->station_name ?? 'N/A' }}"
+         data-shift="{{ $henkaten->shift ?? 'N/A' }}"
+         data-line-area="{{ $henkaten->line_area ?? 'N/A' }}"
+         data-keterangan="{{ $henkaten->keterangan ?? 'N/A' }}"
+         data-machine="{{ $henkaten->machine ?? 'N/A' }}"
+
+         {{-- Data untuk Grid 2 --}}
+         data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
+         data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
+         data-time-start="{{ $henkaten->time_start ?? '-' }}"
+         data-time-end="{{ $henkaten->time_end ?? '-' }}"
+
+         {{-- Data untuk Periode (Format disamakan dengan gambar) --}}
+         data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d M Y') : '-' }}"
+         data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d M Y') : 'Selanjutnya' }}"
+
+         {{-- Data untuk Lampiran --}}
+         data-lampiran="{{ $henkaten->lampiran ? asset($henkaten->lampiran) : '' }}">
+         
+        {{-- Tampilan Visual Kartu (disesuaikan dengan field baru) --}}
+        <div class="flex items-center justify-center space-x-1.5">
+            <div class="text-center">
+                <div class="text-[8px] font-bold">OLD JIG</div>
+                <div class="text-xl my-0.5">⚙️</div>
+                <p class="text-[7px] font-semibold">{{ $henkaten->description_before ?? 'N/A' }}</p>
+            </div>
+            <div class="text-blue-500">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                </svg>
+            </div>
+            <div class="text-center">
+                <div class="text-[8px] font-bold text-red-600">NEW JIG</div>
+                <div class="text-xl my-0.5">⚙️</div>
+                <p class="text-[7px] font-semibold">{{ $henkaten->description_after ?? 'N/A' }}</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-1">
+            <div class="bg-blue-400 text-center py-0.5 rounded">
+                <span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? 'N/A' }}</span>
+            </div>
+            <div class="bg-blue-400 text-center py-0.5 rounded">
+                <span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? 'N/A' }}</span>
+            </div>
+        </div>
+        <div class="flex justify-center">
+            <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
+                {{-- Format visual kartu tetap ringkas --}}
+                ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} - {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
+            </div>
+        </div>
+    </div>
+@empty
+    <div class="text-center text-xs text-gray-400 py-4 w-full">No Active Machine Henkaten</div>
+@endforelse
         </div>
     </div>
 </div>
 
+{{-- ============================================= --}}
+{{-- MODAL UNTUK DETAIL MACHINE HENKATEN --}}
+{{-- ============================================= --}}
+<div id="henkatenModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl"> {{-- Dibuat lebih lebar (max-w-2xl) --}}
+        
+        {{-- 1️⃣ HEADER MODAL --}}
+        <div class="flex justify-between items-center border-b p-4 bg-pink-500">
+            <h3 class="text-lg font-semibold text-gray-800">Detail Henkaten Machine</h3>
+            <button id="modalCloseButton" class="text-gray-500 hover:text-gray-800 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        {{-- 2️⃣ ISI MODAL --}}
+        <div class="p-6 space-y-4">
+
+            {{-- PERUBAHAN JIG/MACHINE --}}
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">Perubahan Jig / Machine</h4>
+                <div class="flex items-center justify-around">
+                    
+                    {{-- SEBELUM --}}
+                    <div class="text-center">
+                        <span class="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">Sebelum</span>
+                        <div class="text-3xl text-gray-500 mx-auto my-2">🏭</div>
+                        <p id="modalDescriptionBefore" class="font-semibold text-sm mt-1">-</p>
+                    </div>
+
+                    <div class="text-2xl text-gray-400">→</div>
+
+                    {{-- SESUDAH --}}
+                    <div class="text-center">
+                        <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded">Sesudah</span>
+                        <div class="text-3xl text-red-600 mx-auto my-2">🏭</div>
+                        <p id="modalDescriptionAfter" class="font-semibold text-sm text-red-600 mt-1">-</p>
+                    </div>
+                </div>
+            </div>
+            
+            {{-- DETAIL INFORMASI (Grid 1) --}}
+            <div class="space-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Station</p>
+                        <p id="modalStation" class="font-semibold text-sm">-</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Shift</p>
+                        <p id="modalShift" class="font-semibold text-sm">-</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Line Area</p>
+                        <p id="modalLineArea" class="font-semibold text-sm">-</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Keterangan</p>
+                        <p id="modalKeterangan" class="font-semibold text-sm">-</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500">Machine</p>
+                        <p id="modalMachine" class="font-semibold text-sm truncate">-</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- DETAIL INFORMASI (Grid 2) --}}
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div class="bg-orange-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500">Serial Number Start</p>
+                    <p id="modalSerialStart" class="font-semibold text-sm">-</p>
+                </div>
+                <div class="bg-orange-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500">Serial Number End</p>
+                    <p id="modalSerialEnd" class="font-semibold text-sm">-</p>
+                </div>
+                <div class="bg-orange-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500">Time Start</p>
+                    <p id="modalTimeStart" class="font-semibold text-sm">-</p>
+                </div>
+                <div class="bg-orange-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500">Time End</p>
+                    <p id="modalTimeEnd" class="font-semibold text-sm">-</p>
+                </div>
+            </div>
+
+            {{-- PERIODE --}}
+            <div class="flex justify-between items-center px-4 py-2 border-t mt-4 pt-4">
+                <div class="text-left">
+                    <p class="text-xs text-gray-500">Mulai</p>
+                    <p id="modalEffectiveDate" class="font-semibold text-lg">-</p>
+                </div>
+
+                <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                </svg>
+
+                <div class="text-right">
+                    <p class="text-xs text-gray-500">Selesai</p>
+                    <p id="modalEndDate" class="font-semibold text-lg">-</p>
+                </div>
+            </div>
+
+            {{-- LAMPIRAN --}}
+            <div id="modalLampiranSection" class="hidden pt-2">
+                <a id="modalLampiranLink" href="#" target="_blank"
+                    class="block bg-pink-600 hover:bg-orange-700 text-white text-sm px-4 py-2 rounded-lg text-center transition">
+                    Lihat Lampiran
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
 {{-- ============================================= --}}
 {{-- MATERIAL SECTION --}}
 {{-- ============================================= --}}
@@ -936,7 +1066,7 @@ $statusText = $m->status ?? 'NORMAL';
     </div>
 
    {{-- ============================================= --}}
-{{--  MATERIAL HENKATEN CARD SECTION (DIPERBARUI) --}}
+{{--  MATERIAL HENKATEN CARD SECTION     --}}
 {{-- ============================================= --}}
 <div class="border-t mt-2 pt-2">
     <div class="relative">
@@ -1092,7 +1222,7 @@ $statusText = $m->status ?? 'NORMAL';
     <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
         <div class="bg-orange-50 p-3 rounded-lg">
             <p class="text-xs text-gray-500">Station</p>
-            <p id="modalStation" class="font-semibold text-sm truncate">-</p>
+            <p id="modalStation" class="font-semibold text-sm">-</p>
         </div>
         <div class="bg-orange-50 p-3 rounded-lg">
             <p class="text-xs text-gray-500">Shift</p>
@@ -1190,11 +1320,11 @@ $statusText = $m->status ?? 'NORMAL';
         document.getElementById("current-shift").textContent = shift;
     }
 
+    /**
+     * Set Grup
+     */
     function setGrup(grup) {
-        // Ambil CSRF token dari meta tag
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-        // Kirim request ke server untuk simpan session
         fetch("{{ route('dashboard.setGrup') }}", {
             method: 'POST',
             headers: {
@@ -1214,7 +1344,6 @@ $statusText = $m->status ?? 'NORMAL';
         })
         .then(data => {
             if (data.status === 'success') {
-                // Reload halaman untuk menerapkan filter dari session
                 location.reload();
             } else {
                 console.error('Failed to set group.');
@@ -1226,106 +1355,106 @@ $statusText = $m->status ?? 'NORMAL';
             alert('Terjadi kesalahan. Pastikan Anda memiliki koneksi dan CSRF token valid.');
         });
     }
+
+    // =============================================
     // --- FUNGSI MODAL MAN POWER (DIPERBAIKI) ---
-function showHenkatenDetail(henkatenId) {
-    const card = document.querySelector(`[data-henkaten-id="${henkatenId}"]`);
-    if (!card) {
-        console.error('Card Man Power Henkaten tidak ditemukan!');
-        return;
+    // =============================================
+    function showHenkatenDetail(henkatenId) {
+        const card = document.querySelector(`[data-henkaten-id="${henkatenId}"]`);
+        if (!card) {
+            console.error('Card Man Power Henkaten tidak ditemukan!');
+            return;
+        }
+        
+        // --- PERBAIKAN: Dapatkan modal spesifik ---
+        const modal = document.getElementById('henkatenDetailModal');
+        if (!modal) {
+            console.error('Modal Man Power (henkatenDetailModal) tidak ditemukan!');
+            return;
+        }
+        
+        const data = card.dataset; // Ambil semua data- attributes
+
+        // --- PERBAIKAN: Gunakan modal.querySelector() ---
+        modal.querySelector('#modalNamaBefore').textContent = data.nama || '-';
+        modal.querySelector('#modalNamaAfter').textContent = data.namaAfter || '-';
+        modal.querySelector('#modalStation').textContent = data.station || '-';
+        modal.querySelector('#modalShift').textContent = data.shift || '-';
+        modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
+        modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
+        modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
+        modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
+        modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
+        modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-'; 
+        modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
+        modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
+        
+        // Mengurus Lampiran
+        const lampiran = data.lampiran;
+        const section = modal.querySelector('#modalLampiranSection'); // <-- Perbaikan
+        const link = modal.querySelector('#modalLampiranLink'); // <-- Perbaikan
+        
+        if (lampiran) {
+            section.classList.remove('hidden');
+            link.href = lampiran;
+        } else {
+            section.classList.add('hidden');
+        }
+
+        // Tampilkan Modal
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
     }
-    
-    const data = card.dataset; // Ambil semua data- attributes
 
-    // Mengisi bagian "Perubahan Pekerja"
-    document.getElementById('modalNamaBefore').textContent = data.nama || '-';
-    document.getElementById('modalNamaAfter').textContent = data.namaAfter || '-';
-
-    
-    // Mengisi bagian "Informasi Detail" (Grid)
-    document.getElementById('modalStation').textContent = data.station || '-';
-    document.getElementById('modalShift').textContent = data.shift || '-';
-    document.getElementById('modalLineArea').textContent = data.lineArea || '-';
-    document.getElementById('modalKeterangan').textContent = data.keterangan || '-';
-    document.getElementById('modalSerialStart').textContent = data.serialNumberStart || '-';
-    document.getElementById('modalSerialEnd').textContent = data.serialNumberEnd || '-';
-    document.getElementById('modalTimeStart').textContent = data.timeStart || '-';
-    document.getElementById('modalTimeEnd').textContent = data.timeEnd || '-'; 
-
-    // Mengisi bagian "Periode"
-    document.getElementById('modalEffectiveDate').textContent = data.effectiveDate || '-';
-    document.getElementById('modalEndDate').textContent = data.endDate || 'Selanjutnya';
-   
-
-    // Mengurus Lampiran
-    const lampiran = data.lampiran;
-    const section = document.getElementById('modalLampiranSection');
-    const link = document.getElementById('modalLampiranLink');
-    
-    if (lampiran) {
-        section.classList.remove('hidden');
-        link.href = lampiran;
-    } else {
-        section.classList.add('hidden');
-    }
-
-    // Tampilkan Modal
-    document.getElementById('henkatenDetailModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-
-    }
-
-   function closeHenkatenModal() {
+    function closeHenkatenModal() {
         document.getElementById('henkatenDetailModal').classList.add('hidden');
         document.body.style.overflow = 'auto';
     }
 
-   // --- FUNGSI MODAL METHOD (DIPERBAIKI) ---
-function showMethodHenkatenDetail(henkatenId) {
-    const card = document.querySelector(`.method-card[data-henkaten-id="${henkatenId}"]`);
-    if (!card) {
-        console.error('Elemen card Henkaten Metode tidak ditemukan untuk id:', henkatenId);
-        return;
+    // =============================================
+    // --- FUNGSI MODAL METHOD ---
+    // =============================================
+    function showMethodHenkatenDetail(henkatenId) {
+        const card = document.querySelector(`.method-card[data-henkaten-id="${henkatenId}"]`);
+        if (!card) {
+            console.error('Elemen card Henkaten Metode tidak ditemukan untuk id:', henkatenId);
+            return;
+        }
+        
+        const modal = document.getElementById('methodHenkatenDetailModal');
+        if (!modal) {
+            console.error('Elemen modal Henkaten Metode tidak ditemukan');
+            return;
+        }
+
+        const data = card.dataset; 
+
+        // (Kode ini sudah benar menggunakan modal.querySelector())
+        modal.querySelector('#modalStation').textContent = data.station || '-';
+        modal.querySelector('#modalShift').textContent = data.shift || '-';
+        modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
+        modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
+        modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
+        modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
+        modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
+        modal.querySelector('#modalKeteranganBefore').textContent = data.keterangan || '-';
+        modal.querySelector('#modalKeteranganAfter').textContent = data.keteranganAfter || '-';
+        modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
+        modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
+        
+        const lampiranSection = modal.querySelector('#modalLampiranSection');
+        const lampiranLink = modal.querySelector('#modalLampiranLink');
+        
+        if (data.lampiran) {
+            lampiranLink.href = data.lampiran;
+            lampiranSection.classList.remove('hidden');
+        } else {
+            lampiranSection.classList.add('hidden');
+        }
+
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
     }
-    
-    const modal = document.getElementById('methodHenkatenDetailModal');
-    if (!modal) {
-        console.error('Elemen modal Henkaten Metode tidak ditemukan');
-        return;
-    }
-
-    const data = card.dataset; // Ambil semua data- attributes
-
-   
-    // Mengisi bagian "Informasi Detail" (Grid)
-    modal.querySelector('#modalStation').textContent = data.station || '-';
-    modal.querySelector('#modalShift').textContent = data.shift || '-';
-    modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
-    modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
-    modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
-    modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
-    modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
-    modal.querySelector('#modalKeteranganBefore').textContent = data.keterangan || '-';
-    modal.querySelector('#modalKeteranganAfter').textContent = data.keteranganAfter || '-';
-
-    // Mengisi bagian "Periode"
-    modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
-    modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya'; // Anda sudah punya ini
-    
-    // Mengurus Lampiran
-    const lampiranSection = modal.querySelector('#modalLampiranSection');
-    const lampiranLink = modal.querySelector('#modalLampiranLink');
-    
-    if (data.lampiran) {
-        lampiranLink.href = data.lampiran;
-        lampiranSection.classList.remove('hidden');
-    } else {
-        lampiranSection.classList.add('hidden');
-    }
-
-    // Tampilkan Modal
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
 
     function closeMethodHenkatenModal() {
         const modal = document.getElementById('methodHenkatenDetailModal');
@@ -1335,81 +1464,127 @@ function showMethodHenkatenDetail(henkatenId) {
         document.body.style.overflow = 'auto';
     }
 
+    // =============================================
+    // --- FUNGSI MODAL MATERIAL ---
+    // =============================================
+    function showMaterialHenkatenDetail(element) {
+        const modal = document.getElementById('materialHenkatenDetailModal');
+        if (!modal) {
+            console.error('Modal Material tidak ditemukan');
+            return;
+        }
 
- // ==================================================
-// FUNGSI MENAMPILKAN MODAL DETAIL MATERIAL HENKATEN
-// ==================================================
-function showMaterialHenkatenDetail(element) {
-    // Ambil semua data dari atribut data-*
-    const before = element.getAttribute('data-nama');
-    const after = element.getAttribute('data-nama-after');
-    const station = element.getAttribute('data-station');
-    const shift = element.getAttribute('data-shift');
-    const lineArea = element.getAttribute('data-line-area');
-    const keterangan = element.getAttribute('data-keterangan');
-    const serialStart = element.getAttribute('data-serial-number-start');
-    const serialEnd = element.getAttribute('data-serial-number-end');
-    const timeStart = element.getAttribute('data-time-start');
-    const timeEnd = element.getAttribute('data-time-end');
-    const effectiveDate = element.getAttribute('data-effective-date');
-    const endDate = element.getAttribute('data-end-date');
-    const lampiran = element.getAttribute('data-lampiran');
-        const material = element.getAttribute('data-material'); 
+        // (Kode ini sudah benar menggunakan modal.querySelector())
+        modal.querySelector('#modalMaterialBefore').textContent = element.getAttribute('data-nama');
+        modal.querySelector('#modalMaterialAfter').textContent = element.getAttribute('data-nama-after');
+        modal.querySelector('#modalStation').textContent = element.getAttribute('data-station');
+        modal.querySelector('#modalShift').textContent = element.getAttribute('data-shift');
+        modal.querySelector('#modalLineArea').textContent = element.getAttribute('data-line-area');
+        modal.querySelector('#modalKeterangan').textContent = element.getAttribute('data-keterangan');
+        modal.querySelector('#modalSerialStart').textContent = element.getAttribute('data-serial-number-start');
+        modal.querySelector('#modalSerialEnd').textContent = element.getAttribute('data-serial-number-end');
+        modal.querySelector('#modalTimeStart').textContent = element.getAttribute('data-time-start');
+        modal.querySelector('#modalTimeEnd').textContent = element.getAttribute('data-time-end');
+        modal.querySelector('#modalEffectiveDate').textContent = element.getAttribute('data-effective-date');
+        modal.querySelector('#modalEndDate').textContent = element.getAttribute('data-end-date');
+        modal.querySelector('#modalMaterial').textContent = element.getAttribute('data-material'); 
 
+        const lampiran = element.getAttribute('data-lampiran');
+        const lampiranSection = modal.querySelector('#modalLampiranSection');
+        const lampiranLink = modal.querySelector('#modalLampiranLink');
+        if (lampiran) {
+            lampiranSection.classList.remove('hidden');
+            lampiranLink.href = lampiran;
+        } else {
+            lampiranSection.classList.add('hidden');
+        }
 
-   const modal = document.getElementById('materialHenkatenDetailModal');
-
-// Isi ke modal (pakai querySelector supaya scoped ke modal Material)
-modal.querySelector('#modalMaterialBefore').textContent = before;
-modal.querySelector('#modalMaterialAfter').textContent = after;
-modal.querySelector('#modalStation').textContent = station;
-modal.querySelector('#modalShift').textContent = shift;
-modal.querySelector('#modalLineArea').textContent = lineArea;
-modal.querySelector('#modalKeterangan').textContent = keterangan;
-modal.querySelector('#modalSerialStart').textContent = serialStart;
-modal.querySelector('#modalSerialEnd').textContent = serialEnd;
-modal.querySelector('#modalTimeStart').textContent = timeStart;
-modal.querySelector('#modalTimeEnd').textContent = timeEnd;
-modal.querySelector('#modalEffectiveDate').textContent = effectiveDate;
-modal.querySelector('#modalEndDate').textContent = endDate;
- modal.querySelector('#modalMaterial').textContent = material;
-
-
-// Lampiran
-const lampiranSection = modal.querySelector('#modalLampiranSection');
-const lampiranLink = modal.querySelector('#modalLampiranLink');
-if (lampiran) {
-    lampiranSection.classList.remove('hidden');
-    lampiranLink.href = lampiran;
-} else {
-    lampiranSection.classList.add('hidden');
-}
-
-
-    // Tampilkan modal
-    document.getElementById('materialHenkatenDetailModal').classList.remove('hidden');
-}
-
-function closeMaterialHenkatenModal() {
-    document.getElementById('materialHenkatenDetailModal').classList.add('hidden');
-
-}
-
-// ==================================================
-// ESC UNTUK MENUTUP SEMUA MODAL
-// ==================================================
-document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-        closeHenkatenModal?.();
-        closeMethodHenkatenModal?.();
-        closeMaterialHenkatenModal?.();
+        modal.classList.remove('hidden');
     }
-});
+
+    function closeMaterialHenkatenModal() {
+        document.getElementById('materialHenkatenDetailModal').classList.add('hidden');
+    }
+
+    // =============================================
+    // --- FUNGSI MODAL MACHINE (DI-UPDATE TOTAL) ---
+    // =============================================
+    function showMachineHenkatenDetail(element) {
+        // 1. Dapatkan modal-nya
+        const modal = document.getElementById('henkatenModal');
+        if (!modal) {
+            console.error('Modal Machine (henkatenModal) tidak ditemukan!');
+            return;
+        }
+
+        // 2. Ambil semua data dari atribut data-*
+        const data = element.dataset;
+
+        // 3. Isi data ke modal menggunakan modal.querySelector()
+        
+        // "Perubahan" section
+        modal.querySelector('#modalDescriptionBefore').textContent = data.descriptionBefore || '-';
+        modal.querySelector('#modalDescriptionAfter').textContent = data.descriptionAfter || '-';
+
+        // Grid 1
+        modal.querySelector('#modalStation').textContent = data.station || '-';
+        modal.querySelector('#modalShift').textContent = data.shift || '-';
+        modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
+        modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
+        modal.querySelector('#modalMachine').textContent = data.machine || '-'; // ID baru
+
+        // Grid 2
+        modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
+        modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
+        modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
+        modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
+
+        // Periode
+        modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
+        modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
+
+        // 4. Lampiran
+        const lampiranSection = modal.querySelector('#modalLampiranSection');
+        const lampiranLink = modal.querySelector('#modalLampiranLink');
+        
+        if (data.lampiran) {
+            lampiranLink.href = data.lampiran;
+            lampiranSection.classList.remove('hidden');
+        } else {
+            lampiranSection.classList.add('hidden');
+            lampiranLink.href = '#'; // Reset href
+        }
+
+        // 5. Tampilkan modal
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Fungsi untuk menutup modal MACHINE
+    function closeMachineHenkatenModal() {
+        const modal = document.getElementById('henkatenModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        document.body.style.overflow = 'auto'; // Kembalikan scroll body
+    }
+
+
+    // ==================================================
+    // ESC UNTUK MENUTUP SEMUA MODAL
+    // ==================================================
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeHenkatenModal?.();
+            closeMethodHenkatenModal?.();
+            closeMaterialHenkatenModal?.();
+            closeMachineHenkatenModal?.(); // <-- Pastikan ini ada
+        }
+    });
 
     // ==================================================
     // FUNGSI SCROLL UNTUK CARD HENKATEN (GLOBAL)
     // ==================================================
-   
     function scrollMaterialHenkaten(direction) {
         const container = document.getElementById('materialHenkatenContainer');
         if (!container) return; 
@@ -1423,7 +1598,6 @@ document.addEventListener('keydown', function (e) {
     }
 
     
-
     // ==================================================
     // INISIALISASI SAAT HALAMAN DIMUAT (DOMContentLoaded)
     // ==================================================
@@ -1432,7 +1606,6 @@ document.addEventListener('keydown', function (e) {
     setInterval(updateDateTime, 1000);
     updateDateTime(); // Panggil sekali saat muat
 
-    // Gabungkan semua listener dalam satu 'DOMContentLoaded'
     document.addEventListener('DOMContentLoaded', function() {
 
         /**
@@ -1473,35 +1646,22 @@ document.addEventListener('keydown', function (e) {
         setupHorizontalScroll('methodScrollContainer', 'scrollLeftMethodIcon', 'scrollRightMethodIcon');
 
 
-        // ================================================================
-        // INISIALISASI SCROLL UNTUK CARD (BAGIAN YANG DIPERBAIKI)
-        // ================================================================
-        
-        
+        // ... (Fungsi scroll card & method icon Anda yang lain) ...
         const container = document.getElementById('materialHenkatenContainer');
         const leftBtn = document.getElementById('scrollLeftBtnMaterial');
         const rightBtn = document.getElementById('scrollRightBtnMaterial');
 
         if (container && leftBtn && rightBtn) {
-            
             function checkScrollButtons() {
                 const isAtStart = container.scrollLeft <= 0;
                 const isAtEnd = container.scrollLeft >= (container.scrollWidth - container.clientWidth - 1); 
-
                 leftBtn.style.display = isAtStart ? 'none' : 'block';
                 rightBtn.style.display = isAtEnd ? 'none' : 'block';
             }
-
-            // Pasang event listener-nya di sini
             container.addEventListener('scroll', checkScrollButtons);
-
-            // Atur visibilitas awal
             setTimeout(checkScrollButtons, 100); 
         }
 
-        // ================================================================
-        // INISIALISASI SCROLL BUTTONS UNTUK METHOD ICON VIEW
-        // ================================================================
         const methodContainer = document.getElementById('methodScrollContainer');
         const methodLeftBtn = document.querySelector('[onclick="scrollMethodLeft()"]');
         const methodRightBtn = document.querySelector('[onclick="scrollMethodRight()"]');
@@ -1510,14 +1670,16 @@ document.addEventListener('keydown', function (e) {
             function checkMethodScrollButtons() {
                 const isAtStart = methodContainer.scrollLeft <= 0;
                 const isAtEnd = methodContainer.scrollLeft >= (methodContainer.scrollWidth - methodContainer.clientWidth - 1);
-
                 methodLeftBtn.style.visibility = isAtStart ? 'hidden' : 'visible';
                 methodRightBtn.style.visibility = isAtEnd ? 'hidden' : 'visible';
             }
-
             methodContainer.addEventListener('scroll', checkMethodScrollButtons);
             setTimeout(checkMethodScrollButtons, 100);
         }
+        
+        // ================================================================
+        // INISIALISASI SEMUA EVENT LISTENER MODAL
+        // ================================================================
         
         // --- Event Listener untuk Modal Man Power ---
         const manPowerModal = document.getElementById('henkatenDetailModal');
@@ -1525,6 +1687,7 @@ document.addEventListener('keydown', function (e) {
             manPowerModal.addEventListener('click', function(e) {
                 if (e.target === this) closeHenkatenModal();
             });
+            // (Asumsi tombol close 'X' punya onclick="closeHenkatenModal()")
         }
         
         // --- Event Listener untuk Modal Method ---
@@ -1535,16 +1698,32 @@ document.addEventListener('keydown', function (e) {
             });
         }
 
-        // --- Event Listener Global untuk Tombol 'Escape' ---
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeHenkatenModal();
-                closeMethodHenkatenModal(); // Tutup kedua modal
-            }
-        });
+        // --- Event Listener untuk Modal Material ---
+        const materialModal = document.getElementById('materialHenkatenDetailModal');
+        if (materialModal) {
+            materialModal.addEventListener('click', function(e) {
+                if (e.target === this) closeMaterialHenkatenModal();
+            });
+            // (Asumsi tombol close 'X' punya onclick="closeMaterialHenkatenModal()")
+        }
+        
+        // --- Event Listener untuk Modal MACHINE ---
+        const machineModal = document.getElementById('henkatenModal');
+        const machineCloseButton = machineModal.querySelector('#modalCloseButton'); // <-- Cari di dalam modal
 
-    
-    });
+        if (machineModal && machineCloseButton) {
+            // Listener untuk tombol close 'X'
+            machineCloseButton.addEventListener('click', closeMachineHenkatenModal);
+
+            // Listener untuk klik di luar area modal
+            machineModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeMachineHenkatenModal();
+                }
+            });
+        }
+        
+    }); 
 </script>
 @endpush
 
