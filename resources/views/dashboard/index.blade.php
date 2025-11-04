@@ -534,7 +534,7 @@
 <div class="bg-white shadow rounded p-4 flex flex-col">
     <h2 class="text-sm font-semibold mb-3 text-center">METHOD</h2>
 
-    <div class="w-full overflow-hidden">
+  <div class="w-full overflow-hidden">
         <div class="flex justify-between items-start gap-1"
              style="flex-wrap: nowrap;">
 
@@ -542,10 +542,11 @@
                 @php
                     $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
                     $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
+                    $cardBgColor = $isHenkaten ? 'bg-red-600' : 'bg-white';
                     $statusText = $m->status ?? 'NORMAL';
                 @endphp
 
-                <div class="flex-1 min-w-0 flex flex-col items-center justify-between border border-gray-200 rounded-lg p-2 mx-0.5">
+                <div class="flex-1 min-w-0 flex flex-col items-center justify-between border border-gray-200 rounded-lg p-2 mx-0.5 {{ $cardBgColor }}">
                     
                     {{-- Station Label --}}
                     <div class="min-h-[2.5rem] flex items-center justify-center mb-1">
@@ -893,7 +894,7 @@
 {{-- ============================================= --}}
 <div id="henkatenModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
     
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl"> {{-- Dibuat lebih lebar (max-w-2xl) --}}
+<div class="bg-white rounded-lg shadow-xl w-full max-w-2xl"> 
         
         {{-- 1️⃣ HEADER MODAL --}}
         <div class="flex justify-between items-center border-b p-4 bg-pink-500">
@@ -1037,16 +1038,17 @@
                 <tbody>
                     <tr>
                         @foreach($stationStatuses as $station)
-                            <td class="border border-gray-300 px-1 py-1">
-                                <div class="material-status flex items-center justify-center bg-white text-gray-800 font-bold cursor-pointer" data-id="{{ $station['id'] }}"></div>
+                            @php $isHenkaten = $station['status'] !== 'NORMAL'; @endphp
+                            <td class="border border-gray-300 px-1 py-1 {{ $isHenkaten ? 'bg-red-600' : 'bg-white' }}">
+                                <div class="material-status flex items-center justify-center text-gray-800 font-bold cursor-pointer" data-id="{{ $station['id'] }}"></div>
                             </td>
                         @endforeach
                     </tr>
                     <tr>
                         @foreach($stationStatuses as $station)
                             @php $isHenkaten = $station['status'] !== 'NORMAL'; @endphp
-                            <td class="border border-gray-300 px-1 py-0.5 text-[8px] font-bold">
-                                <div class="{{ $isHenkaten ? 'text-red-600' : 'text-green-600' }}">
+                            <td class="border border-gray-300 px-1 py-0.5 text-[8px] font-bold {{ $isHenkaten ? 'bg-red-600' : 'bg-white' }}">
+                                <div class="{{ $isHenkaten ? 'text-white' : 'text-green-600' }}">
                                     {{ $station['status'] }}
                                 </div>
                             </td>

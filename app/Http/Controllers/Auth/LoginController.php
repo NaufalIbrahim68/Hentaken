@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
-use Illuminate\Http\Request; // <-- TAMBAHKAN INI
+use Illuminate\Http\Request;
+use App\Models\User; // <-- PASTIKAN ANDA IMPORT USER MODEL
 
 class LoginController extends Controller
 {
@@ -26,7 +27,7 @@ class LoginController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/'; // Saya ganti ke '/' sesuai route dashboard Anda
+    protected $redirectTo = '/'; // Sesuai permintaan Anda
 
     /**
      * Create a new controller instance.
@@ -39,7 +40,43 @@ class LoginController extends Controller
         $this->middleware('auth')->only('logout');
     }
 
-    // --- (PENAMBAHAN) ---
+    // --- (PENAMBAHAN BARU) ---
+    // Method ini di-override untuk mengubah total logika otentikasi.
+    // Kita tidak akan mengecek password di database.
+    // -----------------------------------------------------------------
+    protected function attemptLogin(Request $request)
+    {
+        // 1. Ambil input NPK dan Password dari form
+        $npk = $request->input($this->username());
+        $password = $request->input('password');
+
+        // 2. Cek apakah password yang diketik adalah "password"
+        if ($password !== 'password') {
+            // Jika BUKAN "password", langsung gagalkan login.
+            return false;
+        }
+
+        // 3. Jika password BENAR ("password"), cari user berdasarkan NPK
+        //    Pastikan Anda sudah 'use App\Models\User;' di bagian atas file.
+        $user = User::where($this->username(), $npk)->first();
+
+        // 4. Cek apakah user dengan NPK tersebut ada
+        if ($user) {
+            // 5. Jika user ada, login-kan dia secara manual
+            //    Kita tidak peduli apa password-nya di database.
+            $this->guard()->login($user, $request->filled('remember'));
+            
+            // 6. Kembalikan 'true' untuk menandakan login berhasil
+            return true;
+        }
+
+        // 7. Jika user dengan NPK itu tidak ditemukan, gagalkan login
+        return false;
+    }
+    // --- (AKHIR PENAMBAHAN BARU) ---
+
+
+    // --- (INI SUDAH BENAR DARI ANDA) ---
     // Method ini mengganti validasi default
     // agar tidak lagi mencari 'email'
     // ----------------------------------------------------
@@ -47,11 +84,11 @@ class LoginController extends Controller
     {
         $request->validate([
             $this->username() => 'required|string', // Validasi NPK
-            'password' => 'required|string',      // Validasi Password
+            'password' => 'required|string',       // Validasi Password
         ]);
     }
 
-    // --- (PENAMBAHAN) ---
+    // --- (INI SUDAH BENAR DARI ANDA) ---
     // Method ini memberi tahu Laravel
     // untuk menggunakan 'npk' sebagai field login, BUKAN 'email'
     // ----------------------------------------------------
@@ -60,4 +97,3 @@ class LoginController extends Controller
         return 'npk'; // Ganti 'email' menjadi 'npk'
     }
 }
-
