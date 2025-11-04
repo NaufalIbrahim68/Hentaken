@@ -266,25 +266,70 @@ public function search(Request $request)
 {
     $request->validate([
         'q' => 'nullable|string',
-        'grup' => 'required|string', // misal A, B, A(Troubleshooting), B(Troubleshooting)
+        'grup' => 'required|string',
     ]);
 
     $q = $request->input('q', '');
     $grupInput = $request->input('grup');
-
-    // Tentukan grup untuk query troubleshooting
     $grupTs = str_contains($grupInput, 'Troubleshooting') ? substr($grupInput, 0, 1) : $grupInput;
+
+    // =================================================================
+    // AWAL BLOK LOGIKA BARU (LEBIH AKURAT)
+    // =================================================================
+
+    $now = Carbon::now();
+    $today = $now->copy()->startOfDay(); // 2025-11-04 00:00:00
+    $currentTime = $now->toTimeString(); // 15:00:00 (misalnya)
+
+    // 1. Dapatkan SEMUA ID man power yang sedang aktif henkaten
+    $allBusyIds = ManPowerHenkaten::where(function ($query) use ($today, $currentTime) {
+                        
+                        // Kriteria 1: Henkaten permanen (belum ada tgl berakhir)
+                        $query->whereNull('end_date');
+
+                        // Kriteria 2: Henkaten berakhir di masa depan (besok atau lusa, dst.)
+                        $query->orWhere('end_date', '>', $today); 
+
+                        // Kriteria 3: Henkaten berakhir HARI INI, tapi JAM-nya belum lewat
+                        $query->orWhere(function ($q) use ($today, $currentTime) {
+                            $q->where('end_date', $today) // end_date adalah hari ini
+                              ->where('time_end', '>', $currentTime); // dan jam berakhir > jam sekarang
+                        });
+
+                    })
+                    ->pluck('man_power_id_after')
+                    ->filter()
+                    ->unique()
+                    ->all();
+
+    // 2. Pisahkan ID regular dan ID Troubleshooting (TS)
+    $busyRegularIds = [];
+    $busyTsIds = [];
+
+    foreach ($allBusyIds as $id) {
+        if (is_string($id) && str_starts_with($id, 't-')) {
+            $busyTsIds[] = substr($id, 2);
+        } else {
+            $busyRegularIds[] = $id;
+        }
+    }
+
+    // =================================================================
+    // AKHIR BLOK LOGIKA BARU
+    // =================================================================
 
     // Cari di manpower normal
     $manPower = ManPower::query()
         ->where('nama', 'like', "%$q%")
         ->where('grup', $grupInput)
+        ->whereNotIn('id', $busyRegularIds) // <-- PASTIKAN BARIS INI ADA
         ->get(['id', 'nama', 'grup']);
 
     // Cari di troubleshooting
     $troubleshooting = Troubleshooting::query()
         ->where('nama', 'like', "%$q%")
         ->where('grup', $grupTs)
+        ->whereNotIn('id', $busyTsIds) // <-- PASTIKAN BARIS INI ADA
         ->get(['id', 'nama', 'grup']);
 
     // Gabungkan hasil

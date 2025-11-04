@@ -160,27 +160,37 @@
         {{-- Kolom Kiri --}}
          <div class="w-1/3"></div>
 
-        {{-- Title & Date --}}
-        <div class="w-1/3 text-center">
-           <h1 class="text-base font-bold">HENKATEN FA</h1>
-    <select id="line-selector"
-        class="border border-gray-300 text-xs rounded px-1 py-[2px] focus:ring focus:ring-gray-200">
-        <option class="text-base font-bold">LINE 1</option>
-        <option class="text-base font-bold">LINE 2</option>
-        <option class="text-base font-bold">LINE 3</option>
-        <option class="text-base font-bold">LINE 4</option>
-        <option selected class="text-base font-bold">LINE 5</option>
-        <option class="text-base font-bold">LINE 6</option>
-    </select>
-</div>
-
-        {{-- Time & Shift --}}
-        <div class="w-1/3 text-right">
-            <p class="font-mono text-sm" id="current-time"></p>
-            <p class="text-xs" id="current-shift"></p>
-        </div>
+      {{-- Kolom Kiri (Kosong) --}}
+    <div class="w-1/3">
+        {{-- Biarkan kosong untuk alignment --}}
     </div>
 
+    {{-- Title, Line, & Date --}}
+    <div class="w-1/3 text-center">
+        <h1 class="text-base font-bold">HENKATEN FA</h1>
+        
+        <select id="line-selector" class="border border-gray-300 text-xs rounded px-1 py-[2px] focus:ring focus:ring-gray-200">
+            <option class="text-base font-bold">LINE 1</option>
+            <option class="text-base font-bold">LINE 2</option>
+            <option class="text-base font-bold">LINE 3</option>
+            <option class="text-base font-bold">LINE 4</option>
+            <option selected class="text-base font-bold">LINE 5</option>
+            <option class="text-base font-bold">LINE 6</option>
+        </select>
+        
+        {{-- PINDAHKAN TANGGAL KE SINI (di dalam div) --}}
+        <p class="text-[10px] text-gray-600 mt-1" id="current-date"></p>
+        
+    </div> {{-- Penutup untuk "w-1/3 text-center" --}}
+
+
+    {{-- Time & Shift --}}
+    <div class="w-1/3 text-right">
+        <p class="font-mono text-sm" id="current-time"></p>
+        <p class="text-xs" id="current-shift"></p>
+    </div>
+
+    </div>
     {{-- 4 SECTION GRID - . --}}
     <div class="grid grid-cols-2 gap-3 h-[92vh]">
  
@@ -321,7 +331,7 @@
                                 <td class="border border-gray-300 px-1 py-1.5 text-center {{ $bgColorCell }}">
                                     <div class="flex items-center justify-center gap-1">
                                         <div class="w-2 h-2 rounded-full {{ $statusColor }}" title="{{ $statusText }}"></div>
-                                        <span class="text-[8px] font-semibold {{ $isHenkaten ? 'text-red-700' : 'text-green-700' }}">{{ $statusText }}</span>
+                                        <span class="text-[8px] font-semibold {{ $isHenkaten ? 'text-white' : 'text-green-700' }}">{{ $statusText }}</span>
                                     </div>
                                 </td>
                             @endforeach
@@ -1317,7 +1327,13 @@
     function updateDateTime() {
         const now = new Date();
         const dateOptions = { day: '2-digit', month: 'long', year: 'numeric' };
-        document.getElementById("current-date").textContent = now.toLocaleDateString('en-GB', dateOptions);
+        
+        // PASTIKAN HTML-nya ada: <p id="current-date"></p>
+        const dateEl = document.getElementById("current-date");
+        if (dateEl) {
+            dateEl.textContent = now.toLocaleDateString('en-GB', dateOptions);
+        }
+
         document.getElementById("current-time").textContent = now.toLocaleTimeString('en-GB');
 
         const hour = now.getHours();
@@ -1367,7 +1383,7 @@
     }
 
     // =============================================
-    // --- FUNGSI MODAL MAN POWER (DIPERBAIKI) ---
+    // --- FUNGSI MODAL MAN POWER ---
     // =============================================
     function showHenkatenDetail(henkatenId) {
         const card = document.querySelector(`[data-henkaten-id="${henkatenId}"]`);
@@ -1375,17 +1391,12 @@
             console.error('Card Man Power Henkaten tidak ditemukan!');
             return;
         }
-        
-        // --- PERBAIKAN: Dapatkan modal spesifik ---
         const modal = document.getElementById('henkatenDetailModal');
         if (!modal) {
             console.error('Modal Man Power (henkatenDetailModal) tidak ditemukan!');
             return;
         }
-        
-        const data = card.dataset; // Ambil semua data- attributes
-
-        // --- PERBAIKAN: Gunakan modal.querySelector() ---
+        const data = card.dataset;
         modal.querySelector('#modalNamaBefore').textContent = data.nama || '-';
         modal.querySelector('#modalNamaAfter').textContent = data.namaAfter || '-';
         modal.querySelector('#modalStation').textContent = data.station || '-';
@@ -1399,10 +1410,9 @@
         modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
         modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
         
-        // Mengurus Lampiran
         const lampiran = data.lampiran;
-        const section = modal.querySelector('#modalLampiranSection'); // <-- Perbaikan
-        const link = modal.querySelector('#modalLampiranLink'); // <-- Perbaikan
+        const section = modal.querySelector('#modalLampiranSection');
+        const link = modal.querySelector('#modalLampiranLink');
         
         if (lampiran) {
             section.classList.remove('hidden');
@@ -1410,8 +1420,6 @@
         } else {
             section.classList.add('hidden');
         }
-
-        // Tampilkan Modal
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }
@@ -1426,20 +1434,12 @@
     // =============================================
     function showMethodHenkatenDetail(henkatenId) {
         const card = document.querySelector(`.method-card[data-henkaten-id="${henkatenId}"]`);
-        if (!card) {
-            console.error('Elemen card Henkaten Metode tidak ditemukan untuk id:', henkatenId);
-            return;
-        }
+        if (!card) return;
         
         const modal = document.getElementById('methodHenkatenDetailModal');
-        if (!modal) {
-            console.error('Elemen modal Henkaten Metode tidak ditemukan');
-            return;
-        }
+        if (!modal) return;
 
         const data = card.dataset; 
-
-        // (Kode ini sudah benar menggunakan modal.querySelector())
         modal.querySelector('#modalStation').textContent = data.station || '-';
         modal.querySelector('#modalShift').textContent = data.shift || '-';
         modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
@@ -1461,7 +1461,6 @@
         } else {
             lampiranSection.classList.add('hidden');
         }
-
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }
@@ -1479,12 +1478,8 @@
     // =============================================
     function showMaterialHenkatenDetail(element) {
         const modal = document.getElementById('materialHenkatenDetailModal');
-        if (!modal) {
-            console.error('Modal Material tidak ditemukan');
-            return;
-        }
+        if (!modal) return;
 
-        // (Kode ini sudah benar menggunakan modal.querySelector())
         modal.querySelector('#modalMaterialBefore').textContent = element.getAttribute('data-nama');
         modal.querySelector('#modalMaterialAfter').textContent = element.getAttribute('data-nama-after');
         modal.querySelector('#modalStation').textContent = element.getAttribute('data-station');
@@ -1508,7 +1503,6 @@
         } else {
             lampiranSection.classList.add('hidden');
         }
-
         modal.classList.remove('hidden');
     }
 
@@ -1517,66 +1511,45 @@
     }
 
     // =============================================
-    // --- FUNGSI MODAL MACHINE (DI-UPDATE TOTAL) ---
+    // --- FUNGSI MODAL MACHINE ---
     // =============================================
     function showMachineHenkatenDetail(element) {
-        // 1. Dapatkan modal-nya
         const modal = document.getElementById('henkatenModal');
-        if (!modal) {
-            console.error('Modal Machine (henkatenModal) tidak ditemukan!');
-            return;
-        }
-
-        // 2. Ambil semua data dari atribut data-*
+        if (!modal) return;
         const data = element.dataset;
-
-        // 3. Isi data ke modal menggunakan modal.querySelector()
-        
-        // "Perubahan" section
         modal.querySelector('#modalDescriptionBefore').textContent = data.descriptionBefore || '-';
         modal.querySelector('#modalDescriptionAfter').textContent = data.descriptionAfter || '-';
-
-        // Grid 1
         modal.querySelector('#modalStation').textContent = data.station || '-';
         modal.querySelector('#modalShift').textContent = data.shift || '-';
         modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
         modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
-        modal.querySelector('#modalMachine').textContent = data.machine || '-'; // ID baru
-
-        // Grid 2
+        modal.querySelector('#modalMachine').textContent = data.machine || '-';
         modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
         modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
         modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
         modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
-
-        // Periode
         modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
         modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
 
-        // 4. Lampiran
         const lampiranSection = modal.querySelector('#modalLampiranSection');
         const lampiranLink = modal.querySelector('#modalLampiranLink');
-        
         if (data.lampiran) {
             lampiranLink.href = data.lampiran;
             lampiranSection.classList.remove('hidden');
         } else {
             lampiranSection.classList.add('hidden');
-            lampiranLink.href = '#'; // Reset href
+            lampiranLink.href = '#';
         }
-
-        // 5. Tampilkan modal
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }
 
-    // Fungsi untuk menutup modal MACHINE
     function closeMachineHenkatenModal() {
         const modal = document.getElementById('henkatenModal');
         if (modal) {
             modal.classList.add('hidden');
         }
-        document.body.style.overflow = 'auto'; // Kembalikan scroll body
+        document.body.style.overflow = 'auto';
     }
 
 
@@ -1588,31 +1561,30 @@
             closeHenkatenModal?.();
             closeMethodHenkatenModal?.();
             closeMaterialHenkatenModal?.();
-            closeMachineHenkatenModal?.(); // <-- Pastikan ini ada
+            closeMachineHenkatenModal?.();
         }
     });
 
     // ==================================================
     // FUNGSI SCROLL UNTUK CARD HENKATEN (GLOBAL)
     // ==================================================
+    // Fungsi ini dipanggil oleh onclick="scrollMaterialHenkaten('left')"
     function scrollMaterialHenkaten(direction) {
         const container = document.getElementById('materialHenkatenContainer');
         if (!container) return; 
         const scrollAmount = 240; 
-        
         if (direction === 'left') {
             container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
         } else {
             container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
         }
     }
-
     
     // ==================================================
     // INISIALISASI SAAT HALAMAN DIMUAT (DOMContentLoaded)
     // ==================================================
 
-    // Jalankan jam
+    // Jalankan jam (ini bisa di luar DOMContentLoaded)
     setInterval(updateDateTime, 1000);
     updateDateTime(); // Panggil sekali saat muat
 
@@ -1627,6 +1599,7 @@
             const scrollRightBtn = document.getElementById(rightBtnId);
             
             if (!scrollContainer || !scrollLeftBtn || !scrollRightBtn) {
+                // console.warn('Scroll setup failed for:', containerId);
                 return;
             }
             const scrollAmount = 250; 
@@ -1644,49 +1617,25 @@
             }
             scrollContainer.addEventListener('scroll', updateButtons);
             updateButtons(); 
-            scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+            // Opsional: scroll ke paling kanan saat memuat
+            // scrollContainer.scrollLeft = scrollContainer.scrollWidth;
         }
 
-        // Inisialisasi SEMUA bagian scroll tabel
+        // Inisialisasi SEMUA bagian scroll
+        // PERBAIKAN: Semua scroll di-handle oleh satu fungsi
         setupHorizontalScroll('materialTableContainer', 'scrollLeftMaterial', 'scrollRightMaterial');
         setupHorizontalScroll('manPowerTableContainer', 'scrollLeftManPower', 'scrollRightManPower');
         setupHorizontalScroll('machineTableContainer', 'scrollLeftMachine', 'scrollRightMachine');
         setupHorizontalScroll('shiftChangeContainer', 'scrollLeftShift', 'scrollRightShift');
         setupHorizontalScroll('methodChangeContainer', 'scrollLeftMethod', 'scrollRightMethod');
-        setupHorizontalScroll('methodScrollContainer', 'scrollLeftMethodIcon', 'scrollRightMethodIcon');
-
-
-        // ... (Fungsi scroll card & method icon Anda yang lain) ...
-        const container = document.getElementById('materialHenkatenContainer');
-        const leftBtn = document.getElementById('scrollLeftBtnMaterial');
-        const rightBtn = document.getElementById('scrollRightBtnMaterial');
-
-        if (container && leftBtn && rightBtn) {
-            function checkScrollButtons() {
-                const isAtStart = container.scrollLeft <= 0;
-                const isAtEnd = container.scrollLeft >= (container.scrollWidth - container.clientWidth - 1); 
-                leftBtn.style.display = isAtStart ? 'none' : 'block';
-                rightBtn.style.display = isAtEnd ? 'none' : 'block';
-            }
-            container.addEventListener('scroll', checkScrollButtons);
-            setTimeout(checkScrollButtons, 100); 
-        }
-
-        const methodContainer = document.getElementById('methodScrollContainer');
-        const methodLeftBtn = document.querySelector('[onclick="scrollMethodLeft()"]');
-        const methodRightBtn = document.querySelector('[onclick="scrollMethodRight()"]');
-
-        if (methodContainer && methodLeftBtn && methodRightBtn) {
-            function checkMethodScrollButtons() {
-                const isAtStart = methodContainer.scrollLeft <= 0;
-                const isAtEnd = methodContainer.scrollLeft >= (methodContainer.scrollWidth - methodContainer.clientWidth - 1);
-                methodLeftBtn.style.visibility = isAtStart ? 'hidden' : 'visible';
-                methodRightBtn.style.visibility = isAtEnd ? 'hidden' : 'visible';
-            }
-            methodContainer.addEventListener('scroll', checkMethodScrollButtons);
-            setTimeout(checkMethodScrollButtons, 100);
-        }
         
+        // Ini untuk icon-icon Method/Material
+        setupHorizontalScroll('methodScrollContainer', 'scrollLeftMethodIcon', 'scrollRightMethodIcon');
+        
+        // Ini untuk card-card Henkaten Material
+        setupHorizontalScroll('materialHenkatenContainer', 'scrollLeftBtnMaterial', 'scrollRightBtnMaterial');
+
+
         // ================================================================
         // INISIALISASI SEMUA EVENT LISTENER MODAL
         // ================================================================
@@ -1697,7 +1646,6 @@
             manPowerModal.addEventListener('click', function(e) {
                 if (e.target === this) closeHenkatenModal();
             });
-            // (Asumsi tombol close 'X' punya onclick="closeHenkatenModal()")
         }
         
         // --- Event Listener untuk Modal Method ---
@@ -1714,18 +1662,15 @@
             materialModal.addEventListener('click', function(e) {
                 if (e.target === this) closeMaterialHenkatenModal();
             });
-            // (Asumsi tombol close 'X' punya onclick="closeMaterialHenkatenModal()")
         }
         
         // --- Event Listener untuk Modal MACHINE ---
         const machineModal = document.getElementById('henkatenModal');
-        const machineCloseButton = machineModal.querySelector('#modalCloseButton'); // <-- Cari di dalam modal
-
-        if (machineModal && machineCloseButton) {
-            // Listener untuk tombol close 'X'
-            machineCloseButton.addEventListener('click', closeMachineHenkatenModal);
-
-            // Listener untuk klik di luar area modal
+        if (machineModal) {
+            const machineCloseButton = machineModal.querySelector('#modalCloseButton');
+            if (machineCloseButton) {
+                machineCloseButton.addEventListener('click', closeMachineHenkatenModal);
+            }
             machineModal.addEventListener('click', function(e) {
                 if (e.target === this) {
                     closeMachineHenkatenModal();
@@ -1734,35 +1679,41 @@
         }
         
 
-        document.addEventListener("DOMContentLoaded", () => {
-    const lineSelector = document.getElementById("line-selector");
+        // ================================================================
+        // INISIALISASI LINE SELECTOR
+        // ================================================================
+        
+        // KESALAHAN FATAL DIPERBAIKI:
+        // Listener `DOMContentLoaded` yang di dalam DIBUANG.
+        const lineSelector = document.getElementById("line-selector");
+        if (lineSelector) {
+            // Set selected line dari session (kalau ada)
+            // (Note: Ini mungkin lebih baik dilakukan di Blade-nya langsung)
+            fetch('/session/line')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.line) lineSelector.value = data.line;
+                });
 
-    // Set selected line dari session (kalau ada)
-    fetch('/session/line')
-        .then(res => res.json())
-        .then(data => {
-            if (data.line) lineSelector.value = data.line;
-        });
+            lineSelector.addEventListener("change", function() {
+                const selectedLine = this.value;
 
-    lineSelector.addEventListener("change", function() {
-        const selectedLine = this.value;
-
-        fetch("{{ route('dashboard.setLine') }}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": "{{ csrf_token() }}"
-            },
-            body: JSON.stringify({ line: selectedLine })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === "success") {
-                location.reload(); // reload data dashboard sesuai line
-            }
-        });
-    });
-});
+                fetch("{{ route('dashboard.setLine') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify({ line: selectedLine })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        location.reload(); // reload data dashboard sesuai line
+                    }
+                });
+            });
+        }
     }); 
 </script>
 @endpush

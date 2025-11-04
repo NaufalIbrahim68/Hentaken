@@ -162,7 +162,7 @@
 
         {{-- Title & Date --}}
         <div class="w-1/3 text-center">
-            <h1 class="text-base font-bold">HENKATEN Incoming</h1>
+            <h1 class="text-base font-bold">HENKATEN INCOMMING</h1>
             <p class="text-[10px] text-gray-600" id="current-date"></p>
         </div>
 

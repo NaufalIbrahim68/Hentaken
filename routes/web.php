@@ -8,6 +8,7 @@ use App\Http\Controllers\MachineController;
 use App\Http\Controllers\HenkatenController;
 use App\Http\Controllers\MethodController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\MasterConfirmController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -162,12 +163,22 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/method', [HenkatenController::class, 'showMethodActivityLog'])->name('method'); 
     });
 
+    
+ // ======================================================================
+    // Konfirmasi Approval Section Head
     // ======================================================================
-    // TIME SCHEDULER
-    // ======================================================================
-    Route::prefix('time-scheduler')->name('scheduler.')->group(function () {
-        Route::get('/manpower/create', [ManPowerController::class, 'createManpowerScheduler'])->name('manpower.create');
-    });
+    Route::middleware(['auth', 'role:secthead'])->group(function () {
+    Route::get('/konfirmasi/master', [MasterConfirmController::class, 'index'])->name('konfirmasi.master');
+    Route::post('/konfirmasi/master/{type}/{id}/approve', [MasterConfirmController::class, 'approve'])->name('konfirmasi.master.approve');
+    Route::post('/konfirmasi/master/{type}/{id}/revisi', [MasterConfirmController::class, 'revisi'])->name('konfirmasi.master.revisi');
+        Route::get('/master/confirmation', [ManPowerController::class, 'confirmation'])->name('master.confirmation');
+Route::get('/henkaten/approval', [HenkatenController::class, 'approval'])->name('henkaten.approval');
+Route::get('/api/master-detail/{type}/{id}', [MasterConfirmController::class, 'show']);
+
+});
+
+
+
 
     // (Rute Profile, jika Anda menggunakannya, juga harus ada di dalam sini)
     // Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

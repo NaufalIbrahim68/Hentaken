@@ -312,17 +312,24 @@ document.addEventListener('alpine:init', () => {
 
 
 
-        async searchAfter() {
+       async searchAfter() {
             if (this.autocompleteQuery.length < 2) {
                 this.autocompleteResults = [];
                 return;
             }
             try {
-                const res = await fetch(`${this.searchManpowerUrl}?query=${encodeURIComponent(this.autocompleteQuery)}`);
+                // MEMBANGUN URL DENGAN PARAMETER YANG TEPAT
+                const url = new URL(this.searchManpowerUrl, window.location.origin);
+                url.searchParams.append('q', this.autocompleteQuery); // 'q' untuk query
+                url.searchParams.append('grup', this.currentGrup);  // 'grup' untuk grup
+                
+                // Menggunakan URL yang sudah dibuat
+                const res = await fetch(url);
+                
                 const data = await res.json();
                 this.autocompleteResults = Array.isArray(data) ? data : (data.data ?? []);
             } catch (err) {
-                console.error(err);
+                console.error('❌ Gagal mencari man power:', err);
                 this.autocompleteResults = [];
             }
         },
