@@ -27,6 +27,7 @@ class DashboardController extends Controller
         session(['active_shift' => $shiftNumForQuery]);
 
         $grupForQuery = session('active_grup');
+        $lineForQuery = session('active_line', 'LINE 5'); // default LINE 5
         $baseHenkatenQuery = function ($query) use ($now) {
             $query->where(function ($q) use ($now) {
                 $q->where('effective_date', '<=', $now)
@@ -128,7 +129,7 @@ class DashboardController extends Controller
 
         // View berbeda untuk tiap role
         $view = match ($role) {
-            'Leader' => 'dashboard.roles.leader',
+            'Leader FA' => 'dashboard.roles.leader_fa',
             'Leader SMT' => 'dashboard.roles.leader_smt',
             'Leader PPIC' => 'dashboard.roles.leader_ppic',
             'Leader QC' => 'dashboard.roles.leader_qc',
@@ -168,4 +169,20 @@ class DashboardController extends Controller
         session()->forget('active_grup');
         return redirect()->route('dashboard');
     }
+
+    public function setLine(Request $request)
+{
+    $request->validate([
+        'line' => 'required|string|in:LINE 1,LINE 2,LINE 3,LINE 4,LINE 5,LINE 6',
+    ]);
+
+    // Simpan line ke session
+    session(['active_line' => $request->line]);
+
+    return response()->json([
+        'status' => 'success',
+        'line' => $request->line
+    ]);
+}
+
 }

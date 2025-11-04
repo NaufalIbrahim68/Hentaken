@@ -68,6 +68,12 @@ Route::middleware(['auth'])->group(function () {
     // Aksi tambahan dashboard
     Route::post('/dashboard/set-grup', [DashboardController::class, 'setGrup'])->name('dashboard.setGrup');
     Route::get('/dashboard/reset-grup', [DashboardController::class, 'resetGrup'])->name('dashboard.resetGrup');
+    Route::post('/dashboard/set-line', [DashboardController::class, 'setLine'])->name('dashboard.setLine');
+
+    Route::get('/session/line', function() {
+    return response()->json(['line' => session('active_line')]);
+});
+
 
     
     // ======================================================================
