@@ -120,10 +120,11 @@
                                         <div class="mb-4">
                                             <label for="end_date"
                                                 class="block text-gray-700 text-sm font-bold mb-2">Tanggal
-                                                Berakhir</label>
+                                                Berakhir</L>
                                             <input type="date" id="end_date" name="end_date"
                                                 value="{{ old('end_date') }}"
-                                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                required>
                                         </div>
                                         <div class="mb-4">
                                             <label for="time_start"
@@ -136,7 +137,7 @@
                                         <div class="mb-4">
                                             <label for="time_end"
                                                 class="block text-gray-700 text-sm font-bold mb-2">Waktu
-                                                Berakhir</label>
+                                                Berakhir</L>
                                             <input type="time" id="time_end" name="time_end"
                                                 value="{{ old('time_end') }}"
                                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -169,7 +170,7 @@
                                             autocomplete="off" class="w-full py-3 px-4 border rounded"
                                             placeholder="Masukkan Nama Man Power Pengganti..." required>
                                         <input type="hidden" name="man_power_id_after"
-                                            x-model="selectedManpowerAfter">
+                                            x-model="selectedManpowerAfter">
                                         <ul x-show="autocompleteResults.length > 0"
                                             class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
                                             <template x-for="item in autocompleteResults" :key="item.id">
@@ -182,20 +183,49 @@
                                     </div>
                                 </div>
 
-                                {{-- Keterangan (Tidak berubah) --}}
-                                <div class="mb-6 mt-6">
-                                    <label for="keterangan"
-                                        class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
-                                    <textarea id="keterangan" name="keterangan" rows="4"
-                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                        placeholder="Jelaskan alasan perubahan man power..."
-                                        required>{{ old('keterangan') }}</textarea>
-                                </div>
+                                {{-- ========================================================== --}}
+                                {{-- BARU: Grid untuk Keterangan dan Syarat & Ketentuan --}}
+                                {{-- ========================================================== --}}
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                                    
+                                    {{-- Kolom 1: Keterangan (DIUBAH) --}}
+                                    <div>
+                                        <label for="keterangan"
+                                            class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
+                                        <textarea id="keterangan" name="keterangan" rows="6" {{-- Rows diubah jadi 6 agar seimbang --}}
+                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            required>{{ old('keterangan') }}</textarea>
+                                    </div>
 
-                                {{-- Lampiran (Tidak berubah) --}}
+                                    {{-- Kolom 2: Syarat & Ketentuan (BARU) --}}
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-2">Syarat & Ketentuan Lampiran</label>
+                                        <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+                                            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan untuk Izin/Sakit:</p>
+                                            <ul class="list-disc list-inside space-y-1">
+                                                <li>
+                                                    <strong>Sakit:</strong> Wajib melampirkan Surat Keterangan Sakit (SKS) yang valid dari dokter atau klinik.
+                                                </li>
+                                                <li>
+                                                    <strong>Izin Resmi:</strong> Wajib melampirkan surat izin yang telah disetujui oleh atasan (Supervisor/Foreman).
+                                                </li>
+                                                <li>
+                                                    <strong>Darurat/Lainnya:</strong> Dokumen pendukung lain yang relevan (jika ada).
+                                                </li>
+                                            </ul>
+                                            <p class="mt-3 italic text-xs">Pastikan lampiran foto/dokumen jelas dan dapat dibaca.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {{-- ========================================================== --}}
+                                {{-- AKHIR DARI PERUBAHAN GRID --}}
+                                {{-- ========================================================== --}}
+
+
+                                {{-- Lampiran (Tidak berubah, posisinya setelah grid baru) --}}
                                 <div class="mb-6 mt-6">
                                     <label for="lampiran"
-                                        class="block text-gray-700 text-sm font-bold mb-2">Lampiran</label>
+                                        class="block text-gray-700 text-sm font-bold mb-2">Lampiran (Wajib untuk Izin/Sakit)</label>
                                     <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
                                         class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                         required>
@@ -224,127 +254,124 @@
                         </div> {{-- Akhir dari wrapper x-data --}}
                     </form>
 
-           
-    
-
-    </div>
-    </div>
-    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Alpine.js (Tidak ada perubahan di sini) --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('henkatenForm', (config) => ({
-        // STATE
-        grupError: null,
-        selectedLineArea: config.oldLineArea || '',
-        selectedStation: config.oldStation || '',
-        stationList: [],
-        selectedManpowerBefore: config.oldManPowerBeforeId || '',
-        selectedManpowerAfter: config.oldManPowerAfterId || '',
-        manPowerBeforeList: [],
-        manPowerAfterList: [],
-        manpowerBefore: { id: config.oldManPowerBeforeId || '', nama: config.oldManPowerBeforeName || '' },
-        selectedManpowerAfterObj: { id: config.oldManPowerAfterId || '', nama: config.oldManPowerAfterName || '' },
-        namaBefore: config.oldManPowerBeforeName || '',
-        namaAfter: config.oldManPowerAfterName || '',
-        autocompleteResults: [],
-        autocompleteQuery: config.oldManPowerAfterName || '',
+    <script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('henkatenForm', (config) => ({
+            // STATE
+            grupError: null,
+            selectedLineArea: config.oldLineArea || '',
+            selectedStation: config.oldStation || '',
+            stationList: [],
+            selectedManpowerBefore: config.oldManPowerBeforeId || '',
+            selectedManpowerAfter: config.oldManPowerAfterId || '',
+            manPowerBeforeList: [],
+            manPowerAfterList: [],
+            manpowerBefore: { id: config.oldManPowerBeforeId || '', nama: config.oldManPowerBeforeName || '' },
+            selectedManpowerAfterObj: { id: config.oldManPowerAfterId || '', nama: config.oldManPowerAfterName || '' },
+            namaBefore: config.oldManPowerBeforeName || '',
+            namaAfter: config.oldManPowerAfterName || '',
+            autocompleteResults: [],
+            autocompleteQuery: config.oldManPowerAfterName || '',
 
-        // URL
-        findManpowerUrl: config.findManpowerUrl,
-        searchManpowerUrl: config.searchManpowerUrl,
-        findStationsUrl: config.findStationsUrl,
+            // URL
+            findManpowerUrl: config.findManpowerUrl,
+            searchManpowerUrl: config.searchManpowerUrl,
+            findStationsUrl: config.findStationsUrl,
 
-        // INIT
-        init() {
-            console.log('✅ Alpine initialized (Henkaten Man Power)');
-            if (this.selectedLineArea) {
-                this.fetchStations(false);
-            }
-        },
+            // INIT
+            init() {
+                console.log('✅ Alpine initialized (Henkaten Man Power)');
+                // BARU: Validasi Grup saat init
+                if (!config.oldGrup) {
+                    this.grupError = 'Grup Anda tidak terdeteksi. Silakan logout dan login kembali.';
+                    console.error('❌ Grup Error:', this.grupError);
+                }
 
-        async fetchStations(resetStation = true) {
-            if (!this.selectedLineArea) {
-                this.stationList = [];
-                this.selectedStation = '';
-                return;
-            }
-            try {
-                const res = await fetch(`${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
-                const data = await res.json();
-                this.stationList = Array.isArray(data) ? data : (data.data ?? []);
-                if (resetStation) this.selectedStation = '';
-            } catch (err) {
-                console.error(err);
-                this.stationList = [];
-            }
-        },
+                if (this.selectedLineArea) {
+                    this.fetchStations(false); // false = jangan reset station jika ada old data
+                }
+            },
 
-       async fetchManpowerBefore() {
-    if (!this.selectedStation || !this.selectedLineArea) return;
+            async fetchStations(resetStation = true) {
+                if (!this.selectedLineArea) {
+                    this.stationList = [];
+                    this.selectedStation = '';
+                    this.manpowerBefore = { id: '', nama: '' }; // Reset juga manpower before
+                    return;
+                }
+                try {
+                    const res = await fetch(`${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
+                    const data = await res.json();
+                    this.stationList = Array.isArray(data) ? data : (data.data ?? []);
+                    if (resetStation) {
+                         this.selectedStation = '';
+                         this.manpowerBefore = { id: '', nama: '' }; // Reset juga manpower before
+                    }
+                } catch (err) {
+                    console.error(err);
+                    this.stationList = [];
+                }
+            },
 
-    try {
-        const url = new URL(this.findManpowerUrl, window.location.origin);
-        url.searchParams.append('station_id', this.selectedStation);
-        url.searchParams.append('line_area', this.selectedLineArea);
-        url.searchParams.append('grup', '{{ $currentGroup }}'); // atau ambil dari config
+            async fetchManpowerBefore() {
+                if (!this.selectedStation || !this.selectedLineArea || !config.oldGrup) return;
 
-        const res = await fetch(url, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
+                try {
+                    const url = new URL(this.findManpowerUrl, window.location.origin);
+                    url.searchParams.append('station_id', this.selectedStation);
+                    url.searchParams.append('line_area', this.selectedLineArea);
+                    url.searchParams.append('grup', config.oldGrup); // Ambil dari config
 
-        const data = await res.json();
-        console.log('📦 Manpower Before response:', data);
+                    const res = await fetch(url, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
 
-        this.manpowerBefore = {
-            id: data.id ?? '',
-            nama: data.nama ?? ''
-        };
+                    const data = await res.json();
+                    console.log('📦 Manpower Before response:', data);
 
-    } catch (err) {
-        console.error('❌ Gagal mengambil manpower sebelum:', err);
-        this.manpowerBefore = { id: '', nama: '' };
-    }
-},
+                    this.manpowerBefore = {
+                        id: data.id ?? '',
+                        nama: data.nama ?? ''
+                    };
 
+                } catch (err) {
+                    console.error('❌ Gagal mengambil manpower sebelum:', err);
+                    this.manpowerBefore = { id: '', nama: '' };
+                }
+            },
 
+            async searchAfter() {
+                if (this.autocompleteQuery.length < 2 || !config.oldGrup) {
+                    this.autocompleteResults = [];
+                    return;
+                }
+                try {
+                    const url = new URL(this.searchManpowerUrl, window.location.origin);
+                    url.searchParams.append('q', this.autocompleteQuery);
+                    url.searchParams.append('grup', config.oldGrup); // Ambil dari config
+                    
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    this.autocompleteResults = Array.isArray(data) ? data : (data.data ?? []);
+                } catch (err) {
+                    console.error('❌ Gagal mencari man power:', err);
+                    this.autocompleteResults = [];
+                }
+            },
 
-       async searchAfter() {
-            if (this.autocompleteQuery.length < 2) {
+            selectAfter(item) {
+                this.autocompleteQuery = item.nama;
+                this.selectedManpowerAfter = item.id;
                 this.autocompleteResults = [];
-                return;
             }
-            try {
-                // MEMBANGUN URL DENGAN PARAMETER YANG TEPAT
-                const url = new URL(this.searchManpowerUrl, window.location.origin);
-                url.searchParams.append('q', this.autocompleteQuery); // 'q' untuk query
-                url.searchParams.append('grup', this.currentGrup);  // 'grup' untuk grup
-                
-                // Menggunakan URL yang sudah dibuat
-                const res = await fetch(url);
-                
-                const data = await res.json();
-                this.autocompleteResults = Array.isArray(data) ? data : (data.data ?? []);
-            } catch (err) {
-                console.error('❌ Gagal mencari man power:', err);
-                this.autocompleteResults = [];
-            }
-        },
-
-        selectAfter(item) {
-            this.autocompleteQuery = item.nama;
-            this.selectedManpowerAfter = item.id;
-            this.autocompleteResults = [];
-        }
-    }));
-});
-
-</script>
-
-
-
-
+        }));
+    });
+    </script>
 </x-app-layout>

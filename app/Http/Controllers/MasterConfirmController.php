@@ -42,16 +42,17 @@ class MasterConfirmController extends Controller
         return back()->with('warning', ucfirst($type).' dikembalikan untuk revisi.');
     }
 
-    private function getModel($type)
-    {
-        return match($type) {
-            'manpower' => ManPower::class,
-            'method'   => Method::class,
-            'machine'  => Machine::class,
-            'material' => Material::class,
-            default    => abort(404),
-        };
-    }
+  private function getModel($type)
+{
+    return match($type) {
+        'manpower' => ManPower::class,
+        'method'   => Method::class,
+        'machine'  => Machine::class,
+        'material' => Material::class,
+        'role'     => Role::class, 
+        default    => abort(404),
+    };
+}
 
     public function show($type, $id)
 {

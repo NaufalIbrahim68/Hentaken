@@ -313,7 +313,7 @@
                                 <td class="border border-gray-300 px-1 py-1.5 text-center {{ $bgColorCell }}">
                                     <div class="flex items-center justify-center gap-1">
                                         <div class="w-2 h-2 rounded-full {{ $statusColor }}" title="{{ $statusText }}"></div>
-                                        <span class="text-[8px] font-semibold {{ $isHenkaten ? 'text-red-700' : 'text-green-700' }}">{{ $statusText }}</span>
+                                        <span class="text-[8px] font-semibold {{ $isHenkaten ? 'text-white' : 'text-green-700' }}">{{ $statusText }}</span>
                                     </div>
                                 </td>
                             @endforeach

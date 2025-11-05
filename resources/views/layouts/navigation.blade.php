@@ -24,7 +24,7 @@
                     {{-- KONFIRMASI MASTER DATA --}}
                     <a href="{{ route('master.confirmation') }}"
                        class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
-                        Konfirmasi Master Data
+                        Konfirmasi Data Master
                     </a>
 
                     {{-- KONFIRMASI HENKATEN --}}

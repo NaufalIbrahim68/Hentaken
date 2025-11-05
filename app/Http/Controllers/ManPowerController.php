@@ -394,5 +394,18 @@ public function getManPower(Request $request)
     return response()->json($result);
 }
 
+// Tambahkan di ManPowerController
+public function confirmation()
+{
+    $manpowers = ManPower::where('status', 'pending')->get(); // contoh filter status pending
+    $methods   = \App\Models\Method::where('status', 'pending')->get();
+    $machines  = \App\Models\Machine::where('status', 'pending')->get();
+    $materials = \App\Models\Material::where('status', 'pending')->get();
+
+    return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials'));
+}
+
+
+
 
 }

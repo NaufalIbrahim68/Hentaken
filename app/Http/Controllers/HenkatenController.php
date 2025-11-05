@@ -646,4 +646,114 @@ class HenkatenController extends Controller
             'nama' => 'Man power tidak ditemukan'
         ]);
     }
+
+    // Tambahkan di HenkatenController
+public function approval()
+    {
+        // Ambil semua data henkaten dari 4M yang statusnya 'Pending'
+        // Sesuaikan nama Model dan nama status 'Pending' jika berbeda
+        $manpowers = ManPowerHenkaten::where('status', 'Pending')->get();
+        $machines  = MachineHenkaten::where('status', 'Pending')->get();
+        $methods   = MethodHenkaten::where('status', 'Pending')->get();
+        $materials = MaterialHenkaten::where('status', 'Pending')->get();
+
+        // Kirim data ke view approval
+        return view('secthead.henkaten-approval', compact(
+            'manpowers', 
+            'machines', 
+            'methods', 
+            'materials'
+        ));
+    }
+
+    /**
+     * [BARU] Helper function internal untuk mengambil item henkaten
+     * berdasarkan tipe dan ID.
+     */
+    private function getHenkatenItem($type, $id)
+    {
+        $modelClass = null;
+        
+        // Tentukan Model mana yang akan di-query berdasarkan $type
+        switch ($type) {
+            case 'manpower': 
+                $modelClass = ManPowerHenkaten::class; 
+                break;
+            case 'machine':  
+                $modelClass = MachineHenkaten::class;  
+                break;
+            case 'method':   
+                $modelClass = MethodHenkaten::class;   
+                break;
+            case 'material': 
+                $modelClass = MaterialHenkaten::class; 
+                break;
+        }
+        
+        if (!$modelClass) {
+            return null; // Tipe tidak valid
+        }
+        
+        // Cari item berdasarkan ID
+        return $modelClass::find($id);
+    }
+
+    /**
+     * [BARU] Mengambil detail data Henkaten untuk modal (API).
+     * Method ini dipanggil oleh route 'api/henkaten-detail/{type}/{id}'
+     */
+    public function getHenkatenDetail($type, $id)
+    {
+        $item = $this->getHenkatenItem($type, $id);
+
+        if (!$item) {
+            return response()->json(['error' => 'Data not found.'], 404);
+        }
+
+        // Kembalikan data sebagai JSON
+        return response()->json($item);
+    }
+
+    /**
+     * [BARU] Memproses aksi 'Approve' Henkaten.
+     * Method ini dipanggil oleh route 'henkaten/approval/{type}/{id}/approve'
+     */
+    public function approveHenkaten(Request $request, $type, $id)
+    {
+        $item = $this->getHenkatenItem($type, $id);
+
+        if (!$item) {
+            return redirect()->route('henkaten.approval')->with('error', 'Data Henkaten tidak ditemukan.');
+        }
+
+        // Ganti 'Approved' sesuai dengan value status di database Anda
+        $item->status = 'Approved'; 
+        $item->save();
+        
+        // (Opsional) Tambahkan ke Activity Log di sini
+
+        return redirect()->route('henkaten.approval')->with('success', 'Henkaten ' . ucfirst($type) . ' berhasil di-approve.');
+    }
+
+    /**
+     * [BARU] Memproses aksi 'Revisi' Henkaten.
+     * Method ini dipanggil oleh route 'henkaten/approval/{type}/{id}/revisi'
+     */
+    public function revisiHenkaten(Request $request, $type, $id)
+    {
+        $item = $this->getHenkatenItem($type, $id);
+
+        if (!$item) {
+            return redirect()->route('henkaten.approval')->with('error', 'Data Henkaten tidak ditemukan.');
+        }
+
+        // Ganti 'Revisi' sesuai dengan value status di database Anda
+        $item->status = 'Revisi'; 
+        $item->save();
+
+        // (Opsional) Tambahkan ke Activity Log di sini
+        
+        return redirect()->route('henkaten.approval')->with('success', 'Henkaten ' . ucfirst($type) . ' dikirim kembali untuk revisi.');
+    }
+
 }

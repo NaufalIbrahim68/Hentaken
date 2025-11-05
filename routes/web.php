@@ -164,25 +164,42 @@ Route::middleware(['auth'])->group(function () {
     });
 
     
- // ======================================================================
-    // Konfirmasi Approval Section Head
-    // ======================================================================
-    Route::middleware(['auth', 'role:secthead'])->group(function () {
+// ======================================================================
+// Konfirmasi Approval Section Head
+// ======================================================================
+
+Route::middleware(['auth', 'role:Sect Head Produksi|Sect Head PPIC|Sect Head QC'])->group(function () {
+    // --- Rute Master Data (Sudah Ada) ---
     Route::get('/konfirmasi/master', [MasterConfirmController::class, 'index'])->name('konfirmasi.master');
     Route::post('/konfirmasi/master/{type}/{id}/approve', [MasterConfirmController::class, 'approve'])->name('konfirmasi.master.approve');
     Route::post('/konfirmasi/master/{type}/{id}/revisi', [MasterConfirmController::class, 'revisi'])->name('konfirmasi.master.revisi');
-        Route::get('/master/confirmation', [ManPowerController::class, 'confirmation'])->name('master.confirmation');
-Route::get('/henkaten/approval', [HenkatenController::class, 'approval'])->name('henkaten.approval');
-Route::get('/api/master-detail/{type}/{id}', [MasterConfirmController::class, 'show']);
+    Route::get('/master/confirmation', [ManPowerController::class, 'confirmation'])->name('master.confirmation');
+    Route::get('/api/master-detail/{type}/{id}', [MasterConfirmController::class, 'show']);
+
+    // --- Rute Henkaten Approval ---
+
+    // [Sudah Ada] Rute untuk menampilkan halaman approval henkaten
+    Route::get('/henkaten/approval', [HenkatenController::class, 'approval'])->name('henkaten.approval');
+
+    // [BARU] Rute untuk menangani aksi approve henkaten
+    Route::post('/henkaten/approval/{type}/{id}/approve', [HenkatenController::class, 'approveHenkaten'])
+          ->name('henkaten.approve');
+
+    // [BARU] Rute untuk menangani aksi revisi henkaten
+    Route::post('/henkaten/approval/{type}/{id}/revisi', [HenkatenController::class, 'revisiHenkaten'])
+          ->name('henkaten.revisi');
+    
+    // [BARU] Rute API untuk mengambil data detail henkaten (untuk modal)
+    // Pastikan URL-nya sama dengan yang ada di 'fetch' JavaScript
+    Route::get('/api/henkaten-detail/{type}/{id}', [HenkatenController::class, 'getHenkatenDetail']);
 
 });
 
 
 
 
-    // (Rute Profile, jika Anda menggunakannya, juga harus ada di dalam sini)
-    // Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-}); // <-- INI ADALAH AKHIR DARI GROUP MIDDLEWARE 'AUTH'
+
+
+}); 
 
