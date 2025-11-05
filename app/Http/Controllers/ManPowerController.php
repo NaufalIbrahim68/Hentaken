@@ -28,13 +28,23 @@ class ManPowerController extends Controller
     // ==============================================================
     // CREATE MASTER MANPOWER
     // ==============================================================
-    public function create()
-    {
-        $lineAreas = Station::select('line_area')->distinct()->pluck('line_area');
-        $stations = Station::all();
+   public function create()
+{
+    // Ambil daftar 'line_area' yang unik dan tidak null
+    // Urutkan berdasarkan abjad (asc) agar rapi di dropdown
+    $lineAreas = Station::select('line_area')
+                        ->whereNotNull('line_area') // Hindari mengambil nilai NULL
+                        ->distinct()
+                        ->orderBy('line_area', 'asc') 
+                        ->pluck('line_area');
 
-        return view('manpower.create', compact('lineAreas', 'stations'));
-    }
+    // $stations = Station::all(); // <-- TIDAK PERLU LAGI
+    // Data 'stations' akan di-load secara dinamis via AJAX
+    // setelah user memilih 'line_area'.
+
+    // Kirim HANYA 'lineAreas' ke view.
+    return view('manpower.create', compact('lineAreas'));
+}
 
     // ==============================================================
     // GET STATIONS BY LINE AREA (AJAX) — dipakai juga untuk modal
@@ -59,64 +69,72 @@ class ManPowerController extends Controller
     // STORE MASTER MANPOWER
     // ==============================================================
    public function storeMaster(Request $request)
-    {
-        // 1. TAMBAHKAN 'tanggal_mulai' PADA VALIDASI
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'station_id' => 'nullable|exists:stations,id',
-            'shift' => 'nullable|in:1,2',
-            'grup' => 'required|string', // bisa A, B, A(Troubleshooting), B(Troubleshooting)
-            'tanggal_mulai' => 'required|date', // <-- TAMBAHAN BARU
-            'waktu_mulai' => 'required|date_format:H:i', 
-        ]);
+{
+    // 1. VALIDASI
+    $request->validate([
+        'nama' => 'required|string|max:255',
+        'station_id' => 'nullable|exists:stations,id',
+        'grup' => 'required|string',
+        'shift' => 'nullable|string',
+        'tanggal_mulai' => 'required|date',
+        'waktu_mulai' => 'required|date_format:H:i',
+    ]);
 
-        // 2. TAMBAHKAN 'tanggal_mulai' PADA $request->only()
-        $data = $request->only(['nama', 'station_id', 'shift', 'grup', 'tanggal_mulai', 'waktu_mulai']);
+    // 2. AMBIL DATA REQUEST
+    $data = $request->only(['nama', 'station_id', 'shift', 'grup', 'tanggal_mulai', 'waktu_mulai']);
 
-        if (str_contains($data['grup'], 'Troubleshooting')) {
-            // Ambil hanya A atau B untuk tabel troubleshooting
-            $grupTs = substr($data['grup'], 0, 1);
-
-            // Simpan ke troubleshooting
-            $troubleshooting = Troubleshooting::create([
-                'nama' => $data['nama'],
-                'grup' => $grupTs,
-                'status' => 'normal',
-            ]);
-
-            // Simpan juga ke master manpower
-            // 3. TAMBAHKAN 'tanggal_mulai' DI SINI
-            ManPower::create([
-                'nama' => $data['nama'],
-                'grup' => $data['grup'], // lengkap, seperti A(Troubleshooting)
-                'station_id' => $data['station_id'] ?? null,
-                'shift' => $data['shift'] ?? null,
-                'line_area' => null,
-                'status' => 'normal',
-                'troubleshooting_id' => $troubleshooting->id,
-                'tanggal_mulai' => $data['tanggal_mulai'], // <-- TAMBAHAN BARU
-                'waktu_mulai' => $data['waktu_mulai'],
-            ]);
-
-        } else {
-            // Masuk ke manpower biasa
-            // 4. TAMBAHKAN 'tanggal_mulai' DI SINI JUGA
-            ManPower::create([
-                'nama' => $data['nama'],
-                'grup' => $data['grup'],
-                'station_id' => $data['station_id'],
-                'shift' => $data['shift'],
-                'line_area' => null,
-                'status' => 'normal',
-                'tanggal_mulai' => $data['tanggal_mulai'], // <-- TAMBAHAN BARU
-                'waktu_mulai' => $data['waktu_mulai'],
-            ]);
+    // 3. CARI LINE AREA BERDASARKAN STATION_ID
+    $lineAreaOfStation = null; 
+    if (!empty($data['station_id'])) {
+        $station = Station::find($data['station_id']);
+        
+        if ($station) {
+            $lineAreaOfStation = $station->line_area;
         }
-
-        return redirect()->route('manpower.index')
-                         ->with('success', 'Data Man Power berhasil ditambahkan.');
     }
 
+    // 4. PROSES SIMPAN DATA
+    if (str_contains($data['grup'], 'Troubleshooting')) {
+        
+        // Simpan ke troubleshooting
+        // (Status di tabel troubleshooting tetap 'normal', 
+        //  asumsi 'pending' hanya untuk data man power baru)
+        $grupTs = substr($data['grup'], 0, 1);
+        $troubleshooting = Troubleshooting::create([
+            'nama' => $data['nama'],
+            'grup' => $grupTs,
+            'status' => 'normal', 
+        ]);
+
+        // Simpan ke master manpower
+        ManPower::create([
+            'nama' => $data['nama'],
+            'grup' => $data['grup'],
+            'station_id' => $data['station_id'] ?? null,
+            'shift' => $data['shift'] ?? null,
+            'line_area' => $lineAreaOfStation,
+            'status' => 'pending', // <-- DIUBAH
+            'troubleshooting_id' => $troubleshooting->id,
+            'tanggal_mulai' => $data['tanggal_mulai'],
+            'waktu_mulai' => $data['waktu_mulai'],
+        ]);
+
+    } else {
+        // Masuk ke manpower biasa
+        ManPower::create([
+            'nama' => $data['nama'],
+            'grup' => $data['grup'],
+            'station_id' => $data['station_id'],
+            'line_area' => $lineAreaOfStation,
+            'status' => 'pending', // <-- DIUBAH
+            'tanggal_mulai' => $data['tanggal_mulai'],
+            'waktu_mulai' => $data['waktu_mulai'],
+        ]);
+    }
+
+    return redirect()->route('manpower.index')
+                     ->with('success', 'Data Man Power berhasil ditambahkan.');
+}
 
 
 
@@ -141,7 +159,7 @@ class ManPowerController extends Controller
         $validatedData = $request->validate([
             'nama' => 'required|string|max:255',
             'station_id' => 'required|exists:stations,id',
-            'shift' => 'required|in:1,2',
+            
             'grup' => 'required|in:A,B',
         ]);
 

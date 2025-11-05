@@ -149,6 +149,14 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('manpower', ManPowerController::class)->except(['show']);
     Route::delete('/manpower-master/{id}', [ManPowerController::class, 'destroyMaster'])->name('manpower.destroyMaster');
 
+
+    // ----------------------------------------------------------------------
+// [BARU] Rute AJAX untuk form Material
+// ----------------------------------------------------------------------
+Route::get('/get-stations-by-line-area', [MaterialController::class, 'getStationsByLineArea'])
+       ->name('get.stations.by.line.area');
+
+       
     Route::resource('materials', MaterialController::class);
     Route::resource('machines', MachineController::class);
     Route::resource('methods', MethodController::class);

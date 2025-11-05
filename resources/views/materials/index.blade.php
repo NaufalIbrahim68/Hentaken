@@ -32,7 +32,7 @@
                                         Nama Material</th>
                                     <th
                                         class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase">
-                                        Lampiran</th>
+                                        Line Area</th>
                                     <th
                                         class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase">
                                         Status</th>
@@ -46,14 +46,7 @@
                                     <tr class="hover:bg-gray-50 transition duration-200">
                                         <td class="py-3 px-4">{{ $material->station->station_name ?? 'N/A' }}</td>
                                         <td class="py-3 px-4 font-medium">{{ $material->material_name }}</td>
-                                        <td class="py-3 px-4">
-                                            @if($material->lampiran)
-                                                <a href="{{ Storage::url($material->lampiran) }}" target="_blank"
-                                                    class="text-blue-500 hover:underline">Lihat</a>
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
+                                       <td class="py-3 px-4 font-medium">{{ $material->station->line_area }}</td>
                                         <td class="py-3 px-4">
                                             @if($material->status == 'normal')
                                                 <span

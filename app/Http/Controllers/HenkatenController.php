@@ -6,7 +6,7 @@ use App\Models\ManPower;
 use App\Models\ManPowerHenkaten;
 use App\Models\MethodHenkaten;
 use App\Models\MaterialHenkaten; 
-use App\Models\MachineHenkaten; // <-- BARU: Ditambahkan
+use App\Models\MachineHenkaten; 
 use App\Models\Station;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -703,17 +703,66 @@ public function approval()
      * Method ini dipanggil oleh route 'api/henkaten-detail/{type}/{id}'
      */
     public function getHenkatenDetail($type, $id)
-    {
-        $item = $this->getHenkatenItem($type, $id);
+{
+    $modelClass = null;
 
-        if (!$item) {
-            return response()->json(['error' => 'Data not found.'], 404);
-        }
-
-        // Kembalikan data sebagai JSON
-        return response()->json($item);
+    // 1. Tentukan Model Class
+    switch ($type) {
+        case 'manpower':
+            $modelClass = ManPowerHenkaten::class;
+            break;
+        case 'machine':
+            $modelClass = MachineHenkaten::class;
+            break;
+        case 'method':
+            $modelClass = MethodHenkaten::class;
+            break;
+        case 'material':
+            $modelClass = MaterialHenkaten::class;
+            break;
+        default:
+            return response()->json(['error' => 'Invalid type.'], 404);
     }
 
+    // 2. Buat Query Builder
+    $query = $modelClass::query();
+
+    // ============================================================
+    // == PERBAIKAN LOGIKA IF DIMULAI DI SINI ==
+    // ============================================================
+
+    // 3. Tambahkan Eager Loading berdasarkan tipe
+    // (Gunakan 'if...elseif' agar strukturnya benar)
+
+    if ($type === 'manpower') {
+        $query->with(['station', 'manPower']);
+    
+    } elseif ($type === 'machine') {
+        $query->with(['station']);
+        
+    } elseif ($type === 'material') {
+        $query->with(['station', 'material']); 
+        
+    } elseif ($type === 'method') {
+        $query->with(['station']); 
+    }
+
+    // ============================================================
+    // == PERBAIKAN LOGIKA IF SELESAI ==
+    // ============================================================
+
+    // 4. Ambil data
+    // (Lebih baik pakai findOrFail untuk auto-handle 404 jika ID tidak ada)
+    $item = $query->find($id);
+    
+    // 5. Cek jika item tidak ditemukan (jika Anda tidak pakai findOrFail)
+    if (!$item) {
+        return response()->json(['error' => 'Data not found.'], 404);
+    }
+
+    // 6. Kembalikan data sebagai JSON (Ini sudah BENAR)
+    return response()->json($item);
+}
     /**
      * [BARU] Memproses aksi 'Approve' Henkaten.
      * Method ini dipanggil oleh route 'henkaten/approval/{type}/{id}/approve'

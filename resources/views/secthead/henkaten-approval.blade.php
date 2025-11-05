@@ -23,7 +23,6 @@
                     <table class="min-w-full text-sm border border-gray-200">
                         <thead class="bg-gray-100 text-gray-700">
                             <tr>
-                                <th class="px-4 py-2 text-left">ID</th>
                                 <th class="px-4 py-2 text-left">Poin Perubahan / Masalah</th>
                                 <th class="px-4 py-2 text-left">Line Area</th>
                                 <th class="px-4 py-2 text-left">Status</th>
@@ -33,7 +32,6 @@
                         <tbody>
                             @foreach ($items as $item)
                                 <tr class="border-t">
-                                    <td class="px-4 py-2">{{ $item->id }}</td>
                                     {{-- Menggunakan field yang umum ada di henkaten --}}
                                     <td class="px-4 py-2">{{ $item->change_point ?? $item->problem ?? $item->deskripsi ?? '-' }}</td>
                                     <td class="px-4 py-2">{{ $item->line_area ?? '-' }}</td>
@@ -70,15 +68,15 @@
              x-transition:leave-end="opacity-0">
             
 <div class="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto" @click.stop>
-                        <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold">Detail Henkaten (<span x-text="type" class="capitalize"></span>)</h3>
-                    <button @click="showModal = false" class="text-gray-500 hover:text-gray-800">&times;</button>
-                </div>
-                
-                {{-- Konten Modal: Menampilkan data form henkaten --}}
-                <div x-show="loading" class="text-center p-8">
-                    <p class="text-gray-500">Loading data...</p>
-                </div>
+                <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Detail Henkaten (<span x-text="type" class="capitalize"></span>)</h3>
+                <button @click="showModal = false" class="text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            
+            {{-- Konten Modal: Menampilkan data form henkaten --}}
+            <div x-show="loading" class="text-center p-8">
+                <p class="text-gray-500">Loading data...</p>
+            </div>
 
 
              <div x-show="!loading && Object.keys(detail).length > 0" class="text-sm">
@@ -91,13 +89,13 @@
                 <dt class="font-medium text-gray-500">ID Henkaten:</dt>
                 <dd class="text-gray-900" x-text="detail.id || '-'"></dd>
             </div>
-            <div>
-                <dt class="font-medium text-gray-500">Station / Line:</dt>
-                <dd class="text-gray-900">
-                    <span x-text="detail.station_id ? 'Station ' + detail.station_name : '-'"></span> / 
-                    <span x-text="detail.line_area || 'N/A'"></span>
-                </dd>
-            </div>
+            <dt class="font-medium text-gray-500">Station / Line:</dt>
+<dd class="text-gray-900">
+    <span x-text="detail.station?.station_name || '-'"></span> / 
+    <span x-text="detail.line_area || '-'"></span>
+</dd>
+
+
             <div>
                 <dt class="font-medium text-gray-500">Shift:</dt>
                 <dd class="text-gray-900" x-text="detail.shift || '-'"></dd>
@@ -123,38 +121,45 @@
             <div>
                 <dt class="font-medium text-gray-500">Waktu Mulai (Efektif):</dt>
                 <dd class="text-gray-900">
-                    <span x-text="formatDate(detail.effective_date)"></span> @ <span x-text="detail.time_start || 'N/A'"></span>
+                    {{-- DIUBAH: Menggunakan formatTime() --}}
+                    <span x-text="formatDate(detail.effective_date)"></span> @ <span x-text="formatTime(detail.time_start)"></span>
                 </dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">Waktu Selesai (Estimasi):</dt>
                 <dd class="text-gray-900">
-                    <span x-text="formatDate(detail.end_date)"></span> @ <span x-text="detail.time_end || 'N/A'"></span>
+                    {{-- DIUBAH: Menggunakan formatTime() --}}
+                    <span x-text="formatDate(detail.end_date)"></span> @ <span x-text="formatTime(detail.time_end)"></span>
                 </dd>
             </div>
-           
+            
         </div>
     </dl>
 
     <div class="mt-4 border-t pt-4">
         <h4 class="text-md font-semibold text-gray-800 mb-3">Detail Perubahan (<span x-text="type" class="capitalize"></span>)</h4>
 
-        <template x-if="type === 'manpower'">
-            <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-                <div>
-                    <dt class="font-medium text-gray-500">Operator Awal:</dt>
-                    <dd class="text-gray-900"><span x-text="detail.nama || 'N/A'"></span></dd>
-                </div>
-                <div>
-                    <dt class="font-medium text-gray-500">Operator Pengganti:</dt>
-                    <dd class="text-gray-900"><span x-text="detail.nama_after || 'N/A'"></span></dd>
-                </div>
-                <div class="md:col-span-2">
-                    <dt class="font-medium text-gray-500">Keterangan:</dt>
-                    <dd class="text-gray-900 whitespace-pre-wrap" x-text="detail.keterangan || '-'"></dd>
-                </div>
-            </dl>
-        </template>
+       <template x-if="type === 'manpower'">
+    <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+        <div>
+            <dt class="font-medium text-gray-500">Operator Awal:</dt>
+            <dd class="text-gray-900"><span x-text="detail.nama || 'N/A'"></span></dd>
+        </div>
+        <div>
+            <dt class="font-medium text-gray-500">Operator Pengganti:</dt>
+            <dd class="text-gray-900"><span x-text="detail.nama_after || 'N/A'"></span></dd>
+        </div>
+        <div>
+            <dt class="font-medium text-gray-500">Grup:</dt>
+<dd class="text-gray-900"><span x-text="detail.man_power?.grup || '-'"></span></dd>
+        </div>
+        <div class="md:col-span-2">
+            <dt class="font-medium text-gray-500">Keterangan:</dt>
+            <dd class="text-gray-900 whitespace-pre-wrap" x-text="detail.keterangan || '-'"></dd>
+        </div>
+    </dl>
+</template>
+
 
         <template x-if="type === 'machine'">
             <dl class="grid grid-cols-1 gap-x-6 gap-y-3">
@@ -305,6 +310,46 @@
                         return isoString; // Kembalikan string asli jika error
                     }
                 },
+
+                // == DIUBAH: MENAMBAHKAN FUNGSI formatTime() ==
+                /**
+                 * Memformat string tanggal/waktu (termasuk yg aneh) menjadi HH:mm
+                 */
+                formatTime(timeString) {
+                    if (!timeString || timeString === 'N/A') return 'N/A';
+
+                    // Cek 1: Jika sudah format 'HH:mm' (mis: "07:00")
+                    if (/^\d{2}:\d{2}$/.test(timeString)) {
+                        return timeString;
+                    }
+
+                    // Cek 2: Jika format 'HH:mm:ss' (mis: "07:00:00")
+                    if (/^\d{2}:\d{2}:\d{2}$/.test(timeString)) {
+                        return timeString.substring(0, 5); // Ambil 'HH:mm'
+                    }
+
+                    // Cek 3: Jika format timestamp full (mis: "1900-01-01 07:00:00...")
+                    try {
+                        const date = new Date(timeString);
+                        // Cek apakah hasil parsing valid
+                        if (isNaN(date.getTime())) {
+                            // Fallback: Coba ambil bagian waktu jika formatnya "Y-m-d H:i:s"
+                            const parts = timeString.split(' ');
+                            if (parts.length === 2 && parts[1].includes(':')) {
+                                return parts[1].substring(0, 5); // Ambil HH:mm
+                            }
+                            return timeString; // Gagal, kembalikan apa adanya
+                        }
+                        
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        return `${hours}:${minutes}`; // Hasil: 07:00
+                    } catch (e) {
+                        return timeString; // Fallback
+                    }
+                },
+                // == AKHIR PENAMBAHAN FUNGSI formatTime() ==
+
 
                 /**
                  * 1. Mengambil nama file dari path (mis: 'folder/file.jpg' -> 'file.jpg')

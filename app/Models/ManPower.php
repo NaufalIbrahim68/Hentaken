@@ -31,20 +31,13 @@ class ManPower extends Model
     /**
      * Relasi ke model Station.
      */
-    public function station()
-    {
-        return $this->belongsTo(Station::class);
-    }
-
-    public function timeScheduler()
+public function station()
 {
-    return $this->belongsTo(TimeScheduler::class, 'time_scheduler_id');
+    return $this->belongsTo(Station::class, 'station_id', 'id');
 }
 
-public function stations()
-{
-    return $this->belongsToMany(Station::class, 'man_power_stations', 'man_power_id', 'station_id');
-}
+    
+
 
 
 public function troubleshooting()

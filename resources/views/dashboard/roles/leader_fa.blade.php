@@ -160,27 +160,29 @@
         {{-- Kolom Kiri --}}
          <div class="w-1/3"></div>
 
-      {{-- Kolom Kiri (Kosong) --}}
-    <div class="w-1/3">
-        {{-- Biarkan kosong untuk alignment --}}
-    </div>
+    
 
-    {{-- Title, Line, & Date --}}
-    <div class="w-1/3 text-center">
+   {{-- Title, Line, & Date --}}
+<div class="w-1/3">
+    <div class="flex items-center justify-center gap-1">
         <h1 class="text-base font-bold">HENKATEN FA</h1>
         
-        <select id="line-selector" class="border border-gray-300 text-xs rounded px-1 py-[2px] focus:ring focus:ring-gray-200">
-            <option class="text-base font-bold">LINE 1</option>
-            <option class="text-base font-bold">LINE 2</option>
-            <option class="text-base font-bold">LINE 3</option>
-            <option class="text-base font-bold">LINE 4</option>
-            <option selected class="text-base font-bold">LINE 5</option>
-            <option class="text-base font-bold">LINE 6</option>
-        </select>
-        
-        {{-- PINDAHKAN TANGGAL KE SINI (di dalam div) --}}
-        <p class="text-[10px] text-gray-600 mt-1" id="current-date"></p>
-        
+      <select id="line-selector" class="border border-gray-300 text-sm rounded px-2 py-0.5 focus:ring focus:ring-gray-200 font-bold appearance-none">
+    <option class="text-base font-bold">LINE 1</option>
+    <option class="text-base font-bold">LINE 2</option>
+    <option class="text-base font-bold">LINE 3</option>
+    <option class="text-base font-bold">LINE 4</option>
+    <option selected class="text-base font-bold">LINE 5</option>
+    <option class="text-base font-bold">LINE 6</option>
+</select>
+    </div>
+    
+    {{-- PINDAHKAN TANGGAL KE SINI (di dalam div) --}}
+    <p class="text-[10px] text-gray-600 mt-0.5 text-center" id="current-date"></p>
+
+    
+   
+
     </div> {{-- Penutup untuk "w-1/3 text-center" --}}
 
 

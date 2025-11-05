@@ -34,27 +34,32 @@ class MaterialController extends Controller
      * Menampilkan form untuk membuat material baru.
      */
    public function create()
-{
-    // 2. Ambil semua data stasiun dari database
-    //    Kita urutkan berdasarkan nama/kode agar dropdown rapi
-    $stations = Station::orderBy('station_code')->get();
+    {
+        // 1. Ambil daftar 'line_area' yang unik (distinct) dari tabel stations
+        // 2. Gunakan pluck() untuk mengambil nilainya saja
+        // 3. filter()->values() untuk mengatasi jika ada nilai null/kosong
+        $lineAreas = Station::select('line_area')
+                            ->distinct()
+                            ->orderBy('line_area', 'asc')
+                            ->pluck('line_area')
+                            ->filter()
+                            ->values();
 
-    // 3. Kirim variabel $stations ke view 'materials.create'
-    return view('materials.create', compact('stations'));
-}
+        // 3. Kirim variabel $lineAreas ke view 'materials.create'
+        return view('materials.create', compact('lineAreas'));
+    }
 
 
     /**
      * Menyimpan material baru ke database.
      */
-    public function store(Request $request)
+   public function store(Request $request)
     {
         $request->validate([
             'station_id' => 'required|exists:stations,id',
             'material_name' => 'required|string|max:255',
             'keterangan' => 'nullable|string',
             'lampiran' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // max 2MB
-            'status' => 'required|boolean',
         ]);
 
         $station = Station::find($request->station_id);
@@ -64,17 +69,18 @@ class MaterialController extends Controller
             $lampiranPath = $request->file('lampiran')->store('public/lampiran_material');
         }
 
-        Material::create([
+       Material::create([
             'station_id' => $request->station_id,
             'station_code' => $station->station_code,
             'material_name' => $request->material_name,
             'keterangan' => $request->keterangan,
-            'lampiran' => $lampiranPath,
-            'status' => $request->status,
+            'foto_path' => $lampiranPath, // <-- Ini kuncinya
+            'status' => 'Pending',
         ]);
-
-        return redirect()->route('materials.index')->with('success', 'Data material berhasil ditambahkan.');
+     return redirect()->route('materials.index')
+       ->with('success', 'Data material berhasil ditambahkan & menunggu approval.');
     }
+
 
     /**
      * Menampilkan form untuk mengedit material.
@@ -146,5 +152,24 @@ class MaterialController extends Controller
 
     return response()->json($materials);
 }
+
+public function getStationsByLineArea(Request $request)
+    {
+        // Ambil 'line_area' dari query string (?line_area=...)
+        $lineArea = $request->query('line_area');
+
+        if (!$lineArea) {
+            return response()->json([], 400); // Bad request jika parameter tidak ada
+        }
+
+        // Cari semua station yang cocok dengan line_area tersebut
+        $stations = Station::where('line_area', $lineArea)
+                           // ->where('status', 1) // Opsional: jika station punya status
+                           ->orderBy('station_name', 'asc')
+                           ->get(['id', 'station_name']); // Ambil ID dan Nama Station
+        
+        // Kembalikan data sebagai JSON
+        return response()->json($stations);
+    }
 
 }
