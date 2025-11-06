@@ -14,7 +14,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use App\Models\Material;  
-use Illuminate\Support\Facades\Session;   
+use Illuminate\Support\Facades\Session;  
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+ 
 
 class HenkatenController extends Controller
 {
@@ -50,20 +52,16 @@ class HenkatenController extends Controller
             'shift'              => 'required|string',
             'grup'               => 'required|string', 
             'man_power_id'       => 'required|integer|exists:man_power,id',
-            
-            // PERBAIKAN 1: Tambahkan 'different'
             'man_power_id_after' => 'required|integer|exists:man_power,id|different:man_power_id', 
-            
             'station_id'         => 'required|integer|exists:stations,id',
             'keterangan'         => 'required|string',
             'line_area'          => 'required|string',
             'effective_date'     => 'required|date',
-            'end_date'           => 'required|date|after_or_equal:effective_date', // Dibuat required di form
-            'lampiran'           => 'required|image|mimes:jpeg,png,jpg|max:2048', // Disesuaikan: tambah jpg 
+            'end_date'           => 'required|date|after_or_equal:effective_date',
+            'lampiran'           => 'required|image|mimes:jpeg,png,jpg|max:2048', 
             'time_start'         => 'required|date_format:H:i',
             'time_end'           => 'required|date_format:H:i|after_or_equal:time_start',
         ], [
-            // Tambahkan pesan error kustom untuk 'different'
             'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.'
         ]);
 
@@ -72,34 +70,36 @@ class HenkatenController extends Controller
         try {
             DB::beginTransaction();
 
-            // 1. Ambil data Man Power yang valid dari database
-            $manPowerAsli = ManPower::find($validated['man_power_id']);
-            $manPowerAfter = ManPower::find($validated['man_power_id_after']);
-
-            if (!$manPowerAsli || !$manPowerAfter) {
-                throw new \Exception('Data Man Power tidak ditemukan.');
-            }
+            // 1. Ambil data (Gunakan findOrFail agar otomatis error jika data tidak ada)
+            $manPowerAsli = ManPower::findOrFail($validated['man_power_id']);
+            $manPowerAfter = ManPower::findOrFail($validated['man_power_id_after']);
+            $station = Station::findOrFail($validated['station_id']); // <-- Ambil data station untuk pesan sukses
 
             // 2. Handle file upload
             if ($request->hasFile('lampiran')) {
-                // Folder 'henkaten_man_power_lampiran'
                 $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
             }
 
             // 3. Siapkan data untuk tabel log Henkaten
+            // (Ini sudah benar, $validated['station_id'] akan tersimpan di log)
             $dataToCreate = $validated;
             $dataToCreate['lampiran'] = $lampiranPath;
-            $dataToCreate['nama'] = $manPowerAsli->nama;       // <-- Ambil nama asli dari DB
-            $dataToCreate['nama_after'] = $manPowerAfter->nama; // <-- Ambil nama asli dari DB
+            $dataToCreate['nama'] = $manPowerAsli->nama; 
+            $dataToCreate['nama_after'] = $manPowerAfter->nama;
             
-            // Buat log henkaten
             ManPowerHenkaten::create($dataToCreate);
 
-            // 4. Update Man Power Asli (yang diganti)
+            // ===================================================================
+            // 4. Update Man Power Asli (YANG DIMINTA)
+            // ===================================================================
             $manPowerAsli->status = 'henkaten';
-            // PERBAIKAN 2: Lepas Man Power Asli dari station
-            $manPowerAsli->station_id = null; 
+            
+            // $manPowerAsli->station_id = null; // <-- BARIS INI DINONAKTIFKAN
+            // Dengan menonaktifkan baris di atas, 'station_id' Man Power Asli
+            // akan tetap merujuk ke station terakhirnya.
+            
             $manPowerAsli->save();
+            // ===================================================================
 
             // 5. Update Man Power After (pengganti)
             $manPowerAfter->status = 'aktif';
@@ -108,21 +108,27 @@ class HenkatenController extends Controller
 
             DB::commit();
 
+            // REVISI PESAN SUKSES: Menggunakan variabel $station agar lebih pasti
             return redirect()->route('henkaten.create')
-                ->with('success', 'Data Henkaten berhasil dibuat. ' . $manPowerAfter->nama . ' sekarang ditugaskan di ' . $manPowerAsli->station->station_name ?? 'station'); // <-- Pesan sukses lebih baik
+                ->with('success', 'Data Henkaten berhasil dibuat. ' . $manPowerAfter->nama . ' sekarang ditugaskan di ' . $station->station_name);
 
         } catch (\Exception $e) {
             DB::rollBack();
+            
             // Hapus file yang terlanjur di-upload jika terjadi error
             if ($lampiranPath && Storage::disk('public')->exists($lampiranPath)) {
                 Storage::disk('public')->delete($lampiranPath);
             }
             
-            // Kirim pesan error yang lebih jelas
+            // PENYEMPURNAAN ERROR: Beri pesan lebih jelas jika data tidak ditemukan
+            if ($e instanceof ModelNotFoundException) {
+                 return back()->withErrors(['error' => 'Data Man Power atau Station tidak ditemukan di database.'])->withInput();
+            }
+            
+            // Error umum
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
         }
     }
-
 
     // ==============================================================  
     // BAGIAN 2: START PAGE HENKATEN MAN POWER  

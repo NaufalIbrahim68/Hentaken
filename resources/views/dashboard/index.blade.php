@@ -1,5 +1,9 @@
 
 <x-app-layout>
+
+
+
+    
     <style>
         .machine-status {
             width: 40px;
@@ -137,39 +141,40 @@
             height: 2px;
         }
 
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+
     </style>
 
-    <div class="w-full h-screen flex flex-col px-3 py-1">
-        {{-- HEADER --}}
-        <div class="flex items-center justify-between border-b pb-1 mb-1 h-[8vh]">
-            {{-- Kolom Kiri: Logo --}}
-            <div class="w-1/3 flex items-center">
-                <img src="{{ asset('assets/images/AVI.png') }}" alt="Logo AVI" class="h-10 w-auto" />
-            </div>
+    
 
-            {{-- Title & Date --}}
-            <div class="w-1/3 text-center">
-                <h1 class="text-base font-bold">HENKATEN FA LINE 5</h1>
-                <p class="text-[10px] text-gray-600" id="current-date"></p>
-            </div>
+ <div class="w-full h-screen flex flex-col px-3 py-1">
+    {{-- HEADER - . --}}
+    <div class="flex items-center justify-between border-b pb-1 mb-1 h-[8vh]">
+        {{-- Kolom Kiri --}}
+         <div class="w-1/3"></div>
 
-            {{-- Time & Shift --}}
-            <div class="w-1/3 text-right">
-                <p class="font-mono text-sm" id="current-time"></p>
-                <p class="text-xs" id="current-shift"></p>
-            </div>
+        {{-- Title & Date --}}
+        <div class="w-1/3 text-center">
+            <h1 class="text-base font-bold">HENKATEN FA LINE 5</h1>
+            <p class="text-[10px] text-gray-600" id="current-date"></p>
         </div>
 
-        {{-- 4 SECTION GRID --}}
-        <div class="grid grid-cols-2 gap-3 h-[92vh]">
-           
+        {{-- Time & Shift --}}
+        <div class="w-1/3 text-right">
+            <p class="font-mono text-sm" id="current-time"></p>
+            <p class="text-xs" id="current-shift"></p>
+        </div>
+    </div>
+
+    {{-- 4 SECTION GRID - . --}}
+    <div class="grid grid-cols-2 gap-3 h-[92vh]">
  
 {{-- MAN POWER --}}
 <div class="bg-white shadow rounded p-1 flex flex-col">
@@ -237,7 +242,7 @@
     @else
         {{-- TABEL MAN POWER FORMAT HORIZONTAL --}}
         <div class="w-full">
-            <table class="w-full border-collapse table-fixed">
+            <table class="w-full border-collapse">
                 <thead>
                     <tr class="bg-gray-50">
                         {{-- Header untuk setiap station --}}
@@ -245,11 +250,9 @@
                             @foreach($stationWorkers as $currentWorker)
                                 @php
                                     $stationName = $currentWorker->station ? $currentWorker->station->station_name : 'Station ' . $stationId;
-                                    $isHenkaten = ($currentWorker->status == 'Henkaten');
-                                    $bgColorHeader = $isHenkaten ? 'bg-red-500' : 'bg-gray-50';
                                 @endphp
-                                <th class="border border-gray-300 px-1 py-1.5 text-[9px] font-bold text-gray-800 text-center {{ $bgColorHeader }}">
-                                    <div class="break-words leading-tight">{{ $stationName }}</div>
+                                <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium text-gray-700">
+                                    <div class="text-center leading-tight break-words">{{ $stationName }}</div>
                                 </th>
                             @endforeach
                         @endforeach
@@ -260,14 +263,10 @@
                     <tr>
                         @foreach($groupedManPower as $stationId => $stationWorkers)
                             @foreach($stationWorkers as $currentWorker)
-                                @php
-                                    $isHenkaten = ($currentWorker->status == 'Henkaten');
-                                    $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
-                                @endphp
-                                <td class="border border-gray-300 px-1 py-2 text-center {{ $bgColorCell }}">
-                                    <div class="flex justify-center">
-                                        <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <td class="border border-gray-300 p-2">
+                                    <div class="flex justify-center items-center">
+                                        <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                                             </svg>
                                         </div>
@@ -283,10 +282,8 @@
                             @foreach($stationWorkers as $currentWorker)
                                 @php
                                     $displayName = $currentWorker->nama;
-                                    $isHenkaten = ($currentWorker->status == 'Henkaten');
-                                    $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
                                 @endphp
-                                <td class="border border-gray-300 px-1 py-1.5 text-center {{ $bgColorCell }}">
+                                <td class="border border-gray-300 px-1 py-1.5 text-center">
                                     <p class="text-[9px] font-semibold text-gray-700 break-words leading-tight" title="{{ $displayName }}">
                                         {{ $displayName }}
                                     </p>
@@ -301,14 +298,11 @@
                             @foreach($stationWorkers as $currentWorker)
                                 @php
                                     $isHenkaten = ($currentWorker->status == 'Henkaten');
-                                    $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
-                                    $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-                                    $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
+                                    $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
                                 @endphp
-                                <td class="border border-gray-300 px-1 py-1.5 text-center {{ $bgColorCell }}">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <div class="w-2 h-2 rounded-full {{ $statusColor }}" title="{{ $statusText }}"></div>
-                                        <span class="text-[8px] font-semibold {{ $isHenkaten ? 'text-white' : 'text-green-700' }}">{{ $statusText }}</span>
+                                <td class="border border-gray-300 p-2 {{ $bgColor }}">
+                                    <div class="flex justify-center">
+                                        <div class="w-3 h-3 rounded-full {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }}"></div>
                                     </div>
                                 </td>
                             @endforeach
@@ -316,6 +310,18 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        {{-- Legend --}}
+        <div class="flex justify-center gap-4 mt-3 mb-3 text-[10px]">
+            <div class="flex items-center gap-1">
+                <div class="w-2 h-2 rounded-full bg-green-600"></div>
+                <span class="text-gray-600">Normal</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <div class="w-2 h-2 rounded-full bg-red-600"></div>
+                <span class="text-gray-600">Henkaten</span>
+            </div>
         </div>
     @endif
 </div>

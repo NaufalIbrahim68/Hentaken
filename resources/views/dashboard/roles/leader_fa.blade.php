@@ -222,7 +222,7 @@
     
 </div>
 
- {{-- ======================================================================= --}}
+{{-- ======================================================================= --}}
 {{-- BAGIAN ATAS: DAFTAR MAN POWER (TABEL HORIZONTAL) --}}
 {{-- ======================================================================= --}}
 <div class="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -238,7 +238,7 @@
     @else
         {{-- TABEL MAN POWER FORMAT HORIZONTAL --}}
         <div class="w-full">
-            <table class="w-full border-collapse table-fixed">
+            <table class="w-full border-collapse">
                 <thead>
                     <tr class="bg-gray-50">
                         {{-- Header untuk setiap station --}}
@@ -248,9 +248,10 @@
                                     $stationName = $currentWorker->station ? $currentWorker->station->station_name : 'Station ' . $stationId;
                                     $isHenkaten = ($currentWorker->status == 'Henkaten');
                                     $bgColorHeader = $isHenkaten ? 'bg-red-500' : 'bg-gray-50';
+                                    $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
                                 @endphp
-                                <th class="border border-gray-300 px-1 py-1.5 text-[9px] font-bold text-gray-800 text-center {{ $bgColorHeader }}">
-                                    <div class="break-words leading-tight">{{ $stationName }}</div>
+                                <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium {{ $bgColorHeader }} {{ $textColorHeader }}">
+                                    <div class="text-center leading-tight break-words">{{ $stationName }}</div>
                                 </th>
                             @endforeach
                         @endforeach
@@ -265,10 +266,10 @@
                                     $isHenkaten = ($currentWorker->status == 'Henkaten');
                                     $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
                                 @endphp
-                                <td class="border border-gray-300 px-1 py-2 text-center {{ $bgColorCell }}">
-                                    <div class="flex justify-center">
-                                        <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <td class="border border-gray-300 p-2 {{ $bgColorCell }}">
+                                    <div class="flex justify-center items-center">
+                                        <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                                             </svg>
                                         </div>
@@ -286,9 +287,10 @@
                                     $displayName = $currentWorker->nama;
                                     $isHenkaten = ($currentWorker->status == 'Henkaten');
                                     $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
+                                    $textColor = $isHenkaten ? 'text-white' : 'text-gray-700';
                                 @endphp
                                 <td class="border border-gray-300 px-1 py-1.5 text-center {{ $bgColorCell }}">
-                                    <p class="text-[9px] font-semibold text-gray-700 break-words leading-tight" title="{{ $displayName }}">
+                                    <p class="text-[9px] font-semibold {{ $textColor }} break-words leading-tight" title="{{ $displayName }}">
                                         {{ $displayName }}
                                     </p>
                                 </td>
@@ -302,14 +304,11 @@
                             @foreach($stationWorkers as $currentWorker)
                                 @php
                                     $isHenkaten = ($currentWorker->status == 'Henkaten');
-                                    $statusText = $isHenkaten ? 'HENKATEN' : 'NORMAL';
-                                    $statusColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-                                    $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
+                                    $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
                                 @endphp
-                                <td class="border border-gray-300 px-1 py-1.5 text-center {{ $bgColorCell }}">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <div class="w-2 h-2 rounded-full {{ $statusColor }}" title="{{ $statusText }}"></div>
-                                        <span class="text-[8px] font-semibold {{ $isHenkaten ? 'text-white' : 'text-green-700' }}">{{ $statusText }}</span>
+                                <td class="border border-gray-300 p-2 {{ $bgColor }}">
+                                    <div class="flex justify-center">
+                                        <div class="w-3 h-3 rounded-full {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }}"></div>
                                     </div>
                                 </td>
                             @endforeach
@@ -318,8 +317,21 @@
                 </tbody>
             </table>
         </div>
+
+        {{-- Legend --}}
+        <div class="flex justify-center gap-4 mt-3 mb-3 text-[10px]">
+            <div class="flex items-center gap-1">
+                <div class="w-2 h-2 rounded-full bg-green-600"></div>
+                <span class="text-gray-600">Normal</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <div class="w-2 h-2 rounded-full bg-red-600"></div>
+                <span class="text-gray-600">Henkaten</span>
+            </div>
+        </div>
     @endif
 </div>
+
     {{-- ======================================================================= --}}
     {{-- BAGIAN BAWAH: DETAIL HENKATEN (OTOMATIS TERFILTER) --}}
     {{-- ======================================================================= --}}
@@ -530,12 +542,17 @@
 <div class="bg-white shadow rounded p-4 flex flex-col">
     <h2 class="text-sm font-semibold mb-3 text-center">METHOD</h2>
 
-    <div class="w-full overflow-x-auto">
+    <div class="w-full">
         <table class="w-full border-collapse">
             <thead>
                 <tr class="bg-gray-50">
                     @foreach ($methods as $m)
-                        <th class="border border-gray-300 px-2 py-2 text-[10px] font-medium text-gray-700 min-w-[60px]">
+                        @php
+                            $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
+                            $bgColorHeader = $isHenkaten ? 'bg-red-500' : 'bg-gray-50';
+                            $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
+                        @endphp
+                        <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium {{ $bgColorHeader }} {{ $textColorHeader }}">
                             <div class="text-center leading-tight break-words">
                                 {{ $m->station->station_name ?? 'N/A' }}
                             </div>
@@ -547,10 +564,14 @@
                 {{-- Row untuk Icon --}}
                 <tr>
                     @foreach ($methods as $m)
-                        <td class="border border-gray-300 p-2">
+                        @php
+                            $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
+                            $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
+                        @endphp
+                        <td class="border border-gray-300 p-2 {{ $bgColorCell }}">
                             <div class="flex justify-center items-center">
-                                <div class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                     </svg>
@@ -565,19 +586,28 @@
                         @php
                             $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
                             $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-                            $statusText = $m->status ?? 'NORMAL';
                         @endphp
-                        <td class="border border-gray-300 p-2">
+                        <td class="border border-gray-300 p-2 {{ $bgColor }}">
                             <div class="flex justify-center">
-                                <span class="px-3 py-1 {{ $bgColor }} text-white text-[10px] rounded font-semibold whitespace-nowrap">
-                                    {{ $statusText }}
-                                </span>
+                                <div class="w-3 h-3 rounded-full {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }}"></div>
                             </div>
                         </td>
                     @endforeach
                 </tr>
             </tbody>
         </table>
+    </div>
+
+    {{-- Legend --}}
+    <div class="flex justify-center gap-4 mt-3 text-[10px]">
+        <div class="flex items-center gap-1">
+            <div class="w-2 h-2 rounded-full bg-green-600"></div>
+            <span class="text-gray-600">Normal</span>
+        </div>
+        <div class="flex items-center gap-1">
+            <div class="w-2 h-2 rounded-full bg-red-600"></div>
+            <span class="text-gray-600">Henkaten</span>
+        </div>
     </div>
 
 
