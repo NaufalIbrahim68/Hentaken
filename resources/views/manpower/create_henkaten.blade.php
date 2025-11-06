@@ -45,117 +45,129 @@
                             @method('PUT')
                         @endif
 
-                        {{-- PERUBAHAN: Input tersembunyi sekarang mengambil data dari $log jika ada --}}
+                        {{-- PERUBAHAN: Input Shift tersembunyi, mengambil dari $log atau $currentShift --}}
                         <input type="hidden" name="shift" value="{{ old('shift', $log->shift ?? $currentShift) }}">
-                        <input type="hidden" name="grup" value="{{ old('grup', $log->grup ?? $currentGroup) }}">
+                        
+                        {{-- 
+                            Input Grup akan ditangani di bawah:
+                            - Mode Create: input hidden
+                            - Mode Edit: dropdown
+                        --}}
 
                         {{-- Wrapper Alpine.js --}}
-                        {{-- PERUBAHAN: 'old(...)' sekarang diisi default dari $log --}}
-                        <div x-data="henkatenForm({
-                        isEditing: {{ isset($log) ? 'true' : 'false' }},  {{-- <-- TAMBAHKAN INI --}}
-                                oldShift: '{{ old('shift', $log->shift ?? $currentShift) }}',
-                                oldGrup: '{{ old('grup', $log->grup ?? $currentGroup) }}',
-                                oldLineArea: '{{ old('line_area', $log->line_area ?? '') }}',
-                                oldStation: {{ old('station_id', $log->station_id ?? 'null') }},
-                                oldManPowerBeforeId: {{ old('man_power_id', $log->man_power_id ?? 'null') }},
-                                oldManPowerBeforeName: '{{ old('nama', $log->manpowerBefore->nama ?? '') }}',
-                                oldManPowerAfterId: {{ old('man_power_id_after', $log->man_power_id_after ?? 'null') }},
-                                oldManPowerAfterName: '{{ old('nama_after', $log->manpowerAfter->nama ?? '') }}',
-                                findManpowerUrl: '{{ route('henkaten.getManPower') }}',
-                                searchManpowerUrl: '{{ route('manpower.search') }}',
-                                findStationsUrl: '{{ route('henkaten.stations.by_line') }}'
-                            })" x-init="init()">
+                        {{-- PERUBAHAN: 'x-data' diisi data dari $log jika ada --}}
+                       <div x-data="henkatenForm({
+        isEditing: {{ isset($log) ? 'true' : 'false' }},
+        
+        oldGrup: '{{ old('grup', $log->grup ?? $currentGroup) }}',
+        oldLineArea: '{{ old('line_area', $log->line_area ?? '') }}',
+        oldStation: {{ old('station_id', $log->station_id ?? 'null') }},
+        
+        // PENTING: Ambil data 'Before' langsung dari kolom $log
+        oldManPowerBeforeId: {{ old('man_power_id', $log->man_power_id ?? 'null') }},
+        oldManPowerBeforeName: '{{ old('nama', $log->nama ?? '') }}',
+        
+        // PENTING: Ambil data 'After' langsung dari kolom $log
+        oldManPowerAfterId: {{ old('man_power_id_after', $log->man_power_id_after ?? 'null') }},
+        oldManPowerAfterName: '{{ old('nama_after', $log->nama_after ?? '') }}',
+
+        // URL (Sama)
+        findManpowerUrl: '{{ route('henkaten.getManPower') }}',
+        searchManpowerUrl: '{{ route('manpower.search') }}',
+        findStationsUrl: '{{ route('henkaten.stations.by_line') }}'
+    })" x-init="init()">
                             
-                            {{-- PERUBAHAN: Fieldset ini tidak lagi dinonaktifkan oleh grupError --}}
                             <fieldset>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                            {{-- Kolom Kiri --}}
-<div>
-    {{-- GRUP (HANYA TAMPIL DI MODE EDIT) --}}
-    @if (isset($log))
-        <div class="mb-4">
-            <label for="grup" class="block text-sm font-medium text-gray-700">Grup</label>
-            <select id="grup" name="grup" x-model="selectedGrup"
-                @change="fetchManpowerBefore"
-                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                <option value="">-- Pilih Grup --</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-            </select>
-        </div>
-    @endif
-    {{-- AKHIR BLOK GRUP --}}
-                                        {{-- LINE AREA --}}
+                                {{-- Kolom Kiri --}}
+                                <div>
+                                    {{-- PERUBAHAN: Tampilkan dropdown Grup HANYA saat mode EDIT --}}
+                                    @if (isset($log))
                                         <div class="mb-4">
-                                            <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
-                                            <select id="line_area" name="line_area" x-model="selectedLineArea"
-                                                @change="fetchStations"
+                                            <label for="grup" class="block text-sm font-medium text-gray-700">Grup</label>
+                                            <select id="grup" name="grup" x-model="selectedGrup"
+                                                @change="fetchManpowerBefore" {{-- Mengubah grup akan me-refresh Man Power "Before" --}}
                                                 class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                                <option value="">-- Pilih Line Area --</option>
-                                                @foreach ($lineAreas as $area)
-                                                    <option value="{{ $area }}">{{ $area }}</option>
-                                                @endforeach
+                                                <option value="">-- Pilih Grup --</option>
+                                                <option value="A">A</option>
+                                                <option value="B">B</option>
                                             </select>
                                         </div>
+                                    @else
+                                        {{-- Mode CREATE: Grup diambil dari session & dikirim via hidden input --}}
+                                        <input type="hidden" name="grup" value="{{ $currentGroup }}">
+                                    @endif
 
-                                        {{-- STATION --}}
-                                        <div class="mb-4">
-                                            <label for="station_id"
-                                                class="block text-sm font-medium text-gray-700">Station</label>
-                                            <select id="station_id" name="station_id" x-model="selectedStation"
-                                                @change="fetchManpowerBefore" :disabled="!stationList.length"
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                                <option value="">-- Pilih Station --</option>
-                                                <template x-for="station in stationList" :key="station.id">
-                                                    <option :value="station.id" x-text="station.station_name"></option>
-                                                </template>
-                                            </select>
-                                        </div>
-                                    </div> 
-                                    
-                                    {{-- Kolom Kanan --}}
-                                    <div>
-                                        <div class="mb-4">
-                                            <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
-                                            {{-- PERUBAHAN: value diisi dari $log --}}
-                                            <input type="date" id="effective_date" name="effective_date"
-value="{{ old('effective_date', isset($log) ? \Carbon\Carbon::parse($log->effective_date)->format('Y-m-d') : '') }}"                                               
- class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                required>
-                                        </div>
-                                        <div class="mb-4">
-                                            <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
-                                            {{-- PERUBAHAN: value diisi dari $log --}}
-                                            <input type="date" id="end_date" name="end_date"
-value="{{ old('end_date', isset($log) ? \Carbon\Carbon::parse($log->end_date)->format('Y-m-d') : '') }}"                                                
-class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                required>
-                                        </div>
-                                        <div class="mb-4">
-                                            <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
-                                       <input type="time" id="time_start" name="time_start"
-       value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"
-                                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                required>
-                                        </div>
-                                        <div class="mb-4">
-                                            <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
-                                            {{-- PERUBAHAN: value diisi dari $log --}}
-                                           <input type="time" id="time_end" name="time_end"
-       value="{{ old('time_end', isset($log) ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '') }}"
-                                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                required>
-                                        </div>
+                                    {{-- LINE AREA --}}
+                                    <div class="mb-4">
+                                        <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
+                                        <select id="line_area" name="line_area" x-model="selectedLineArea"
+                                            @change="fetchStations"
+                                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                            <option value="">-- Pilih Line Area --</option>
+                                            @foreach ($lineAreas as $area)
+                                                <option value="{{ $area }}">{{ $area }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    {{-- STATION --}}
+                                    <div class="mb-4">
+                                        <label for="station_id"
+                                            class="block text-sm font-medium text-gray-700">Station</label>
+                                        <select id="station_id" name="station_id" x-model="selectedStation"
+                                            @change="fetchManpowerBefore" :disabled="!stationList.length"
+                                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                            <option value="">-- Pilih Station --</option>
+                                            <template x-for="station in stationList" :key="station.id">
+                                                <option :value="station.id" x-text="station.station_name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div> 
+                                
+                                {{-- Kolom Kanan (Tanggal & Waktu) --}}
+                                <div>
+                                    <div class="mb-4">
+                                        <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
+                                        {{-- PERUBAHAN: value diisi dari $log (diformat) atau old() --}}
+                                        <input type="date" id="effective_date" name="effective_date"
+                                            value="{{ old('effective_date', isset($log) ? \Carbon\Carbon::parse($log->effective_date)->format('Y-m-d') : '') }}"                                
+                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            required>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
+                                        <input type="date" id="end_date" name="end_date"
+                                            value="{{ old('end_date', isset($log) ? \Carbon\Carbon::parse($log->end_date)->format('Y-m-d') : '') }}"                                
+                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            required>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
+                                        <input type="time" id="time_start" name="time_start"
+                                            value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"
+                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            required>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
+                                        <input type="time" id="time_end" name="time_end"
+                                            value="{{ old('time_end', isset($log) ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '') }}"
+                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            required>
                                     </div>
                                 </div>
+                                </div>
 
-                                {{-- Before & After (Tidak berubah, x-model akan mengisinya) --}}
+                                {{-- Before & After --}}
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                                    {{-- Before (Otomatis) --}}
+                                    {{-- Before --}}
                                     <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md">
                                         <label for="nama_before_display" class="text-gray-700 text-sm font-bold">Nama Karyawan Sebelum</label>
-                                        <input type="text" id="nama_before_display" name="nama"
+                                        {{-- PERUBAHAN: Hapus name="nama". Data "Before" di-load dari x-data --}}
+                                        <input type="text" id="nama_before_display"
                                             x-model="manpowerBefore.nama" readonly
                                             class="w-full py-3 px-4 border rounded bg-gray-100 text-gray-600"
                                             placeholder="Nama Man Power Sebelum">
@@ -163,9 +175,10 @@ class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 lead
                                         <p class="text-xs text-gray-500 mt-2 italic">Data man power yang diganti (otomatis berdasarkan grup, line, & station)</p>
                                     </div>
 
-                                    {{-- After (Autocomplete) --}}
+                                    {{-- After --}}
                                     <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative">
                                         <label for="nama_after" class="text-gray-700 text-sm font-bold">Nama Karyawan Sesudah</label>
+                                        {{-- 'autocompleteQuery' diisi dari x-data (termasuk $log->nama_after) --}}
                                         <input type="text" id="nama_after" name="nama_after" x-model="autocompleteQuery"
                                             @input.debounce.300="searchAfter()" @click.away="autocompleteResults = []"
                                             autocomplete="off" class="w-full py-3 px-4 border rounded"
@@ -184,11 +197,12 @@ class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 lead
                                     </div>
                                 </div>
 
+                                {{-- Keterangan & Syarat --}}
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                                     {{-- Kolom 1: Keterangan --}}
                                     <div>
                                         <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
-                                        {{-- PERUBAHAN: value diisi dari $log --}}
+                                        {{-- PERUBAHAN: value diisi dari $log atau old() --}}
                                         <textarea id="keterangan" name="keterangan" rows="6"
                                             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                             required>{{ old('keterangan', $log->keterangan ?? '') }}</textarea>
@@ -201,17 +215,11 @@ class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 lead
                                             {{-- ... (Isi syarat & ketentuan tetap sama) ... --}}
                                             <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan untuk Izin/Sakit:</p>
                                             <ul class="list-disc list-inside space-y-1">
-                                                <li>
-                                                    <strong>Sakit:</strong> Wajib melampirkan Surat Keterangan Sakit (SKS) yang valid dari dokter atau klinik.
-                                                </li>
-                                                <li>
-                                                    <strong>Izin Resmi:</strong> Wajib melampirkan surat izin yang telah disetujui oleh atasan (Supervisor/Foreman).
-                                                </li>
-                                                <li>
-                                                    <strong>Darurat/Lainnya:</strong> Dokumen pendukung lain yang relevan (jika ada).
-                                                </li>
+                                                <li><strong>Sakit:</strong> Wajib melampirkan SKS.</li>
+                                                <li><strong>Izin Resmi:</strong> Wajib melampirkan surat izin.</li>
+                                                <li><strong>Darurat/Lainnya:</strong> Dokumen pendukung lain.</li>
                                             </ul>
-                                            <p class="mt-3 italic text-xs">Pastikan lampiran foto/dokumen jelas dan dapat dibaca.</p>
+                                            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -231,8 +239,7 @@ class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 lead
                                         <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
                                             <p class="text-sm text-gray-700 font-medium mb-1">Lampiran saat ini:</p>
                                             <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
-                                                class="text-blue-600 hover:text-blue-800 hover:underline flex items-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1-3a1 1 0 100 2h2a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+                                                class="text-blue-600 hover:text-blue-800 hover:underline">
                                                 Lihat Lampiran ({{ basename($log->lampiran) }})
                                             </a>
                                             <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda ingin mengganti lampiran ini.</p>
@@ -266,53 +273,67 @@ class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 lead
 
     {{-- Alpine.js (PERUBAHAN PENTING PADA 'init') --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script>
+   <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('henkatenForm', (config) => ({
             // STATE
-            grupError: null, // Kita biarkan null, tidak ada cek lagi
-            selectedGrup: config.oldGrup || '', // <-- TAMBAHKAN BARIS INI
+            selectedGrup: config.oldGrup || '', 
             selectedLineArea: config.oldLineArea || '',
             selectedStation: config.oldStation || '',
             stationList: [],
             selectedManpowerAfter: config.oldManPowerAfterId || '',
-            manpowerBefore: { id: config.oldManPowerBeforeId || '', nama: config.oldManPowerBeforeName || '' },
+            // manpowerBefore diisi dari config (termasuk $log->nama)
+            manpowerBefore: { id: config.oldManPowerBeforeId || '', nama: config.oldManPowerBeforeName || '' }, 
             autocompleteResults: [],
-            autocompleteQuery: config.oldManPowerAfterName || '',
+            // autocompleteQuery diisi dari config (termasuk $log->nama_after)
+            autocompleteQuery: config.oldManPowerAfterName || '', 
 
             // URL
             findManpowerUrl: config.findManpowerUrl,
             searchManpowerUrl: config.searchManpowerUrl,
             findStationsUrl: config.findStationsUrl,
 
-            // INIT (PERUBAHAN: Dibuat 'async' untuk menangani mode edit)
-       async init() {
-    console.log('✅ Alpine initialized (Henkaten Man Power)');
+            // =================================================================
+            // INI ADALAH FUNGSI INIT YANG SUDAH DIPERBAIKI
+            // =================================================================
+            async init() {
+                console.log('✅ Alpine initialized (Henkaten Man Power)');
+                console.log('Editing Mode:', config.isEditing);
+                console.log('Initial Grup:', this.selectedGrup);
+                
+                // Ini data historis yang dimuat dari $log (seharusnya "Putri S")
+                console.log('Initial Manpower Before (from log):', this.manpowerBefore.nama); 
 
-    // Jika ada line_area, ambil stations dulu
-    if (this.selectedLineArea) {
-        await this.fetchStations(false);
-    }
+                // 1. Selalu isi daftar Station jika Line Area ada
+                if (this.selectedLineArea) {
+                    console.log('🔁 Restoring stations for line:', this.selectedLineArea);
+                    await this.fetchStations(false); // false = jangan reset station_id
+                }
 
-    // Kalau mode edit dan station sudah ada, jalankan fetchManpowerBefore()
-    if (config.isEditing && this.selectedStation) {
-        console.log('✳️ Mode Edit: Fetching manpower before berdasarkan data log');
-        await this.fetchManpowerBefore();
-    } 
-    else if (!config.isEditing && this.selectedStation) {
-        console.log('🏃 Mode Create: Menjalankan fetchManpowerBefore()');
-        await this.fetchManpowerBefore();
-    }
-},
+                // 2. HANYA fetch data "Before" jika ini mode CREATE BARU
+                if (!config.isEditing && this.selectedStation) {
+                    console.log('🏃 Mode Create: Fetching new manpower before...');
+                    await this.fetchManpowerBefore();
+                } 
+                // 3. Jika Mode Edit, JANGAN LAKUKAN APA-APA.
+                else if (config.isEditing) {
+                    console.log('✳️ Mode Edit: Data "Before" di-load dari $log. Tidak ada fetch.');
+                    // Kita tidak menjalankan fetchManpowerBefore()
+                    // Data "Putri S" aman dan tidak akan ditimpa "Yuli I"
+                }
+            },
+            // =================================================================
+            // AKHIR FUNGSI INIT
+            // =================================================================
 
-
-            // (Fungsi fetchStations, fetchManpowerBefore, searchAfter, selectAfter tetap sama persis seperti kode Anda)
-            
             async fetchStations(resetStation = true) {
                 if (!this.selectedLineArea) {
                     this.stationList = [];
                     this.selectedStation = '';
-                    this.manpowerBefore = { id: '', nama: '' }; // Reset juga manpower before
+                    // HANYA reset manpowerBefore jika BUKAN mode edit
+                    if (!config.isEditing) {
+                        this.manpowerBefore = { id: '', nama: '' }; 
+                    }
                     return;
                 }
                 try {
@@ -321,66 +342,53 @@ class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 lead
                     this.stationList = Array.isArray(data) ? data : (data.data ?? []);
                     if (resetStation) {
                         this.selectedStation = '';
-                        this.manpowerBefore = { id: '', nama: '' }; // Reset juga manpower before
+                        // HANYA reset manpowerBefore jika BUKAN mode edit
+                        if (!config.isEditing) {
+                            this.manpowerBefore = { id: '', nama: '' };
+                        }
                     }
                 } catch (err) {
-                    console.error(err);
+                    console.error('Gagal fetch stations:', err);
                     this.stationList = [];
                 }
             },
 
-           async fetchManpowerBefore() {
-            // GANTI INI:
-            // if (!this.selectedStation || !this.selectedLineArea || !config.oldGrup) return;
-            // MENJADI INI (gunakan this.selectedGrup):
-            if (!this.selectedStation || !this.selectedLineArea || !this.selectedGrup) {
-                console.warn('Menunggu Grup, Line, dan Station dipilih...');
-                return;
-            }
+            async fetchManpowerBefore() {
+                // Fungsi ini sekarang HANYA dipanggil di mode Create,
+                // atau jika user mengubah dropdown di mode Edit
+                if (!this.selectedStation || !this.selectedLineArea || !this.selectedGrup) {
+                    console.warn('Menunggu Grup, Line, dan Station dipilih...');
+                    return;
+                }
+                try {
+                    const url = new URL(this.findManpowerUrl, window.location.origin);
+                    url.searchParams.append('station_id', this.selectedStation);
+                    url.searchParams.append('line_area', this.selectedLineArea);
+                    url.searchParams.append('grup', this.selectedGrup); // Menggunakan state Alpine
 
-            try {
-                const url = new URL(this.findManpowerUrl, window.location.origin);
-                url.searchParams.append('station_id', this.selectedStation);
-                url.searchParams.append('line_area', this.selectedLineArea);
-                
-                // GANTI INI:
-                // url.searchParams.append('grup', config.oldGrup); 
-                // MENJADI INI (gunakan this.selectedGrup):
-                url.searchParams.append('grup', this.selectedGrup);
-
-                const res = await fetch(url, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-
+                    const res = await fetch(url, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
                     const data = await res.json();
-                    console.log('📦 Manpower Before response:', data);
-
-                    this.manpowerBefore = {
-                        id: data.id ?? '',
-                        nama: data.nama ?? ''
-                    };
-
+                    console.log('📦 Manpower Before response (fetch):', data);
+                    this.manpowerBefore = { id: data.id ?? '', nama: data.nama ?? '' };
                 } catch (err) {
                     console.error('❌ Gagal mengambil manpower sebelum:', err);
                     this.manpowerBefore = { id: '', nama: '' };
                 }
             },
 
-           async searchAfter() {
-                
-if (this.autocompleteQuery.length < 2 || !this.selectedGrup) {                    this.autocompleteResults = [];
-                    return;
-                }
-                try {
-                    const url = new URL(this.searchManpowerUrl, window.location.origin);
-                    
-                    // GANTI 'q' MENJADI 'query'
-                    url.searchParams.append('query', this.autocompleteQuery);
-                    
-                    // Baris ini tidak akan berguna jika Anda tidak pakai Cara 1
+            async searchAfter() {
+                // (Fungsi ini sudah benar, tidak perlu diubah)
+                if (this.autocompleteQuery.length < 2 || !this.selectedGrup) { 
+                    this.autocompleteResults = [];
+                    return;
+                }
+                try {
+                    const url = new URL(this.searchManpowerUrl, window.location.origin);
+                    url.searchParams.append('query', this.autocompleteQuery);
                     url.searchParams.append('grup', this.selectedGrup); 
-                    
-                    const res = await fetch(url);
+                    const res = await fetch(url);
                     const data = await res.json();
                     this.autocompleteResults = Array.isArray(data) ? data : (data.data ?? []);
                 } catch (err) {
@@ -390,11 +398,12 @@ if (this.autocompleteQuery.length < 2 || !this.selectedGrup) {            
             },
 
             selectAfter(item) {
+                // (Fungsi ini sudah benar, tidak perlu diubah)
                 this.autocompleteQuery = item.nama;
                 this.selectedManpowerAfter = item.id;
                 this.autocompleteResults = [];
             }
         }));
     });
-    </script>
+</script>
 </x-app-layout>

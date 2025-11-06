@@ -29,6 +29,8 @@ class ManPowerHenkaten extends Model
         'serial_number_end',
         'time_start',
         'time_end',
+        'grup', 
+        'status',
     ];
 
     protected $casts = [

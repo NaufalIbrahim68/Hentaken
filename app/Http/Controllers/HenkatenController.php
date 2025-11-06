@@ -13,59 +13,61 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
-use App\Models\Material;     
+use App\Models\Material;  
+use Illuminate\Support\Facades\Session;   
 
 class HenkatenController extends Controller
 {
     // ==============================================================  
     // BAGIAN 1: FORM PEMBUATAN HENKATEN MAN POWER  
     // ==============================================================
-    public function create()
-    {
-        // 1. Ambil data shift & grup dari session
-        $currentGroup = session('active_grup');
-        $currentShift = session('active_shift', 1); // Beri default '1' jika session shift kosong
+  public function create()
+{
+    // Mendapatkan Line Area unik dari database
+    $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
 
-        // 2. [WAJIB] Cek jika grup belum dipilih, paksa kembali ke dashboard
-        if (!$currentGroup) {
-            // Ganti 'dashboard.index' jika nama route dashboard Anda berbeda
-            return redirect()->route('dashboard') 
-                             ->with('error', 'Silakan pilih Grup di Dashboard terlebih dahulu.');
-        }
+    // Mengambil shift dan grup dari session (dari dashboard)
+    $currentShift = Session::get('shift');
+    $currentGroup = Session::get('grup');
 
-        // 3. Ambil line_areas (Ini dari kode Anda dan sudah benar)
-        $lineAreas = Station::whereNotNull('line_area')
-                            ->orderBy('line_area', 'asc')
-                            ->pluck('line_area')
-                            ->unique();
-
-
-        
-
-        // 5. Kirim data yang diperlukan ke view
-        return view('manpower.create_henkaten', compact(
-            'lineAreas', 
-            'currentGroup', 
-            'currentShift'
-        ));
+    if (!$currentGroup || !$currentShift) {
+        return redirect()->route('dashboard')
+            ->with('error', 'Silakan pilih Shift dan Grup di Dashboard terlebih dahulu.');
     }
 
+    // Kirim data ke view 'create_henkaten'
+    // PENTING: $log TIDAK dikirim di sini
+    return view('manpower.create_henkaten', compact(
+        'lineAreas', 
+        'currentShift', 
+        'currentGroup'
+    ));
+}
+
    public function store(Request $request)
-   {
+    {
         $validated = $request->validate([
             'shift'              => 'required|string',
-            'grup'               => 'required|string', // Pastikan grup ada di validasi
+            'grup'               => 'required|string', 
             'man_power_id'       => 'required|integer|exists:man_power,id',
-            'man_power_id_after' => 'required|integer|exists:man_power,id',
+            
+            // PERBAIKAN 1: Tambahkan 'different'
+            'man_power_id_after' => 'required|integer|exists:man_power,id|different:man_power_id', 
+            
             'station_id'         => 'required|integer|exists:stations,id',
-            'keterangan'         => 'required|string', // Dibuat required sesuai form
+            'keterangan'         => 'required|string',
             'line_area'          => 'required|string',
-            'effective_date'     => 'required|date', // Dibuat required sesuai form
-            'end_date'           => 'nullable|date|after_or_equal:effective_date',
-            'lampiran'           => 'required|image|mimes:jpeg,png|max:2048',      
-            'time_start'         => 'required|date_format:H:i', // Dibuat required sesuai form
-            'time_end'           => 'required|date_format:H:i|after_or_equal:time_start', // Dibuat required
+            'effective_date'     => 'required|date',
+            'end_date'           => 'required|date|after_or_equal:effective_date', // Dibuat required di form
+            'lampiran'           => 'required|image|mimes:jpeg,png,jpg|max:2048', // Disesuaikan: tambah jpg 
+            'time_start'         => 'required|date_format:H:i',
+            'time_end'           => 'required|date_format:H:i|after_or_equal:time_start',
+        ], [
+            // Tambahkan pesan error kustom untuk 'different'
+            'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.'
         ]);
+
+        $lampiranPath = null; // Definisikan di luar try-catch untuk rollback
 
         try {
             DB::beginTransaction();
@@ -74,34 +76,32 @@ class HenkatenController extends Controller
             $manPowerAsli = ManPower::find($validated['man_power_id']);
             $manPowerAfter = ManPower::find($validated['man_power_id_after']);
 
-            // Jika karena satu dan lain hal data tidak ditemukan, batalkan.
             if (!$manPowerAsli || !$manPowerAfter) {
                 throw new \Exception('Data Man Power tidak ditemukan.');
             }
 
             // 2. Handle file upload
-            $lampiranPath = null;
             if ($request->hasFile('lampiran')) {
-                $lampiranPath = $request->file('lampiran')->store('lampiran_henkaten', 'public');
+                // Folder 'henkaten_man_power_lampiran'
+                $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
             }
 
             // 3. Siapkan data untuk tabel log Henkaten
             $dataToCreate = $validated;
             $dataToCreate['lampiran'] = $lampiranPath;
-            $dataToCreate['nama'] = $manPowerAsli->nama; // <-- Ambil nama asli dari DB
+            $dataToCreate['nama'] = $manPowerAsli->nama;       // <-- Ambil nama asli dari DB
             $dataToCreate['nama_after'] = $manPowerAfter->nama; // <-- Ambil nama asli dari DB
             
             // Buat log henkaten
             ManPowerHenkaten::create($dataToCreate);
 
             // 4. Update Man Power Asli (yang diganti)
-            // Set status dan lepas dari station
             $manPowerAsli->status = 'henkaten';
-            // $manPowerAsli->station_id = null; // <-- Asumsi: 'null' berarti tidak ditugaskan
+            // PERBAIKAN 2: Lepas Man Power Asli dari station
+            $manPowerAsli->station_id = null; 
             $manPowerAsli->save();
 
             // 5. Update Man Power After (pengganti)
-            // Set status dan tugaskan ke station yang baru
             $manPowerAfter->status = 'aktif';
             $manPowerAfter->station_id = $validated['station_id']; // <-- Tugaskan ke station
             $manPowerAfter->save();
@@ -109,17 +109,20 @@ class HenkatenController extends Controller
             DB::commit();
 
             return redirect()->route('henkaten.create')
-                ->with('success', 'Data Henkaten berhasil dibuat. ' . $manPowerAfter->nama . ' sekarang ditugaskan di station tersebut.');
+                ->with('success', 'Data Henkaten berhasil dibuat. ' . $manPowerAfter->nama . ' sekarang ditugaskan di ' . $manPowerAsli->station->station_name ?? 'station'); // <-- Pesan sukses lebih baik
 
         } catch (\Exception $e) {
             DB::rollBack();
             // Hapus file yang terlanjur di-upload jika terjadi error
-            if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
+            if ($lampiranPath && Storage::disk('public')->exists($lampiranPath)) {
                 Storage::disk('public')->delete($lampiranPath);
             }
+            
+            // Kirim pesan error yang lebih jelas
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
         }
-   }
+    }
+
 
     // ==============================================================  
     // BAGIAN 2: START PAGE HENKATEN MAN POWER  
@@ -581,33 +584,38 @@ class HenkatenController extends Controller
     // BAGIAN 5: API BANTUAN  
     // (Dipindahkan ke bawah agar rapi)
     // ==============================================================
-   public function searchManPower(Request $request)
-{
-    // 1. Validasi input
-    $validator = Validator::make($request->all(), [
-        'q' => 'required|string|min:2', // Terima 'q' (dari JavaScript)
-        'grup' => 'required|string',     // Terima 'grup' (dari JavaScript)
-    ]);
+  public function searchManPower(Request $request)
+    {
+        // 1. Validasi input
+        $validator = Validator::make($request->all(), [
+            // PERBAIKAN: Ubah 'q' menjadi 'query' agar sesuai dgn Alpine.js
+            'query' => 'required|string|min:2', 
+            'grup'  => 'required|string',       
+        ]);
 
-    // Jika validasi gagal (misal: grup tidak terkirim), kirim error
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
+        // Jika validasi gagal (misal: grup tidak terkirim), kirim error
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // 2. Ambil parameter yang sudah divalidasi
+        $query = $request->get('query'); // <-- PERBAIKAN: Ambil 'query'
+        $grup = $request->get('grup');
+
+        // 3. Sesuaikan Query Database
+        $results = ManPower::where('nama', 'like', "%{$query}%")
+            ->where('grup', $grup) // Filter berdasarkan grup
+            // Opsional: Hanya cari man power yang 'standby' atau belum punya station
+            // ->whereNull('station_id') 
+            // ->where('status', 'standby')
+            ->select('id', 'nama')
+            ->orderBy('nama', 'asc')
+            ->limit(10)
+            ->get();
+
+        return response()->json($results);
     }
 
-    // 2. Ambil parameter yang sudah divalidasi
-    $query = $request->get('q');
-    $grup = $request->get('grup');
-
-    // 3. Sesuaikan Query Database
-    $results = ManPower::where('nama', 'like', "%{$query}%")
-        ->where('grup', $grup) // <-- PERBAIKAN UTAMA: Filter berdasarkan grup
-        ->select('id', 'nama')
-        ->orderBy('nama', 'asc')
-        ->limit(10)
-        ->get();
-
-    return response()->json($results);
-}
 
     public function getStationsByLine(Request $request)
     {
@@ -630,20 +638,21 @@ class HenkatenController extends Controller
 
         return response()->json($materials);
     }
-
-    public function getManPower(Request $request)
+public function getManPower(Request $request)
     {
         // 1. Validasi input
         $data = $request->validate([
             'grup' => 'required|string',
-            'line_area' => 'required|string',
-            'station_id' => 'required', 
+            'line_area' => 'required|string', // Validasi tetap ada, tapi tidak dipakai di query ManPower
+            'station_id' => 'required|integer|exists:stations,id', // Validasi lebih ketat
         ]);
 
-        // 2. Cari SATU KARYAWAN SPESIFIK berdasarkan TIGA kriteria
-        $employeeToReplace = ManPower::where('line_area', $data['line_area'])
-            ->where('station_id', $data['station_id'])
-            ->where('grup', $data['grup']) // <-- Filter grup ditambahkan di query utama
+        // 2. Cari KARYAWAN SPESIFIK berdasarkan Kriteria UTAMA
+        //    Seorang Man Power 'melekat' pada 'station_id' dan 'grup'-nya.
+        //    Kita tidak perlu 'line_area' untuk query ManPower, karena station_id sudah unik.
+        $employeeToReplace = ManPower::where('station_id', $data['station_id'])
+            ->where('grup', $data['grup'])
+            // ->where('status', 'aktif') // Opsional: jika Anda ingin memastikan hanya MP aktif
             ->first(['id', 'nama']); // Kita hanya butuh ->first()
 
         // 3. Kirim respons JSON
@@ -651,13 +660,12 @@ class HenkatenController extends Controller
             return response()->json($employeeToReplace);
         }
             
-        // 4. Jika tidak ada karyawan yang cocok sama sekali
+        // 4. Jika tidak ada karyawan yang cocok
         return response()->json([
             'id' => null,
-            'nama' => 'Man power tidak ditemukan'
+            'nama' => 'Man power tidak ditemukan di station ini' // Pesan lebih jelas
         ]);
     }
-
     // Tambahkan di HenkatenController
 public function approval()
     {
