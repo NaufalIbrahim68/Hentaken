@@ -165,11 +165,25 @@ Route::get('/get-stations-by-line-area', [MaterialController::class, 'getStation
     // ACTIVITY LOG
     // ======================================================================
     Route::prefix('activity-log')->name('activity.log.')->group(function () {
-        Route::get('/manpower', [ActivityLogController::class, 'manpower'])->name('manpower');
         Route::get('/machine', [HenkatenController::class, 'showMachineActivityLog'])->name('machine');
         Route::get('/material', [HenkatenController::class, 'showMaterialActivityLog'])->name('material');
         Route::get('/method', [HenkatenController::class, 'showMethodActivityLog'])->name('method'); 
     });
+
+
+    // ======================================================================
+// ACTIVITY LOG - (MAN POWER - CRUD Lengkap)
+// ======================================================================
+// Kita buat grup terpisah khusus untuk Man Power agar lebih rapi
+Route::prefix('activity-log/manpower')
+    ->name('activity.log.manpower') // Nama dasar rute: 'activity.log.manpower'
+    ->controller(ActivityLogController::class) // Menggunakan Controller Grouping
+    ->group(function () {
+    Route::get('/', 'manpower')->name(''); // name('') akan digabung dengan nama grup
+    Route::get('/{log}/edit', 'edit')->name('.edit');
+    Route::put('/{log}', 'update')->name('.update');
+    Route::delete('/{log}', 'destroy')->name('.destroy');
+});
 
     
 // ======================================================================
@@ -202,9 +216,6 @@ Route::middleware(['auth', 'role:Sect Head Produksi|Sect Head PPIC|Sect Head QC'
     Route::get('/api/henkaten-detail/{type}/{id}', [HenkatenController::class, 'getHenkatenDetail']);
 
 });
-
-
-
 
 
 

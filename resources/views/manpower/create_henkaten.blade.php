@@ -1,7 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Buat Data Henkaten Man Power') }}
+            {{-- PERUBAHAN: Judul dinamis --}}
+            {{ isset($log) ? 'Edit Data' : 'Buat Data' }} Henkaten Man Power
         </h2>
     </x-slot>
 
@@ -10,7 +11,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
 
-                    {{-- Menampilkan pesan error validasi DARI BACKEND LARAVEL --}}
+                    {{-- Menampilkan pesan error validasi (Tidak berubah) --}}
                     @if ($errors->any())
                         <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
                             <p class="font-bold">Terdapat kesalahan input:</p>
@@ -22,7 +23,7 @@
                         </div>
                     @endif
 
-                    {{-- Notifikasi sukses --}}
+                    {{-- Notifikasi sukses (Tidak berubah) --}}
                     @if (session('success'))
                         <div x-data="{ show: true }" x-show="show" x-transition
                             x-init="setTimeout(() => show = false, 3000)"
@@ -36,53 +37,43 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('henkaten.store') }}" method="POST" enctype="multipart/form-data">
+                    {{-- PERUBAHAN: Action form dinamis --}}
+                    <form action="{{ isset($log) ? route('activity.log.manpower.update', $log->id) : route('henkaten.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        {{-- PERUBAHAN: Tambah method PUT jika mode edit --}}
+                        @if (isset($log))
+                            @method('PUT')
+                        @endif
 
-                        {{-- Input tersembunyi untuk Shift dan Grup dari Session --}}
-                        <input type="hidden" name="shift" value="{{ $currentShift }}">
-                        <input type="hidden" name="grup" value="{{ $currentGroup }}">
+                        {{-- PERUBAHAN: Input tersembunyi sekarang mengambil data dari $log jika ada --}}
+                        <input type="hidden" name="shift" value="{{ old('shift', $log->shift ?? $currentShift) }}">
+                        <input type="hidden" name="grup" value="{{ old('grup', $log->grup ?? $currentGroup) }}">
 
                         {{-- Wrapper Alpine.js --}}
+                        {{-- PERUBAHAN: 'old(...)' sekarang diisi default dari $log --}}
                         <div x-data="henkatenForm({
-                                oldShift: '{{ old('shift', $currentShift) }}',
-                                oldGrup: '{{ old('grup', $currentGroup) }}',
-                                oldLineArea: '{{ old('line_area') }}',
-                                oldStation: {{ old('station_id') ?? 'null' }},
-                                oldManPowerBeforeId: {{ old('man_power_id') ?? 'null' }},
-                                oldManPowerBeforeName: '{{ old('nama') }}',
-                                oldManPowerAfterId: {{ old('man_power_id_after') ?? 'null' }},
-                                oldManPowerAfterName: '{{ old('nama_after') }}',
+                                oldShift: '{{ old('shift', $log->shift ?? $currentShift) }}',
+                                oldGrup: '{{ old('grup', $log->grup ?? $currentGroup) }}',
+                                oldLineArea: '{{ old('line_area', $log->line_area ?? '') }}',
+                                oldStation: {{ old('station_id', $log->station_id ?? 'null') }},
+                                oldManPowerBeforeId: {{ old('man_power_id', $log->man_power_id ?? 'null') }},
+                                oldManPowerBeforeName: '{{ old('nama', $log->manpowerBefore->nama ?? '') }}',
+                                oldManPowerAfterId: {{ old('man_power_id_after', $log->man_power_id_after ?? 'null') }},
+                                oldManPowerAfterName: '{{ old('nama_after', $log->manpowerAfter->nama ?? '') }}',
                                 findManpowerUrl: '{{ route('henkaten.getManPower') }}',
                                 searchManpowerUrl: '{{ route('manpower.search') }}',
                                 findStationsUrl: '{{ route('henkaten.stations.by_line') }}'
                             })" x-init="init()">
-                            {{-- ========================================================== --}}
-                            {{-- BARU: Menampilkan error jika Grup/Shift dari Sesi tidak ada --}}
-                            {{-- ========================================================== --}}
-                            <template x-if="grupError">
-                                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md"
-                                    role="alert">
-                                    <p class="font-bold">Sesi Tidak Valid</p>
-                                    <p x-text="grupError"></p>
-                                </div>
-                            </template>
-
-                            {{-- ========================================================== --}}
-                            {{-- BARU: Fieldset untuk menonaktifkan form jika ada error --}}
-                            {{-- ========================================================== --}}
-                            <fieldset :disabled="grupError">
-
-
-
+                            
+                            {{-- PERUBAHAN: Fieldset ini tidak lagi dinonaktifkan oleh grupError --}}
+                            <fieldset>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                                     {{-- Kolom Kiri --}}
                                     <div>
                                         {{-- LINE AREA --}}
                                         <div class="mb-4">
-                                            <label for="line_area" class="block text-sm font-medium text-gray-700">Line
-                                                Area</label>
+                                            <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
                                             <select id="line_area" name="line_area" x-model="selectedLineArea"
                                                 @change="fetchStations"
                                                 class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -106,65 +97,61 @@
                                                 </template>
                                             </select>
                                         </div>
-                                    </div> {{-- Kolom Kanan (Tidak berubah) --}}
+                                    </div> 
+                                    
+                                    {{-- Kolom Kanan --}}
                                     <div>
                                         <div class="mb-4">
-                                            <label for="effective_date"
-                                                class="block text-gray-700 text-sm font-bold mb-2">Tanggal
-                                                Efektif</label>
+                                            <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
+                                            {{-- PERUBAHAN: value diisi dari $log --}}
                                             <input type="date" id="effective_date" name="effective_date"
-                                                value="{{ old('effective_date') }}"
+                                                value="{{ old('effective_date', $log->effective_date ?? '') }}"
                                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                 required>
                                         </div>
                                         <div class="mb-4">
-                                            <label for="end_date"
-                                                class="block text-gray-700 text-sm font-bold mb-2">Tanggal
-                                                Berakhir</L>
+                                            <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
+                                            {{-- PERUBAHAN: value diisi dari $log --}}
                                             <input type="date" id="end_date" name="end_date"
-                                                value="{{ old('end_date') }}"
-                                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                required>
-                                        </div>
-                                        <div class="mb-4">
-                                            <label for="time_start"
-                                                class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
-                                            <input type="time" id="time_start" name="time_start"
-                                                value="{{ old('time_start') }}"
+                                                value="{{ old('end_date', $log->end_date ?? '') }}"
                                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                 required>
                                         </div>
                                         <div class="mb-4">
-                                            <label for="time_end"
-                                                class="block text-gray-700 text-sm font-bold mb-2">Waktu
-                                                Berakhir</L>
+                                            <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
+                                            {{-- PERUBAHAN: value diisi dari $log --}}
+                                            <input type="time" id="time_start" name="time_start"
+                                                value="{{ old('time_start', $log->time_start ?? '') }}"
+                                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                required>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
+                                            {{-- PERUBAHAN: value diisi dari $log --}}
                                             <input type="time" id="time_end" name="time_end"
-                                                value="{{ old('time_end') }}"
+                                                value="{{ old('time_end', $log->time_end ?? '') }}"
                                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                 required>
                                         </div>
                                     </div>
                                 </div>
 
-                                {{-- Before & After untuk Man Power (Tidak berubah) --}}
+                                {{-- Before & After (Tidak berubah, x-model akan mengisinya) --}}
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                                     {{-- Before (Otomatis) --}}
                                     <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md">
-                                        <label for="nama_before_display" class="text-gray-700 text-sm font-bold">Nama
-                                            Karyawan Sebelum</label>
+                                        <label for="nama_before_display" class="text-gray-700 text-sm font-bold">Nama Karyawan Sebelum</label>
                                         <input type="text" id="nama_before_display" name="nama"
                                             x-model="manpowerBefore.nama" readonly
                                             class="w-full py-3 px-4 border rounded bg-gray-100 text-gray-600"
                                             placeholder="Nama Man Power Sebelum">
                                         <input type="hidden" name="man_power_id" x-model="manpowerBefore.id">
-                                        <p class="text-xs text-gray-500 mt-2 italic">Data man power yang diganti
-                                            (otomatis berdasarkan grup, line, & station)</p>
+                                        <p class="text-xs text-gray-500 mt-2 italic">Data man power yang diganti (otomatis berdasarkan grup, line, & station)</p>
                                     </div>
 
                                     {{-- After (Autocomplete) --}}
                                     <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative">
-                                        <label for="nama_after" class="text-gray-700 text-sm font-bold">Nama Karyawan
-                                            Sesudah</label>
+                                        <label for="nama_after" class="text-gray-700 text-sm font-bold">Nama Karyawan Sesudah</label>
                                         <input type="text" id="nama_after" name="nama_after" x-model="autocompleteQuery"
                                             @input.debounce.300="searchAfter()" @click.away="autocompleteResults = []"
                                             autocomplete="off" class="w-full py-3 px-4 border rounded"
@@ -183,24 +170,21 @@
                                     </div>
                                 </div>
 
-                                {{-- ========================================================== --}}
-                                {{-- BARU: Grid untuk Keterangan dan Syarat & Ketentuan --}}
-                                {{-- ========================================================== --}}
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                                    
-                                    {{-- Kolom 1: Keterangan (DIUBAH) --}}
+                                    {{-- Kolom 1: Keterangan --}}
                                     <div>
-                                        <label for="keterangan"
-                                            class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
-                                        <textarea id="keterangan" name="keterangan" rows="6" {{-- Rows diubah jadi 6 agar seimbang --}}
+                                        <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
+                                        {{-- PERUBAHAN: value diisi dari $log --}}
+                                        <textarea id="keterangan" name="keterangan" rows="6"
                                             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            required>{{ old('keterangan') }}</textarea>
+                                            required>{{ old('keterangan', $log->keterangan ?? '') }}</textarea>
                                     </div>
 
-                                    {{-- Kolom 2: Syarat & Ketentuan (BARU) --}}
+                                    {{-- Kolom 2: Syarat & Ketentuan (Tidak berubah) --}}
                                     <div>
                                         <label class="block text-gray-700 text-sm font-bold mb-2">Syarat & Ketentuan Lampiran</label>
                                         <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+                                            {{-- ... (Isi syarat & ketentuan tetap sama) ... --}}
                                             <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan untuk Izin/Sakit:</p>
                                             <ul class="list-disc list-inside space-y-1">
                                                 <li>
@@ -217,37 +201,44 @@
                                         </div>
                                     </div>
                                 </div>
-                                {{-- ========================================================== --}}
-                                {{-- AKHIR DARI PERUBAHAN GRID --}}
-                                {{-- ========================================================== --}}
 
 
-                                {{-- Lampiran (Tidak berubah, posisinya setelah grid baru) --}}
+                                {{-- Lampiran --}}
                                 <div class="mb-6 mt-6">
                                     <label for="lampiran"
                                         class="block text-gray-700 text-sm font-bold mb-2">Lampiran (Wajib untuk Izin/Sakit)</label>
                                     <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
                                         class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                        required>
+                                        {{-- PERUBAHAN: 'required' hanya jika BUKAN mode edit --}}
+                                        {{ !isset($log) ? 'required' : '' }}>
+                                    
+                                    {{-- PERUBAHAN: Tampilkan lampiran saat ini jika ada --}}
+                                    @if (isset($log) && $log->lampiran)
+                                        <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                            <p class="text-sm text-gray-700 font-medium mb-1">Lampiran saat ini:</p>
+                                            <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                                                class="text-blue-600 hover:text-blue-800 hover:underline flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1-3a1 1 0 100 2h2a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+                                                Lihat Lampiran ({{ basename($log->lampiran) }})
+                                            </a>
+                                            <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda ingin mengganti lampiran ini.</p>
+                                        </div>
+                                    @endif
                                 </div>
 
                             </fieldset>
-                            {{-- ========================================================== --}}
-                            {{-- AKHIR BARU: Fieldset --}}
-                            {{-- ========================================================== --}}
-
-
-                            {{-- Tombol (SEKARANG DI LUAR FIELDSET) --}}
+                            
+                            {{-- Tombol --}}
                             <div class="flex items-center justify-end space-x-4 pt-4 border-t mt-6">
-                                <a href="{{ route('dashboard') }}"
+                                {{-- PERUBAHAN: Link Batal dinamis --}}
+                                <a href="{{ isset($log) ? route('activity.log.manpower') : route('dashboard') }}"
                                     class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">
                                     Batal
                                 </a>
-                                <button type="submit" {{-- DIUBAH: Tambahkan :disabled dan styling --}}
-                                    :disabled="grupError"
-                                    class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md"
-                                    :class="{ 'opacity-50 cursor-not-allowed': grupError }">
-                                    Simpan Data
+                                {{-- PERUBAHAN: Teks tombol dinamis --}}
+                                <button type="submit"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
+                                    {{ isset($log) ? 'Update Data' : 'Simpan Data' }}
                                 </button>
                             </div>
 
@@ -259,24 +250,18 @@
         </div>
     </div>
 
-    {{-- Alpine.js (Tidak ada perubahan di sini) --}}
+    {{-- Alpine.js (PERUBAHAN PENTING PADA 'init') --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('henkatenForm', (config) => ({
             // STATE
-            grupError: null,
+            grupError: null, // Kita biarkan null, tidak ada cek lagi
             selectedLineArea: config.oldLineArea || '',
             selectedStation: config.oldStation || '',
             stationList: [],
-            selectedManpowerBefore: config.oldManPowerBeforeId || '',
             selectedManpowerAfter: config.oldManPowerAfterId || '',
-            manPowerBeforeList: [],
-            manPowerAfterList: [],
             manpowerBefore: { id: config.oldManPowerBeforeId || '', nama: config.oldManPowerBeforeName || '' },
-            selectedManpowerAfterObj: { id: config.oldManPowerAfterId || '', nama: config.oldManPowerAfterName || '' },
-            namaBefore: config.oldManPowerBeforeName || '',
-            namaAfter: config.oldManPowerAfterName || '',
             autocompleteResults: [],
             autocompleteQuery: config.oldManPowerAfterName || '',
 
@@ -285,20 +270,30 @@
             searchManpowerUrl: config.searchManpowerUrl,
             findStationsUrl: config.findStationsUrl,
 
-            // INIT
-            init() {
+            // INIT (PERUBAHAN: Dibuat 'async' untuk menangani mode edit)
+            async init() {
                 console.log('✅ Alpine initialized (Henkaten Man Power)');
-                // BARU: Validasi Grup saat init
-                if (!config.oldGrup) {
-                    this.grupError = 'Grup Anda tidak terdeteksi. Silakan logout dan login kembali.';
-                    console.error('❌ Grup Error:', this.grupError);
+                
+                // PERUBAHAN: Tidak ada lagi cek grupError
+
+                // Jika ada Line Area yang dipilih (dari $log atau old()),
+                // langsung panggil fetchStations
+                if (this.selectedLineArea) {
+                    // 'await' memastikan stationList terisi sebelum lanjut
+                    // 'false' artinya JANGAN reset selectedStation (penting untuk mode edit)
+                    await this.fetchStations(false); 
                 }
 
-                if (this.selectedLineArea) {
-                    this.fetchStations(false); // false = jangan reset station jika ada old data
+                // Setelah stationList dan selectedStation terisi (dari config),
+                // panggil fetchManpowerBefore untuk mengisi data "Karyawan Sebelum"
+                if (this.selectedStation) {
+                    // Tidak perlu 'await' jika tidak ada yang bergantung padanya
+                    this.fetchManpowerBefore();
                 }
             },
 
+            // (Fungsi fetchStations, fetchManpowerBefore, searchAfter, selectAfter tetap sama persis seperti kode Anda)
+            
             async fetchStations(resetStation = true) {
                 if (!this.selectedLineArea) {
                     this.stationList = [];
@@ -311,8 +306,8 @@
                     const data = await res.json();
                     this.stationList = Array.isArray(data) ? data : (data.data ?? []);
                     if (resetStation) {
-                         this.selectedStation = '';
-                         this.manpowerBefore = { id: '', nama: '' }; // Reset juga manpower before
+                        this.selectedStation = '';
+                        this.manpowerBefore = { id: '', nama: '' }; // Reset juga manpower before
                     }
                 } catch (err) {
                     console.error(err);
@@ -321,6 +316,7 @@
             },
 
             async fetchManpowerBefore() {
+                // PERUBAHAN: Ambil 'grup' dari config, yang sudah diisi dari $log atau session
                 if (!this.selectedStation || !this.selectedLineArea || !config.oldGrup) return;
 
                 try {
@@ -348,6 +344,7 @@
             },
 
             async searchAfter() {
+                // PERUBAHAN: Ambil 'grup' dari config
                 if (this.autocompleteQuery.length < 2 || !config.oldGrup) {
                     this.autocompleteResults = [];
                     return;
