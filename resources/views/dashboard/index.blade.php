@@ -1,9 +1,5 @@
 
 <x-app-layout>
-
-
-
-    
     <style>
         .machine-status {
             width: 40px;
@@ -141,40 +137,39 @@
             height: 2px;
         }
 
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
-}
-.scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 
-    
+    <div class="w-full h-screen flex flex-col px-3 py-1">
+        {{-- HEADER --}}
+        <div class="flex items-center justify-between border-b pb-1 mb-1 h-[8vh]">
+            {{-- Kolom Kiri: Logo --}}
+            <div class="w-1/3 flex items-center">
+                <img src="{{ asset('assets/images/AVI.png') }}" alt="Logo AVI" class="h-10 w-auto" />
+            </div>
 
- <div class="w-full h-screen flex flex-col px-3 py-1">
-    {{-- HEADER - . --}}
-    <div class="flex items-center justify-between border-b pb-1 mb-1 h-[8vh]">
-        {{-- Kolom Kiri --}}
-         <div class="w-1/3"></div>
+            {{-- Title & Date --}}
+            <div class="w-1/3 text-center">
+                <h1 class="text-base font-bold">HENKATEN FA LINE 5</h1>
+                <p class="text-[10px] text-gray-600" id="current-date"></p>
+            </div>
 
-        {{-- Title & Date --}}
-        <div class="w-1/3 text-center">
-            <h1 class="text-base font-bold">HENKATEN FA LINE 5</h1>
-            <p class="text-[10px] text-gray-600" id="current-date"></p>
+            {{-- Time & Shift --}}
+            <div class="w-1/3 text-right">
+                <p class="font-mono text-sm" id="current-time"></p>
+                <p class="text-xs" id="current-shift"></p>
+            </div>
         </div>
 
-        {{-- Time & Shift --}}
-        <div class="w-1/3 text-right">
-            <p class="font-mono text-sm" id="current-time"></p>
-            <p class="text-xs" id="current-shift"></p>
-        </div>
-    </div>
-
-    {{-- 4 SECTION GRID - . --}}
-    <div class="grid grid-cols-2 gap-3 h-[92vh]">
+        {{-- 4 SECTION GRID --}}
+        <div class="grid grid-cols-2 gap-3 h-[92vh]">
+           
  
 {{-- MAN POWER --}}
 <div class="bg-white shadow rounded p-1 flex flex-col">

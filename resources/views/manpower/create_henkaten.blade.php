@@ -52,6 +52,7 @@
                         {{-- Wrapper Alpine.js --}}
                         {{-- PERUBAHAN: 'old(...)' sekarang diisi default dari $log --}}
                         <div x-data="henkatenForm({
+                        isEditing: {{ isset($log) ? 'true' : 'false' }},  {{-- <-- TAMBAHKAN INI --}}
                                 oldShift: '{{ old('shift', $log->shift ?? $currentShift) }}',
                                 oldGrup: '{{ old('grup', $log->grup ?? $currentGroup) }}',
                                 oldLineArea: '{{ old('line_area', $log->line_area ?? '') }}',
@@ -69,8 +70,22 @@
                             <fieldset>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                                    {{-- Kolom Kiri --}}
-                                    <div>
+                            {{-- Kolom Kiri --}}
+<div>
+    {{-- GRUP (HANYA TAMPIL DI MODE EDIT) --}}
+    @if (isset($log))
+        <div class="mb-4">
+            <label for="grup" class="block text-sm font-medium text-gray-700">Grup</label>
+            <select id="grup" name="grup" x-model="selectedGrup"
+                @change="fetchManpowerBefore"
+                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">-- Pilih Grup --</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+            </select>
+        </div>
+    @endif
+    {{-- AKHIR BLOK GRUP --}}
                                         {{-- LINE AREA --}}
                                         <div class="mb-4">
                                             <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
@@ -105,31 +120,30 @@
                                             <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
                                             {{-- PERUBAHAN: value diisi dari $log --}}
                                             <input type="date" id="effective_date" name="effective_date"
-                                                value="{{ old('effective_date', $log->effective_date ?? '') }}"
-                                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+value="{{ old('effective_date', isset($log) ? \Carbon\Carbon::parse($log->effective_date)->format('Y-m-d') : '') }}"                                               
+ class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                 required>
                                         </div>
                                         <div class="mb-4">
                                             <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
                                             {{-- PERUBAHAN: value diisi dari $log --}}
                                             <input type="date" id="end_date" name="end_date"
-                                                value="{{ old('end_date', $log->end_date ?? '') }}"
-                                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+value="{{ old('end_date', isset($log) ? \Carbon\Carbon::parse($log->end_date)->format('Y-m-d') : '') }}"                                                
+class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                 required>
                                         </div>
                                         <div class="mb-4">
                                             <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
-                                            {{-- PERUBAHAN: value diisi dari $log --}}
-                                            <input type="time" id="time_start" name="time_start"
-                                                value="{{ old('time_start', $log->time_start ?? '') }}"
+                                       <input type="time" id="time_start" name="time_start"
+       value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"
                                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                 required>
                                         </div>
                                         <div class="mb-4">
                                             <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
                                             {{-- PERUBAHAN: value diisi dari $log --}}
-                                            <input type="time" id="time_end" name="time_end"
-                                                value="{{ old('time_end', $log->time_end ?? '') }}"
+                                           <input type="time" id="time_end" name="time_end"
+       value="{{ old('time_end', isset($log) ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '') }}"
                                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                                 required>
                                         </div>
@@ -257,6 +271,7 @@
         Alpine.data('henkatenForm', (config) => ({
             // STATE
             grupError: null, // Kita biarkan null, tidak ada cek lagi
+            selectedGrup: config.oldGrup || '', // <-- TAMBAHKAN BARIS INI
             selectedLineArea: config.oldLineArea || '',
             selectedStation: config.oldStation || '',
             stationList: [],
@@ -271,26 +286,25 @@
             findStationsUrl: config.findStationsUrl,
 
             // INIT (PERUBAHAN: Dibuat 'async' untuk menangani mode edit)
-            async init() {
-                console.log('✅ Alpine initialized (Henkaten Man Power)');
-                
-                // PERUBAHAN: Tidak ada lagi cek grupError
+       async init() {
+    console.log('✅ Alpine initialized (Henkaten Man Power)');
 
-                // Jika ada Line Area yang dipilih (dari $log atau old()),
-                // langsung panggil fetchStations
-                if (this.selectedLineArea) {
-                    // 'await' memastikan stationList terisi sebelum lanjut
-                    // 'false' artinya JANGAN reset selectedStation (penting untuk mode edit)
-                    await this.fetchStations(false); 
-                }
+    // Jika ada line_area, ambil stations dulu
+    if (this.selectedLineArea) {
+        await this.fetchStations(false);
+    }
 
-                // Setelah stationList dan selectedStation terisi (dari config),
-                // panggil fetchManpowerBefore untuk mengisi data "Karyawan Sebelum"
-                if (this.selectedStation) {
-                    // Tidak perlu 'await' jika tidak ada yang bergantung padanya
-                    this.fetchManpowerBefore();
-                }
-            },
+    // Kalau mode edit dan station sudah ada, jalankan fetchManpowerBefore()
+    if (config.isEditing && this.selectedStation) {
+        console.log('✳️ Mode Edit: Fetching manpower before berdasarkan data log');
+        await this.fetchManpowerBefore();
+    } 
+    else if (!config.isEditing && this.selectedStation) {
+        console.log('🏃 Mode Create: Menjalankan fetchManpowerBefore()');
+        await this.fetchManpowerBefore();
+    }
+},
+
 
             // (Fungsi fetchStations, fetchManpowerBefore, searchAfter, selectAfter tetap sama persis seperti kode Anda)
             
@@ -315,19 +329,28 @@
                 }
             },
 
-            async fetchManpowerBefore() {
-                // PERUBAHAN: Ambil 'grup' dari config, yang sudah diisi dari $log atau session
-                if (!this.selectedStation || !this.selectedLineArea || !config.oldGrup) return;
+           async fetchManpowerBefore() {
+            // GANTI INI:
+            // if (!this.selectedStation || !this.selectedLineArea || !config.oldGrup) return;
+            // MENJADI INI (gunakan this.selectedGrup):
+            if (!this.selectedStation || !this.selectedLineArea || !this.selectedGrup) {
+                console.warn('Menunggu Grup, Line, dan Station dipilih...');
+                return;
+            }
 
-                try {
-                    const url = new URL(this.findManpowerUrl, window.location.origin);
-                    url.searchParams.append('station_id', this.selectedStation);
-                    url.searchParams.append('line_area', this.selectedLineArea);
-                    url.searchParams.append('grup', config.oldGrup); // Ambil dari config
+            try {
+                const url = new URL(this.findManpowerUrl, window.location.origin);
+                url.searchParams.append('station_id', this.selectedStation);
+                url.searchParams.append('line_area', this.selectedLineArea);
+                
+                // GANTI INI:
+                // url.searchParams.append('grup', config.oldGrup); 
+                // MENJADI INI (gunakan this.selectedGrup):
+                url.searchParams.append('grup', this.selectedGrup);
 
-                    const res = await fetch(url, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    });
+                const res = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
 
                     const data = await res.json();
                     console.log('📦 Manpower Before response:', data);
@@ -343,18 +366,21 @@
                 }
             },
 
-            async searchAfter() {
-                // PERUBAHAN: Ambil 'grup' dari config
-                if (this.autocompleteQuery.length < 2 || !config.oldGrup) {
-                    this.autocompleteResults = [];
-                    return;
-                }
-                try {
-                    const url = new URL(this.searchManpowerUrl, window.location.origin);
-                    url.searchParams.append('q', this.autocompleteQuery);
-                    url.searchParams.append('grup', config.oldGrup); // Ambil dari config
+           async searchAfter() {
+                
+if (this.autocompleteQuery.length < 2 || !this.selectedGrup) {                    this.autocompleteResults = [];
+                    return;
+                }
+                try {
+                    const url = new URL(this.searchManpowerUrl, window.location.origin);
+                    
+                    // GANTI 'q' MENJADI 'query'
+                    url.searchParams.append('query', this.autocompleteQuery);
                     
-                    const res = await fetch(url);
+                    // Baris ini tidak akan berguna jika Anda tidak pakai Cara 1
+                    url.searchParams.append('grup', this.selectedGrup); 
+                    
+                    const res = await fetch(url);
                     const data = await res.json();
                     this.autocompleteResults = Array.isArray(data) ? data : (data.data ?? []);
                 } catch (err) {

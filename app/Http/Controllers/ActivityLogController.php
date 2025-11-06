@@ -87,8 +87,8 @@ class ActivityLogController extends Controller
         // Update data log
         $log->update($validatedData);
 
-        return redirect()->route('activity.log.manpower')->with('success', 'Data Henkaten Man Power berhasil diperbarui!');
-    }
+return redirect('/henkaten/approval')->with('success', 'Data Henkaten Man Power berhasil diperbarui!');   
+ }
 
     // ==========================================================
     // BARU: Method untuk DESTROY (Hapus)

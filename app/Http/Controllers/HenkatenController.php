@@ -581,22 +581,33 @@ class HenkatenController extends Controller
     // BAGIAN 5: API BANTUAN  
     // (Dipindahkan ke bawah agar rapi)
     // ==============================================================
-    public function searchManPower(Request $request)
-    {
-        $query = $request->get('query', ''); // ubah dari 'q' jadi 'query'
+   public function searchManPower(Request $request)
+{
+    // 1. Validasi input
+    $validator = Validator::make($request->all(), [
+        'q' => 'required|string|min:2', // Terima 'q' (dari JavaScript)
+        'grup' => 'required|string',     // Terima 'grup' (dari JavaScript)
+    ]);
 
-        if (strlen($query) < 2) {
-            return response()->json([]);
-        }
-
-        $results = ManPower::where('nama', 'like', "%{$query}%")
-            ->select('id', 'nama')
-            ->orderBy('nama', 'asc')
-            ->limit(10)
-            ->get();
-
-        return response()->json($results);
+    // Jika validasi gagal (misal: grup tidak terkirim), kirim error
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
     }
+
+    // 2. Ambil parameter yang sudah divalidasi
+    $query = $request->get('q');
+    $grup = $request->get('grup');
+
+    // 3. Sesuaikan Query Database
+    $results = ManPower::where('nama', 'like', "%{$query}%")
+        ->where('grup', $grup) // <-- PERBAIKAN UTAMA: Filter berdasarkan grup
+        ->select('id', 'nama')
+        ->orderBy('nama', 'asc')
+        ->limit(10)
+        ->get();
+
+    return response()->json($results);
+}
 
     public function getStationsByLine(Request $request)
     {

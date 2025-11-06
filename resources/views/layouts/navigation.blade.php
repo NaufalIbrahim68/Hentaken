@@ -1,159 +1,196 @@
 @auth
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            {{-- BAGIAN KIRI: LOGO --}}
-            <div class="flex">
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <img src="{{ asset('assets/images/AVI.png') }}" alt="Logo AVI" class="block h-10 w-auto" />
-                    </a>
+<div x-data="{ sidebarOpen: false }" class="relative">
+    {{-- TOGGLE BUTTON - OUTSIDE SIDEBAR --}}
+    <button @click="sidebarOpen = !sidebarOpen" 
+            class="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100 transition border border-gray-200">
+        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path x-show="!sidebarOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            <path x-show="sidebarOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
+
+    {{-- OVERLAY --}}
+    <div x-show="sidebarOpen" 
+         @click="sidebarOpen = false"
+         x-transition:enter="transition-opacity ease-linear duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-linear duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-gray-900 bg-opacity-50 z-30"></div>
+
+    {{-- SIDEBAR --}}
+    <aside x-show="sidebarOpen"
+           x-transition:enter="transition ease-in-out duration-300 transform"
+           x-transition:enter-start="-translate-x-full"
+           x-transition:enter-end="translate-x-0"
+           x-transition:leave="transition ease-in-out duration-300 transform"
+           x-transition:leave-start="translate-x-0"
+           x-transition:leave-end="-translate-x-full"
+           class="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-40 shadow-xl">
+        
+        {{-- MENU --}}
+        <nav class="flex-1 overflow-y-auto p-4 pt-6">
+            {{-- === ROLE: SECT HEAD === --}}
+            @if(in_array(Auth::user()->role, ['Sect Head Produksi', 'Sect Head PPIC', 'Sect Head QC']))
+                {{-- DASHBOARD --}}
+                <a href="{{ route('dashboard') }}"
+                   class="flex items-center px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+
+                {{-- KONFIRMASI MASTER DATA --}}
+                <a href="{{ route('master.confirmation') }}"
+                   class="flex items-center px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Konfirmasi Data Master</span>
+                </a>
+
+                {{-- KONFIRMASI HENKATEN --}}
+                <a href="{{ route('henkaten.approval') }}"
+                   class="flex items-center px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Konfirmasi Henkaten</span>
+                </a>
+
+            {{-- === ROLE: ADMIN & LEADER === --}}
+            @else
+                {{-- DASHBOARD --}}
+                <a href="{{ route('dashboard') }}"
+                   class="flex items-center px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+
+                {{-- MASTER DATA --}}
+                <div x-data="{ masterOpen: false }" class="mb-2">
+                    <button @click="masterOpen = !masterOpen"
+                            class="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                            </svg>
+                            <span>Master Data</span>
+                        </div>
+                        <svg class="w-4 h-4 transition-transform flex-shrink-0" :class="{ 'rotate-180': masterOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="masterOpen" x-transition class="ml-4 mt-2 space-y-1">
+                        <a href="{{ route('manpower.index') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Man Power</a>
+                        <a href="{{ route('machines.index') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Machine</a>
+                        <a href="{{ route('materials.index') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Material</a>
+                        <a href="{{ route('methods.index') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Method</a>
+                    </div>
+                </div>
+
+                {{-- BUAT HENKATEN --}}
+                <div x-data="{ buatOpen: false }" class="mb-2">
+                    <button @click="buatOpen = !buatOpen"
+                            class="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>Buat Henkaten</span>
+                        </div>
+                        <svg class="w-4 h-4 transition-transform flex-shrink-0" :class="{ 'rotate-180': buatOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="buatOpen" x-transition class="ml-4 mt-2 space-y-1">
+                        <a href="{{ route('henkaten.create') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Man Power</a>
+                        <a href="{{ route('henkaten.machine.create') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Machine</a>
+                        <a href="{{ route('henkaten.material.create') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Material</a>
+                        <a href="{{ route('henkaten.method.create') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Method</a>
+                    </div>
+                </div>
+
+                {{-- HENKATEN START --}}
+                <div x-data="{ startOpen: false }" class="mb-2">
+                    <button @click="startOpen = !startOpen"
+                            class="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Henkaten Start</span>
+                        </div>
+                        <svg class="w-4 h-4 transition-transform flex-shrink-0" :class="{ 'rotate-180': startOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="startOpen" x-transition class="ml-4 mt-2 space-y-1">
+                        <a href="{{ route('henkaten.manpower.start.page') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Man Power</a>
+                        <a href="{{ route('henkaten.machine.start.page') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Machine</a>
+                        <a href="{{ route('henkaten.material.start.page') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Material</a>
+                        <a href="{{ route('henkaten.method.start.page') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Method</a>
+                    </div>
+                </div>
+
+                {{-- ACTIVITY LOG --}}
+                <div x-data="{ activityOpen: false }" class="mb-2">
+                    <button @click="activityOpen = !activityOpen"
+                            class="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Activity Log</span>
+                        </div>
+                        <svg class="w-4 h-4 transition-transform flex-shrink-0" :class="{ 'rotate-180': activityOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="activityOpen" x-transition class="ml-4 mt-2 space-y-1">
+                        <a href="{{ route('activity.log.manpower') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Man Power</a>
+                        <a href="{{ route('activity.log.machine') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Machine</a>
+                        <a href="{{ route('activity.log.material') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Material</a>
+                        <a href="{{ route('activity.log.method') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Method</a>
+                    </div>
+                </div>
+            @endif
+        </nav>
+
+        {{-- USER MENU --}}
+        <div class="p-4 border-t border-gray-200">
+            <div x-data="{ userOpen: false }" class="relative">
+                <button @click="userOpen = !userOpen"
+                        class="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <div class="flex items-center min-w-0">
+                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span class="truncate">{{ Auth::user()->name ?? 'User' }}</span>
+                    </div>
+                    <svg class="w-4 h-4 transition-transform flex-shrink-0" :class="{ 'rotate-180': userOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div x-show="userOpen" x-transition class="mt-2">
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">
+                            <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            {{ __('Log Out') }}
+                        </button>
+                    </form>
                 </div>
             </div>
-
-            {{-- BAGIAN KANAN: MENU --}}
-            <div class="hidden sm:flex sm:items-center sm:space-x-4">
-                {{-- === ROLE: SECT HEAD === --}}
-                @if(in_array(Auth::user()->role, ['Sect Head Produksi', 'Sect Head PPIC', 'Sect Head QC']))
-                    {{-- DASHBOARD --}}
-                    <a href="{{ route('dashboard') }}"
-                       class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
-                        Dashboard
-                    </a>
-
-                    {{-- KONFIRMASI MASTER DATA --}}
-                    <a href="{{ route('master.confirmation') }}"
-                       class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
-                        Konfirmasi Data Master
-                    </a>
-
-                    {{-- KONFIRMASI HENKATEN --}}
-                    <a href="{{ route('henkaten.approval') }}"
-                       class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
-                        Konfirmasi Henkaten
-                    </a>
-
-                {{-- === ROLE: ADMIN & LEADER === --}}
-                @else
-                    {{-- DASHBOARD --}}
-                    <a href="{{ route('dashboard') }}"
-                       class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-600 hover:text-gray-900">
-                        Dashboard
-                    </a>
-
-                    {{-- MASTER DATA --}}
-                    <x-dropdown align="right" width="48">
-                        <x-slot name="trigger">
-                            <button
-                                class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
-                                <div>Master Data</div>
-                                <svg class="ms-1 w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                     viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                        </x-slot>
-
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('manpower.index')">Man Power</x-dropdown-link>
-                            <x-dropdown-link :href="route('machines.index')">Machine</x-dropdown-link>
-                            <x-dropdown-link :href="route('materials.index')">Material</x-dropdown-link>
-                            <x-dropdown-link :href="route('methods.index')">Method</x-dropdown-link>
-                        </x-slot>
-                    </x-dropdown>
-
-                    {{-- BUAT HENKATEN --}}
-                    <x-dropdown align="right" width="48">
-                        <x-slot name="trigger">
-                            <button
-                                class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
-                                <div>Buat Henkaten</div>
-                                <svg class="ms-1 w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                     viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                        </x-slot>
-
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('henkaten.create')">Man Power</x-dropdown-link>
-                            <x-dropdown-link :href="route('henkaten.machine.create')">Machine</x-dropdown-link>
-                            <x-dropdown-link :href="route('henkaten.material.create')">Material</x-dropdown-link>
-                            <x-dropdown-link :href="route('henkaten.method.create')">Method</x-dropdown-link>
-                        </x-slot>
-                    </x-dropdown>
-
-                    {{-- HENKATEN START --}}
-                    <x-dropdown align="right" width="48">
-                        <x-slot name="trigger">
-                            <button
-                                class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
-                                <div>Henkaten Start</div>
-                                <svg class="ms-1 w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                     viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                        </x-slot>
-
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('henkaten.manpower.start.page')">Man Power</x-dropdown-link>
-                            <x-dropdown-link :href="route('henkaten.machine.start.page')">Machine</x-dropdown-link>
-                            <x-dropdown-link :href="route('henkaten.material.start.page')">Material</x-dropdown-link>
-                            <x-dropdown-link :href="route('henkaten.method.start.page')">Method</x-dropdown-link>
-                        </x-slot>
-                    </x-dropdown>
-
-                    {{-- ACTIVITY LOG --}}
-                    <x-dropdown align="right" width="48">
-                        <x-slot name="trigger">
-                            <button
-                                class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
-                                <div>Activity Log</div>
-                                <svg class="ms-1 w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                     viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                        </x-slot>
-
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('activity.log.manpower')">Man Power</x-dropdown-link>
-                            <x-dropdown-link :href="route('activity.log.machine')">Machine</x-dropdown-link>
-                            <x-dropdown-link :href="route('activity.log.material')">Material</x-dropdown-link>
-                            <x-dropdown-link :href="route('activity.log.method')">Method</x-dropdown-link>
-                        </x-slot>
-                    </x-dropdown>
-                @endif
-
-                {{-- USER MENU --}}
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
-                            <div>{{ Auth::user()->name ?? 'User' }}</div>
-                            <svg class="ms-1 w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                 viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                    </x-slot>
-                    <x-slot name="content">
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <x-dropdown-link :href="route('logout')"
-                                             onclick="event.preventDefault(); this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
         </div>
-    </div>
-</nav>
+    </aside>
+</div>
 @endauth
