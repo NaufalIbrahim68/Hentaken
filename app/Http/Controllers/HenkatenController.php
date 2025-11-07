@@ -16,6 +16,8 @@ use Illuminate\View\View;
 use App\Models\Material;  
 use Illuminate\Support\Facades\Session;  
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Carbon; 
+
  
 
 class HenkatenController extends Controller
@@ -23,28 +25,45 @@ class HenkatenController extends Controller
     // ==============================================================  
     // BAGIAN 1: FORM PEMBUATAN HENKATEN MAN POWER  
     // ==============================================================
-  public function create()
-{
-    // Mendapatkan Line Area unik dari database
-    $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
+   public function create()
+    {
+        // Mendapatkan Line Area unik dari database
+        $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
 
-    // Mengambil shift dan grup dari session (dari dashboard)
-    $currentShift = Session::get('shift');
-    $currentGroup = Session::get('grup');
+        // --- LOGIKA SHIFT OTOMATIS (BARU) ---
+        // Atur timezone ke Waktu Indonesia Barat
+        $now = Carbon::now('Asia/Jakarta');
+        
+        // Tentukan jam mulai Shift 2 (07:00) dan Shift 1 (19:00)
+        $shift2Start = $now->copy()->setTime(7, 0, 0);
+        $shift1Start = $now->copy()->setTime(19, 0, 0);
 
-    if (!$currentGroup || !$currentShift) {
-        return redirect()->route('dashboard')
-            ->with('error', 'Silakan pilih Shift dan Grup di Dashboard terlebih dahulu.');
+        $currentShift = 0; // Default
+        if ($now->gte($shift2Start) && $now->lt($shift1Start)) {
+            // Jika jam >= 07:00 DAN < 19:00 -> Shift 2
+            $currentShift = 2;
+        } else {
+            // Jika jam >= 19:00 ATAU < 07:00 -> Shift 1
+            $currentShift = 1;
+        }
+        // --- AKHIR LOGIKA SHIFT OTOMATIS ---
+
+        // Mengambil grup dari session (shift sudah tidak diperlukan)
+$currentGroup = Session::get('active_grup');
+        // HANYA cek jika Grup belum dipilih
+        if (!$currentGroup) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Silakan pilih Grup di Dashboard terlebih dahulu.'); // Pesan error diubah
+        }
+
+        // Kirim data ke view 'create_henkaten'
+        // PENTING: $log TIDAK dikirim di sini
+        return view('manpower.create_henkaten', compact(
+            'lineAreas',
+            'currentShift', // Mengirim shift yang baru dihitung
+            'currentGroup'
+        ));
     }
-
-    // Kirim data ke view 'create_henkaten'
-    // PENTING: $log TIDAK dikirim di sini
-    return view('manpower.create_henkaten', compact(
-        'lineAreas', 
-        'currentShift', 
-        'currentGroup'
-    ));
-}
 
    public function store(Request $request)
     {

@@ -154,35 +154,47 @@
                 <img src="{{ asset('assets/images/AVI.png') }}" alt="Logo AVI" class="h-10 w-auto" />
             </div>
 
-           {{-- Ganti blok kode Anda dengan ini --}}
-<div class="w-1/3 text-center">
-
-    {{-- 
-      Form ini menggunakan method GET.
-      'onchange="this.form.submit()"' berarti form akan otomatis 
-      disubmit (halaman di-reload) setiap kali dropdown diganti.
-    --}}
+       <div class="w-1/3 text-center">
     <form action="{{ url()->current() }}" method="GET" class="flex justify-center">
         
         <select name="line_area" 
                 onchange="this.form.submit()"
                 class="text-base font-bold border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
             
-            @forelse($lineAreas as $line)
+            @php
+                $hasFalLine = false; // Variabel bantu untuk melacak
+            @endphp
+
+            @foreach($lineAreas as $line)
                 {{-- 
-                  Ini akan membuat <option value="FA L1"> HENKATEN FA L1 </option> 
-                  'selected' akan ditambahkan ke opsi yang cocok dengan
-                  $selectedLineArea yang kita kirim dari controller.
+                    Kita cek apakah $line (cth: "FA L1", "SMT L1") 
+                    diawali dengan string "FA L".
+                    Kita gunakan namespace lengkap "Illuminate\Support\Str::" agar aman.
                 --}}
-                <option value="{{ $line }}" {{ $selectedLineArea == $line ? 'selected' : '' }}>
-                    HENKATEN {{ $line }}
+                @if(Illuminate\Support\Str::startsWith($line, 'FA L'))
+                    
+                    @php $hasFalLine = true; @endphp {{-- Tandai bahwa kita menemukan setidaknya satu line FA L --}}
+
+                    <option value="{{ $line }}" {{ $selectedLineArea == $line ? 'selected' : '' }}>
+                        HENKATEN {{ $line }}
+                    </option>
+                @endif
+            @endforeach
+
+            {{-- 
+                Jika setelah dicek semua, tidak ada satupun line FA L
+                (misalnya $lineAreas hanya berisi "SMT L1" dan "SMT L2"),
+                kita tampilkan pesan ini.
+            --}}
+            @if(!$hasFalLine)
+                <option disabled {{ !$selectedLineArea ? 'selected' : '' }}>
+                    Tidak ada Line FA L
                 </option>
-            @empty
-                <option disabled>Tidak ada Line Area</option>
-            @endforelse
+            @endif
 
         </select>
     </form>
+
 
     {{-- Ini tetap sama dari kode Anda --}}
     <p class="text-[10px] text-gray-600" id="current-date"></p>
@@ -881,10 +893,13 @@
                         @endphp
                         <td class="border border-gray-300 p-2 {{ $bgColorCell }}">
                             <div class="flex justify-center items-center">
-                                <div class="machine-status rounded-full bg-purple-600 flex items-center justify-center cursor-pointer" 
-                                     style="width: 32px; height: 32px; min-width: 32px; min-height: 32px;"
+                                <div class="machine-status rounded-full flex items-center justify-center cursor-pointer" 
+                                     style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; background-color: #9333ea;"
                                      onclick="toggleMachine(this)">
-                                    <span class="text-white" style="font-size: 16px;">🏭</span>
+                                    <svg class="text-white" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
                                 </div>
                             </div>
                         </td>
@@ -919,6 +934,8 @@
             <span class="text-gray-600">Henkaten</span>
         </div>
     </div>
+
+
 
     {{-- MACHINE HENKATEN CARD SECTION --}}
     <div class="border-t mt-4 pt-4 overflow-x-auto scrollbar-hide">
