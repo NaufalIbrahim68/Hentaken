@@ -609,37 +609,47 @@ $currentGroup = Session::get('active_grup');
     // BAGIAN 5: API BANTUAN  
     // (Dipindahkan ke bawah agar rapi)
     // ==============================================================
-  public function searchManPower(Request $request)
+   public function searchManPower(Request $request)
     {
         // 1. Validasi input
         $validator = Validator::make($request->all(), [
-            // PERBAIKAN: Ubah 'q' menjadi 'query' agar sesuai dgn Alpine.js
-            'query' => 'required|string|min:2', 
-            'grup'  => 'required|string',       
+            // Sesuai dengan Alpine.js: 'query'
+            'query' => 'required|string|min:2',
+            'grup'  => 'required|string',
         ]);
 
         // Jika validasi gagal (misal: grup tidak terkirim), kirim error
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
         // 2. Ambil parameter yang sudah divalidasi
-        $query = $request->get('query'); // <-- PERBAIKAN: Ambil 'query'
+        $query = $request->get('query');
         $grup = $request->get('grup');
 
         // 3. Sesuaikan Query Database
         $results = ManPower::where('nama', 'like', "%{$query}%")
-            ->where('grup', $grup) // Filter berdasarkan grup
-            // Opsional: Hanya cari man power yang 'standby' atau belum punya station
-            // ->whereNull('station_id') 
-            // ->where('status', 'standby')
-            ->select('id', 'nama')
+            
+            // =================================================================
+            // PERUBAHAN KUNCI:
+            // Menggunakan 'LIKE' dengan wildcard '%'
+            // Ini akan membuat 'B' cocok dengan 'B(Troubleshooting)', dll.
+            ->where('grup', 'LIKE', $grup . '%')
+            // =================================================================
+
+            // Opsional: Anda bisa aktifkan filter ini jika man power pengganti
+            // harus yang berstatus 'aktif' atau 'standby'.
+            // ->where('status', 'aktif') 
+            // ->orWhere('status', 'standby')
+
+            ->select('id', 'nama') // Hanya ambil kolom yang diperlukan
             ->orderBy('nama', 'asc')
-            ->limit(10)
+            ->limit(10) // Batasi hasil untuk performa
             ->get();
 
         return response()->json($results);
     }
+
 
 
     public function getStationsByLine(Request $request)
