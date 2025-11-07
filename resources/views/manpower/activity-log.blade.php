@@ -52,13 +52,17 @@
                             <tr>
                                 <th scope="col" class="py-3 px-3">Tanggal Dibuat</th>
                                 <th scope="col" class="py-3 px-3">Nama Sebelum</th>
-                                <th scope="col" class="py-3 px-3">Grup</th> {{-- <-- 1. KOLOM BARU DITAMBAHKAN --}}
+                                <th scope="col" class="py-3 px-3">Grup</th>
                                 <th scope="col" class="py-3 px-3">Nama Sesudah</th>
                                 <th scope="col" class="py-3 px-3">Station</th>
                                 <th scope="col" class="py-3 px-3">Line Area</th>
                                 <th scope="col" class="py-3 px-3">Tgl Efektif</th>
                                 <th scope="col" class="py-3 px-3">Tgl Selesai</th>
                                 <th scope="col" class="py-3 px-3">Keterangan</th>
+                                
+                                {{-- 1. HEADER NOTE DITAMBAHKAN --}}
+                                <th scope="col" class="py-3 px-3">Note</th> 
+
                                 <th scope="col" class="py-3 px-3">Status</th>
                                 <th scope="col" class="py-3 px-3">Lampiran</th>
                                 <th scope="col" class="py-3 px-3">Aksi</th>
@@ -72,10 +76,7 @@
                                         {{ $log->created_at ? $log->created_at->format('d M Y') : '-' }}
                                     </td>
                                     <td class="py-2 px-3">{{ $log->nama ?? '-' }}</td>
-                                    
-                                   {{-- 2. DATA BARU DITAMBAHKAN (diambil dari relasi manpowerBefore) --}}
-<td class_name="py-2 px-3">{{ $log->manpowerBefore->grup ?? '-' }}</td>
-
+                                    <td class="py-2 px-3">{{ $log->manpowerBefore->grup ?? '-' }}</td>
                                     <td class="py-2 px-3">{{ $log->nama_after ?? '-' }}</td>
                                     <td class="py-2 px-3">{{ $log->station->station_name ?? 'N/A' }}</td>
                                     <td class="py-2 px-3">{{ $log->line_area ?? '-' }}</td>
@@ -87,6 +88,9 @@
                                     </td>
                                     <td class="py-2 px-3 max-w-xs break-words">{{ $log->keterangan ?? '-' }}</td>
                                     
+                                    {{-- 2. DATA NOTE DITAMBAHKAN (dengan style yang sama seperti keterangan) --}}
+                                    <td class="py-2 px-3 max-w-xs break-words">{{ $log->note ?? '-' }}</td>
+
                                     <td class="py-2 px-3">
                                         @php
                                             $status = $log->status;
@@ -122,7 +126,7 @@
                                     <td class="py-2 px-3">
                                         <div class="flex space-x-1">
                                             <a href="{{ route('activity.log.manpower.edit', $log->id) }}" 
-                                               class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-medium px-2 py-1 rounded-md transition">
+                                                class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-medium px-2 py-1 rounded-md transition">
                                                 Edit
                                             </a>
                                             <form action="{{ route('activity.log.manpower.destroy', $log->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
@@ -138,8 +142,8 @@
                                 </tr>
                             @empty
                                 <tr class="bg-white border-b">
-                                    {{-- 3. COLSPAN DIPERBARUI --}}
-                                    <td colspan="12" class="py-4 px-6 text-center text-gray-500">
+                                    {{-- 3. COLSPAN DIPERBARUI MENJADI 13 --}}
+                                    <td colspan="13" class="py-4 px-6 text-center text-gray-500">
                                         Tidak ada data Henkaten Man Power
                                     </td>
                                 </tr>
@@ -154,6 +158,5 @@
 
             </div>
         </div>
-    </div>
     </div>
 </x-app-layout>

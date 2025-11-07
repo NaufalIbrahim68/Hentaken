@@ -832,21 +832,29 @@ public function approval()
      * [BARU] Memproses aksi 'Revisi' Henkaten.
      * Method ini dipanggil oleh route 'henkaten/approval/{type}/{id}/revisi'
      */
-    public function revisiHenkaten(Request $request, $type, $id)
-    {
-        $item = $this->getHenkatenItem($type, $id);
+   public function revisiHenkaten(Request $request, $type, $id)
+{
+    $item = $this->getHenkatenItem($type, $id);
 
-        if (!$item) {
-            return redirect()->route('henkaten.approval')->with('error', 'Data Henkaten tidak ditemukan.');
-        }
-
-        // Ganti 'Revisi' sesuai dengan value status di database Anda
-        $item->status = 'Revisi'; 
-        $item->save();
-
-        // (Opsional) Tambahkan ke Activity Log di sini
-        
-        return redirect()->route('henkaten.approval')->with('success', 'Henkaten ' . ucfirst($type) . ' dikirim kembali untuk revisi.');
+    if (!$item) {
+        return redirect()->route('henkaten.approval')->with('error', 'Data Henkaten tidak ditemukan.');
     }
+
+    // --- TAMBAHAN DI SINI ---
+    // 1. Ambil catatan revisi dari request
+    $catatanRevisi = $request->input('revision_notes');
+
+    // 2. Simpan catatan ke kolom 'note' (atau nama kolom Anda)
+    $item->note = $catatanRevisi; 
+    // --- SELESAI ---
+
+    // Ganti 'Revisi' sesuai dengan value status di database Anda
+    $item->status = 'Revisi'; 
+    $item->save();
+
+    // (Opsional) Tambahkan ke Activity Log di sini
+    
+    return redirect()->route('henkaten.approval')->with('success', 'Henkaten ' . ucfirst($type) . ' dikirim kembali untuk revisi.');
+}
 
 }

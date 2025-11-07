@@ -30,10 +30,11 @@
            x-transition:leave-end="-translate-x-full"
            class="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-40 shadow-xl">
         
-        {{-- MENU --}}
+       {{-- MENU --}}
         <nav class="flex-1 overflow-y-auto p-4 pt-6">
             {{-- === ROLE: SECT HEAD === --}}
             @if(in_array(Auth::user()->role, ['Sect Head Produksi', 'Sect Head PPIC', 'Sect Head QC']))
+                
                 {{-- DASHBOARD --}}
                 <a href="{{ route('dashboard') }}"
                    class="flex items-center px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
@@ -44,21 +45,45 @@
                 </a>
 
                 {{-- KONFIRMASI MASTER DATA --}}
+                {{-- MODIFIKASI DI BAWAH INI --}}
                 <a href="{{ route('master.confirmation') }}"
-                   class="flex items-center px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
-                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Konfirmasi Data Master</span>
+                   class="flex items-center justify-between px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    
+                    {{-- Grup untuk Ikon dan Teks --}}
+                    <span class="flex items-center">
+                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Konfirmasi Data Master</span>
+                    </span>
+
+                    {{-- Badge Notifikasi --}}
+                    @if(isset($pendingMasterDataCount) && $pendingMasterDataCount > 0)
+                        <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                            {{ $pendingMasterDataCount }}
+                        </span>
+                    @endif
                 </a>
 
                 {{-- KONFIRMASI HENKATEN --}}
+                {{-- MODIFIKASI DI BAWAH INI --}}
                 <a href="{{ route('henkaten.approval') }}"
-                   class="flex items-center px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
-                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Konfirmasi Henkaten</span>
+                   class="flex items-center justify-between px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    
+                    {{-- Grup untuk Ikon dan Teks --}}
+                    <span class="flex items-center">
+                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Konfirmasi Henkaten</span>
+                    </span>
+
+                    {{-- Badge Notifikasi --}}
+                    @if(isset($pendingHenkatenCount) && $pendingHenkatenCount > 0)
+                        <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                            {{ $pendingHenkatenCount }}
+                        </span>
+                    @endif
                 </a>
 
             {{-- === ROLE: ADMIN & LEADER === --}}

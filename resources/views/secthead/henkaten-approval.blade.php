@@ -7,7 +7,7 @@
 
     <div class="py-8 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="henkatenApproval()">
 
-        @foreach (['manpower', 'method', 'machine', 'material'] as $type)
+    @foreach (['manpower', 'method', 'machine', 'material'] as $type)
             @php
                 $items = ${$type.'s'} ?? collect(); 
             @endphp
@@ -21,7 +21,24 @@
                     <table class="min-w-full text-sm border border-gray-200">
                         <thead class="bg-gray-100 text-gray-700">
                             <tr>
-                                <th class="px-4 py-2 text-left">Poin Perubahan / Masalah</th>
+                                {{-- HEADER DINAMIS --}}
+                                @if ($type === 'manpower')
+                                    <th class="px-4 py-2 text-left">Operator Awal</th>
+                                    <th class="px-4 py-2 text-left">Operator Pengganti</th>
+                                @elseif ($type === 'method')
+                                    <th class="px-4 py-2 text-left">Keterangan Awal</th>
+                                    <th class="px-4 py-2 text-left">Keterangan Sesudah</th>
+                                @elseif ($type === 'material')
+                                    <th class="px-4 py-2 text-left">Material</th>
+                                    <th class="px-4 py-2 text-left">Deskripsi Sebelum</th>
+                                    <th class="px-4 py-2 text-left">Deskripsi Sesudah</th>
+                                @elseif ($type === 'machine')
+                                    <th class="px-4 py-2 text-left">Mesin</th>
+                                    <th class="px-4 py-2 text-left">Deskripsi Sebelum</th>
+                                    <th class="px-4 py-2 text-left">Deskripsi Sesudah</th>
+                                @endif
+
+                                {{-- HEADER UMUM --}}
                                 <th class="px-4 py-2 text-left">Line Area</th>
                                 <th class="px-4 py-2 text-left">Status</th>
                                 <th class="px-4 py-2 text-center">Aksi</th>
@@ -30,7 +47,25 @@
                         <tbody>
                             @foreach ($items as $item)
                                 <tr class="border-t">
-                                    <td class="px-4 py-2">{{ $item->change_point ?? $item->problem ?? $item->deskripsi ?? '-' }}</td>
+                                    {{-- DATA DINAMIS --}}
+                                    @if ($type === 'manpower')
+                                        <td class="px-4 py-2">{{ $item->nama ?? '-' }}</td>
+                                        <td class="px-4 py-2">{{ $item->nama_after ?? '-' }}</td>
+                                    @elseif ($type === 'method')
+                                        <td class="px-4 py-2">{{ $item->keterangan ?? '-' }}</td>
+                                        <td class="px-4 py-2">{{ $item->keterangan_after ?? '-' }}</td>
+                                    @elseif ($type === 'material')
+                                        {{-- Menggunakan "?->" untuk "optional chaining" jika $item->material mungkin null --}}
+                                        <td class="px-4 py-2">{{ $item->material?->material_name ?? '-' }}</td>
+                                        <td class="px-4 py-2">{{ $item->description_before ?? '-' }}</td>
+                                        <td class="px-4 py-2">{{ $item->description_after ?? '-' }}</td>
+                                    @elseif ($type === 'machine')
+                                        <td class="px-4 py-2">{{ $item->machine ?? '-' }}</td>
+                                        <td class="px-4 py-2">{{ $item->description_before ?? '-' }}</td>
+                                        <td class="px-4 py-2">{{ $item->description_after ?? '-' }}</td>
+                                    @endif
+
+                                    {{-- DATA UMUM --}}
                                     <td class="px-4 py-2">{{ $item->line_area ?? '-' }}</td>
                                     <td class="px-4 py-2">
                                         <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-200 text-yellow-800">
@@ -51,7 +86,6 @@
                 @endif
             </div>
         @endforeach
-
         {{-- Modal Detail dengan Layout Kanan-Kiri --}}
         <div x-show="showModal" 
              class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4"
@@ -282,25 +316,53 @@
                 </div>
 
                 {{-- Tombol Aksi --}}
-                <div class="mt-6 flex justify-end space-x-3 border-t pt-4">
-                    <form :action="`/henkaten/approval/${type}/${id}/revisi`" method="POST">
-                        @csrf
-                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow-sm">
-                            Revisi
-                        </button>
-                    </form>
-                    <form :action="`/henkaten/approval/${type}/${id}/approve`" method="POST">
-                        @csrf
-                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow-sm">
-                            Approve
-                        </button>
-                    </form>
-                    <button @click="showModal = false" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded shadow-sm">
-                        Tutup
-                    </button>
-                </div>
-            </div>
-        </div>
+                        <div class="mt-6 border-t pt-4">
+
+                            {{-- Form untuk Revisi (hanya berisi textarea) --}}
+                            <form :action="`/henkaten/approval/${type}/${id}/revisi`" method="POST" id="revision-form">
+                                @csrf
+                                <div class="mb-4">
+                                    <label for="revision_notes" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Catatan Revisi 
+                                        <span class="text-gray-500">(Wajib diisi jika ada Revisi)</span>
+                                    </label>
+                                    <textarea 
+                                        id="revision_notes" 
+                                        name="revision_notes" {{-- 'name' ini penting untuk dikirim ke backend --}}
+                                        rows="3" 
+                                        class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+                                        placeholder="Contoh: Lampiran tidak sesuai, mohon diperbaiki..."
+                                        required {{-- Tambahkan 'required' agar wajib diisi saat form disubmit --}}
+                                    ></textarea>
+                                </div>
+                            </form>
+
+                            {{-- Baris Tombol Aksi --}}
+                            <div class="flex justify-end space-x-3">
+                                
+                                {{-- Tombol Revisi: Mensubmit form 'revision-form' di atas --}}
+                                <button 
+                                    type="submit" 
+                                    form="revision-form" {{-- Atribut 'form' ini akan menyambungkan tombol ke form --}}
+                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow-sm">
+                                    Revisi
+                                </button>
+                                
+                                {{-- Form Approve (terpisah) --}}
+                                <form :action="`/henkaten/approval/${type}/${id}/approve`" method="POST">
+                                    @csrf
+                                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow-sm">
+                                        Approve
+                                    </button>
+                                </form>
+                                
+                                {{-- Tombol Tutup --}}
+                                <button @click="showModal = false" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded shadow-sm">
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>       
+                     </div>
     </div>
 
     <script>
