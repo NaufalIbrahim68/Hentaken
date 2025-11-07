@@ -80,6 +80,8 @@ $currentGroup = Session::get('active_grup');
             'lampiran'           => 'required|image|mimes:jpeg,png,jpg|max:2048', 
             'time_start'         => 'required|date_format:H:i',
             'time_end'           => 'required|date_format:H:i|after_or_equal:time_start',
+            'serial_number_start' => 'nullable|string|max:255',
+            'serial_number_end'   => 'nullable|string|max:255',
         ], [
             'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.'
         ]);

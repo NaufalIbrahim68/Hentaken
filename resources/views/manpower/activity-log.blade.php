@@ -87,10 +87,15 @@
                                         {{ $log->end_date ? \Carbon\Carbon::parse($log->end_date)->format('d M Y') : '-' }}
                                     </td>
                                     <td class="py-2 px-3 max-w-xs break-words">{{ $log->keterangan ?? '-' }}</td>
-                                    
-                                    {{-- 2. DATA NOTE DITAMBAHKAN (dengan style yang sama seperti keterangan) --}}
-                                    <td class="py-2 px-3 max-w-xs break-words">{{ $log->note ?? '-' }}</td>
-
+                                 {{-- 2. DATA NOTE DITAMBAHKAN --}}
+<td class="py-2 px-3 max-w-xs break-words">
+    {{-- Tampilkan note hanya jika status BUKAN 'Approve' --}}
+    @if ($log->status != 'Approved')
+        {{ $log->note ?? '-' }}
+    @else
+        -
+    @endif
+</td>
                                     <td class="py-2 px-3">
                                         @php
                                             $status = $log->status;

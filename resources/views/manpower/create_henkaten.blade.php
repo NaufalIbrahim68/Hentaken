@@ -125,7 +125,49 @@
                                             </template>
                                         </select>
                                     </div>
+                                   {{-- SERIAL NUMBER START --}}
+<div class="mb-4">
+    <label for="serial_number_start" class="block text-sm font-medium text-gray-700">
+        Serial Number Start
+        {{-- Tanda Wajib (hanya di mode Edit) --}}
+        @if(isset($log))
+            <span class="text-red-500">*</span>
+        @else
+            <span class="text-gray-500 text-xs"></span>
+        @endif
+    </label>
+    <input type="text" id="serial_number_start" name="serial_number_start"
+        value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
+        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        placeholder="Masukkan serial number awal..."
+        {{-- Atribut 'required' HANYA jika mode edit --}}
+        {{ isset($log) ? 'required' : '' }}>
+</div>
+
+{{-- SERIAL NUMBER END --}}
+<div class="mb-4">
+    <label for="serial_number_end" class="block text-sm font-medium text-gray-700">
+        Serial Number End
+        {{-- Tanda Wajib (hanya di mode Edit) --}}
+        @if(isset($log))
+            <span class="text-red-500">*</span>
+        @else
+            <span class="text-gray-500 text-xs"></span>
+        @endif
+    </label>
+    <input type="text" id="serial_number_end" name="serial_number_end"
+        value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
+        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        placeholder="Masukkan serial number akhir..."
+        {{-- Atribut 'required' HANYA jika mode edit --}}
+        {{ isset($log) ? 'required' : '' }}>
+</div>
+                                  
+
                                 </div> 
+                                
+
+                                
                                 
                                 {{-- Kolom Kanan (Tanggal & Waktu) --}}
                                 <div>
