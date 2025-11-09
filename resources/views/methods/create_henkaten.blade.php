@@ -1,7 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Buat Data Henkaten Method') }}
+            {{-- UBAH: Judul dinamis --}}
+            {{ isset($log) ? __('Edit Data Henkaten Method') : __('Buat Data Henkaten Method') }}
         </h2>
     </x-slot>
 
@@ -24,7 +25,7 @@
 
                     {{-- Notifikasi sukses --}}
                     @if (session('success'))
-                        <div 
+                        <div
                             x-data="{ show: true }"
                             x-show="show"
                             x-transition
@@ -33,7 +34,7 @@
                             role="alert"
                         >
                             <span class="block font-semibold">{{ session('success') }}</span>
-                            <button 
+                            <button
                                 @click="show = false"
                                 class="absolute top-2 right-2 text-green-700 hover:text-green-900 font-bold"
                             >
@@ -42,34 +43,37 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('henkaten.method.store') }}" method="POST" enctype="multipart/form-data">
+                    {{-- UBAH: Form action dinamis --}}
+                    @php
+                        $formAction = isset($log)
+                            ? route('activity.log.method.update', $log->id)
+                            : route('henkaten.method.store');
+                    @endphp
+
+                    <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        
+                        {{-- UBAH: Tambahkan method spoofing untuk EDIT --}}
+                        @if(isset($log))
+                            @method('PUT')
+                        @endif
+
                         {{-- ============================================= --}}
-                        {{-- BARU: Input tersembunyi untuk Shift --}}
+                        {{-- Input tersembunyi untuk Shift --}}
                         {{-- ============================================= --}}
-                        <input type="hidden" name="shift" value="{{ $currentShift }}">
-                        
+                        {{-- UBAH: Ambil nilai dari $log jika ada, atau $currentShift jika baru --}}
+                        <input type="hidden" name="shift" value="{{ old('shift', $log->shift ?? ($currentShift ?? '')) }}">
+
                         {{-- Wrapper Alpine untuk dependent dropdowns --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
                              x-data="dependentDropdowns(
-                                 '{{ old('line_area') }}', 
-                                 {{ old('station_id') ?? 'null' }}, 
-                                 @json($stations ?? []) 
+                                 {{-- UBAH: Isi data dari $log jika ada --}}
+                                 '{{ old('line_area', $log->station->line_area ?? '') }}',
+                                 {{ old('station_id', $log->station_id ?? 'null') }},
+                                 @json($stations ?? [])
                              )">
 
                             {{-- Kolom Kiri --}}
                             <div>
-                                {{-- =================================== --}}
-                                {{-- DIHAPUS: Dropdown Shift --}}
-                                {{-- =================================== --}}
-                                {{-- <div class="mb-4">
-                                    <label for="shift" class="block text-gray-700 text-sm font-bold mb-2">Shift</label>
-                                    <select id="shift" name="shift" ... >
-                                        ...
-                                    </select>
-                                </div> --}}
-
                                 <div class="mb-4">
                                     <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
                                     <select id="line_area" name="line_area" required
@@ -77,13 +81,16 @@
                                             x-model="selectedLineArea"
                                             @change="fetchStations()">
                                         <option value="">-- Pilih Line Area --</option>
-                                        
+
                                         @foreach ($lineAreas as $area)
-                                            <option value="{{ $area }}" :selected="'{{ $area }}' === selectedLineArea">
+                                            {{-- UBAH: Gunakan @selected untuk Blade non-Alpine fallback --}}
+                                            <option value="{{ $area }}"
+                                                    :selected="'{{ $area }}' === selectedLineArea"
+                                                    @selected(old('line_area', $log->station->line_area ?? '') == $area)>
                                                 {{ $area }}
                                             </option>
                                         @endforeach
-                                        
+
                                     </select>
                                 </div>
 
@@ -93,15 +100,20 @@
                                             class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
                                             x-model="selectedStation"
                                             :disabled="stationList.length === 0">
-                                        
+
                                         <option value="">-- Pilih Station --</option>
-                                        
+
+                                        {{--
+                                          CATATAN: Controller 'edit' Anda HARUS mengirimkan $stations
+                                          yang sudah terisi agar :selected di bawah ini berfungsi
+                                          saat halaman dimuat (sebelum Alpine mengambil alih)
+                                        --}}
                                         <template x-for="station in stationList" :key="station.id">
-                                            <option :value="station.id" 
-                                                    :selected="station.id == selectedStation" 
+                                            <option :value="station.id"
+                                                    :selected="station.id == selectedStation"
                                                     x-text="station.station_name"></option>
                                         </template>
-                                        
+
                                     </select>
                                 </div>
                             </div>
@@ -110,31 +122,36 @@
                             <div>
                                 <div class="mb-4">
                                     <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
+                                    {{-- UBAH: Isi value dari $log jika ada --}}
                                     <input type="date" id="effective_date" name="effective_date"
-                                           value="{{ old('effective_date') }}"
+                                           value="{{ old('effective_date', $log->effective_date ?? '') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
-                                    <input type="date" id="end_date" name="end_date" value="{{ old('end_date') }}"
+                                    {{-- UBAH: Isi value dari $log jika ada --}}
+                                    <input type="date" id="end_date" name="end_date"
+                                           value="{{ old('end_date', $log->end_date ?? '') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
+                                    {{-- UBAH: Isi value dari $log jika ada --}}
                                     <input type="time" id="time_start" name="time_start"
-                                           value="{{ old('time_start') }}"
+                                           value="{{ old('time_start', $log->time_start ?? '') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
+                                    {{-- UBAH: Isi value dari $log jika ada --}}
                                     <input type="time" id="time_end" name="time_end"
-                                           value="{{ old('time_end') }}"
+                                           value="{{ old('time_end', $log->time_end ?? '') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
@@ -147,20 +164,22 @@
                             {{-- Before --}}
                             <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md">
                                 <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sebelum</label>
+                                {{-- UBAH: Isi value dari $log jika ada --}}
                                 <textarea id="keterangan" name="keterangan" rows="4"
                                           placeholder="Jelaskan kondisi method sebelum perubahan..."
                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                          required>{{ old('keterangan') }}</textarea>
+                                          required>{{ old('keterangan', $log->keterangan ?? '') }}</textarea>
                                 <p class="text-xs text-gray-500 mt-2 italic">Data method sebelum perubahan</p>
                             </div>
 
                             {{-- After --}}
                             <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md">
                                 <label for="keterangan_after" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sesudah Pergantian</label>
+                                {{-- UBAH: Isi value dari $log jika ada --}}
                                 <textarea id="keterangan_after" name="keterangan_after" rows="4"
                                           placeholder="Jelaskan kondisi method setelah perubahan..."
                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                          required>{{ old('keterangan_after') }}</textarea>
+                                          required>{{ old('keterangan_after', $log->keterangan_after ?? '') }}</textarea>
                                 <p class="text-xs text-green-600 mt-2 italic">Data method setelah perubahan</p>
                             </div>
 
@@ -171,16 +190,35 @@
                             <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran</label>
                             <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
                                    class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                   required>
+                                   {{-- UBAH: 'required' hanya jika membuat baru --}}
+                                   {{ isset($log) ? '' : 'required' }}>
+
+                            {{-- UBAH: Tampilkan file yang ada jika sedang edit --}}
+                            @if(isset($log) && $log->lampiran)
+                                <div class="mt-2 text-sm text-gray-600">
+                                    <p>File saat ini:
+                                        {{-- Pastikan Anda sudah menjalankan `php artisan storage:link` --}}
+                                        <a href="{{ asset('storage/' . $log->lampiran) }}"
+                                           target="_blank"
+                                           class="text-blue-600 hover:underline font-medium">
+                                           Lihat Lampiran
+                                        </a>
+                                    </p>
+                                    <p class="text-xs italic text-gray-500">Kosongkan input file jika tidak ingin mengubah lampiran.</p>
+                                </div>
+                            @endif
                         </div>
+
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
-                            <a href="{{ route('dashboard') }}"
+                            {{-- UBAH: Link batal kembali ke halaman index log --}}
+                            <a href="{{ route('activity.log.method') }}"
                                class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">
                                 Batal
                             </a>
                             <button type="submit"
                                     class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
-                                Simpan Data
+                                {{-- UBAH: Teks tombol dinamis --}}
+                                {{ isset($log) ? 'Simpan Perubahan' : 'Simpan Data' }}
                             </button>
                         </div>
                     </form>
@@ -193,15 +231,24 @@
     {{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
-        // Fungsi Dependent Dropdown
+        // Fungsi Dependent Dropdown (Tidak perlu diubah)
         function dependentDropdowns(oldLineArea, oldStation, initialStations) {
             return {
                 selectedLineArea: oldLineArea || '',
                 selectedStation: oldStation || null,
                 stationList: initialStations || [],
-                
+
+                // init() {
+                //     // Jika $stations sudah ada saat load, Alpine akan menggunakannya
+                //     // Jika tidak (saat 'create' atau validasi gagal), fetchStations() akan
+                //     // dipanggil oleh @change
+                // },
+
                 fetchStations() {
-                    this.selectedStation = null; 
+                    // Hanya reset station jika line *benar-benar* berubah
+                    if (this.selectedStation !== null) {
+                        this.selectedStation = null;
+                    }
                     this.stationList = [];
 
                     if (!this.selectedLineArea) {

@@ -8,6 +8,9 @@ use App\Http\Controllers\MachineController;
 use App\Http\Controllers\HenkatenController;
 use App\Http\Controllers\MethodController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\ActivityLogMethodController;
+use App\Http\Controllers\ActivityLogMaterialController;
+use App\Http\Controllers\ActivityLogMachineController;
 use App\Http\Controllers\MasterConfirmController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,7 +44,7 @@ Route::middleware(['auth'])->group(function () {
     // ======================================================================
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-     // Hanya Admin
+    // Hanya Admin
     Route::get('/dashboard/admin', [DashboardController::class, 'admin'])
         ->middleware('role:admin')
         ->name('dashboard.admin');
@@ -76,7 +79,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
-    
+
     // ======================================================================
     // HENKATEN WORKFLOW
     // ======================================================================
@@ -96,7 +99,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/method/start', [HenkatenController::class, 'showMethodStartPage'])->name('method.start.page');
         Route::patch('/method/start/update', [HenkatenController::class, 'updateMethodStartData'])->name('method.start.update');
 
-        // MATERIAL HENKATEN 
+        // MATERIAL HENKATEN
         Route::get('/material/create', [HenkatenController::class, 'createMaterialHenkaten'])->name('material.create');
         Route::post('/material/store', [HenkatenController::class, 'storeMaterialHenkaten'])->name('material.store');
         Route::get('/material/start', [HenkatenController::class, 'showMaterialStartPage'])->name('material.start.page');
@@ -154,9 +157,9 @@ Route::middleware(['auth'])->group(function () {
 // [BARU] Rute AJAX untuk form Material
 // ----------------------------------------------------------------------
 Route::get('/get-stations-by-line-area', [MaterialController::class, 'getStationsByLineArea'])
-       ->name('get.stations.by.line.area');
+        ->name('get.stations.by.line.area');
 
-       
+
     Route::resource('materials', MaterialController::class);
     Route::resource('machines', MachineController::class);
     Route::resource('methods', MethodController::class);
@@ -165,9 +168,7 @@ Route::get('/get-stations-by-line-area', [MaterialController::class, 'getStation
     // ACTIVITY LOG
     // ======================================================================
     Route::prefix('activity-log')->name('activity.log.')->group(function () {
-        Route::get('/machine', [HenkatenController::class, 'showMachineActivityLog'])->name('machine');
-        Route::get('/material', [HenkatenController::class, 'showMaterialActivityLog'])->name('material');
-        Route::get('/method', [HenkatenController::class, 'showMethodActivityLog'])->name('method'); 
+        // Rute '/method' dipindahkan ke grup CRUD di bawah
     });
 
 
@@ -185,7 +186,46 @@ Route::prefix('activity-log/manpower')
     Route::delete('/{log}', 'destroy')->name('.destroy');
 });
 
-    
+// ======================================================================
+// ACTIVITY LOG - (Method - CRUD Lengkap)
+// ======================================================================
+Route::prefix('activity-log/method')
+    ->name('activity.log.method') // Nama dasar rute: 'activity.log.method'
+    ->controller(ActivityLogMethodController::class) // Menggunakan Controller Grouping
+    ->group(function () {
+        Route::get('/', 'index')->name(''); // Rute: 'activity.log.method'
+        Route::get('/{log}/edit', 'edit')->name('.edit'); // Rute: 'activity.log.method.edit'
+        Route::put('/{log}', 'update')->name('.update'); // Rute: 'activity.log.method.update'
+        Route::delete('/{log}', 'destroy')->name('.destroy'); // Rute: 'activity.log.method.destroy'
+    });
+
+    // ======================================================================
+// ACTIVITY LOG - (MACHINE - CRUD Lengkap)
+// ======================================================================
+Route::prefix('activity-log/machine')
+    ->name('activity.log.machine') // Nama dasar rute: 'activity.log.machine'
+    ->controller(ActivityLogMethodController::class) // Sesuai permintaan, menggunakan controller yang sama dengan Method
+    ->group(function () {
+        Route::get('/', 'index')->name(''); // Rute: 'activity.log.machine'
+        Route::get('/{log}/edit', 'edit')->name('.edit'); // Rute: 'activity.log.machine.edit'
+        Route::put('/{log}', 'update')->name('.update'); // Rute: 'activity.log.machine.update'
+        Route::delete('/{log}', 'destroy')->name('.destroy'); // Rute: 'activity.log.machine.destroy'
+    });
+
+
+    // ======================================================================
+// ACTIVITY LOG - (MATERIAL - CRUD Lengkap)
+// ======================================================================
+Route::prefix('activity-log/material')
+    ->name('activity.log.material') // Nama dasar rute: 'activity.log.material'
+    ->controller(ActivityLogMaterialController::class) // Controller BARU
+    ->group(function () {
+        Route::get('/', 'index')->name(''); // Rute: 'activity.log.material'
+        Route::get('/{log}/edit', 'edit')->name('.edit'); // Rute: 'activity.log.material.edit'
+        Route::put('/{log}', 'update')->name('.update'); // Rute: 'activity.log.material.update'
+        Route::delete('/{log}', 'destroy')->name('.destroy'); // Rute: 'activity.log.material.destroy'
+    });
+
 // ======================================================================
 // Konfirmasi Approval Section Head
 // ======================================================================
@@ -205,12 +245,12 @@ Route::middleware(['auth', 'role:Sect Head Produksi|Sect Head PPIC|Sect Head QC'
 
     // [BARU] Rute untuk menangani aksi approve henkaten
     Route::post('/henkaten/approval/{type}/{id}/approve', [HenkatenController::class, 'approveHenkaten'])
-          ->name('henkaten.approve');
+            ->name('henkaten.approve');
 
     // [BARU] Rute untuk menangani aksi revisi henkaten
     Route::post('/henkaten/approval/{type}/{id}/revisi', [HenkatenController::class, 'revisiHenkaten'])
-          ->name('henkaten.revisi');
-    
+            ->name('henkaten.revisi');
+
     // [BARU] Rute API untuk mengambil data detail henkaten (untuk modal)
     // Pastikan URL-nya sama dengan yang ada di 'fetch' JavaScript
     Route::get('/api/henkaten-detail/{type}/{id}', [HenkatenController::class, 'getHenkatenDetail']);
@@ -220,5 +260,4 @@ Route::middleware(['auth', 'role:Sect Head Produksi|Sect Head PPIC|Sect Head QC'
 
 
 
-}); 
-
+});

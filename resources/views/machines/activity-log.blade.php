@@ -1,7 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{-- DIUBAH: Judul --}}
             {{ __('Activity Log - Machine') }}
         </h2>
     </x-slot>
@@ -13,7 +12,6 @@
 
                     {{-- FORM FILTER BERDASARKAN CREATED_AT --}}
                     <div class="flex justify-end mb-4">
-                        {{-- DIUBAH: Route --}}
                         <form action="{{ route('activity.log.machine') }}" method="GET"
                             class="flex items-end space-x-2">
 
@@ -22,105 +20,124 @@
                                     Filter Tanggal
                                 </label>
                                 <input type="date" name="created_date" id="created_date"
-                                    value="{{ $created_date ?? '' }}" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm 
+                                    value="{{ $created_date ?? '' }}" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm
                                     focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                             </div>
 
-                            <button type="submit" class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium 
-                                rounded-md text-white bg-blue-600 hover:bg-blue-700 
-                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                            <button type="submit" class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium
+                                    rounded-md text-white bg-blue-600 hover:bg-blue-700
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                                 Filter
                             </button>
 
-                            {{-- DIUBAH: Route --}}
-                            <a href="{{ route('activity.log.machine') }}" class="py-4 px-6 border border-gray-300 shadow-sm text-sm font-medium rounded-md 
-                                text-gray-700 bg-white hover:bg-gray-100 
-                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                            <a href="{{ route('activity.log.machine') }}" class="py-2 px-6 border border-gray-300 shadow-sm text-sm font-medium rounded-md
+                                    text-gray-700 bg-white hover:bg-gray-100
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                                 Reset
                             </a>
                         </form>
                     </div>
-                </div>
 
+                    {{-- TAMPILKAN NOTIFIKASI SUKSES (JIKA ADA DARI REDIRECT) --}}
+                    @if (session('success'))
+                        <div class="mb-4 p-4 rounded-md bg-green-100 border border-green-400 text-green-700">
+                            {{ session('success') }}
+                        </div>
+                    @endif
 
-                {{-- NOTIFIKASI JIKA DATA TIDAK DITEMUKAN --}}
-                @if ($logs->isEmpty() && $created_date)
-                    <div class="mb-4 p-4 rounded-md bg-yellow-100 border border-yellow-400 text-yellow-700">
-                        {{-- DIUBAH: Teks --}}
-                        Tidak ada data Henkaten Machine untuk tanggal
-                        <strong>{{ \Carbon\Carbon::parse($created_date)->format('d M Y') }}</strong>.
-                    </div>
-                @endif
+                    {{-- NOTIFIKASI JIKA DATA TIDAK DITEMUKAN --}}
+                    @if ($logs->isEmpty() && $created_date)
+                        <div class="mb-4 p-4 rounded-md bg-yellow-100 border border-yellow-400 text-yellow-700">
+                            Tidak ada data Henkaten Machine untuk tanggal
+                            <strong>{{ \Carbon\Carbon::parse($created_date)->format('d M Y') }}</strong>.
+                        </div>
+                    @endif
 
-                {{-- TABEL DATA --}}
-                <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
-                    <table class="w-full text-sm text-left text-gray-500">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                            <tr>
-                                <th scope="col" class="py-3 px-6">Tanggal Dibuat</th>
-                                {{-- DIUBAH: Kolom Machine --}}
-                                <th scope="col" class="py-3 px-6">Kategori</th>
-                                <th scope="col" class="py-3 px-6">Deskripsi Sebelum</th>
-                                <th scope="col" class="py-3 px-6">Deskripsi Sesudah</th>
-                                <th scope="col" class="py-3 px-6">Station</th>
-                                <th scope="col" class="py-3 px-6">Line Area</th>
-                                <th scope="col" class="py-3 px-6">Tgl Efektif</th>
-                                <th scope="col" class="py-3 px-6">Tgl Selesai</th>
-                                <th scope="col" class="py-3 px-6">Keterangan</th>
-                                <th scope="col" class="py-3 px-6">Lampiran</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($logs as $log)
-                                <tr class="bg-white border-b hover:bg-gray-50">
-                                    <td class="py-4 px-6">
-                                        {{ $log->created_at ? $log->created_at->format('d M Y') : '-' }}
-                                    </td>
-                                    {{-- DIUBAH: Data Machine --}}
-                                    <td class="py-4 px-6">{{ $log->machine ?? '-' }}</td>
-                                    <td class="py-4 px-6">{{ $log->description_before ?? '-' }}</td>
-                                    <td class="py-4 px-6">{{ $log->description_after?? '-' }}</td>
-                                    
-                                    <td class="py-4 px-6">{{ $log->station->station_name ?? 'N/A' }}</td>
-                                    <td class="py-4 px-6">{{ $log->line_area ?? '-' }}</td>
-                                    <td class="py-4 px-6">
-                                        {{ $log->effective_date ? \Carbon\Carbon::parse($log->effective_date)->format('d M Y') : '-' }}
-                                    </td>
-                                    <td class="py-4 px-6">
-                                        {{ $log->end_date ? \Carbon\Carbon::parse($log->end_date)->format('d M Y') : '-' }}
-                                    </td>
-                                    <td class="py-4 px-6">{{ $log->keterangan ?? '-' }}</td>
-                                    <td class="py-4 px-6">
-                                        @if ($log->lampiran)
-                                            <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
-                                                class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-                                                Lihat Lampiran
+                    {{-- TABEL DATA --}}
+                    <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="py-3 px-6">Tanggal Dibuat</th>
+                                    <th scope="col" class="py-3 px-6">Kategori</th>
+                                    <th scope="col" class="py-3 px-6">Deskripsi Sebelum</th>
+                                    <th scope="col" class="py-3 px-6">Deskripsi Sesudah</th>
+                                    <th scope="col" class="py-3 px-6">Station</th>
+                                    <th scope="col" class="py-3 px-6">Line Area</th>
+                                    <th scope="col" class="py-3 px-6">Tgl Efektif</th>
+                                    <th scope="col" class="py-3 px-6">Tgl Selesai</th>
+                                    <th scope="col" class="py-3 px-6">Keterangan</th>
+                                    <th scope="col" class="py-3 px-6">Lampiran</th>
+                                    {{-- TAMBAHAN KOLOM AKSI --}}
+                                    <th scope="col" class="py-3 px-6">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($logs as $log)
+                                    <tr class="bg-white border-b hover:bg-gray-50">
+                                        <td class="py-4 px-6">
+                                            {{ $log->created_at ? $log->created_at->format('d M Y') : '-' }}
+                                        </td>
+                                        <td class="py-4 px-6">{{ $log->machine ?? '-' }}</td>
+                                        <td class="py-4 px-6">{{ $log->description_before ?? '-' }}</td>
+                                        <td class="py-4 px-6">{{ $log->description_after?? '-' }}</td>
+                                        <td class="py-4 px-6">{{ $log->station->station_name ?? 'N/A' }}</td>
+                                        <td class="py-4 px-6">{{ $log->line_area ?? '-' }}</td>
+                                        <td class="py-4 px-6">
+                                            {{ $log->effective_date ? \Carbon\Carbon::parse($log->effective_date)->format('d M Y') : '-' }}
+                                        </td>
+                                        <td class="py-4 px-6">
+                                            {{ $log->end_date ? \Carbon\Carbon::parse($log->end_date)->format('d M Y') : '-' }}
+                                        </td>
+                                        <td class="py-4 px-6">{{ $log->keterangan ?? '-' }}</td>
+                                        <td class="py-4 px-6">
+                                            @if ($log->lampiran)
+                                                <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                                                    class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                                                    Lihat Lampiran
+                                                </a>
+                                            @else
+                                                <span class="text-gray-400">Tidak ada</span>
+                                            @endif
+                                        </td>
+                                        {{-- TAMBAHAN TOMBOL AKSI --}}
+                                        <td class="py-4 px-6 flex space-x-2">
+                                            <a href="{{ route('activity.log.machine.edit', $log->id) }}"
+                                                class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                                                Edit
                                             </a>
-                                        @else
-                                            <span class="text-gray-400">Tidak ada</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr class="bg-white border-b">
-                                    {{-- DIUBAH: Colspan --}}
-                                    <td colspan="10" class="py-4 px-6 text-center text-gray-500">
-                                        {{-- DIUBAH: Teks --}}
-                                        Tidak ada data Henkaten Machine
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                                            <form action="{{ route('activity.log.machine.destroy', $log->id) }}" method="POST"
+                                                onsubmit="return confirm('Anda yakin ingin menghapus data ini?');"
+                                                class="inline-block">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                    class="inline-block bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                                                    Hapus
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr class="bg-white border-b">
+                                        {{-- Update colspan jadi 11 --}}
+                                        <td colspan="11" class="py-4 px-6 text-center text-gray-500">
+                                            Tidak ada data Henkaten Machine
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
 
-                <div class="mt-4">
-                    {{-- DIUBAH: Pagination view --}}
-                    {{ $logs->appends(request()->query())->links('vendor.pagination.tailwind-activity-machine') }}
-                </div>
+                    <div class="mt-4">
+                        {{-- Ganti pagination view jika perlu, atau gunakan default --}}
+                        {{ $logs->appends(request()->query())->links() }}
+                        {{-- {{ $logs->appends(request()->query())->links('vendor.pagination.tailwind-activity-machine') }} --}}
+                    </div>
 
+                </div>
             </div>
         </div>
-    </div>
     </div>
 </x-app-layout>

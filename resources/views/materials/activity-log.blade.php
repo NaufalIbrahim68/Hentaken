@@ -11,7 +11,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
 
-                    {{-- FORM FILTER - Rute diubah ke material --}}
+                    {{-- FORM FILTER --}}
                     <div class="flex justify-end mb-4">
                         <form action="{{ route('activity.log.material') }}" method="GET"
                             class="flex items-end space-x-2">
@@ -21,19 +21,18 @@
                                     Filter Tanggal
                                 </label>
                                 <input type="date" name="created_date" id="created_date"
-                                    value="{{ $created_date ?? '' }}" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm 
+                                    value="{{ $created_date ?? '' }}" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm
                                     focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                             </div>
 
-                            <button type="submit" class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium 
-                                    rounded-md text-white bg-blue-600 hover:bg-blue-700 
+                            <button type="submit" class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium
+                                    rounded-md text-white bg-blue-600 hover:bg-blue-700
                                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                                 Filter
                             </button>
 
-                            {{-- Link Reset - Rute diubah ke material --}}
-                            <a href="{{ route('activity.log.material') }}" class="py-4 px-6 border border-gray-300 shadow-sm text-sm font-medium rounded-md 
-                                    text-gray-700 bg-white hover:bg-gray-100 
+                            <a href="{{ route('activity.log.material') }}" class="py-4 px-6 border border-gray-300 shadow-sm text-sm font-medium rounded-md
+                                    text-gray-700 bg-white hover:bg-gray-100
                                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                                 Reset
                             </a>
@@ -42,7 +41,7 @@
                 </div>
 
 
-                {{-- NOTIFIKASI JIKA DATA TIDAK DITEMUKAN - Teks diubah --}}
+                {{-- NOTIFIKASI JIKA DATA TIDAK DITEMUKAN --}}
                 @if ($logs->isEmpty() && $created_date)
                     <div class="mb-4 p-4 rounded-md bg-yellow-100 border border-yellow-400 text-yellow-700">
                         Tidak ada data Henkaten Material untuk tanggal
@@ -56,7 +55,6 @@
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                             <tr>
                                 <th scope="col" class="py-3 px-6">Tanggal Dibuat</th>
-                                {{-- Kolom diubah ke Material --}}
                                 <th scope="col" class="py-3 px-6">Nama Material Sebelum</th>
                                 <th scope="col" class="py-3 px-6">Nama Material Sesudah</th>
                                 <th scope="col" class="py-3 px-6">Station</th>
@@ -64,6 +62,8 @@
                                 <th scope="col" class="py-3 px-6">Tgl Efektif</th>
                                 <th scope="col" class="py-3 px-6">Tgl Selesai</th>
                                 <th scope="col" class="py-3 px-6">Lampiran</th>
+                                {{-- BARU: Kolom Aksi --}}
+                                <th scope="col" class="py-3 px-6">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -72,7 +72,6 @@
                                     <td class="py-4 px-6">
                                         {{ $log->created_at ? $log->created_at->format('d M Y') : '-' }}
                                     </td>
-                                    {{-- Data diubah ke material_name / material_after --}}
                                     <td class="py-4 px-6">{{ $log->material_name ?? '-' }}</td>
                                     <td class="py-4 px-6">{{ $log->material_after ?? '-' }}</td>
                                     <td class="py-4 px-6">{{ $log->station->station_name ?? 'N/A' }}</td>
@@ -93,11 +92,29 @@
                                             <span class="text-gray-400">Tidak ada</span>
                                         @endif
                                     </td>
+
+                                    {{-- BARU: Tombol Edit & Hapus --}}
+                                    <td class="py-4 px-6 flex space-x-2">
+                                        <a href="{{ route('activity.log.material.edit', $log->id) }}"
+                                            class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                                            Edit
+                                        </a>
+                                        <form action="{{ route('activity.log.material.destroy', $log->id) }}" method="POST"
+                                            onsubmit="return confirm('Anda yakin ingin menghapus data ini?');"
+                                            class="inline-block">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="inline-block bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                                                Hapus
+                                            </button>
+                                        </form>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr class="bg-white border-b">
-                                    <td colspan="8" class="py-4 px-6 text-center text-gray-500">
-                                        {{-- Teks diubah ke Material --}}
+                                    {{-- BARU: Colspan diubah dari 8 menjadi 9 --}}
+                                    <td colspan="9" class="py-4 px-6 text-center text-gray-500">
                                         Tidak ada data Henkaten Material
                                     </td>
                                 </tr>
@@ -107,7 +124,6 @@
                 </div>
 
                 <div class="mt-4">
-                    {{-- Pagination tetap sama, akan menggunakan style yang sama --}}
                     {{ $logs->appends(request()->query())->links('vendor.pagination.tailwind-activity-manpower') }}
                 </div>
 
