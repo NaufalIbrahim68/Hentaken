@@ -74,25 +74,29 @@ class DashboardController extends Controller
         $activeManPowerHenkatens = ManPowerHenkaten::with('station')
             ->where(fn($q) => $baseHenkatenQuery($q))
             ->where('shift', $shiftNumForQuery)
-            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) // <-- Filter Line
+            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) 
+            ->where('status', 'approved') 
             ->latest('effective_date')->get();
 
         $activeMethodHenkatens = MethodHenkaten::with('station')
             ->where(fn($q) => $baseHenkatenQuery($q))
             ->where('shift', $shiftNumForQuery)
-            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) // <-- Filter Line
+            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) 
+           ->where('status', 'approved') 
             ->latest('effective_date')->get();
 
         $machineHenkatens = MachineHenkaten::with('station')
             ->where(fn($q) => $baseHenkatenQuery($q))
             ->where('shift', $shiftNumForQuery)
-            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) // <-- Filter Line
+            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) 
+             ->where('status', 'approved') 
             ->latest('effective_date')->get();
 
         $materialHenkatens = MaterialHenkaten::with(['station', 'material'])
             ->where(fn($q) => $baseHenkatenQuery($q))
             ->where('shift', $shiftNumForQuery)
-            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) // <-- Filter Line
+            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) 
+            ->where('status', 'approved') 
             ->latest('effective_date')->get();
 
         // === DATA MANPOWER ===
