@@ -78,17 +78,17 @@ class ActivityLogMaterialController extends Controller
     {
         // 1. Validasi data (disesuaikan dengan form BARU Anda)
         $validatedData = $request->validate([
-            'station_id'         => 'required|exists:stations,id',
-            'material_id'        => 'required|exists:materials,id', // DIUBAH
-            'effective_date'     => 'required|date',
-            'end_date'           => 'required|date|after_or_equal:effective_date', // Dulu nullable, form Anda 'required'
-            'time_start'         => 'required',
-            'time_end'           => 'required',
+            'station_id'       => 'required|exists:stations,id',
+            'material_id'      => 'required|exists:materials,id', // DIUBAH
+            'effective_date'   => 'required|date',
+            'end_date'         => 'required|date|after_or_equal:effective_date', // Dulu nullable, form Anda 'required'
+            'time_start'       => 'required',
+            'time_end'         => 'required',
             'description_before' => 'required|string|max:255', // DIUBAH
             'description_after'  => 'required|string|max:255', // DIUBAH
-            'keterangan'         => 'required|string',
-            'lampiran'           => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
-            'shift'              => 'required|string',
+            'keterangan'       => 'required|string',
+            'lampiran'         => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
+            'shift'            => 'required|string',
         ]);
 
         // 2. Handle file upload
@@ -100,12 +100,23 @@ class ActivityLogMaterialController extends Controller
             $validatedData['lampiran'] = $path;
         }
 
-        // 3. Update data log
+        // 3. -----------------------------------------------------------
+        //    PERUBAHAN UTAMA DI SINI
+        //    Set status kembali ke 'Pending' dan hapus note revisi lama.
+        // -----------------------------------------------------------
+        $validatedData['status'] = 'Pending';
+        $validatedData['note']   = null;
+
+
+        // 4. Update data log
+        //    ($validatedData sekarang sudah berisi 'status' dan 'note' baru)
         $log->update($validatedData);
 
+        // 5. Ubah pesan sukses
         return redirect()->route('activity.log.material')
-                         ->with('success', 'Data log Material berhasil diperbarui.');
+                         ->with('success', 'Data berhasil diupdate dan diajukan kembali untuk approval.');
     }
+
     /**
      * Menghapus log material dari database.
      */

@@ -22,7 +22,9 @@ class MethodHenkaten extends Model
         'time_start',
         'time_end',
         'serial_number_start',
-        'serial_number_end'
+        'serial_number_end',
+        'status',
+        'note',
     ];
 
     protected $casts = [

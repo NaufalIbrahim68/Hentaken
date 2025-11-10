@@ -413,33 +413,24 @@
                     }
                 },
 
-                formatTime(timeString) {
-                    if (!timeString || timeString === 'N/A') return 'N/A';
+formatTime(timeString) {
+                    if (!timeString || timeString === 'N/A') return '-';
 
-                    if (/^\d{2}:\d{2}$/.test(timeString)) {
-                        return timeString;
+                    // 1. Gunakan Regex untuk mencari pola "HH:MM" (dua digit:dua digit)
+                    //    Ini akan cocok dengan "07:00" dari string apapun, termasuk:
+                    //    - "07:00:00.0000000" (SQL Server time)
+                    //    - "1900-01-01 07:00:00" (SQL Server datetime)
+                    //    - "07:00:00"
+                    //    - "07:00"
+                    const match = String(timeString).match(/(\d{2}:\d{2})/);
+
+                    // 2. Jika pola "HH:MM" ditemukan, kembalikan itu
+                    if (match) {
+                        return match[0]; // Hasilnya akan "07:00"
                     }
 
-                    if (/^\d{2}:\d{2}:\d{2}$/.test(timeString)) {
-                        return timeString.substring(0, 5);
-                    }
-
-                    try {
-                        const date = new Date(timeString);
-                        if (isNaN(date.getTime())) {
-                            const parts = timeString.split(' ');
-                            if (parts.length === 2 && parts[1].includes(':')) {
-                                return parts[1].substring(0, 5);
-                            }
-                            return timeString;
-                        }
-                        
-                        const hours = String(date.getHours()).padStart(2, '0');
-                        const minutes = String(date.getMinutes()).padStart(2, '0');
-                        return `${hours}:${minutes}`;
-                    } catch (e) {
-                        return timeString;
-                    }
+                    // 3. Jika tidak ada pola yang cocok, kembalikan string aslinya
+                    return timeString;
                 },
 
                 getFileName(path) {

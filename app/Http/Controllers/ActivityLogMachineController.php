@@ -59,7 +59,7 @@ public function edit(MachineHenkaten $log): View
         ]);
     }
 
-   public function update(Request $request, MachineHenkaten $log)
+  public function update(Request $request, MachineHenkaten $log)
     {
         // 1. Validasi data (disesuaikan agar cocok dengan form Anda)
         $validatedData = $request->validate([
@@ -88,12 +88,20 @@ public function edit(MachineHenkaten $log): View
             $validatedData['lampiran'] = $path;
         }
 
-        // 3. Update data log menggunakan data yang sudah divalidasi
-        // Ini jauh lebih aman daripada $request->except()
+        // 3. -----------------------------------------------------------
+        //    PERUBAHAN UTAMA DI SINI
+        //    Set status kembali ke 'Pending' dan hapus note revisi lama.
+        // -----------------------------------------------------------
+        $validatedData['status'] = 'Pending';
+        $validatedData['note']   = null;
+
+        // 4. Update data log menggunakan data yang sudah divalidasi
+        //    ($validatedData sekarang sudah berisi 'status' dan 'note' baru)
         $log->update($validatedData);
 
+        // 5. Ubah pesan sukses
         return redirect()->route('activity.log.machine')
-                         ->with('success', 'Data log Machine berhasil diperbarui.');
+                         ->with('success', 'Data berhasil diupdate dan diajukan kembali untuk approval.');
     }
 
     /**

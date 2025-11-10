@@ -37,7 +37,6 @@ class MachineHenkaten extends Model
         'shift',
         'keterangan',
         'line_area',
-        // 'created_at' & 'updated_at' dihapus dari sini karena diurus otomatis
         'effective_date',
         'end_date',
         'lampiran',
@@ -45,9 +44,11 @@ class MachineHenkaten extends Model
         'serial_number_end',
         'time_start',
         'time_end',
-        'machine', // Ini adalah kolom Teks (String) Kategori Henkaten
+        'machine', 
         'description_before',
         'description_after',
+        'status',
+        'note',
     ];
 
     /**

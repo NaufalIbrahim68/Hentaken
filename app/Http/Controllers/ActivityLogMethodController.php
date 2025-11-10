@@ -62,7 +62,7 @@ class ActivityLogMethodController extends Controller
     /**
      * Memperbarui log di database.
      */
-    public function update(Request $request, MethodHenkaten $log) // <-- GANTI INI jika model Anda berbeda
+   public function update(Request $request, MethodHenkaten $log) // <-- Menggunakan route-model binding Anda
     {
         // Validasi data
         $request->validate([
@@ -71,11 +71,21 @@ class ActivityLogMethodController extends Controller
             'effective_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:effective_date',
             'lampiran' => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
-            // Tambahkan validasi lain jika perlu
+            
         ]);
 
         // Ambil semua data kecuali lampiran
         $data = $request->except('lampiran');
+
+        // -----------------------------------------------------------
+        // PERUBAHAN UTAMA DI SINI
+        // -----------------------------------------------------------
+        // 1. Set status kembali ke 'Pending' untuk diajukan ulang ke Section Head.
+        $data['status'] = 'Pending';
+        
+        // 2. [Opsional] Hapus 'note' revisi sebelumnya (best practice).
+        $data['note'] = null;
+        // -----------------------------------------------------------
 
         // Handle file upload (lampiran)
         if ($request->hasFile('lampiran')) {
@@ -84,16 +94,17 @@ class ActivityLogMethodController extends Controller
                 Storage::delete('public/' . $log->lampiran);
             }
 
-            // Simpan lampiran baru
+            // Simpan lampiran baru (path dari kode Anda)
             $path = $request->file('lampiran')->store('lampiran/method', 'public');
             $data['lampiran'] = $path;
         }
 
-        // Update data log
+        // Update data log dengan $data yang sudah berisi status 'Pending'
         $log->update($data);
 
+        // Ubah pesan sukses agar lebih jelas
         return redirect()->route('activity.log.method')
-                         ->with('success', 'Data log berhasil diperbarui.');
+                         ->with('success', 'Data berhasil diupdate dan diajukan kembali untuk approval.');
     }
 
     /**
