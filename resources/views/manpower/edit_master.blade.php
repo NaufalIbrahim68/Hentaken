@@ -5,22 +5,20 @@
         </h2>
     </x-slot>
 
-
     @php
-    // Ambil ID dari relasi 'stations'
-    $stationIds = $man_power->stations->pluck('station_id');
-    
-    // Cek: Jika koleksi $stationIds kosong DAN $man_power->station_id ada isinya,
-    // maka gunakan $man_power->station_id sebagai fallback.
-    if ($stationIds->isEmpty() && $man_power->station_id) {
-        $stationIds = [$man_power->station_id];
-    }
-@endphp
+        $stationIds = $man_power->stations->pluck('id');
+        if ($stationIds->isEmpty() && $man_power->station_id) {
+            $stationIds = [$man_power->station_id];
+        } else {
+            $stationIds = $stationIds->all();
+        }
+    @endphp
+
     <div 
-      x-data="manpowerEdit(
-    '{{ $man_power->line_area }}',
-    {{ json_encode($stationIds) }} 
-)"
+        x-data="manpowerEdit(
+            '{{ $man_power->line_area }}',
+            {{ json_encode($stationIds) }} 
+        )"
         x-init="init()"
         class="py-12"
     >
@@ -179,33 +177,33 @@
             isStationModalOpen: false,
             newStationId: '',
 
-           async init() {
-    if (this.selectedLineArea) {
-        await this.fetchStations();
-        await this.loadCurrentStations();
-    }
-},
+            async init() {
+                if (this.selectedLineArea) {
+                    await this.fetchStations();
+                    await this.loadCurrentStations();
+                }
+            },
 
-async fetchStations() {
-    try {
-        const res = await fetch(`{{ route('manpower.master.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
-        this.stationList = await res.json();
-    } catch (err) {
-        console.error('Fetch stations failed:', err);
-    }
-},
+            async fetchStations() {
+                try {
+                    const res = await fetch(`{{ route('manpower.master.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
+                    this.stationList = await res.json();
+                } catch (err) {
+                    console.error('Fetch stations failed:', err);
+                }
+            },
 
-loadCurrentStations() {
-    if (!Array.isArray(this.oldStationIds)) return;
+            loadCurrentStations() {
+                if (!Array.isArray(this.oldStationIds)) return;
 
-    // Ubah semua 'oldStationIds' menjadi Angka (Number)
-    const numericOldIds = this.oldStationIds.map(id => parseInt(id, 10));
+                // Ubah semua 'oldStationIds' menjadi Angka (Number)
+                const numericOldIds = this.oldStationIds.map(id => parseInt(id, 10));
 
-    this.currentStations = this.stationList.filter(st =>
-        // Sekarang kita membandingkan Angka dengan Angka
-        numericOldIds.includes(st.id) 
-    );
-},
+                this.currentStations = this.stationList.filter(st =>
+                    // Sekarang kita membandingkan Angka dengan Angka
+                    numericOldIds.includes(st.id) 
+                );
+            },
 
             openStationModal() {
                 if (!this.selectedLineArea) {

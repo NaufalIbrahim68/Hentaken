@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany; // <-- TAMBAHKAN INI
+
 
 class ManPower extends Model
 {
@@ -28,13 +31,26 @@ class ManPower extends Model
 
     ];
 
-    /**
-     * Relasi ke model Station.
-     */
-public function station()
-{
+
+     public function stations(): BelongsToMany
+    {
+        // Sesuaikan nama-nama ini jika perlu:
+        // 1. 'man_power_station' -> Nama tabel pivot Anda
+        // 2. 'man_power_id'    -> Foreign key untuk ManPower di tabel pivot
+        // 3. 'station_id'       -> Foreign key untuk Station di tabel pivot
+        return $this->belongsToMany(Station::class, 'man_power_stations', 'man_power_id', 'station_id');
+    }
+
+ /**
+     * Relasi ke model Station (SINGULAR).
+     * Ini mungkin relasi lama atau untuk 'station utama'.
+     * Biarkan saja apa adanya.
+     */
+    public function station(): BelongsTo // <-- UBAH TIPE RETURN JADI BelongsTo
+    {
     return $this->belongsTo(Station::class, 'station_id', 'id');
-}
+    }
+
 
     
 

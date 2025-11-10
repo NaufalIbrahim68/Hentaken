@@ -142,15 +142,18 @@ class ManPowerController extends Controller
     // ==============================================================
     // EDIT MASTER MANPOWER
     // ==============================================================
-    public function edit($id)
-    {
-        $man_power = ManPower::findOrFail($id);
-        $lineAreas = Station::select('line_area')->distinct()->pluck('line_area');
-        $stations = Station::all();
+   public function edit($id)
+{
+    
+    // MENJADI SEPERTI INI:
+    $man_power = ManPower::with('stations')->findOrFail($id);
+    
+    // Sisa kode Anda tetap sama
+    $lineAreas = Station::select('line_area')->distinct()->pluck('line_area');
+    $stations = Station::all();
 
-        return view('manpower.edit_master', compact('man_power', 'lineAreas', 'stations'));
-    }
-
+    return view('manpower.edit_master', compact('man_power', 'lineAreas', 'stations'));
+}
     // ==============================================================
     // UPDATE MASTER MANPOWER
     // ==============================================================
