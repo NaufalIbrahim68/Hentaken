@@ -25,7 +25,9 @@ class MaterialHenkaten extends Model
         'serial_number_start',
         'serial_number_end',
         'description_before', 
-        'description_after'
+        'description_after',
+        'status',
+        'notes'
     ];
 
     protected $casts = [

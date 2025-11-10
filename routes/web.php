@@ -203,15 +203,14 @@ Route::prefix('activity-log/method')
 // ACTIVITY LOG - (MACHINE - CRUD Lengkap)
 // ======================================================================
 Route::prefix('activity-log/machine')
-    ->name('activity.log.machine') // Nama dasar rute: 'activity.log.machine'
-    ->controller(ActivityLogMethodController::class) // Sesuai permintaan, menggunakan controller yang sama dengan Method
-    ->group(function () {
-        Route::get('/', 'index')->name(''); // Rute: 'activity.log.machine'
-        Route::get('/{log}/edit', 'edit')->name('.edit'); // Rute: 'activity.log.machine.edit'
-        Route::put('/{log}', 'update')->name('.update'); // Rute: 'activity.log.machine.update'
-        Route::delete('/{log}', 'destroy')->name('.destroy'); // Rute: 'activity.log.machine.destroy'
-    });
-
+ ->name('activity.log.machine') 
+->controller(ActivityLogMachineController::class) // <-- INI PERBAIKANNYA
+->group(function () {
+ Route::get('/', 'index')->name(''); 
+ Route::get('/{log}/edit', 'edit')->name('.edit'); 
+ Route::put('/{log}', 'update')->name('.update'); 
+ Route::delete('/{log}', 'destroy')->name('.destroy');
+ });
 
     // ======================================================================
 // ACTIVITY LOG - (MATERIAL - CRUD Lengkap)

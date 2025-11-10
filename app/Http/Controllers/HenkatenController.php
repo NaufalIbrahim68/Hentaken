@@ -410,23 +410,7 @@ $currentGroup = Session::get('active_grup');
         return redirect()->back()->with('success', 'Serial number Henkaten Material berhasil diupdate.');
     }
 
-    public function showMaterialActivityLog(Request $request): View
-    {
-        $created_date = $request->input('created_date');
-
-        $query = MaterialHenkaten::with('station')
-                                    ->latest();
-
-        if ($created_date) {
-            $query->whereDate('created_at', $created_date);
-        }
-
-        $logs = $query->paginate(15);
-        return view('materials.activity-log', [
-            'logs' => $logs,
-            'created_date' => $created_date
-        ]);
-    }
+   
 
     // ==============================================================
     // BAGIAN 6: FORM PEMBUATAN HENKATEN MACHINE (BARU)

@@ -64,13 +64,13 @@
                         <input type="hidden" name="shift" value="{{ old('shift', $log->shift ?? ($currentShift ?? '')) }}">
 
                         {{-- Wrapper Alpine untuk dependent dropdowns --}}
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
-                             x-data="dependentDropdowns(
-                                 {{-- UBAH: Isi data dari $log jika ada --}}
-                                 '{{ old('line_area', $log->station->line_area ?? '') }}',
-                                 {{ old('station_id', $log->station_id ?? 'null') }},
-                                 @json($stations ?? [])
-                             )">
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
+     x-data="dependentDropdowns({
+        oldLineArea: '{{ old('line_area', $log->station->line_area ?? '') }}',
+        oldStation: {{ old('station_id', $log->station_id ?? 'null') }},
+        findStationsUrl: '{{ route('henkaten.stations.by_line') }}'
+     })"
+     x-init="init()">
 
                             {{-- Kolom Kiri --}}
                             <div>
@@ -82,15 +82,12 @@
                                             @change="fetchStations()">
                                         <option value="">-- Pilih Line Area --</option>
 
-                                        @foreach ($lineAreas as $area)
-                                            {{-- UBAH: Gunakan @selected untuk Blade non-Alpine fallback --}}
-                                            <option value="{{ $area }}"
-                                                    :selected="'{{ $area }}' === selectedLineArea"
-                                                    @selected(old('line_area', $log->station->line_area ?? '') == $area)>
-                                                {{ $area }}
-                                            </option>
-                                        @endforeach
-
+                                     @foreach ($lineAreas as $area)
+    <option value="{{ $area }}"
+            @selected(old('line_area', $log->station->line_area ?? '') == $area)>
+        {{ $area }}
+    </option>
+@endforeach
                                     </select>
                                 </div>
 
@@ -124,8 +121,8 @@
                                     <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
                                     {{-- UBAH: Isi value dari $log jika ada --}}
                                     <input type="date" id="effective_date" name="effective_date"
-                                           value="{{ old('effective_date', $log->effective_date ?? '') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+value="{{ old('effective_date', isset($log) ? \Carbon\Carbon::parse($log->effective_date)->format('Y-m-d') : '') }}"                                          
+ class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
 
@@ -133,8 +130,7 @@
                                     <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
                                     {{-- UBAH: Isi value dari $log jika ada --}}
                                     <input type="date" id="end_date" name="end_date"
-                                           value="{{ old('end_date', $log->end_date ?? '') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+value="{{ old('end_date', isset($log) ? \Carbon\Carbon::parse($log->end_date)->format('Y-m-d') : '') }}"                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
 
@@ -142,8 +138,7 @@
                                     <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
                                     {{-- UBAH: Isi value dari $log jika ada --}}
                                     <input type="time" id="time_start" name="time_start"
-                                           value="{{ old('time_start', $log->time_start ?? '') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
 
@@ -151,8 +146,7 @@
                                     <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
                                     {{-- UBAH: Isi value dari $log jika ada --}}
                                     <input type="time" id="time_end" name="time_end"
-                                           value="{{ old('time_end', $log->time_end ?? '') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+value="{{ old('time_end', isset($log) ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '') }}"                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
                             </div>
@@ -228,44 +222,62 @@
         </div>
     </div>
 
-    {{-- Alpine.js --}}
+  {{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+    {{-- 
+      PERBAIKAN TOTAL: Mengadopsi logic dari 'henkatenForm' Manpower
+      (Disederhanakan hanya untuk dropdown Line Area & Station)
+    --}}
     <script>
-        // Fungsi Dependent Dropdown (Tidak perlu diubah)
-        function dependentDropdowns(oldLineArea, oldStation, initialStations) {
-            return {
-                selectedLineArea: oldLineArea || '',
-                selectedStation: oldStation || null,
-                stationList: initialStations || [],
+        document.addEventListener('alpine:init', () => {
+            // Kita beri nama 'dependentDropdowns'
+            Alpine.data('dependentDropdowns', (config) => ({
+                
+                // --- Properti Data (STATE) ---
+                selectedLineArea: config.oldLineArea || '',
+                selectedStation: config.oldStation || null,
+                stationList: [], // Selalu mulai kosong
 
-                // init() {
-                //     // Jika $stations sudah ada saat load, Alpine akan menggunakannya
-                //     // Jika tidak (saat 'create' atau validasi gagal), fetchStations() akan
-                //     // dipanggil oleh @change
-                // },
+                // --- URL ---
+                findStationsUrl: config.findStationsUrl,
 
-                fetchStations() {
-                    // Hanya reset station jika line *benar-benar* berubah
-                    if (this.selectedStation !== null) {
-                        this.selectedStation = null;
+                // --- FUNGSI INIT (dijalankan oleh x-init) ---
+                async init() {
+                    console.log('✅ Alpine Dropdowns Initialized (Method)');
+                    
+                    // 1. Jika line area sudah ada (saat edit),
+                    //    kita fetch daftar station-nya
+                    if (this.selectedLineArea) {
+                        console.log('🔁 Mode Edit: Mengambil ulang stations untuk line:', this.selectedLineArea);
+                        // 'false' artinya JANGAN reset selectedStation
+                        await this.fetchStations(false); 
                     }
-                    this.stationList = [];
+                },
 
+                // --- FUNGSI FETCH (Dipakai oleh init() dan @change) ---
+                async fetchStations(resetStation = true) {
                     if (!this.selectedLineArea) {
+                        this.stationList = [];
+                        this.selectedStation = null; // Ubah ke null
                         return;
                     }
+                    try {
+                        const res = await fetch(`${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
+                        const data = await res.json();
+                        
+                        // Logic dari file 'manpower' Anda (lebih aman)
+                        this.stationList = Array.isArray(data) ? data : (data.data ?? []);
 
-                    fetch(`{{ route('henkaten.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            this.stationList = data;
-                        })
-                        .catch(err => {
-                            console.error('Gagal mengambil data station:', err);
-                            this.stationList = [];
-                        });
+                        if (resetStation) {
+                            this.selectedStation = null; // Ubah ke null
+                        }
+                    } catch (err) {
+                        console.error('Gagal fetch stations:', err);
+                        this.stationList = [];
+                    }
                 }
-            }
-        }
+            }));
+        });
     </script>
 </x-app-layout>

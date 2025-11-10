@@ -26,9 +26,9 @@ class ActivityLogMachineController extends Controller
             $query->whereDate('created_at', $created_date);
         }
 
-        $logs = $query->paginate(15);
+        $logs = $query->paginate(10);
 
-        return view('activity-log.machine', [
+        return view('machines.activity-log', [
             'logs' => $logs,
             'created_date' => $created_date
         ]);
@@ -37,25 +37,25 @@ class ActivityLogMachineController extends Controller
     /**
      * Menampilkan form untuk mengedit log machine.
      */
- public function edit(MachineHenkaten $log): View
+public function edit(MachineHenkaten $log): View
     {
-        // 1. Eager load relasi 'station'
+        // 1. Eager load relasi 'station' (Ini sudah bagus)
         $log->load('station');
 
         // 2. Ambil data untuk dropdown Line Area
-        $lineAreas = Station::pluck('line_area')->unique()->filter()->toArray();
+        //    (Versi ini lebih efisien: 'distinct' & 'order' di DB)
+        $lineAreas = Station::select('line_area')
+                            ->distinct()
+                            ->orderBy('line_area', 'asc')
+                            ->pluck('line_area');
 
-        // 3. Ambil daftar station untuk line_area yang sedang dipilih
-        $stations = [];
-        if ($log->station) {
-            $stations = Station::where('line_area', $log->station->line_area)
-                               ->get(['id', 'station_name']);
-        }
+        // 3. Query $stations SUDAH TIDAK DIPERLUKAN LAGI!
+        //    Alpine.js di Blade akan mengambilnya sendiri.
 
-        return view('machines.create_henkaten', [
+        // 4. Kirim HANYA data $log dan $lineAreas
+        return view('machines.create_henkaten', [ // Sesuaikan path view jika perlu
             'log'       => $log,
             'lineAreas' => $lineAreas,
-            'stations'  => $stations
         ]);
     }
 
@@ -74,10 +74,7 @@ class ActivityLogMachineController extends Controller
             'after_value'    => 'required|string|max:255', // Nama disesuaikan
             'keterangan'     => 'required|string',         // Dibuat required
             'lampiran'       => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
-
-            // Field tersembunyi
             'shift'          => 'required|string',
-            'grup'           => 'required|string',
         ]);
 
         // 2. Handle file upload (lampiran) secara terpisah
@@ -112,7 +109,7 @@ class ActivityLogMachineController extends Controller
         // Hapus data dari database
         $log->delete();
 
-        return redirect()->route('activity.log.machine')
+        return redirect()->route('machines.activity-log')
                          ->with('success', 'Data log Machine berhasil dihapus.');
     }
 }

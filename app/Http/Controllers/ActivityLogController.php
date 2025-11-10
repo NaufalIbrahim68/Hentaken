@@ -13,9 +13,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException; // Penting untuk error 
 
 class ActivityLogController extends Controller
 {
-    /**
-     * Menampilkan log untuk Man Power Henkaten.
-     */
+    
     public function manpower(Request $request)
     {
         $created_date = $request->input('created_date');
@@ -36,12 +34,7 @@ class ActivityLogController extends Controller
         ]);
     }
 
-    // ==========================================================
-    // BARU: Method untuk EDIT
-    // ==========================================================
-    /**
-     * Menampilkan form untuk mengedit log.
-     */
+   
    public function edit(ManPowerHenkaten $log) // Gunakan Route Model Binding
 {
     // Mendapatkan Line Area unik dari database
@@ -199,13 +192,6 @@ class ActivityLogController extends Controller
     }
 }
 
-
-    // ==========================================================
-    // BARU: Method untuk DESTROY (Hapus)
-    // ==========================================================
-    /**
-     * Menghapus log dari database.
-     */
     public function destroy(ManPowerHenkaten $log)
     {
         // Hapus file lampiran dari storage

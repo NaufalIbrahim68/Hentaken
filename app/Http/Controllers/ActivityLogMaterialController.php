@@ -31,7 +31,7 @@ class ActivityLogMaterialController extends Controller
         $logs = $query->paginate(10);
 
         // Mengarah ke view yang Anda kirimkan sebelumnya
-        return view('activity-log.material', [
+        return view('materials.activity-log', [
             'logs' => $logs,
             'created_date' => $created_date
         ]);
@@ -89,7 +89,6 @@ class ActivityLogMaterialController extends Controller
             'keterangan'         => 'required|string',
             'lampiran'           => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
             'shift'              => 'required|string',
-            'grup'               => 'required|string', // Pastikan Anda mengirim ini
         ]);
 
         // 2. Handle file upload

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Station;
 use Illuminate\Http\Request;
 use App\Models\MethodHenkaten;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+
 
 class ActivityLogMethodController extends Controller
 {
@@ -24,7 +26,7 @@ class ActivityLogMethodController extends Controller
 
         $logs = $query->paginate(10); // Misalnya paginate 10
 
-        return view('activity-log.method', compact('logs', 'created_date')); // Sesuaikan path view jika perlu
+        return view('methods.activity-log', compact('logs', 'created_date')); // Sesuaikan path view jika perlu
     }
 
     // ==========================================================
@@ -34,12 +36,29 @@ class ActivityLogMethodController extends Controller
     /**
      * Menampilkan form untuk mengedit log.
      */
-    public function edit(MethodHenkaten $log) // <-- GANTI INI jika model Anda berbeda
+ public function edit(MethodHenkaten $log)
     {
-        // Pastikan Anda membuat view 'activity-log.method-edit'
-        return view('activity-log.method-edit', compact('log'));
-    }
+        // 1. Ambil DAFTAR NAMA line_area (sebagai string) dari tabel stations
+        //    Query ini mengambil nilai unik (distinct) dari kolom 'line_area'
+        $lineAreas = Station::select('line_area')
+                            ->distinct()
+                            ->orderBy('line_area', 'asc')
+                            ->pluck('line_area');
 
+        // 2. Ambil DAFTAR STATIONS (sebagai objek) yang sesuai dengan
+        //    line_area yang sedang diedit ($log)
+        //    Ini dibutuhkan agar dropdown "Station" terisi saat halaman dimuat
+        $stations = Station::where('line_area', $log->station->line_area)
+                           ->orderBy('station_name', 'asc') // Asumsi nama kolomnya 'station_name'
+                           ->get();
+
+        // 3. Kirim semua data yang dibutuhkan ke view
+        return view('methods.create_henkaten', compact(
+            'log',        // Data log yang akan diedit
+            'lineAreas',  // Daftar untuk dropdown "Line Area"
+            'stations'    // Daftar untuk dropdown "Station" (yang di-handle Alpine)
+        ));
+    }
     /**
      * Memperbarui log di database.
      */

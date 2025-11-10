@@ -62,21 +62,17 @@
 
                         {{-- DIUBAH: Input Shift tersembunyi mengambil data dari $log jika ada --}}
                         <input type="hidden" name="shift" value="{{ old('shift', $log->shift ?? ($currentShift ?? '')) }}">
-                        {{-- DIUBAH: Tambahkan input Grup (jika Anda menggunakannya) --}}
-                        <input type="hidden" name="grup" value="{{ old('grup', $log->grup ?? ($currentGroup ?? '')) }}">
 
 
-                        {{-- Wrapper Alpine untuk dependent dropdowns --}}
-                        {{-- DIUBAH: x-data diinisialisasi dengan data $log jika ada --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
-                             x-data="dependentDropdowns(
-                                 '{{ old('line_area', $log->station->line_area ?? '') }}',
-                                 {{ old('station_id', $log->station_id ?? 'null') }},
-                                 @json($stations ?? []),
-                                 {{ old('material_id', $log->material_id ?? 'null') }},
-                                 @json($materials ?? [])
-                             )" x-init="init()"> {{-- DIUBAH: Tambah x-init --}}
-
+     x-data="dependentDropdowns({
+        oldLineArea: '{{ old('line_area', $log->station->line_area ?? '') }}',
+        oldStation: {{ old('station_id', $log->station_id ?? 'null') }},
+        oldMaterial: {{ old('material_id', $log->material_id ?? 'null') }},
+        findStationsUrl: '{{ route('henkaten.stations.by_line') }}',
+        findMaterialsUrl: '{{ route('henkaten.materials.by_station') }}'
+     })"
+     x-init="init()">
                             {{-- Kolom Kiri --}}
                             <div>
                                 <div class="mb-4">
@@ -89,7 +85,6 @@
 
                                         @foreach ($lineAreas as $area)
                                             <option value="{{ $area }}"
-                                                :selected="'{{ $area }}' === selectedLineArea"
                                                 {{-- DIUBAH: Tambah @selected --}}
                                                 @selected(old('line_area', $log->station->line_area ?? '') == $area)>
                                                 {{ $area }}
@@ -144,8 +139,8 @@
                                     <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
                                     {{-- DIUBAH: Isi value dari $log --}}
                                     <input type="date" id="effective_date" name="effective_date"
-                                           value="{{ old('effective_date', $log->effective_date ?? '') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+value="{{ old('effective_date', isset($log) ? \Carbon\Carbon::parse($log->effective_date)->format('Y-m-d') : '') }}"                                          
+ class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
 
@@ -153,16 +148,16 @@
                                     <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
                                     {{-- DIUBAH: Isi value dari $log --}}
                                     <input type="date" id="end_date" name="end_date"
-                                           value="{{ old('end_date', $log->end_date ?? '') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                           required> {{-- DIUBAH: Sebaiknya 'required' dihapus jika boleh kosong --}}
+value="{{ old('end_date', isset($log) ? \Carbon\Carbon::parse($log->end_date)->format('Y-m-d') : '')  }}"                                         
+class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                           required> 
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
                                     {{-- DIUBAH: Isi value dari $log --}}
                                     <input type="time" id="time_start" name="time_start"
-                                           value="{{ old('time_start', $log->time_start ?? '') }}"
+                                          value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
@@ -171,8 +166,7 @@
                                     <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
                                     {{-- DIUBAH: Isi value dari $log --}}
                                     <input type="time" id="time_end" name="time_end"
-                                           value="{{ old('time_end', $log->time_end ?? '') }}"
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
                             </div>
@@ -257,36 +251,47 @@
         </div>
     </div>
 
-   {{-- Alpine.js --}}
+ {{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    {{-- DIUBAH: Script Alpine diperbarui dengan init() --}}
+    
+    {{-- 
+      PERBAIKAN TOTAL: Mengadopsi logic 'async init'
+      Disesuaikan untuk 3-level dropdown (Line -> Station -> Material)
+    --}}
     <script>
-        // Fungsi autocomplete (bisa dihapus jika tidak terpakai)
-        // ... (fungsi autocomplete Anda) ...
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('dependentDropdowns', (config) => ({
+                
+                // --- Properti Data (STATE) ---
+                selectedLineArea: config.oldLineArea || '',
+                selectedStation: config.oldStation || null,
+                selectedMaterial: config.oldMaterial || null,
+                stationList: [], // Selalu mulai kosong
+                materialList: [], // Selalu mulai kosong
 
-        // Dependent Dropdown untuk Line -> Station -> Material
-        function dependentDropdowns(oldLineArea, oldStation, initialStations, oldMaterial, initialMaterials) {
-            return {
-                selectedLineArea: oldLineArea || '',
-                selectedStation: oldStation || null,
-                stationList: initialStations || [],
-                selectedMaterial: oldMaterial || null,
-                materialList: initialMaterials || [],
+                // --- URL ---
+                findStationsUrl: config.findStationsUrl,
+                findMaterialsUrl: config.findMaterialsUrl,
 
-                // BARU: method init
-                init() {
-                    // Jika stationList kosong (mode create gagal validasi) tapi lineArea ada
-                    if (this.stationList.length === 0 && this.selectedLineArea) {
-                        this.fetchStations(false); // false = jangan reset selectedStation
-                    }
-                    // Jika materialList kosong (mode create gagal validasi ATAU edit) tapi station ada
-                    // Periksa juga initialMaterials untuk memastikan ini bukan load edit mode yg sukses
-                    else if (this.materialList.length === 0 && this.selectedStation) {
-                        this.fetchMaterials(false); // false = jangan reset selectedMaterial
+                // --- FUNGSI INIT (dijalankan oleh x-init) ---
+                async init() {
+                    console.log('✅ Alpine Dropdowns Initialized (Material)');
+                    
+                    // 1. Jika line area ada (mode edit), fetch stations
+                    if (this.selectedLineArea) {
+                        console.log('🔁 Mode Edit: Mengambil stations untuk line:', this.selectedLineArea);
+                        await this.fetchStations(false); // false = jangan reset selectedStation
+
+                        // 2. Jika station juga ada (mode edit), fetch materials
+                        if (this.selectedStation) {
+                            console.log('🔁 Mode Edit: Mengambil materials untuk station:', this.selectedStation);
+                            await this.fetchMaterials(false); // false = jangan reset selectedMaterial
+                        }
                     }
                 },
 
-                fetchStations(resetStation = true) {
+                // --- FUNGSI FETCH STATIONS (Dipakai oleh init() dan @change) ---
+                async fetchStations(resetStation = true) {
                     if(resetStation) {
                         this.selectedStation = null;
                         this.selectedMaterial = null; // Reset material
@@ -296,23 +301,18 @@
 
                     if (!this.selectedLineArea) return;
 
-                    fetch(`{{ route('henkaten.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            this.stationList = data;
-                            // Jika kita memuat ulang station karena validasi gagal,
-                            // kita juga harus memuat ulang material
-                            if (!resetStation && this.selectedStation) {
-                                this.fetchMaterials(false);
-                            }
-                        })
-                        .catch(err => {
-                            console.error('Gagal mengambil data station:', err);
-                            this.stationList = [];
-                        });
+                    try {
+                        const res = await fetch(`${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
+                        const data = await res.json();
+                        this.stationList = Array.isArray(data) ? data : (data.data ?? []);
+                    } catch (err) {
+                        console.error('Gagal fetch stations:', err);
+                        this.stationList = [];
+                    }
                 },
 
-                fetchMaterials(resetMaterial = true) {
+                // --- FUNGSI FETCH MATERIALS (Dipakai oleh init() dan @change) ---
+                async fetchMaterials(resetMaterial = true) {
                     if(resetMaterial) {
                         this.selectedMaterial = null;
                     }
@@ -320,17 +320,16 @@
 
                     if (!this.selectedStation) return;
 
-                    fetch(`{{ route('henkaten.materials.by_station') }}?station_id=${this.selectedStation}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            this.materialList = data;
-                        })
-                        .catch(err => {
-                            console.error('Gagal mengambil data material:', err);
-                            this.materialList = [];
-                        });
+                    try {
+                        const res = await fetch(`${this.findMaterialsUrl}?station_id=${this.selectedStation}`);
+                        const data = await res.json();
+                        this.materialList = Array.isArray(data) ? data : (data.data ?? []);
+                    } catch (err) {
+                        console.error('Gagal fetch materials:', err);
+                        this.materialList = [];
+                    }
                 }
-            }
-        }
+            }));
+        });
     </script>
 </x-app-layout>
