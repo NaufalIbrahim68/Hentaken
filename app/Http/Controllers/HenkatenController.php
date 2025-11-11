@@ -17,6 +17,9 @@ use App\Models\Material;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log; 
+
 
 
 
@@ -65,92 +68,93 @@ $currentGroup = Session::get('active_grup');
         ));
     }
 
-   public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'shift'              => 'required|string',
-            'grup'               => 'required|string',
-            'man_power_id'       => 'required|integer|exists:man_power,id',
-            'man_power_id_after' => 'required|integer|exists:man_power,id|different:man_power_id',
-            'station_id'         => 'required|integer|exists:stations,id',
-            'keterangan'         => 'required|string',
-            'line_area'          => 'required|string',
-            'effective_date'     => 'required|date',
-            'end_date'           => 'required|date|after_or_equal:effective_date',
-            'lampiran'           => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'time_start'         => 'required|date_format:H:i',
-            'time_end'           => 'required|date_format:H:i|after_or_equal:time_start',
-            'serial_number_start' => 'nullable|string|max:255',
-            'serial_number_end'   => 'nullable|string|max:255',
-        ], [
-            'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.'
-        ]);
+  public function store(Request $request)
+{
+    $validated = $request->validate([
+        'shift'               => 'required|string',
+        'grup'                => 'required|string',
+        'man_power_id'        => 'required|integer|exists:man_power,id',
+        'man_power_id_after'  => 'required|integer|exists:man_power,id|different:man_power_id',
+        'station_id'          => 'required|integer|exists:stations,id',
+        'keterangan'          => 'required|string',
+        'line_area'           => 'required|string',
+        'effective_date'      => 'required|date',
+        'end_date'            => 'required|date|after_or_equal:effective_date',
+        'lampiran'            => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        'time_start'          => 'required|date_format:H:i',
+        'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
+        'serial_number_start' => 'nullable|string|max:255',
+        'serial_number_end'   => 'nullable|string|max:255',
+    ], [
+        'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.'
+    ]);
 
-        $lampiranPath = null; // Definisikan di luar try-catch untuk rollback
+    $lampiranPath = null; // Definisikan di luar try-catch untuk rollback
 
-        try {
-            DB::beginTransaction();
+    try {
+        DB::beginTransaction();
 
-            // 1. Ambil data (Gunakan findOrFail agar otomatis error jika data tidak ada)
-            $manPowerAsli = ManPower::findOrFail($validated['man_power_id']);
-            $manPowerAfter = ManPower::findOrFail($validated['man_power_id_after']);
-            $station = Station::findOrFail($validated['station_id']); // <-- Ambil data station untuk pesan sukses
+        // 1. Ambil data
+        $manPowerAsli = ManPower::findOrFail($validated['man_power_id']);
+        $manPowerAfter = ManPower::findOrFail($validated['man_power_id_after']);
+        $station = Station::findOrFail($validated['station_id']);
 
-            // 2. Handle file upload
-            if ($request->hasFile('lampiran')) {
-                $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
-            }
-
-            // 3. Siapkan data untuk tabel log Henkaten
-            // (Ini sudah benar, $validated['station_id'] akan tersimpan di log)
-            $dataToCreate = $validated;
-            $dataToCreate['lampiran'] = $lampiranPath;
-            $dataToCreate['nama'] = $manPowerAsli->nama;
-            $dataToCreate['nama_after'] = $manPowerAfter->nama;
-
-            ManPowerHenkaten::create($dataToCreate);
-
-            // ===================================================================
-            // 4. Update Man Power Asli (YANG DIMINTA)
-            // ===================================================================
-            $manPowerAsli->status = 'henkaten';
-
-            // $manPowerAsli->station_id = null; // <-- BARIS INI DINONAKTIFKAN
-            // Dengan menonaktifkan baris di atas, 'station_id' Man Power Asli
-            // akan tetap merujuk ke station terakhirnya.
-
-            $manPowerAsli->save();
-            // ===================================================================
-
-            // 5. Update Man Power After (pengganti)
-            $manPowerAfter->status = 'aktif';
-            $manPowerAfter->station_id = $validated['station_id']; // <-- Tugaskan ke station
-            $manPowerAfter->save();
-
-            DB::commit();
-
-            // REVISI PESAN SUKSES: Menggunakan variabel $station agar lebih pasti
-            return redirect()->route('henkaten.create')
-                ->with('success', 'Data Henkaten berhasil dibuat. ' . $manPowerAfter->nama . ' sekarang ditugaskan di ' . $station->station_name);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            // Hapus file yang terlanjur di-upload jika terjadi error
-            if ($lampiranPath && Storage::disk('public')->exists($lampiranPath)) {
-                Storage::disk('public')->delete($lampiranPath);
-            }
-
-            // PENYEMPURNAAN ERROR: Beri pesan lebih jelas jika data tidak ditemukan
-            if ($e instanceof ModelNotFoundException) {
-                 return back()->withErrors(['error' => 'Data Man Power atau Station tidak ditemukan di database.'])->withInput();
-            }
-
-            // Error umum
-            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
+        // 2. Handle file upload
+        if ($request->hasFile('lampiran')) {
+            $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
         }
+
+        // 3. Siapkan data untuk tabel log Henkaten
+        $dataToCreate = $validated;
+        $dataToCreate['lampiran'] = $lampiranPath;
+        $dataToCreate['nama'] = $manPowerAsli->nama;
+        $dataToCreate['nama_after'] = $manPowerAfter->nama;
+
+        dd($dataToCreate);
+
+        // ===================================================
+        // == REVISI PENTING (MENAMBAHKAN STATUS & NOTE) ==
+        // ===================================================
+        
+        // Atur status ke PENDING agar masuk ke alur approval
+        $dataToCreate['status'] = 'PENDING';
+        
+        // Atur note sebagai 'TEMPORER' (karena form ini memiliki end_date)
+        $dataToCreate['note'] = 'TEMPORER'; 
+        
+        // ===================================================
+
+        ManPowerHenkaten::create($dataToCreate);
+
+        // 4. Update Man Power Asli
+        $manPowerAsli->status = 'henkaten';
+        $manPowerAsli->save();
+
+        // 5. Update Man Power After (pengganti)
+        $manPowerAfter->status = 'aktif';
+        $manPowerAfter->station_id = $validated['station_id']; // Tugaskan ke station
+        $manPowerAfter->save();
+
+        DB::commit();
+
+        return redirect()->route('henkaten.create')
+            ->with('success', 'Data Henkaten berhasil dibuat. ' . $manPowerAfter->nama . ' sekarang ditugaskan di ' . $station->station_name);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        if ($lampiranPath && Storage::disk('public')->exists($lampiranPath)) {
+            Storage::disk('public')->delete($lampiranPath);
+        }
+
+        if ($e instanceof ModelNotFoundException) {
+             return back()->withErrors(['error' => 'Data Man Power atau Station tidak ditemukan di database.'])->withInput();
+        }
+
+        return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
     }
 
+}
     // ==============================================================
     // BAGIAN 2: START PAGE HENKATEN MAN POWER
     // ==============================================================
@@ -790,22 +794,63 @@ public function approval()
      * [BARU] Memproses aksi 'Approve' Henkaten.
      * Method ini dipanggil oleh route 'henkaten/approval/{type}/{id}/approve'
      */
-    public function approveHenkaten(Request $request, $type, $id)
-    {
-        $item = $this->getHenkatenItem($type, $id);
+   public function approveHenkaten(Request $request, $type, $id)
+{
+    $item = $this->getHenkatenItem($type, $id);
 
-        if (!$item) {
-            return redirect()->route('henkaten.approval')->with('error', 'Data Henkaten tidak ditemukan.');
+    if (!$item) {
+        return redirect()->route('henkaten.approval')->with('error', 'Data Henkaten tidak ditemukan.');
+    }
+
+    try {
+        DB::beginTransaction();
+
+        $statusToSet = 'Approved'; // Default status (huruf normal)
+
+        // Cek apakah ini henkaten 'manpower' DAN 'PERMANEN'
+        if ($type == 'manpower' && $item->note == 'PERMANEN') {
+            
+            // ==========================================================
+            // LOGIKA KHUSUS UNTUK PERMANEN
+            // ==========================================================
+            
+            // 1. Update tabel master ManPower
+            $masterManPower = ManPower::find($item->man_power_id);
+            
+            if ($masterManPower) {
+                $masterManPower->nama = $item->nama_after; 
+                $masterManPower->save();
+            } else {
+                throw new \Exception('Data Master ManPower (ID: ' . $item->man_power_id . ') tidak ditemukan. Approval dibatalkan.');
+            }
+
+            // 2. Set status ke 'APPROVED' (HURUF KAPITAL)
+            $statusToSet = 'APPROVED'; 
+            
+            // ==========================================================
         }
 
-        // Ganti 'Approved' sesuai dengan value status di database Anda
-        $item->status = 'Approved';
+        // (Jika ini 'machine', 'method', atau 'TEMPORER',
+        // kita lewati blok 'if' di atas dan $statusToSet akan tetap 'Approved')
+
+        // 3. Update status log (sesuai $statusToSet)
+        $item->status = $statusToSet;
         $item->save();
 
-        // (Opsional) Tambahkan ke Activity Log di sini
-
+        // Jika semua berhasil, commit transaksi
+        DB::commit();
+        
         return redirect()->route('henkaten.approval')->with('success', 'Henkaten ' . ucfirst($type) . ' berhasil di-approve.');
+
+    } catch (\Exception $e) {
+        // Jika terjadi error, rollback semua
+        DB::rollBack();
+        
+        Log::error('Gagal approve Henkaten (ID: '.$item->id.', Tipe: '.$type.'): ' . $e->getMessage());
+        
+        return redirect()->route('henkaten.approval')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
     }
+}
 
     /**
      * [BARU] Memproses aksi 'Revisi' Henkaten.
@@ -834,6 +879,95 @@ public function approval()
     // (Opsional) Tambahkan ke Activity Log di sini
 
     return redirect()->route('henkaten.approval')->with('success', 'Henkaten ' . ucfirst($type) . ' dikirim kembali untuk revisi.');
+}
+
+public function createChange($id_manpower)
+{
+    // 1. Cari data master man power berdasarkan ID
+    $manPower = ManPower::with('station')->findOrFail($id_manpower);
+    
+    // 2. Load data lain yang diperlukan untuk form (jika ada)
+    // $stations = ...
+
+    // 3. Tampilkan view form Henkaten Man Power
+    //    dan kirim data $manPower agar form bisa diisi otomatis
+    return view('manpower.create_change', [ // Asumsi nama view Anda henkaten.create
+        'manPower' => $manPower,
+        // 'stations' => $stations
+    ]);
+}
+
+ public function storeChange(Request $request)
+{
+    // 1. VALIDASI DATA
+    // (Validasi Anda sudah benar, kita tambahkan 'jenis_henkaten' agar divalidasi)
+    $validatedData = $request->validate([
+        'line_area' => 'required|string',
+        'station_id' => 'required|integer|exists:stations,id', 
+        'grup' => 'required|string',
+        'nama_sebelum' => 'required|string',
+        'nama_sesudah' => 'required|string',
+        'jenis_henkaten' => 'required|string|in:PERMANEN,TEMPORER', // Pastikan nilainya hanya ini
+        'tanggal_mulai' => 'required|date',
+        'master_man_power_id' => 'required|integer|exists:man_power,id', 
+        'keterangan' => 'nullable|string|max:1000', 
+    ]);
+
+    try {
+        // 2. SELALU CATAT LOG HENKATEN (SEBAGAI PENGAJUAN)
+        $logHenkaten = new ManPowerHenkaten(); 
+        
+        // --- Memasukkan data tervalidasi ke model ---
+        $logHenkaten->man_power_id = $validatedData['master_man_power_id'];
+        $logHenkaten->line_area = $validatedData['line_area'];
+        $logHenkaten->station_id = $validatedData['station_id'];
+        $logHenkaten->grup = $validatedData['grup'];
+        $logHenkaten->keterangan = $validatedData['keterangan'] ?? null;
+
+        // Mapping: 'nama_sebelum' (form) -> 'nama' (tabel)
+        $logHenkaten->nama = $validatedData['nama_sebelum'];
+
+        // Mapping: 'nama_sesudah' (form) -> 'nama_after' (tabel)
+        $logHenkaten->nama_after = $validatedData['nama_sesudah'];
+
+        // Mapping: 'tanggal_mulai' (form) -> 'effective_date' (tabel)
+        $logHenkaten->effective_date = $validatedData['tanggal_mulai'];
+
+        // Mapping: 'jenis_henkaten' (form) -> 'note' (tabel)
+        // Ini PENTING: kita tetap simpan jenisnya (PERMANEN/TEMPORER) di 'note'
+        // agar nanti saat approval, sistem tahu apa yang harus dilakukan.
+        $logHenkaten->note = $validatedData['jenis_henkaten'];
+
+        
+        // --- PERUBAHAN UTAMA SESUAI PERMINTAAN ---
+        // Status awal selalu 'PENDING' untuk semua pengajuan baru.
+        // $logHenkaten->status = $validatedData['jenis_henkaten'] == 'PERMANEN' ? 'APPROVED' : 'PENDING'; // <== KODE LAMA DIHAPUS
+        $logHenkaten->status = 'PENDING'; // <== KODE BARU
+
+        
+        $logHenkaten->save(); // Simpan pengajuan henkaten
+
+        
+        // 3. LOGIKA KHUSUS UNTUK PERGANTIAN "PERMANEN" DIHAPUS DARI SINI
+        /*
+            if ($validatedData['jenis_henkaten'] == 'PERMANEN') {
+                // ... (SEMUA KODE UPDATE MASTER MANPOWER DIHAPUS DARI FUNGSI INI) ...
+                // Logika ini akan dipindahkan ke fungsi approval (misal: public function approve($id))
+            }
+        */
+
+        // 4. REDIRECT DENGAN PESAN SUKSES YANG BARU
+        // Kita ubah pesannya untuk menginformasikan bahwa data perlu approval
+        return redirect()->route('manpower.index')
+                         ->with('success', 'Pengajuan perubahan Man Power telah berhasil dicatat dan menunggu approval.');
+
+    } catch (\Exception $e) {
+        // 5. ERROR HANDLING (Tetap sama)
+        Log::error('Gagal menyimpan Henkaten: ' . $e->getMessage()); 
+        return redirect()->back()
+                         ->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.')
+                         ->withInput();
+    }
 }
 
 }

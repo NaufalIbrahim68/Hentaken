@@ -10,14 +10,31 @@ class ManPowerHenkaten extends Model
 {
     use HasFactory;
     
-    protected $table = 'man_power_henkaten'; // Sesuaikan nama tabel
+    /**
+     * PERBAIKAN:
+     * Nama tabel harus menyertakan schema 'dbo.'
+     * agar SQL Server dapat menemukannya dengan benar.
+     */
+    protected $table = 'dbo.man_power_henkaten';
 
+    /**
+     * Ini sudah benar, karena tabel Anda tidak punya
+     * kolom 'created_at' atau 'updated_at'.
+     */
+    public $timestamps = false;
+
+
+    /**
+     * Daftar $fillable Anda sudah bagus.
+     * (Meskipun controller kita saat ini tidak menggunakan 'create',
+     * ini adalah praktik yang baik).
+     */
     protected $fillable = [
         'man_power_id',
         'station_id',
         'shift',
         'nama',                  // nama_before
-        'nama_after',   
+        'nama_after', 
         'station_id_after', 
         'line_area',
         'effective_date',
@@ -31,13 +48,16 @@ class ManPowerHenkaten extends Model
         'time_end',
         'grup', 
         'status',
+        'note', // <-- Saya tambahkan 'note' yang ada di controller
     ];
 
-    protected $casts = [
+  protected $casts = [
         'effective_date' => 'date',
         'end_date' => 'date',
         'time_start' => 'datetime:H:i',
         'time_end' => 'datetime:H:i',
+        'created_at' => 'datetime', 
+        'updated_at' => 'datetime', 
     ];
 
     /**
@@ -67,8 +87,7 @@ class ManPowerHenkaten extends Model
     }
 
     public function manPower()
-{
-    return $this->belongsTo(ManPower::class, 'man_power_id');
-}
-
+    {
+        return $this->belongsTo(ManPower::class, 'man_power_id');
+    }
 }

@@ -87,6 +87,18 @@ Route::middleware(['auth'])->group(function () {
 
         // MAN POWER HENKATEN
         Route::get('/manpower/create', [HenkatenController::class, 'create'])->name('create');
+
+        // ==================================================
+        // BARU: Rute untuk tombol "Change" dari master manpower
+        // ==================================================
+        Route::get('/manpower/create-change/{id_manpower}', [HenkatenController::class, 'createChange'])
+                 ->name('manpower.createChange');
+        // ==================================================
+
+        // !! TAMBAHKAN RUTE INI UNTUK MEMPERBAIKI ERROR !!
+        Route::post('/manpower/store-change', [HenkatenController::class, 'storeChange'])->name('manpower.storeChange');
+        // !! AKHIR TAMBAHAN !!
+
         Route::post('/manpower/store', [HenkatenController::class, 'store'])->name('store');
         Route::get('/manpower/start', [HenkatenController::class, 'showStartPage'])->name('manpower.start.page');
         Route::patch('/manpower/start/update', [HenkatenController::class, 'updateStartData'])->name('manpower.start.update');
@@ -224,6 +236,8 @@ Route::prefix('activity-log/material')
         Route::put('/{log}', 'update')->name('.update'); // Rute: 'activity.log.material.update'
         Route::delete('/{log}', 'destroy')->name('.destroy'); // Rute: 'activity.log.material.destroy'
     });
+
+    
 
 // ======================================================================
 // Konfirmasi Approval Section Head

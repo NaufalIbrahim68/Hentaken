@@ -15,6 +15,8 @@ class ManPower extends Model
     // Pastikan nama tabel sudah benar
     protected $table = 'man_power';
 
+
+
     /**
      * Kolom yang BOLEH diisi secara massal.
      * Ini adalah kolom asli dari tabel man_power.
