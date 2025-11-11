@@ -219,6 +219,7 @@ Route::prefix('activity-log/method')
         Route::get('/{log}/edit', 'edit')->name('.edit'); // Rute: 'activity.log.method.edit'
         Route::put('/{log}', 'update')->name('.update'); // Rute: 'activity.log.method.update'
         Route::delete('/{log}', 'destroy')->name('.destroy'); // Rute: 'activity.log.method.destroy'
+        Route::get('/pdf', 'downloadPDF')->name('.pdf');
     });
 
     // ======================================================================

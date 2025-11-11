@@ -7,27 +7,47 @@ use Illuminate\Http\Request;
 use App\Models\MethodHenkaten;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf; // Pastikan ini ada di atas
 
 
 class ActivityLogMethodController extends Controller
 {
-    // Asumsi Anda sudah punya fungsi index
-    public function index(Request $request)
-    {
-        $created_date = $request->input('created_date');
+   
 
-        $query = MethodHenkaten::query() // <-- GANTI INI jika model Anda berbeda
-                    ->with('station') // Eager load relasi station
-                    ->orderBy('created_at', 'desc');
+public function index(Request $request)
+{
+    // Ambil input filter
+    $created_date = $request->input('created_date');
+    $line_area = $request->input('line_area'); // <-- Tambahan
 
-        if ($created_date) {
-            $query->whereDate('created_at', $created_date);
-        }
+    // Asumsi model Anda bernama MethodHenkaten
+    $query = \App\Models\MethodHenkaten::with('station'); 
 
-        $logs = $query->paginate(10); // Misalnya paginate 10
-
-        return view('methods.activity-log', compact('logs', 'created_date')); // Sesuaikan path view jika perlu
+    if ($created_date) {
+        $query->whereDate('created_at', $created_date);
     }
+
+    // <-- TAMBAHAN: Filter berdasarkan line_area di tabel station
+    if ($line_area) {
+        $query->whereHas('station', function ($q) use ($line_area) {
+            $q->where('line_area', $line_area);
+        });
+    }
+
+    $logs = $query->latest('created_at')
+        ->paginate(10)
+        ->appends($request->query());
+
+    // <-- TAMBAHAN: Ambil data unik line_area untuk dropdown
+    $lineAreas = Station::distinct()->whereNotNull('line_area')->pluck('line_area');
+
+    return view('methods.activity-log', [ // Pastikan nama view-nya benar
+        'logs' => $logs,
+        'created_date' => $created_date,
+        'lineAreas' => $lineAreas,     // <-- Kirim ke view
+        'line_area' => $line_area,         // <-- Kirim ke view
+    ]);
+}
 
     // ==========================================================
     // TAMBAHKAN FUNGSI-FUNGSI BARU DI BAWAH INI
@@ -123,4 +143,43 @@ class ActivityLogMethodController extends Controller
         return redirect()->route('activity.log.method')
                          ->with('success', 'Data log berhasil dihapus.');
     }
+
+  public function downloadPDF(Request $request)
+{
+    // Ambil input filter (LOGIKA SAMA DENGAN METHOD MANPOWER)
+    $created_date = $request->input('created_date');
+    $line_area = $request->input('line_area');
+
+    // UBAH: Menggunakan model MethodHenkaten
+    // Pastikan nama model Anda sudah benar (misal: \App\Models\MethodHenkaten)
+    $query = \App\Models\MethodHenkaten::with('station');
+
+    // Filter Tanggal (Sama persis)
+    if ($created_date) {
+        $query->whereDate('created_at', $created_date);
+    }
+
+    // Filter Line Area (Sama persis)
+    // Ini mengasumsikan 'methods_henkaten' punya kolom 'line_area'
+    if ($line_area) {
+        $query->where('line_area', $line_area);
+    }
+
+    // Ambil SEMUA data (Sama persis)
+    $logs = $query->latest('created_at')->get();
+
+    // Data untuk dikirim ke view PDF (Sama persis)
+    $data = [
+        'logs' => $logs,
+        'filterDate' => $created_date,
+        'filterLine' => $line_area,
+    ];
+
+    // UBAH: Menggunakan view PDF 'method'
+    $pdf = Pdf::loadView('pdf.activity-log-method', $data) 
+                ->setPaper('a4', 'landscape');
+    
+    // UBAH: Nama file download
+    return $pdf->download('Laporan_Henkaten_Method.pdf');
+}
 }
