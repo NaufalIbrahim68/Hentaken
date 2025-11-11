@@ -11,18 +11,42 @@ use App\Models\ManPowerHenkaten;
 use App\Models\Troubleshooting;
 use Illuminate\View\View;
 
+
 class ManPowerController extends Controller
 {
     // ==============================================================
     // INDEX: Tampilkan daftar Man Power
     // ==============================================================
-    public function index()
+   public function index(Request $request) 
     {
-        $man_powers = ManPower::with('station')
-            ->orderBy('nama', 'asc')
-            ->paginate(5);
+        // 1. Ambil nilai filter dari request
+        $selectedLineArea = $request->get('line_area');
 
-        return view('manpower.index', compact('man_powers'));
+        // 2. Ambil semua line_area yang unik untuk opsi dropdown
+        //    Ini akan mengambil semua 'line_area' yang ada di tabel Anda
+        $lineAreas = ManPower::select('line_area')
+                            ->whereNotNull('line_area')
+                            ->distinct()
+                            ->orderBy('line_area', 'asc')
+                            ->pluck('line_area');
+
+        // 3. Buat query dasar, sama seperti yang Anda miliki
+        $query = ManPower::with('station');
+
+        // 4. Terapkan filter JIKA $selectedLineArea ada isinya
+        if ($selectedLineArea) {
+            $query->where('line_area', $selectedLineArea);
+        }
+
+       
+        $man_powers = $query->orderBy('nama', 'asc')->paginate(5);
+
+        // 6. Kirim semua data yang diperlukan ke view
+        return view('manpower.index', [
+            'man_powers' => $man_powers,
+            'lineAreas' => $lineAreas,           
+            'selectedLineArea' => $selectedLineArea, 
+        ]);
     }
 
     // ==============================================================

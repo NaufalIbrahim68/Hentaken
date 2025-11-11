@@ -29,10 +29,27 @@
                     {{-- Tabel Data --}}
                     <div class="overflow-x-auto">
                         <div class="flex items-center justify-between mb-6">
+                            
+                            {{-- Tombol Tambah Data (Kiri) --}}
                             <a href="{{ route('manpower.create') }}" 
                                 class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
                                 Tambah Data
                             </a>
+
+                            {{-- BARU: Form Filter Dropdown (Kanan) --}}
+                            <form method="GET" action="{{ route('manpower.index') }}" class="flex items-center space-x-2">
+                                <label for="line_area" class="text-sm font-medium text-gray-700">Filter Area:</label>
+                                <select name="line_area" id="line_area" 
+                                        class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        onchange="this.form.submit()">
+                                    <option value="">Semua Line Area</option>
+                                    @foreach ($lineAreas as $area)
+                                        <option value="{{ $area }}" {{ $selectedLineArea == $area ? 'selected' : '' }}>
+                                            {{ $area }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </form>
                         </div>
 
                         <table class="min-w-full bg-white">
@@ -48,7 +65,7 @@
                             </thead>
 
                             <tbody class="divide-y divide-gray-200">
-                                @foreach ($man_powers as $man_power)
+                                @forelse ($man_powers as $man_power)
                                     <tr class="hover:bg-gray-50 transition duration-200">
                                         <td class="py-3 px-4">
                                             {{ $loop->iteration + ($man_powers->currentPage() - 1) * $man_powers->perPage() }}
@@ -82,20 +99,19 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @endforeach
-
-                                @if ($man_powers->isEmpty())
+                                @empty
                                     <tr>
                                         <td colspan="6" class="text-center py-4 text-gray-500">
                                             Tidak ada data master man power.
                                         </td>
                                     </tr>
-                                @endif
+                                @endforelse
                             </tbody>
                         </table>
 
                         <div class="mt-6">
-                            {{ $man_powers->links('vendor.pagination.tailwind-index-mp') }}
+                            {{-- BARU: Menambahkan appends() agar filter tetap ada saat ganti halaman --}}
+                            {{ $man_powers->appends(request()->query())->links('vendor.pagination.tailwind-index-mp') }}
                         </div>
                     </div>
 
