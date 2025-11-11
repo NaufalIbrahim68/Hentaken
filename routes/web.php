@@ -161,8 +161,17 @@ Route::middleware(['auth'])->group(function () {
     // ======================================================================
     // RESOURCE CONTROLLERS
     // ======================================================================
-    Route::resource('manpower', ManPowerController::class)->except(['show']);
-    Route::delete('/manpower-master/{id}', [ManPowerController::class, 'destroyMaster'])->name('manpower.destroyMaster');
+Route::resource('manpower', ManPowerController::class)->except([
+    'show',
+    'update'
+]);
+
+// 2. Daftarkan 'update' secara manual
+//    Ini memberi tahu Laravel: "Gunakan nama 'manpower.update',
+//    tapi arahkan ke method 'updateMaster'"
+Route::put('/manpower/{manpower}', [ManPowerController::class, 'updateMaster'])
+     ->name('manpower.update');   
+      Route::delete('/manpower-master/{id}', [ManPowerController::class, 'destroyMaster'])->name('manpower.destroyMaster');
 
 
     // ----------------------------------------------------------------------

@@ -157,16 +157,20 @@ class ManPowerController extends Controller
     // ==============================================================
     // UPDATE MASTER MANPOWER
     // ==============================================================
-    public function updateMaster(Request $request, $id)
+   public function updateMaster(Request $request, $id)
     {
+        // Sesuaikan validasi dengan input form
         $validatedData = $request->validate([
-            'nama' => 'required|string|max:255',
-            'station_id' => 'required|exists:stations,id',
-            
-            'grup' => 'required|in:A,B',
+            'nama'      => 'required|string|max:255',
+            'line_area' => 'required|string|max:255', // <-- TAMBAHKAN INI
+            'group'     => 'required|in:A,B',         // <-- UBAH 'grup' JADI 'group'
+            // 'station_id' dihapus karena di-handle oleh AlpineJS
         ]);
 
         $man_power = ManPower::findOrFail($id);
+        
+        // Pastikan $fillable di Model ManPower Anda
+        // juga 'line_area' dan 'group' (bukan 'grup')
         $man_power->update($validatedData);
 
         return redirect()->route('manpower.index')
@@ -250,28 +254,40 @@ class ManPowerController extends Controller
     // ==============================================================
     // STATION MANAGEMENT (MODAL)
     // ==============================================================
-    public function storeStation(Request $request)
-    {
-        $request->validate([
-            'line_area' => 'required|string|max:255',
-            'station_name' => 'required|string|max:255',
-        ]);
+   public function storeStation(Request $request)
+{
+    $data = $request->validate([
+        'man_power_id' => 'required|exists:man_power,id',
+        'station_id'   => 'required|exists:stations,id',
+    ]);
 
-        $station = Station::create([
-            'line_area' => $request->line_area,
-            'station_name' => $request->station_name,
-        ]);
+    $manPower = ManPower::find($data['man_power_id']);
 
-        return response()->json($station);
+    // Cek dulu agar tidak duplikat
+    if ($manPower->stations()->where('station_id', $data['station_id'])->exists()) {
+        return response()->json(['message' => 'Station sudah ada.'], 422);
     }
 
-    public function destroyStation($id)
-    {
-        $station = Station::findOrFail($id);
-        $station->delete();
+    // attach() akan otomatis INSERT ke tabel man_power_stations
+    $manPower->stations()->attach($data['station_id']);
 
-        return response()->noContent();
-    }
+    return response()->json(['message' => 'Station berhasil ditambahkan.']);
+}
+
+   public function destroyStation(Request $request, $id)
+{
+    $request->validate([
+        'man_power_id' => 'required|exists:man_power,id',
+    ]);
+
+    $manPower = ManPower::find($request->man_power_id);
+    
+    // detach() akan otomatis DELETE dari tabel man_power_stations
+    // di mana man_power_id = $manPower->id DAN station_id = $id
+    $manPower->stations()->detach($id);
+
+    return response()->json(['message' => 'Station berhasil dihapus.']);
+}
 
     public function updateStation(Request $request, $id)
 {

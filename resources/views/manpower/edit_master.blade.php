@@ -164,7 +164,7 @@
         </div>
     </div>
 
-    {{-- AlpineJS --}}
+  {{-- AlpineJS --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
     <script>
@@ -180,7 +180,7 @@
             async init() {
                 if (this.selectedLineArea) {
                     await this.fetchStations();
-                    await this.loadCurrentStations();
+                    // Penting: Pindahkan loadCurrentStations ke SETELAH fetchStations selesai
                 }
             },
 
@@ -188,6 +188,12 @@
                 try {
                     const res = await fetch(`{{ route('manpower.master.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
                     this.stationList = await res.json();
+                    
+                    // PINDAHKAN INI KE SINI:
+                    // Kita baru bisa memuat station yang dimiliki
+                    // SETELAH kita punya daftar lengkap (stationList)
+                    this.loadCurrentStations(); 
+
                 } catch (err) {
                     console.error('Fetch stations failed:', err);
                 }
@@ -213,6 +219,9 @@
                 this.isStationModalOpen = true;
             },
 
+            // =============================================
+            // PERBAIKAN FUNGSI addStation()
+            // =============================================
             async addStation() {
                 if (!this.newStationId) return alert('Pilih station baru terlebih dahulu.');
 
@@ -228,30 +237,60 @@
                 this.isStationModalOpen = false;
 
                 try {
-                    await fetch(`/manpower/{{ $man_power->id }}/stations`, {
+                    // PERBAIKAN URL: Gunakan route() helper
+                    // PERBAIKAN BODY: Kirim man_power_id
+                    await fetch(`{{ route('manpower.master.stations.store') }}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
-                        body: JSON.stringify({ station_id: selected.id })
+                        body: JSON.stringify({ 
+                            station_id: selected.id,
+                            man_power_id: {{ $man_power->id }} // <-- INI PENTING
+                        })
                     });
                 } catch (err) {
                     console.error('Gagal menyimpan station:', err);
+                    // Jika gagal, hapus station dari tampilan
+                    this.currentStations = this.currentStations.filter(s => s.id !== selected.id);
+                    alert('Gagal menyimpan station ke server.');
                 }
             },
 
+            // =============================================
+            // PERBAIKAN FUNGSI deleteStation()
+            // =============================================
             async deleteStation(id) {
                 if (!confirm('Yakin ingin menghapus station ini?')) return;
+
+                // Simpan dulu station yang akan dihapus, untuk jaga-jaga jika gagal
+                const stationToUndo = this.currentStations.find(s => s.id === id);
+                
+                // Hapus dari UI dulu
                 this.currentStations = this.currentStations.filter(s => s.id !== id);
 
                 try {
-                    await fetch(`/manpower/{{ $man_power->id }}/stations/${id}`, {
+                    // PERBAIKAN URL: Buat URL dinamis dari route() helper
+                    const deleteUrl = `{{ route('manpower.master.stations.destroy', ['id' => ':id']) }}`
+                                        .replace(':id', id);
+
+                    // PERBAIKAN BODY: Kirim man_power_id
+                    await fetch(deleteUrl, {
                         method: 'DELETE',
-                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                        headers: { 
+                            'Content-Type': 'application/json', // Tambahkan ini
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                        },
+                        body: JSON.stringify({
+                            man_power_id: {{ $man_power->id }} // <-- INI PENTING
+                        })
                     });
                 } catch (err) {
                     console.error('Gagal menghapus station:', err);
+                    // Jika gagal, kembalikan station ke tampilan
+                    if (stationToUndo) this.currentStations.push(stationToUndo);
+                    alert('Gagal menghapus station dari server.');
                 }
             }
         };
