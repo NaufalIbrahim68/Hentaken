@@ -205,6 +205,7 @@ Route::prefix('activity-log/manpower')
     Route::get('/{log}/edit', 'edit')->name('.edit');
     Route::put('/{log}', 'update')->name('.update');
     Route::delete('/{log}', 'destroy')->name('.destroy');
+    Route::get('/pdf', 'downloadPDF')->name('.pdf');
 });
 
 // ======================================================================

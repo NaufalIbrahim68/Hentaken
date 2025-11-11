@@ -14,6 +14,27 @@
                     <div class="flex justify-end mb-4">
                         <form action="{{ route('activity.log.manpower') }}" method="GET"
                             class="flex items-end space-x-2">
+
+                            {{-- 1. TAMBAHAN: FILTER LINE AREA --}}
+                            <div>
+                                <label for="line_area" class="block text-xs font-medium text-gray-700">
+                                    Filter Line Area
+                                </label>
+                                <select name="line_area" id="line_area" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm 
+                                        focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                    <option value="">Semua Line</option>
+                                    {{-- Pastikan $lineAreas (array) dan $line_area (string) dikirim dari controller --}}
+                                    @isset($lineAreas)
+                                        @foreach ($lineAreas as $line)
+                                            <option value="{{ $line }}" {{ ($line_area ?? '') == $line ? 'selected' : '' }}>
+                                                {{ $line }}
+                                            </option>
+                                        @endforeach
+                                    @endisset
+                                </select>
+                            </div>
+
+                            {{-- Filter Tanggal (Sudah Ada) --}}
                             <div>
                                 <label for="created_date" class="block text-xs font-medium text-gray-700">
                                     Filter Tanggal
@@ -22,26 +43,37 @@
                                     value="{{ $created_date ?? '' }}" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm 
                                     focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                             </div>
+
                             <button type="submit" class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium 
-                                rounded-md text-white bg-blue-600 hover:bg-blue-700 
-                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                                    rounded-md text-white bg-blue-600 hover:bg-blue-700 
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                                 Filter
                             </button>
-                            <a href="{{ route('activity.log.manpower') }}" class="py-4 px-6 border border-gray-300 shadow-sm text-sm font-medium rounded-md 
-                                text-gray-700 bg-white hover:bg-gray-100 
-                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                            <a href="{{ route('activity.log.manpower') }}" class="py-2 px-6 border border-gray-300 shadow-sm text-sm font-medium rounded-md 
+                                    text-gray-700 bg-white hover:bg-gray-100 
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                                 Reset
                             </a>
+
+                            {{-- 2. TAMBAHAN: TOMBOL DOWNLOAD PDF --}}
+                            <button type="submit" 
+                                    formaction="{{ route('activity.log.manpower.pdf') }}" 
+                                    formtarget="_blank"
+                                    class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium 
+                                           rounded-md text-white bg-green-600 hover:bg-green-700 
+                                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
+                                Download PDF
+                            </button>
+                            
                         </form>
                     </div>
                 </div>
 
 
                 {{-- NOTIFIKASI JIKA DATA TIDAK DITEMUKAN --}}
-                @if ($logs->isEmpty() && $created_date)
+                @if ($logs->isEmpty() && ($created_date || $line_area)) {{-- 3. TAMBAHAN: Cek $line_area juga --}}
                     <div class="mb-4 p-4 rounded-md bg-yellow-100 border border-yellow-400 text-yellow-700">
-                        Tidak ada data Henkaten Man power untuk tanggal
-                        <strong>{{ \Carbon\Carbon::parse($created_date)->format('d M Y') }}</strong>.
+                        Tidak ada data Henkaten Man power untuk filter yang dipilih.
                     </div>
                 @endif
 
@@ -59,10 +91,7 @@
                                 <th scope="col" class="py-3 px-3">Tgl Efektif</th>
                                 <th scope="col" class="py-3 px-3">Tgl Selesai</th>
                                 <th scope="col" class="py-3 px-3">Keterangan</th>
-                                
-                                {{-- 1. HEADER NOTE DITAMBAHKAN --}}
-                                <th scope="col" class="py-3 px-3">Note</th> 
-
+                                <th scope="col" class="py-3 px-3">Note</th>
                                 <th scope="col" class="py-3 px-3">Status</th>
                                 <th scope="col" class="py-3 px-3">Lampiran</th>
                                 <th scope="col" class="py-3 px-3">Aksi</th>
@@ -87,15 +116,13 @@
                                         {{ $log->end_date ? \Carbon\Carbon::parse($log->end_date)->format('d M Y') : '-' }}
                                     </td>
                                     <td class="py-2 px-3 max-w-xs break-words">{{ $log->keterangan ?? '-' }}</td>
-                                 {{-- 2. DATA NOTE DITAMBAHKAN --}}
-<td class="py-2 px-3 max-w-xs break-words">
-    {{-- Tampilkan note hanya jika status BUKAN 'Approve' --}}
-    @if ($log->status != 'Approved')
-        {{ $log->note ?? '-' }}
-    @else
-        -
-    @endif
-</td>
+                                    <td class="py-2 px-3 max-w-xs break-words">
+                                        @if ($log->status != 'Approved')
+                                            {{ $log->note ?? '-' }}
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
                                     <td class="py-2 px-3">
                                         @php
                                             $status = $log->status;
@@ -147,7 +174,6 @@
                                 </tr>
                             @empty
                                 <tr class="bg-white border-b">
-                                    {{-- 3. COLSPAN DIPERBARUI MENJADI 13 --}}
                                     <td colspan="13" class="py-4 px-6 text-center text-gray-500">
                                         Tidak ada data Henkaten Man Power
                                     </td>
