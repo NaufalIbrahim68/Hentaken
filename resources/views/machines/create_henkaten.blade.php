@@ -1,6 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{-- UBAH: Judul dinamis --}}
             {{ isset($log) ? __('Edit Data Henkaten Machine') : __('Buat Data Henkaten Machine') }}
         </h2>
     </x-slot>
@@ -49,18 +50,14 @@
                         @endif
 
                         <input type="hidden" name="shift" value="{{ old('shift', $log->shift ?? ($currentShift ?? '')) }}">
-                        {{-- INPUT GRUP DIHAPUS --}}
 
-                        {{-- Wrapper Alpine.js --}}
-                        {{-- PERBAIKAN: oldGrup dan logika grupError dihapus --}}
                         <div x-data="henkatenForm({
-                                oldLineArea: '{{ old('line_area', $log->station->line_area ?? '') }}',
-                                oldStation: {{ old('station_id', $log->station_id ?? 'null') }},
-                                oldCategory: '{{ old('category', $log->category ?? '') }}',
-                                findStationsUrl: '{{ route('henkaten.stations.by_line') }}'
-                            })" x-init="init()">
+                                 oldLineArea: '{{ old('line_area', $log->station->line_area ?? '') }}',
+                                 oldStation: {{ old('station_id', $log->station_id ?? 'null') }},
+                                 oldCategory: '{{ old('category', $log->category ?? '') }}',
+                                 findStationsUrl: '{{ route('henkaten.stations.by_line') }}'
+                             })" x-init="init()">
 
-                            {{-- Fieldset (tanpa :disabled) --}}
                             <fieldset>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -89,7 +86,6 @@
                                                     :disabled="!stationList.length"
                                                     class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                                                 <option value="">-- Pilih Station --</option>
-                                                {{-- PERBAIKAN: :selected dihapus --}}
                                                 <template x-for="station in stationList" :key="station.id">
                                                     <option :value="station.id" x-text="station.station_name"></option>
                                                 </template>
@@ -109,11 +105,31 @@
                                                 <option value="Camera" @selected(old('category', $log->category ?? '') == 'Camera')>Camera</option>
                                             </select>
                                         </div>
+                                        
+                                        {{-- 1. TAMBAHAN: Supplier Part Number Start --}}
+                                        <div class="mb-4">
+                                            <label for="serial_number_start" class="block text-gray-700 text-sm font-bold mb-2">Supplier Part Number Start</label>
+                                            <input type="text" id="serial_number_start" name="serial_number_start"
+                                                   value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
+                                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                                   {{-- Logika: Wajib diisi hanya saat EDIT --}}
+                                                   {{ isset($log) ? 'required' : '' }}>
+                                        </div>
+                                
+                                        {{-- 2. TAMBAHAN: Supplier Part Number End --}}
+                                        <div class="mb-4">
+                                            <label for="serial_number_end" class="block text-gray-700 text-sm font-bold mb-2">Supplier Part Number End</label>
+                                            <input type="text" id="serial_number_end" name="serial_number_end"
+                                                   value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
+                                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                                   {{-- Logika: Wajib diisi hanya saat EDIT --}}
+                                                   {{ isset($log) ? 'required' : '' }}>
+                                        </div>
+
                                     </div>
 
                                     {{-- Kolom Kanan (Tanggal & Waktu) --}}
                                     <div>
-                                        {{-- PERBAIKAN: Tambah format Carbon untuk Tanggal & Waktu --}}
                                         <div class="mb-4">
                                             <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
                                             <input type="date" id="effective_date" name="effective_date"
@@ -184,7 +200,7 @@
                                                 <a href="{{ asset('storage/' . $log->lampiran) }}"
                                                    target="_blank"
                                                    class="text-blue-600 hover:underline font-medium">
-                                                    Lihat Lampiran
+                                                   Lihat Lampiran
                                                 </a>
                                             </p>
                                             <p class="text-xs italic text-gray-500">Kosongkan input file jika tidak ingin mengubah lampiran.</p>
@@ -215,15 +231,14 @@
 
     {{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    {{-- PERBAIKAN: Script disederhanakan, logic 'grup' dihapus --}}
     <script>
-  document.addEventListener('alpine:init', () => {
-        Alpine.data('henkatenForm', (config) => ({
-            // STATE
-            selectedLineArea: config.oldLineArea || '',
-            selectedStation: config.oldStation || null, 
-            selectedCategory: config.oldCategory || null, 
-            stationList: [],
+ document.addEventListener('alpine:init', () => {
+        Alpine.data('henkatenForm', (config) => ({
+            // STATE
+            selectedLineArea: config.oldLineArea || '',
+            selectedStation: config.oldStation || null, 
+            selectedCategory: config.oldCategory || null, 
+            stationList: [],
 
             // URL
             findStationsUrl: config.findStationsUrl,
@@ -231,11 +246,7 @@
             // INIT
             async init() {
                 console.log('✅ Alpine initialized (Henkaten Machine)');
-
-                // Jika ada old data line area (baik dari 'edit' atau 'create' yg error),
-                // fetch station-nya
                 if (this.selectedLineArea) {
-                    // false = jangan reset selectedStation, biarkan terisi 'oldStation' dari config
                     await this.fetchStations(false);
                 }
             },

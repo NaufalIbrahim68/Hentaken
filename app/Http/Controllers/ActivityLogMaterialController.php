@@ -9,33 +9,46 @@ use App\Models\MaterialHenkaten;
 use App\Models\Station;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse; // Import untuk redirect
+use Illuminate\Http\RedirectResponse; 
+use Barryvdh\DomPDF\Facade\Pdf; 
+
 
 class ActivityLogMaterialController extends Controller
 {
     /**
      * Menampilkan daftar activity log material.
      */
-    public function index(Request $request): View
-    {
-        $created_date = $request->input('created_date');
+   public function index(Request $request): View
+{
+    $created_date = $request->input('created_date');
+    $filterLine = $request->input('line_area'); 
 
-        // Eager load 'station' karena view Anda menggunakan $log->station->station_name
-        $query = MaterialHenkaten::with('station')
-                                 ->latest();
+    $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
 
-        if ($created_date) {
-            $query->whereDate('created_at', $created_date);
-        }
+    // ==========================================================
+    // PERBAIKAN DI SINI: Tambahkan 'material' ke eager loading
+    // ==========================================================
+    $query = MaterialHenkaten::with(['station', 'material']) // <-- DIPERBAIKI
+                               ->latest();
+    // ==========================================================
 
-        $logs = $query->paginate(10);
-
-        // Mengarah ke view yang Anda kirimkan sebelumnya
-        return view('materials.activity-log', [
-            'logs' => $logs,
-            'created_date' => $created_date
-        ]);
+    if ($created_date) {
+        $query->whereDate('created_at', $created_date);
     }
+    
+    if ($filterLine) {
+        $query->where('line_area', $filterLine);
+    }
+
+    $logs = $query->paginate(10);
+
+    return view('materials.activity-log', [
+        'logs' => $logs,
+        'created_date' => $created_date,
+        'lineAreas' => $lineAreas,
+        'filterLine' => $filterLine
+    ]);
+}
 
     /**
      * Menampilkan form untuk mengedit log material.
@@ -89,6 +102,8 @@ class ActivityLogMaterialController extends Controller
             'keterangan'       => 'required|string',
             'lampiran'         => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
             'shift'            => 'required|string',
+            'serial_number_start' => 'required|string|max:255',
+             'serial_number_end'   => 'required|string|max:255', 
         ]);
 
         // 2. Handle file upload
@@ -134,12 +149,43 @@ class ActivityLogMaterialController extends Controller
                          ->with('success', 'Data log Material berhasil dihapus.');
     }
 
-    /**
-     * Memperbarui log material di database.
-     * (Anda juga akan butuh method update nanti)
-     */
-    // public function update(Request $request, MaterialHenkaten $log)
-    // {
-    //     // ... (Logika validasi & update untuk Material) ...
-    // }
+ public function downloadPDF(Request $request)
+{
+    // Ambil input filter
+    $created_date = $request->input('created_date');
+    $line_area = $request->input('line_area');
+
+    // MENGGUNAKAN MODEL: MethodHenkaten (Sesuai dengan kode Anda)
+    $query = MaterialHenkaten::with('station'); // Pastikan 'station' adalah relasi yang benar
+
+    // Filter Tanggal
+    if ($created_date) {
+        $query->whereDate('created_at', $created_date);
+    }
+
+    // Filter Line Area
+    if ($line_area) {
+        // Kolom 'line_area' diasumsikan ada di tabel methods_henkaten
+        $query->where('line_area', $line_area); 
+    }
+
+    // Ambil SEMUA data
+    $logs = $query->latest('created_at')->get();
+
+    // Data untuk dikirim ke view PDF
+    $data = [
+        'logs' => $logs,
+        // Nama variabel filter di PDF view disamakan dengan template sebelumnya
+        'filterDate' => $created_date,
+        'filterLine' => $line_area,
+    ];
+
+    // UBAH: Menggunakan view PDF 'method' (Asumsi nama view Anda adalah 'pdf.activity-log-method')
+    $pdf = Pdf::loadView('pdf.activity-log-material', $data) 
+              ->setPaper('a4', 'landscape');
+    
+    // UBAH: Nama file download disesuaikan dengan Method Henkaten
+    return $pdf->download('Laporan_Henkaten_Material.pdf');
+}
+
 }

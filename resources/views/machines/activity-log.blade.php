@@ -10,7 +10,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
 
-                    {{-- PESAN SUKSES (Style dari Man Power) --}}
+                    {{-- PESAN SUKSES --}}
                     @if (session('success'))
                         <div x-data="{ show: true }" x-show="show" x-transition
                              x-init="setTimeout(() => show = false, 3000)"
@@ -29,6 +29,27 @@
                         <form action="{{ route('activity.log.machine') }}" method="GET"
                               class="flex items-end space-x-2">
 
+                            {{-- ======================================================= --}}
+                            {{-- 1. FILTER LINE AREA (BARU) --}}
+                            {{-- ======================================================= --}}
+                            <div>
+                                <label for="line_area" class="block text-xs font-medium text-gray-700">
+                                    Filter Line Area
+                                </label>
+                                <select name="line_area" id="line_area"
+                                        class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm
+                                               focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                    <option value="">-- Semua Line --</option>
+                                    {{-- $lineAreas & $filterLine harus dikirim dari Controller --}}
+                                    @foreach($lineAreas ?? [] as $area)
+                                        <option value="{{ $area }}" @selected(($filterLine ?? '') == $area)>
+                                            {{ $area }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            
+                            {{-- FILTER TANGGAL --}}
                             <div>
                                 <label for="created_date" class="block text-xs font-medium text-gray-700">
                                     Filter Tanggal
@@ -49,16 +70,28 @@
                                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                                 Reset
                             </a>
+                            
+                            {{-- ======================================================= --}}
+                            {{-- 2. TOMBOL DOWNLOAD PDF (DIPERBARUI) --}}
+                            {{-- ======================================================= --}}
+                            <a href="{{ route('activity.log.machine.pdf', ['created_date' => $created_date ?? '', 'line_area' => $filterLine ?? '']) }}"
+                               target="_blank" 
+                               class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium
+                                      rounded-md text-white bg-green-600 hover:bg-green-700
+                                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
+                                Download PDF
+                            </a>
                         </form>
                     </div>
                 </div> {{-- Penutup P-6 untuk Filter --}}
 
 
-                {{-- NOTIFIKASI JIKA DATA TIDAK DITEMUKAN --}}
-                @if ($logs->isEmpty() && $created_date)
+                {{-- ======================================================= --}}
+                {{-- 3. NOTIFIKASI FILTER (DIPERBARUI) --}}
+                {{-- ======================================================= --}}
+                @if ($logs->isEmpty() && ($created_date || $filterLine))
                     <div class="mb-4 p-4 rounded-md bg-yellow-100 border border-yellow-400 text-yellow-700 mx-6">
-                        Tidak ada data Henkaten Machine untuk tanggal
-                        <strong>{{ \Carbon\Carbon::parse($created_date)->format('d M Y') }}</strong>.
+                        Tidak ada data Henkaten Machine untuk filter yang dipilih.
                     </div>
                 @endif
 
@@ -67,30 +100,23 @@
                     <table class="w-full text-sm text-left text-gray-500">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                             <tr>
-                                {{-- UBAH: Padding 'py-3 px-3' --}}
                                 <th scope="col" class="py-3 px-3">Tanggal Dibuat</th>
                                 <th scope="col" class="py-3 px-3">Kategori</th>
                                 <th scope="col" class="py-3 px-3">Deskripsi Sebelum</th>
                                 <th scope="col" class="py-3 px-3">Deskripsi Sesudah</th>
                                 <th scope="col" class="py-3 px-3">Station</th>
                                 <th scope="col" class="py-3 px-3">Line Area</th>
-                                <th scope="col" class"py-3 px-3">Tgl Efektif</th>
+                                <th scope="col" class="py-3 px-3">Tgl Efektif</th>
                                 <th scope="col" class="py-3 px-3">Tgl Selesai</th>
                                 <th scope="col" class="py-3 px-3">Keterangan</th>
-                                
-                                {{-- TAMBAH: Kolom Note --}}
                                 <th scope="col" class="py-3 px-3">Note</th>
-                                
-                                {{-- TAMBAH: Kolom Status --}}
                                 <th scope="col" class="py-3 px-3">Status</th>
-                                
                                 <th scope="col" class="py-3 px-3">Lampiran</th>
                                 <th scope="col" class="py-3 px-3">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($logs as $log)
-                                {{-- UBAH: Tambah 'text-xs' & padding 'py-2 px-3' --}}
                                 <tr class="bg-white border-b hover:bg-gray-50 text-xs">
                                     <td class="py-2 px-3 whitespace-nowrap">
                                         {{ $log->created_at ? $log->created_at->format('d M Y') : '-' }}
@@ -99,7 +125,7 @@
                                     <td class="py-2 px-3 max-w-xs break-words">{{ $log->description_before ?? '-' }}</td>
                                     <td class="py-2 px-3 max-w-xs break-words">{{ $log->description_after?? '-' }}</td>
                                     <td class="py-2 px-3">{{ $log->station->station_name ?? 'N/A' }}</td>
-                                    <td class="py-2 px-3">{{ $log->line_area ?? '-' }}</td> {{-- Sesuai kode asli Anda --}}
+                                    <td class="py-2 px-3">{{ $log->line_area ?? '-' }}</td>
                                     <td class="py-2 px-3 whitespace-nowrap">
                                         {{ $log->effective_date ? \Carbon\Carbon::parse($log->effective_date)->format('d M Y') : '-' }}
                                     </td>
@@ -108,7 +134,6 @@
                                     </td>
                                     <td class="py-2 px-3 max-w-xs break-words">{{ $log->keterangan ?? '-' }}</td>
                                     
-                                    {{-- TAMBAH: Kolom Note --}}
                                     <td class="py-2 px-3 max-w-xs break-words">
                                         @if ($log->status != 'Approved')
                                             {{ $log->note ?? '-' }}
@@ -117,10 +142,9 @@
                                         @endif
                                     </td>
                                     
-                                    {{-- TAMBAH: Kolom Status --}}
                                     <td class="py-2 px-3">
                                         @php
-                                            $status = $log->status; // Asumsi $log->status ada
+                                            $status = $log->status; 
                                             $badgeClass = '';
 
                                             if($status == 'Approved') {
@@ -140,7 +164,6 @@
                                     
                                     <td class="py-2 px-3">
                                         @if ($log->lampiran)
-                                            {{-- UBAH: Style tombol disamakan --}}
                                             <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
                                                class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-2 py-1 rounded-md transition whitespace-nowrap">
                                                 Lihat Lampiran
@@ -150,7 +173,6 @@
                                         @endif
                                     </td>
                                     
-                                    {{-- UBAH: Style tombol disamakan --}}
                                     <td class="py-2 px-3">
                                         <div class="flex space-x-1">
                                             <a href="{{ route('activity.log.machine.edit', $log->id) }}"
@@ -172,9 +194,9 @@
                                 </tr>
                             @empty
                                 <tr class="bg-white border-b">
-                                    {{-- UBAH: Colspan jadi 13 --}}
                                     <td colspan="13" class="py-4 px-3 text-center text-gray-500">
-                                        Tidak ada data Henkaten Machine
+                                        {{-- 4. PESAN EMPTY (DIPERBARUI) --}}
+                                        Tidak ada data Henkaten Machine untuk filter yang dipilih.
                                     </td>
                                 </tr>
                             @endforelse
@@ -184,6 +206,7 @@
 
                 {{-- PAGINATION --}}
                 <div class="p-6 pt-0">
+                    {{-- Ini sudah otomatis membawa filter, tidak perlu diubah --}}
                     {{ $logs->appends(request()->query())->links() }}
                 </div>
 

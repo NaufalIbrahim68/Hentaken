@@ -30,6 +30,26 @@
                         <form action="{{ route('activity.log.material') }}" method="GET"
                               class="flex items-end space-x-2">
 
+                            {{-- ======================================================= --}}
+                            {{-- 1. FILTER LINE AREA (BARU) --}}
+                            {{-- ======================================================= --}}
+                            <div>
+                                <label for="line_area" class="block text-xs font-medium text-gray-700">
+                                    Filter Line Area
+                                </label>
+                                <select name="line_area" id="line_area"
+                                        class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm
+                                               focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                    <option value="">-- Semua Line --</option>
+                                    {{-- $lineAreas & $filterLine harus dikirim dari Controller --}}
+                                    @foreach($lineAreas ?? [] as $area)
+                                        <option value="{{ $area }}" @selected(($filterLine ?? '') == $area)>
+                                            {{ $area }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             <div>
                                 <label for="created_date" class="block text-xs font-medium text-gray-700">
                                     Filter Tanggal
@@ -45,62 +65,71 @@
                                 Filter
                             </button>
 
-                            {{-- PERBAIKAN: Tombol reset disamakan py-2 --}}
                             <a href="{{ route('activity.log.material') }}" class="py-2 px-6 border border-gray-300 shadow-sm text-sm font-medium rounded-md
                                     text-gray-700 bg-white hover:bg-gray-100
                                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                                 Reset
                             </a>
+                            
+                            {{-- ======================================================= --}}
+                            {{-- 2. TOMBOL DOWNLOAD PDF (BARU & DIPERBARUI) --}}
+                            {{-- ======================================================= --}}
+                            <a href="{{ route('activity.log.material.pdf', ['created_date' => $created_date ?? '', 'line_area' => $filterLine ?? '']) }}"
+                               target="_blank" {{-- Buka di tab baru --}}
+                               class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium
+                                      rounded-md text-white bg-green-600 hover:bg-green-700
+                                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
+                                Download PDF
+                            </a>
+
                         </form>
                     </div>
                 </div> {{-- Penutup P-6 untuk Filter --}}
 
 
                 {{-- NOTIFIKASI JIKA DATA TIDAK DITEMUKAN --}}
-                {{-- PERBAIKAN: Dipindah keluar dari p-6, diberi margin mx-6 --}}
-                @if ($logs->isEmpty() && $created_date)
+                {{-- ======================================================= --}}
+                {{-- 3. NOTIFIKASI FILTER (DIPERBARUI) --}}
+                {{-- ======================================================= --}}
+                @if ($logs->isEmpty() && ($created_date || $filterLine))
                     <div class="mb-4 p-4 rounded-md bg-yellow-100 border border-yellow-400 text-yellow-700 mx-6">
-                        Tidak ada data Henkaten Material untuk tanggal
-                        <strong>{{ \Carbon\Carbon::parse($created_date)->format('d M Y') }}</strong>.
+                        Tidak ada data Henkaten Material untuk filter yang dipilih.
                     </div>
                 @endif
 
                 {{-- TABEL DATA --}}
-                {{-- PERBAIKAN: Dipindah keluar dari p-6, diberi margin mx-6 mb-6 --}}
                 <div class="overflow-x-auto relative shadow-md sm:rounded-lg mx-6 mb-6">
                     <table class="w-full text-sm text-left text-gray-500">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                             <tr>
-                                {{-- PERBAIKAN: Padding diubah ke px-3 --}}
                                 <th scope="col" class="py-3 px-3">Tanggal Dibuat</th>
-                             <th scope="col" class="py-3 px-3">Nama Material</th>
-                                <th scope="col" class="py-3 px-3">Deskripsi  Sebelum</th>
+                                <th scope="col" class="py-3 px-3">Nama Material</th>
+                                <th scope="col" class="py-3 px-3">Deskripsi Sebelum</th>
                                 <th scope="col" class="py-3 px-3">Deskripsi Sesudah</th>
                                 <th scope="col" class="py-3 px-3">Station</th>
                                 <th scope="col" class="py-3 px-3">Line Area</th>
                                 <th scope="col" class="py-3 px-3">Tgl Efektif</th>
                                 <th scope="col" class="py-3 px-3">Tgl Selesai</th>
                                 
-                                {{-- TAMBAH: Kolom Note --}}
-                                <th scope="col" class="py-3 px-3">Note</th>
+                                {{-- ======================================================= --}}
+                                {{-- 4. KOLOM KETERANGAN (TAMBAHAN) --}}
+                                {{-- ======================================================= --}}
+                                <th scope="col" class="py-3 px-3">Keterangan</th>
                                 
-                                {{-- TAMBAH: Kolom Status --}}
+                                <th scope="col" class="py-3 px-3">Note</th>
                                 <th scope="col" class="py-3 px-3">Status</th>
-
                                 <th scope="col" class="py-3 px-3">Lampiran</th>
                                 <th scope="col" class="py-3 px-3">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($logs as $log)
-                                {{-- PERBAIKAN: Tambah class text-xs --}}
                                 <tr class="bg-white border-b hover:bg-gray-50 text-xs">
                                     
-                                    {{-- PERBAIKAN: Padding diubah ke py-2 px-3 --}}
                                     <td class="py-2 px-3 whitespace-nowrap">
                                         {{ $log->created_at ? $log->created_at->format('d M Y') : '-' }}
                                     </td>
-                                         <td class="py-2 px-3 max-w-xs break-words">{{ $log->material->material_name ?? '-' }}</td>
+                                    <td class="py-2 px-3 max-w-xs break-words">{{ $log->material->material_name ?? '-' }}</td>
                                     <td class="py-2 px-3 max-w-xs break-words">{{ $log->description_before ?? '-' }}</td>
                                     <td class="py-2 px-3 max-w-xs break-words">{{ $log->description_after ?? '-' }}</td>
                                     <td class="py-2 px-3">{{ $log->station->station_name ?? 'N/A' }}</td>
@@ -112,7 +141,11 @@
                                         {{ $log->end_date ? \Carbon\Carbon::parse($log->end_date)->format('d M Y') : '-' }}
                                     </td>
 
-                                    {{-- TAMBAH: Kolom Note --}}
+                                    {{-- ======================================================= --}}
+                                    {{-- 5. DATA KETERANGAN (TAMBAHAN) --}}
+                                    {{-- ======================================================= --}}
+                                    <td class="py-2 px-3 max-w-xs break-words">{{ $log->keterangan ?? '-' }}</td>
+
                                     <td class="py-2 px-3 max-w-xs break-words">
                                         @if ($log->status != 'Approved')
                                             {{ $log->note ?? '-' }}
@@ -121,10 +154,9 @@
                                         @endif
                                     </td>
                                     
-                                    {{-- TAMBAH: Kolom Status --}}
                                     <td class="py-2 px-3">
                                         @php
-                                            $status = $log->status; // Asumsi $log->status ada
+                                            $status = $log->status; 
                                             $badgeClass = '';
 
                                             if($status == 'Approved') {
@@ -144,8 +176,7 @@
 
                                     <td class="py-2 px-3">
                                         @if ($log->lampiran)
-                                            {{-- PERBAIKAN: Style tombol disamakan --}}
-                                            <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                                            <a href="{{ asset('storage/'. $log->lampiran) }}" target="_blank"
                                                class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-2 py-1 rounded-md transition whitespace-nowrap">
                                                 Lihat Lampiran
                                             </a>
@@ -154,7 +185,6 @@
                                         @endif
                                     </td>
 
-                                    {{-- PERBAIKAN: Tombol Edit & Hapus --}}
                                     <td class="py-2 px-3">
                                         <div class="flex space-x-1">
                                             <a href="{{ route('activity.log.material.edit', $log->id) }}"
@@ -176,8 +206,10 @@
                                 </tr>
                             @empty
                                 <tr class="bg-white border-b">
-                                    {{-- PERBAIKAN: Colspan diubah menjadi 11 --}}
-                                    <td colspan="11" class="py-4 px-3 text-center text-gray-500">
+                                    {{-- ======================================================= --}}
+                                    {{-- 6. COLSPAN (DIPERBARUI) --}}
+                                    {{-- ======================================================= --}}
+                                    <td colspan="14" class="py-4 px-3 text-center text-gray-500">
                                         Tidak ada data Henkaten Material
                                     </td>
                                 </tr>
@@ -186,9 +218,7 @@
                     </table>
                 </div>
 
-                {{-- PERBAIKAN: Pagination dipindah ke div baru --}}
                 <div class="p-6 pt-0">
-                    {{-- Ganti ke paginator default (atau pastikan custom paginator Anda benar) --}}
                     {{ $logs->appends(request()->query())->links() }}
                 </div>
 

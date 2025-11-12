@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Henkaten Method</title>
+    {{-- UBAH: Judul --}}
+    <title>Laporan Henkaten Material</title>
     
     <style>
         body {
@@ -75,13 +76,12 @@
     <table class="header-table">
         <tr>
             <td>
-                {{-- Gunakan public_path() untuk PDF --}}
                 <img src="{{ public_path('assets/images/AVI.png') }}" alt="Logo" class="logo">
             </td>
             <td class="title">
                 <h1>Laporan Activity Log</h1>
                 {{-- UBAH: Judul --}}
-                <h2>Henkaten Method</h2>
+                <h2>Henkaten Material</h2>
             </td>
         </tr>
     </table>
@@ -100,16 +100,18 @@
     <table>
         <thead>
             <tr>
-                {{-- UBAH: Kolom disesuaikan untuk Method --}}
+                {{-- UBAH: Kolom disesuaikan untuk Material --}}
                 <th>Tgl Dibuat</th>
                 <th>Line Area</th>
                 <th>Station</th>
-                <th>Ket. Sebelum</th>
-                <th>Ket. Sesudah</th>
+                <th>Nama Material</th> {{-- TAMBAHAN BARU --}}
+                <th>Desc. Sebelum</th> {{-- UBAH: Judul --}}
+                <th>Desc. Sesudah</th> {{-- UBAH: Judul --}}
                 <th>Tgl Efektif</th>
                 <th>Waktu</th>
-                 <th>Supp. Part No. Start</th>
+                <th>Supp. Part No. Start</th>
                 <th>Supp. Part No. End</th>
+                <th>Keterangan</th> {{-- TAMBAHAN BARU --}}
                 <th>Status</th>
                 <th>Lampiran</th>
             </tr>
@@ -120,17 +122,20 @@
                     {{-- created_at --}}
                     <td class="text-center">{{ $log->created_at ? $log->created_at->format('d M Y') : '-' }}</td>
                     
-                    {{-- line_area (dari skema methods_henkaten) --}}
+                    {{-- line_area --}}
                     <td class="text-center">{{ $log->line_area ?? '-' }}</td>
                     
                     {{-- station_id (via relasi) --}}
                     <td class="text-center">{{ $log->station->station_name ?? 'N/A' }}</td>
                     
-                    {{-- keterangan --}}
-                    <td style="width: 15%;">{{ $log->keterangan ?? '-' }}</td>
+                    {{-- material_id (via relasi) (BARU) --}}
+                    <td class="text-center">{{ $log->material->material_name ?? 'N/A' }}</td>
                     
-                    {{-- keterangan_after --}}
-                    <td style="width: 15%;">{{ $log->keterangan_after ?? '-' }}</td>
+                    {{-- UBAH: description_before --}}
+                    <td style="width: 15%;">{{ $log->description_before ?? '-' }}</td>
+                    
+                    {{-- UBAH: description_after --}}
+                    <td style="width: 15%;">{{ $log->description_after ?? '-' }}</td>
                     
                     {{-- effective_date --}}
                     <td>{{ $log->effective_date ? \Carbon\Carbon::parse($log->effective_date)->format('d M Y') : '-' }}</td>
@@ -141,8 +146,13 @@
                         -
                         {{ $log->time_end ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '-' }}
                     </td>
+
+                    {{-- Serial Numbers --}}
                     <td class="text-center">{{ $log->serial_number_start ?? '-' }}</td>
                     <td class="text-center">{{ $log->serial_number_end ?? '-' }}</td>
+
+                    {{-- Keterangan (BARU) --}}
+                    <td style="width: 15%;">{{ $log->keterangan ?? '-' }}</td>
                     
                     {{-- status --}}
                     <td class="text-center">{{ $log->status ?? '-' }}</td>
@@ -158,8 +168,8 @@
                 </tr>
             @empty
                 <tr>
-                    {{-- UBAH: Colspan disesuaikan (10 kolom) --}}
-                    <td colspan="10" class="text-center">Tidak ada data untuk filter yang dipilih.</td>
+                    {{-- UBAH: Colspan disesuaikan (13 kolom) --}}
+                    <td colspan="13" class="text-center">Tidak ada data untuk filter yang dipilih.</td>
                 </tr>
             @endforelse
         </tbody>

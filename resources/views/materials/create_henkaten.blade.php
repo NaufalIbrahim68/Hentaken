@@ -52,27 +52,23 @@
 
                     <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        {{-- DIUBAH: Tambah method spoofing jika edit --}}
                         @if (isset($log))
                             @method('PUT')
                         @endif
 
-                        {{-- Input 'redirect_to' bisa dihapus jika tidak digunakan di controller update --}}
                         <input type="hidden" name="redirect_to" value="{{ route('henkaten.material.create') }}">
-
-                        {{-- DIUBAH: Input Shift tersembunyi mengambil data dari $log jika ada --}}
                         <input type="hidden" name="shift" value="{{ old('shift', $log->shift ?? ($currentShift ?? '')) }}">
 
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
-     x-data="dependentDropdowns({
+    x-data="dependentDropdowns({
         oldLineArea: '{{ old('line_area', $log->station->line_area ?? '') }}',
         oldStation: {{ old('station_id', $log->station_id ?? 'null') }},
         oldMaterial: {{ old('material_id', $log->material_id ?? 'null') }},
         findStationsUrl: '{{ route('henkaten.stations.by_line') }}',
         findMaterialsUrl: '{{ route('henkaten.materials.by_station') }}'
-     })"
-     x-init="init()">
+    })"
+    x-init="init()">
                             {{-- Kolom Kiri --}}
                             <div>
                                 <div class="mb-4">
@@ -85,7 +81,6 @@
 
                                         @foreach ($lineAreas as $area)
                                             <option value="{{ $area }}"
-                                                {{-- DIUBAH: Tambah @selected --}}
                                                 @selected(old('line_area', $log->station->line_area ?? '') == $area)>
                                                 {{ $area }}
                                             </option>
@@ -126,47 +121,70 @@
                                         <template x-for="material in materialList" :key="material.id">
                                             <option :value="material.id"
                                                     :selected="material.id == selectedMaterial"
-                                                    x-text="material.material_name"></option> {{-- Pastikan 'material_name' --}}
+                                                    x-text="material.material_name"></option>
                                         </template>
 
                                     </select>
                                 </div>
+                                
+                                {{-- ======================================================= --}}
+                                {{-- 1. TAMBAHAN: Supplier Part Number Start --}}
+                                {{-- ======================================================= --}}
+                                <div class="mb-4">
+                                    <label for="serial_number_start" class="block text-gray-700 text-sm font-bold mb-2">Supplier Part Number Start</label>
+                                    <input type="text" id="serial_number_start" name="serial_number_start"
+                                           value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                           {{-- Logika: Wajib diisi hanya saat EDIT --}}
+                                           {{ isset($log) ? 'required' : '' }}>
+                                </div>
+                        
+                                {{-- ======================================================= --}}
+                                {{-- 2. TAMBAHAN: Supplier Part Number End --}}
+                                {{-- ======================================================= --}}
+                                <div class="mb-4">
+                                    <label for="serial_number_end" class="block text-gray-700 text-sm font-bold mb-2">Supplier Part Number End</label>
+                                    <input type="text" id="serial_number_end" name="serial_number_end"
+                                           value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
+                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                           {{-- Logika: Wajib diisi hanya saat EDIT --}}
+                                           {{ isset($log) ? 'required' : '' }}>
+                                </div>
+
                             </div>
 
                             {{-- Kolom Kanan  --}}
                             <div>
                                 <div class="mb-4">
                                     <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
-                                    {{-- DIUBAH: Isi value dari $log --}}
                                     <input type="date" id="effective_date" name="effective_date"
-value="{{ old('effective_date', isset($log) ? \Carbon\Carbon::parse($log->effective_date)->format('Y-m-d') : '') }}"                                          
- class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+value="{{ old('effective_date', isset($log) ? \Carbon\Carbon::parse($log->effective_date)->format('Y-m-d') : '') }}"
+class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
-                                    {{-- DIUBAH: Isi value dari $log --}}
                                     <input type="date" id="end_date" name="end_date"
-value="{{ old('end_date', isset($log) ? \Carbon\Carbon::parse($log->end_date)->format('Y-m-d') : '')  }}"                                         
+value="{{ old('end_date', isset($log) ? \Carbon\Carbon::parse($log->end_date)->format('Y-m-d') : '')  }}"
 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required> 
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
-                                    {{-- DIUBAH: Isi value dari $log --}}
                                     <input type="time" id="time_start" name="time_start"
-                                          value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"
+                                           value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"
                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
-                                    {{-- DIUBAH: Isi value dari $log --}}
+                                    {{-- PERBAIKAN: Mengambil 'time_end' bukan 'time_start' --}}
                                     <input type="time" id="time_end" name="time_end"
-value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+value="{{ old('time_end', isset($log) ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '') }}"
+class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                            required>
                                 </div>
                             </div>
@@ -176,7 +194,6 @@ value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                             <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md relative">
                                 <label class="text-gray-700 text-sm font-bold mb-2 block">Sebelum</label>
-                                {{-- DIUBAH: Isi value dari $log --}}
                                 <input type="text" name="description_before"
                                        value="{{ old('description_before', $log->description_before ?? '') }}"
                                        class="w-full py-3 px-4 border rounded"
@@ -188,7 +205,6 @@ value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start
 
                             <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative">
                                 <label class="text-gray-700 text-sm font-bold mb-2 block">Sesudah</label>
-                                {{-- DIUBAH: Isi value dari $log --}}
                                 <input type="text" name="description_after"
                                        value="{{ old('description_after', $log->description_after ?? '') }}"
                                        class="w-full py-3 px-4 border rounded"
@@ -202,7 +218,6 @@ value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start
                         {{-- BLOK KETERANGAN --}}
                         <div class="mb-6 mt-6">
                             <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
-                            {{-- DIUBAH: Isi value dari $log --}}
                             <textarea id="keterangan" name="keterangan" rows="4"
                                       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                       placeholder="Jelaskan alasan perubahan material..."
@@ -214,10 +229,8 @@ value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start
                             <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran</label>
                             <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
                                    class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                   {{-- DIUBAH: 'required' hanya saat create --}}
                                    {{ isset($log) ? '' : 'required' }}>
 
-                            {{-- DIUBAH: Tampilkan file saat ini jika edit --}}
                             @if(isset($log) && $log->lampiran)
                                 <div class="mt-2 text-sm text-gray-600">
                                     <p>File saat ini:
@@ -233,14 +246,12 @@ value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start
 
                         {{-- Tombol --}}
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
-                            {{-- DIUBAH: Link Batal ke index log --}}
                             <a href="{{ route('activity.log.material') }}"
                                class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">
                                 Batal
                             </a>
                             <button type="submit"
                                     class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
-                                {{-- DIUBAH: Teks tombol dinamis --}}
                                 {{ isset($log) ? 'Simpan Perubahan' : 'Simpan Data' }}
                             </button>
                         </div>
@@ -251,13 +262,9 @@ value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start
         </div>
     </div>
 
- {{-- Alpine.js --}}
+{{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     
-    {{-- 
-      PERBAIKAN TOTAL: Mengadopsi logic 'async init'
-      Disesuaikan untuk 3-level dropdown (Line -> Station -> Material)
-    --}}
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('dependentDropdowns', (config) => ({
@@ -266,8 +273,8 @@ value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start
                 selectedLineArea: config.oldLineArea || '',
                 selectedStation: config.oldStation || null,
                 selectedMaterial: config.oldMaterial || null,
-                stationList: [], // Selalu mulai kosong
-                materialList: [], // Selalu mulai kosong
+                stationList: [], 
+                materialList: [], 
 
                 // --- URL ---
                 findStationsUrl: config.findStationsUrl,
@@ -277,15 +284,13 @@ value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start
                 async init() {
                     console.log('✅ Alpine Dropdowns Initialized (Material)');
                     
-                    // 1. Jika line area ada (mode edit), fetch stations
                     if (this.selectedLineArea) {
                         console.log('🔁 Mode Edit: Mengambil stations untuk line:', this.selectedLineArea);
-                        await this.fetchStations(false); // false = jangan reset selectedStation
+                        await this.fetchStations(false); 
 
-                        // 2. Jika station juga ada (mode edit), fetch materials
                         if (this.selectedStation) {
                             console.log('🔁 Mode Edit: Mengambil materials untuk station:', this.selectedStation);
-                            await this.fetchMaterials(false); // false = jangan reset selectedMaterial
+                            await this.fetchMaterials(false); 
                         }
                     }
                 },
@@ -294,8 +299,8 @@ value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start
                 async fetchStations(resetStation = true) {
                     if(resetStation) {
                         this.selectedStation = null;
-                        this.selectedMaterial = null; // Reset material
-                        this.materialList = [];      // Reset material list
+                        this.selectedMaterial = null; 
+                        this.materialList = [];     
                     }
                     this.stationList = [];
 

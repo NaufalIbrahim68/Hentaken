@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\MethodHenkaten;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
-use Barryvdh\DomPDF\Facade\Pdf; // Pastikan ini ada di atas
+use Barryvdh\DomPDF\Facade\Pdf; 
 
 
 class ActivityLogMethodController extends Controller
@@ -91,6 +91,9 @@ public function index(Request $request)
             'effective_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:effective_date',
             'lampiran' => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
+             'serial_number_start' => 'required|string|max:255',
+             'serial_number_end'   => 'required|string|max:255', 
+
             
         ]);
 

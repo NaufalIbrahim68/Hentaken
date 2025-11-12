@@ -219,7 +219,7 @@ Route::prefix('activity-log/method')
         Route::get('/{log}/edit', 'edit')->name('.edit'); // Rute: 'activity.log.method.edit'
         Route::put('/{log}', 'update')->name('.update'); // Rute: 'activity.log.method.update'
         Route::delete('/{log}', 'destroy')->name('.destroy'); // Rute: 'activity.log.method.destroy'
-        Route::get('/pdf', 'downloadPDF')->name('.pdf');
+        Route::get('/pdf', action: 'downloadPDF')->name(name: '.pdf');
     });
 
     // ======================================================================
@@ -233,7 +233,8 @@ Route::prefix('activity-log/machine')
  Route::get('/{log}/edit', 'edit')->name('.edit'); 
  Route::put('/{log}', 'update')->name('.update'); 
  Route::delete('/{log}', 'destroy')->name('.destroy');
- });
+Route::get('/export-pdf', 'exportPdf')->name('.pdf'); 
+});
 
     // ======================================================================
 // ACTIVITY LOG - (MATERIAL - CRUD Lengkap)
@@ -246,6 +247,8 @@ Route::prefix('activity-log/material')
         Route::get('/{log}/edit', 'edit')->name('.edit'); // Rute: 'activity.log.material.edit'
         Route::put('/{log}', 'update')->name('.update'); // Rute: 'activity.log.material.update'
         Route::delete('/{log}', 'destroy')->name('.destroy'); // Rute: 'activity.log.material.destroy'
+                Route::get('/pdf', action: 'downloadPDF')->name(name: '.pdf');
+
     });
 
     

@@ -22,7 +22,6 @@
             padding: 5px;
             text-align: left;
             word-wrap: break-word; 
-            /* Menjaga perataan vertikal jika ada gambar */
             vertical-align: middle; 
         }
         th {
@@ -61,10 +60,8 @@
         .text-center {
             text-align: center;
         }
-
-        /* 1. TAMBAHAN: CSS UNTUK GAMBAR LAMPIRAN */
         .lampiran-img {
-            width: 70px; /* Sesuaikan ukuran gambar */
+            width: 70px; 
             height: auto;
             border: 1px solid #ccc;
             padding: 2px;
@@ -109,9 +106,13 @@
                 <th>Station</th>
                 <th>Tgl Efektif</th>
                 <th>Waktu</th>
+                <th>Supp. Part No. Start</th>
+                <th>Supp. Part No. End</th>
                 <th>Keterangan</th>
                 <th>Status</th>
-                <th>Lampiran</th> {{-- 2. TAMBAHAN: Header kolom baru --}}
+                <th>Lampiran</th> 
+                {{-- 1. TAMBAHAN HEADER NOTE --}}
+                <th>Note</th>
             </tr>
         </thead>
         <tbody>
@@ -129,26 +130,30 @@
                         -
                         {{ $log->time_end ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '-' }}
                     </td>
+                        <td class="text-center">{{ $log->serial_number_start ?? '-' }}</td>
+                        <td class="text-center">{{ $log->serial_number_end ?? '-' }}</td>
                     <td style="text-center">{{ $log->keterangan ?? '-' }}</td>
                     <td class="text-center">{{ $log->status ?? '-' }}</td>
-
-                    {{-- 3. TAMBAHAN: Sel data baru untuk Lampiran --}}
                     <td class="text-center">
-                        {{-- 
-                            Cek apakah file ada di storage. Ini mencegah error 'broken image'.
-                            Path ini mengasumsikan Anda sudah menjalankan 'php artisan storage:link'
-                        --}}
                         @if ($log->lampiran && file_exists(public_path('storage/' . $log->lampiran)))
                             <img src="{{ public_path('storage/' . $log->lampiran) }}" alt="Lampiran" class="lampiran-img">
                         @else
                             -
                         @endif
                     </td>
+                    
+                    <td class="text-center">
+                        @if ($log->status == 'APPROVED')
+                            {{ $log->note ?? '-' }}
+                        @else
+                            -
+                        @endif
+                    </td>
+
                 </tr>
             @empty
                 <tr>
-                    {{-- 4. PERBARUI: Colspan diubah dari 11 menjadi 12 --}}
-                    <td colspan="12" class="text-center">Tidak ada data untuk filter yang dipilih.</td>
+                    <td colspan="14" class="text-center">Tidak ada data untuk filter yang dipilih.</td>
                 </tr>
             @endforelse
         </tbody>
