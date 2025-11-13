@@ -103,6 +103,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/manpower/start', [HenkatenController::class, 'showStartPage'])->name('manpower.start.page');
         Route::patch('/manpower/start/update', [HenkatenController::class, 'updateStartData'])->name('manpower.start.update');
         Route::get('/manpower/search', [ManPowerController::class, 'search'])->name('manpower.search');
+        Route::get('/henkaten/search-replacement', [ManPowerController::class, 'searchAvailableReplacement'])
+        ->name('henkaten.searchReplacement');
+Route::get('/check-after', [HenkatenController::class, 'checkAfter'])->name('checkAfter');
+
+
 
 
         // METHOD HENKATEN

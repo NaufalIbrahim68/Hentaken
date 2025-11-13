@@ -9,31 +9,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ManPowerHenkaten extends Model
 {
     use HasFactory;
-    
+
     /**
-     * PERBAIKAN:
-     * Nama tabel harus menyertakan schema 'dbo.'
-     * agar SQL Server dapat menemukannya dengan benar.
+     * Pastikan nama tabel menggunakan schema 'dbo.'
      */
     protected $table = 'dbo.man_power_henkaten';
 
     /**
-     * Ini sudah benar, karena tabel Anda tidak punya
-     * kolom 'created_at' atau 'updated_at'.
+     * Nonaktifkan timestamps otomatis.
+     * Kita kelola 'created_at' & 'updated_at' secara manual.
      */
     public $timestamps = false;
 
-
     /**
-     * Daftar $fillable Anda sudah bagus.
-     * (Meskipun controller kita saat ini tidak menggunakan 'create',
-     * ini adalah praktik yang baik).
+     * Kolom yang dapat diisi (mass assignment).
      */
     protected $fillable = [
         'man_power_id',
         'station_id',
         'shift',
-        'nama',                  // nama_before
+        'nama',                  
         'nama_after', 
         'station_id_after', 
         'line_area',
@@ -48,30 +43,33 @@ class ManPowerHenkaten extends Model
         'time_end',
         'grup', 
         'status',
-        'note', // <-- Saya tambahkan 'note' yang ada di controller
-    ];
-
-  protected $casts = [
-        'effective_date' => 'date',
-        'end_date' => 'date',
-        'time_start' => 'datetime:H:i',
-        'time_end' => 'datetime:H:i',
-        'created_at' => 'datetime', 
-        'updated_at' => 'datetime', 
+        'note',
+        'created_at',
+        'updated_at', // tambahkan agar bisa diisi manual
     ];
 
     /**
-     * Relasi ke ManPower sebelum henkaten (pekerja yang diganti).
+     * Casting tipe data untuk tanggal dan waktu.
+     */
+    protected $casts = [
+        'effective_date' => 'datetime:Y-m-d',
+        'end_date' => 'datetime:Y-m-d',
+        'time_start' => 'datetime:H:i',
+        'time_end' => 'datetime:H:i',
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
+    /**
+     * Relasi ke ManPower sebelum henkaten (yang digantikan).
      */
     public function manPowerBefore(): BelongsTo
     {
-        // Relasi ini menghubungkan kolom 'man_power_id' di tabel ini
-        // ke 'id' di tabel 'man_power'.
         return $this->belongsTo(ManPower::class, 'man_power_id');
     }
 
     /**
-     * Relasi ke ManPower setelah henkaten (pekerja pengganti).
+     * Relasi ke ManPower setelah henkaten (yang menggantikan).
      */
     public function manPowerAfter(): BelongsTo
     {
@@ -79,14 +77,17 @@ class ManPowerHenkaten extends Model
     }
 
     /**
-     * Relasi ke Station sebelum henkaten (station awal).
+     * Relasi ke Station sebelum henkaten.
      */
     public function station(): BelongsTo
     {
         return $this->belongsTo(Station::class, 'station_id');
     }
 
-    public function manPower()
+    /**
+     * Alias relasi ke ManPower (umum).
+     */
+    public function manPower(): BelongsTo
     {
         return $this->belongsTo(ManPower::class, 'man_power_id');
     }

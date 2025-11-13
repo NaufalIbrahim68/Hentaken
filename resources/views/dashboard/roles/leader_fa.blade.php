@@ -343,7 +343,7 @@
                         @foreach($groupedManPower as $stationId => $stationWorkers)
                             @foreach($stationWorkers as $currentWorker)
                                 @php
-                                    $isHenkaten = ($currentWorker->status == 'Henkaten');
+$isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status == 'Approved'); // Asumsi 'Approved' juga harus merah
                                     $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
                                 @endphp
                                 <td class="border border-gray-300 p-2 {{ $bgColor }}">
@@ -384,23 +384,25 @@
             </button>
 
             <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
-                @php
-                    // Logika ini masih sama dan sudah benar
-                    if ($currentGroup) {
-                        $filteredHenkatens = $activeManPowerHenkatens->filter(function ($henkaten) use ($currentGroup) {
-                            // LOGIKA YANG DIUBAH:
-                            // Tambahkan pengecekan apakah statusnya 'approved'
-                            // Saya asumsikan nama field status adalah 'status'
-                            $isCorrectGroup = optional($henkaten->manPower)->grup === $currentGroup;
-                            $isApproved = strtolower($henkaten->status) === 'approved';
 
-                            return $isCorrectGroup && $isApproved;
-                        });
-                    } else {
-                        // Jika $currentGroup = null (belum dipilih), $filteredHenkatens akan kosong
-                        $filteredHenkatens = collect();
-                    }
-                @endphp
+@php
+    // Logika ini masih sama dan sudah benar
+    if ($currentGroup) {
+        $filteredHenkatens = $activeManPowerHenkatens->filter(function ($henkaten) use ($currentGroup) {
+            
+            // Menggunakan relasi manPower (Man Power LAMA) untuk validasi grup.
+            // Walaupun sudah difilter di controller, ini memastikan data aman.
+            $isCorrectGroup = optional($henkaten->manPower)->grup === $currentGroup; 
+            
+            $isApproved = strtolower($henkaten->status) === 'approved';
+            
+            return $isCorrectGroup && $isApproved;
+        });
+    } else {
+        // Jika $currentGroup = null (belum dipilih), $filteredHenkatens akan kosong
+        $filteredHenkatens = collect();
+    }
+@endphp
 
                 @if($filteredHenkatens->isNotEmpty())
                     <div class="flex justify-center gap-3 min-w-full px-2">

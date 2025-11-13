@@ -48,34 +48,27 @@
                         {{-- PERUBAHAN: Input Shift tersembunyi, mengambil dari $log atau $currentShift --}}
                         <input type="hidden" name="shift" value="{{ old('shift', $log->shift ?? $currentShift) }}">
                         
-                        {{-- 
-                            Input Grup akan ditangani di bawah:
-                            - Mode Create: input hidden
-                            - Mode Edit: dropdown
-                        --}}
+<div x-data="henkatenForm({
+    isEditing: {{ isset($log) ? 'true' : 'false' }},
+    // TAMBAHAN: Kirim ID log saat ini jika mode edit
+    logId: {{ isset($log) ? $log->id : 'null' }}, 
+    
+    oldGrup: '{{ old('grup', $log->grup ?? $currentGroup) }}',
+    oldLineArea: '{{ old('line_area', $log->line_area ?? '') }}',
+    oldStation: {{ old('station_id', $log->station_id ?? 'null') }},
+    
+    oldManPowerBeforeId: {{ old('man_power_id', $log->man_power_id ?? 'null') }},
+    oldManPowerBeforeName: '{{ old('nama', $log->nama ?? '') }}',
+    
+    oldManPowerAfterId: {{ old('man_power_id_after', $log->man_power_id_after ?? 'null') }},
+    oldManPowerAfterName: '{{ old('nama_after', $log->nama_after ?? '') }}',
 
-                        {{-- Wrapper Alpine.js --}}
-                        {{-- PERUBAHAN: 'x-data' diisi data dari $log jika ada --}}
-                       <div x-data="henkatenForm({
-        isEditing: {{ isset($log) ? 'true' : 'false' }},
-        
-        oldGrup: '{{ old('grup', $log->grup ?? $currentGroup) }}',
-        oldLineArea: '{{ old('line_area', $log->line_area ?? '') }}',
-        oldStation: {{ old('station_id', $log->station_id ?? 'null') }},
-        
-        // PENTING: Ambil data 'Before' langsung dari kolom $log
-        oldManPowerBeforeId: {{ old('man_power_id', $log->man_power_id ?? 'null') }},
-        oldManPowerBeforeName: '{{ old('nama', $log->nama ?? '') }}',
-        
-        // PENTING: Ambil data 'After' langsung dari kolom $log
-        oldManPowerAfterId: {{ old('man_power_id_after', $log->man_power_id_after ?? 'null') }},
-        oldManPowerAfterName: '{{ old('nama_after', $log->nama_after ?? '') }}',
+    findManpowerUrl: '{{ route('henkaten.getManPower') }}',
+    searchManpowerUrl: '{{ route('manpower.search') }}',
+    findStationsUrl: '{{ route('henkaten.stations.by_line') }}',
+    checkAfterUrl: '{{ route('henkaten.checkAfter') }}' 
+})" x-init="init()">
 
-        // URL (Sama)
-        findManpowerUrl: '{{ route('henkaten.getManPower') }}',
-        searchManpowerUrl: '{{ route('manpower.search') }}',
-        findStationsUrl: '{{ route('henkaten.stations.by_line') }}'
-    })" x-init="init()">
                             
                             <fieldset>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -125,49 +118,44 @@
                                             </template>
                                         </select>
                                     </div>
-                                   {{-- SERIAL NUMBER START --}}
-<div class="mb-4">
-    <label for="serial_number_start" class="block text-sm font-medium text-gray-700">
-        Serial Number Start
-        {{-- Tanda Wajib (hanya di mode Edit) --}}
-        @if(isset($log))
-            <span class="text-red-500">*</span>
-        @else
-            <span class="text-gray-500 text-xs"></span>
-        @endif
-    </label>
-    <input type="text" id="serial_number_start" name="serial_number_start"
-        value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
-        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-        placeholder="Masukkan serial number awal..."
-        {{-- Atribut 'required' HANYA jika mode edit --}}
-        {{ isset($log) ? 'required' : '' }}>
-</div>
+                                    {{-- SERIAL NUMBER START --}}
+                                    <div class="mb-4">
+                                        <label for="serial_number_start" class="block text-sm font-medium text-gray-700">
+                                            Serial Number Start
+                                            {{-- Tanda Wajib (hanya di mode Edit) --}}
+                                            @if(isset($log))
+                                                <span class="text-red-500">*</span>
+                                            @else
+                                                <span class="text-gray-500 text-xs"></span>
+                                            @endif
+                                        </label>
+                                        <input type="text" id="serial_number_start" name="serial_number_start"
+                                            value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
+                                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                            placeholder="Masukkan serial number awal..."
+                                            {{-- Atribut 'required' HANYA jika mode edit --}}
+                                            {{ isset($log) ? 'required' : '' }}>
+                                    </div>
 
-{{-- SERIAL NUMBER END --}}
-<div class="mb-4">
-    <label for="serial_number_end" class="block text-sm font-medium text-gray-700">
-        Serial Number End
-        {{-- Tanda Wajib (hanya di mode Edit) --}}
-        @if(isset($log))
-            <span class="text-red-500">*</span>
-        @else
-            <span class="text-gray-500 text-xs"></span>
-        @endif
-    </label>
-    <input type="text" id="serial_number_end" name="serial_number_end"
-        value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
-        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-        placeholder="Masukkan serial number akhir..."
-        {{-- Atribut 'required' HANYA jika mode edit --}}
-        {{ isset($log) ? 'required' : '' }}>
-</div>
-                                  
-
+                                    {{-- SERIAL NUMBER END --}}
+                                    <div class="mb-4">
+                                        <label for="serial_number_end" class="block text-sm font-medium text-gray-700">
+                                            Serial Number End
+                                            {{-- Tanda Wajib (hanya di mode Edit) --}}
+                                            @if(isset($log))
+                                                <span class="text-red-500">*</span>
+                                            @else
+                                                <span class="text-gray-500 text-xs"></span>
+                                            @endif
+                                        </label>
+                                        <input type="text" id="serial_number_end" name="serial_number_end"
+                                            value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
+                                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                            placeholder="Masukkan serial number akhir..."
+                                            {{-- Atribut 'required' HANYA jika mode edit --}}
+                                            {{ isset($log) ? 'required' : '' }}>
+                                    </div>
                                 </div> 
-                                
-
-                                
                                 
                                 {{-- Kolom Kanan (Tanggal & Waktu) --}}
                                 <div>
@@ -220,7 +208,6 @@
                                     {{-- After --}}
                                     <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative">
                                         <label for="nama_after" class="text-gray-700 text-sm font-bold">Nama Karyawan Sesudah</label>
-                                        {{-- 'autocompleteQuery' diisi dari x-data (termasuk $log->nama_after) --}}
                                         <input type="text" id="nama_after" name="nama_after" x-model="autocompleteQuery"
                                             @input.debounce.300="searchAfter()" @click.away="autocompleteResults = []"
                                             autocomplete="off" class="w-full py-3 px-4 border rounded"
@@ -254,7 +241,6 @@
                                     <div>
                                         <label class="block text-gray-700 text-sm font-bold mb-2">Syarat & Ketentuan Lampiran</label>
                                         <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
-                                            {{-- ... (Isi syarat & ketentuan tetap sama) ... --}}
                                             <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan untuk Izin/Sakit:</p>
                                             <ul class="list-disc list-inside space-y-1">
                                                 <li><strong>Sakit:</strong> Wajib melampirkan SKS.</li>
@@ -299,10 +285,16 @@
                                     Batal
                                 </a>
                                 {{-- PERUBAHAN: Teks tombol dinamis --}}
-                                <button type="submit"
-                                    class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
-                                    {{ isset($log) ? 'Update Data' : 'Simpan Data' }}
-                                </button>
+                            <button type="submit"
+                                :disabled="!afterValid"
+                                class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
+                                {{ isset($log) ? 'Update Data' : 'Simpan Data' }}
+                            </button>
+                            <p x-show="!afterValid" class="text-red-500 text-sm mt-1">
+                                Karyawan ini sudah dijadwalkan sebagai Man Power After untuk shift ini.
+                            </p>
+
+
                             </div>
 
                         </div> {{-- Akhir dari wrapper x-data --}}
@@ -313,139 +305,139 @@
         </div>
     </div>
 
-    {{-- Alpine.js (PERUBAHAN PENTING PADA 'init') --}}
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-   <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('henkatenForm', (config) => ({
-            // STATE
-            selectedGrup: config.oldGrup || '', 
-            selectedLineArea: config.oldLineArea || '',
-            selectedStation: config.oldStation || '',
-            stationList: [],
-            selectedManpowerAfter: config.oldManPowerAfterId || '',
-            // manpowerBefore diisi dari config (termasuk $log->nama)
-            manpowerBefore: { id: config.oldManPowerBeforeId || '', nama: config.oldManPowerBeforeName || '' }, 
-            autocompleteResults: [],
-            // autocompleteQuery diisi dari config (termasuk $log->nama_after)
-            autocompleteQuery: config.oldManPowerAfterName || '', 
+   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('henkatenForm', (config) => ({
+        selectedGrup: config.oldGrup || '',
+        selectedLineArea: config.oldLineArea || '',
+        selectedStation: config.oldStation || '',
+        stationList: [],
+        
+        // TAMBAHAN: logId untuk pengecualian saat Edit
+        logId: config.logId, 
 
-            // URL
-            findManpowerUrl: config.findManpowerUrl,
-            searchManpowerUrl: config.searchManpowerUrl,
-            findStationsUrl: config.findStationsUrl,
+        manpowerBefore: { id: config.oldManPowerBeforeId || '', nama: config.oldManPowerBeforeName || '' },
+        selectedManpowerAfter: config.oldManPowerAfterId || '',
+        autocompleteQuery: config.oldManPowerAfterName || '',
+        autocompleteResults: [],
+        afterValid: true, 
 
-            // =================================================================
-            // INI ADALAH FUNGSI INIT YANG SUDAH DIPERBAIKI
-            // =================================================================
-            async init() {
-                console.log('✅ Alpine initialized (Henkaten Man Power)');
-                console.log('Editing Mode:', config.isEditing);
-                console.log('Initial Grup:', this.selectedGrup);
-                
-                // Ini data historis yang dimuat dari $log (seharusnya "Putri S")
-                console.log('Initial Manpower Before (from log):', this.manpowerBefore.nama); 
+        findManpowerUrl: config.findManpowerUrl,
+        searchManpowerUrl: config.searchManpowerUrl,
+        findStationsUrl: config.findStationsUrl,
+        checkAfterUrl: config.checkAfterUrl, 
 
-                // 1. Selalu isi daftar Station jika Line Area ada
-                if (this.selectedLineArea) {
-                    console.log('🔁 Restoring stations for line:', this.selectedLineArea);
-                    await this.fetchStations(false); // false = jangan reset station_id
-                }
-
-                // 2. HANYA fetch data "Before" jika ini mode CREATE BARU
-                if (!config.isEditing && this.selectedStation) {
-                    console.log('🏃 Mode Create: Fetching new manpower before...');
-                    await this.fetchManpowerBefore();
-                } 
-                // 3. Jika Mode Edit, JANGAN LAKUKAN APA-APA.
-                else if (config.isEditing) {
-                    console.log('✳️ Mode Edit: Data "Before" di-load dari $log. Tidak ada fetch.');
-                    // Kita tidak menjalankan fetchManpowerBefore()
-                    // Data "Putri S" aman dan tidak akan ditimpa "Yuli I"
-                }
-            },
-            // =================================================================
-            // AKHIR FUNGSI INIT
-            // =================================================================
-
-            async fetchStations(resetStation = true) {
-                if (!this.selectedLineArea) {
-                    this.stationList = [];
-                    this.selectedStation = '';
-                    // HANYA reset manpowerBefore jika BUKAN mode edit
-                    if (!config.isEditing) {
-                        this.manpowerBefore = { id: '', nama: '' }; 
-                    }
-                    return;
-                }
-                try {
-                    const res = await fetch(`${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
-                    const data = await res.json();
-                    this.stationList = Array.isArray(data) ? data : (data.data ?? []);
-                    if (resetStation) {
-                        this.selectedStation = '';
-                        // HANYA reset manpowerBefore jika BUKAN mode edit
-                        if (!config.isEditing) {
-                            this.manpowerBefore = { id: '', nama: '' };
-                        }
-                    }
-                } catch (err) {
-                    console.error('Gagal fetch stations:', err);
-                    this.stationList = [];
-                }
-            },
-
-            async fetchManpowerBefore() {
-                // Fungsi ini sekarang HANYA dipanggil di mode Create,
-                // atau jika user mengubah dropdown di mode Edit
-                if (!this.selectedStation || !this.selectedLineArea || !this.selectedGrup) {
-                    console.warn('Menunggu Grup, Line, dan Station dipilih...');
-                    return;
-                }
-                try {
-                    const url = new URL(this.findManpowerUrl, window.location.origin);
-                    url.searchParams.append('station_id', this.selectedStation);
-                    url.searchParams.append('line_area', this.selectedLineArea);
-                    url.searchParams.append('grup', this.selectedGrup); // Menggunakan state Alpine
-
-                    const res = await fetch(url, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    });
-                    const data = await res.json();
-                    console.log('📦 Manpower Before response (fetch):', data);
-                    this.manpowerBefore = { id: data.id ?? '', nama: data.nama ?? '' };
-                } catch (err) {
-                    console.error('❌ Gagal mengambil manpower sebelum:', err);
-                    this.manpowerBefore = { id: '', nama: '' };
-                }
-            },
-
-            async searchAfter() {
-                // (Fungsi ini sudah benar, tidak perlu diubah)
-                if (this.autocompleteQuery.length < 2 || !this.selectedGrup) { 
-                    this.autocompleteResults = [];
-                    return;
-                }
-                try {
-                    const url = new URL(this.searchManpowerUrl, window.location.origin);
-                    url.searchParams.append('query', this.autocompleteQuery);
-                    url.searchParams.append('grup', this.selectedGrup); 
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    this.autocompleteResults = Array.isArray(data) ? data : (data.data ?? []);
-                } catch (err) {
-                    console.error('❌ Gagal mencari man power:', err);
-                    this.autocompleteResults = [];
-                }
-            },
-
-            selectAfter(item) {
-                // (Fungsi ini sudah benar, tidak perlu diubah)
-                this.autocompleteQuery = item.nama;
-                this.selectedManpowerAfter = item.id;
-                this.autocompleteResults = [];
+        async init() {
+            if (this.selectedLineArea) await this.fetchStations(false);
+            if (!config.isEditing && this.selectedStation) await this.fetchManpowerBefore();
+            
+            // Tambahkan listener untuk memicu validasi saat tanggal berubah
+            document.getElementById('effective_date')?.addEventListener('change', () => this.validateAfter());
+            document.getElementById('end_date')?.addEventListener('change', () => this.validateAfter());
+            
+            // Panggil validateAfter() jika sedang mode edit dan data sudah ada
+            if (config.isEditing && this.selectedManpowerAfter) {
+                this.validateAfter();
             }
-        }));
-    });
+        },
+
+        async fetchStations(resetStation = true) {
+            if (!this.selectedLineArea) { this.stationList = []; this.selectedStation = ''; return; }
+            try {
+                const res = await fetch(`${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
+                const data = await res.json();
+                this.stationList = Array.isArray(data) ? data : (data.data ?? []);
+                if (resetStation) this.selectedStation = '';
+                this.fetchManpowerBefore(); 
+            } catch { this.stationList = []; }
+        },
+
+        async fetchManpowerBefore() {
+            if (!this.selectedStation || !this.selectedLineArea || !this.selectedGrup) {
+                this.manpowerBefore = { id: '', nama: '' };
+                return;
+            }
+            try {
+                const url = new URL(this.findManpowerUrl, window.location.origin);
+                url.searchParams.append('station_id', this.selectedStation);
+                url.searchParams.append('line_area', this.selectedLineArea);
+                url.searchParams.append('grup', this.selectedGrup);
+
+                const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const data = await res.json();
+                this.manpowerBefore = data && data.nama ? { id: data.id, nama: data.nama } : { id: '', nama: '' };
+            } catch { this.manpowerBefore = { id: '', nama: '' }; }
+        },
+
+        async searchAfter() {
+            if (this.autocompleteQuery.length < 2 || !this.selectedGrup) { 
+                this.autocompleteResults = []; 
+                return; 
+            }
+            try {
+                const url = new URL(this.searchManpowerUrl, window.location.origin);
+                url.searchParams.append('query', this.autocompleteQuery);
+                url.searchParams.append('grup', this.selectedGrup);
+
+                const res = await fetch(url);
+                const data = await res.json();
+                const list = Array.isArray(data) ? data : (data.data ?? []);
+                this.autocompleteResults = list;
+            } catch { this.autocompleteResults = []; }
+        },
+
+        selectAfter(item) {
+            this.autocompleteQuery = item.nama;
+            this.selectedManpowerAfter = item.id;
+            this.autocompleteResults = [];
+            this.validateAfter(); // Panggil validasi setelah memilih
+        },
+
+        async validateAfter() {
+            const effectiveDate = document.getElementById('effective_date')?.value;
+            const endDate = document.getElementById('end_date')?.value;
+            
+            // 1. Cek Pre-requisites (ID Pengganti, URL, Tanggal Mulai & Akhir)
+            if (!this.selectedManpowerAfter || !this.checkAfterUrl || !effectiveDate || !endDate) { 
+                this.afterValid = true; 
+                return; 
+            }
+            
+            // 2. Cegah validasi jika pengganti sama dengan yang diganti (Jika ID diketahui)
+            if (this.manpowerBefore.id && this.selectedManpowerAfter === this.manpowerBefore.id) {
+                 this.afterValid = false;
+                 return;
+            }
+            
+            try {
+                const url = new URL(this.checkAfterUrl, window.location.origin);
+                
+                // --- PERUBAHAN KRITIS: Mengirim ID, Grup, End Date, dan LOG ID (untuk pengecualian) ---
+                url.searchParams.append('man_power_id_after', this.selectedManpowerAfter);
+                url.searchParams.append('grup', this.selectedGrup);
+                url.searchParams.append('shift', '{{ $currentShift }}');
+                url.searchParams.append('effective_date', effectiveDate);
+                url.searchParams.append('end_date', endDate);
+                
+                // Tambahkan ID log saat ini jika ada (mode edit)
+                if (this.logId) { 
+                    url.searchParams.append('ignore_log_id', this.logId);
+                }
+                // --------------------------------------------------------
+
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                // Jika exists adalah TRUE, berarti ada konflik tanggal.
+                this.afterValid = !data.exists;
+            } catch (e) {
+                console.error("Error validating 'After' Man Power:", e);
+                this.afterValid = true; 
+            }
+        }
+    }));
+});
 </script>
+
 </x-app-layout>

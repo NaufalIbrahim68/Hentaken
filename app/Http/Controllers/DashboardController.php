@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request; // [DIUBAH] Kita perlu Request
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ManPower;
 use App\Models\Method;
@@ -19,8 +19,7 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    // [DIUBAH] Tambahkan (Request $request) agar kita bisa membaca URL
-    public function index(Request $request) : View
+    public function index(Request $request): View
     {
         $now = Carbon::now('Asia/Jakarta');
         $currentTime = $now->toTimeString();
@@ -30,23 +29,18 @@ class DashboardController extends Controller
         $grupForQuery = session('active_grup');
 
         // =========================================================================
-        // [BARU] LOGIKA DROPDOWN LINE AREA
+        // LOGIKA DROPDOWN LINE AREA
         // =========================================================================
-        // 1. Ambil semua line_area unik dari database untuk dropdown
         $lineAreas = Station::select('line_area')
-                            ->distinct()
-                            ->orderBy('line_area', 'asc')
-                            ->pluck('line_area');
+            ->distinct()
+            ->orderBy('line_area', 'asc')
+            ->pluck('line_area');
 
-        // 2. Tentukan line_area yang dipilih dari URL (?line_area=...)
-        //    Jika tidak ada, gunakan line pertama sebagai default
         $selectedLineArea = $request->query('line_area', $lineAreas->first());
 
-        // 3. Gunakan $selectedLineArea sebagai $lineForQuery Anda
         $lineForQuery = $selectedLineArea;
-        session(['active_line' => $lineForQuery]); // Update session juga
+        session(['active_line' => $lineForQuery]);
         // =========================================================================
-
 
         $baseHenkatenQuery = function ($query) use ($now) {
             $query->where(function ($q) use ($now) {
@@ -60,100 +54,100 @@ class DashboardController extends Controller
                 $columns = Schema::getColumnListing($query->getModel()->getTable());
                 if (in_array('time_start', $columns) && in_array('time_end', $columns)) {
                     $query->orWhere(function ($sameDay) use ($now) {
-                        $sameDay->whereDate('effective_date', '=', $now->toDateString())
-                            ->whereDate('end_date', '=', $now->toDateString())
-                            ->whereTime('time_start', '<=', $now->toTimeString())
-                            ->whereTime('time_end', '>=', $now->toTimeString());
+$sameDay->whereDate('effective_date', '<=', $now->toDateString())
+    ->whereDate('end_date', '>=', $now->toDateString())
+    ->whereTime('time_start', '<=', $now->toTimeString())
+    ->whereTime('time_end', '>=', $now->toTimeString());
                     });
                 }
-            } catch (\Exception $e) { }
+            } catch (\Exception $e) {
+                // Log error if needed
+            }
         };
 
         // === AMBIL SEMUA DATA HENKATEN ===
-        // [DIUBAH] Tambahkan filter whereHas untuk line_area
-        $activeManPowerHenkatens = ManPowerHenkaten::with('station')
+        $activeManPowerHenkatens = ManPowerHenkaten::with(['station', 'manPower'])
             ->where(fn($q) => $baseHenkatenQuery($q))
             ->where('shift', $shiftNumForQuery)
-            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) 
-            ->where('status', 'approved') 
-            ->latest('effective_date')->get();
+            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
+            ->when($grupForQuery, fn($q) => $q->whereHas('manPower', fn($sq) => $sq->where('grup', $grupForQuery)))
+            ->whereIn('status', ['Approved', 'approved'])
+            ->latest('effective_date')
+            ->get();
 
         $activeMethodHenkatens = MethodHenkaten::with('station')
             ->where(fn($q) => $baseHenkatenQuery($q))
             ->where('shift', $shiftNumForQuery)
-            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) 
-           ->where('status', 'approved') 
-            ->latest('effective_date')->get();
+            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
+            ->whereIn('status', ['Approved', 'approved'])
+            ->latest('effective_date')
+            ->get();
 
         $machineHenkatens = MachineHenkaten::with('station')
             ->where(fn($q) => $baseHenkatenQuery($q))
             ->where('shift', $shiftNumForQuery)
-            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) 
-             ->where('status', 'approved') 
-            ->latest('effective_date')->get();
+            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
+            ->whereIn('status', ['Approved', 'approved'])
+            ->latest('effective_date')
+            ->get();
 
         $materialHenkatens = MaterialHenkaten::with(['station', 'material'])
             ->where(fn($q) => $baseHenkatenQuery($q))
             ->where('shift', $shiftNumForQuery)
-            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) 
-            ->where('status', 'approved') 
-            ->latest('effective_date')->get();
+            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
+            ->whereIn('status', ['Approved', 'approved'])
+            ->latest('effective_date')
+            ->get();
 
         // === DATA MANPOWER ===
-        $manPower = collect();
+        $replacedManPowerIds = $activeManPowerHenkatens->pluck('man_power_id')->toArray();
+
+        $manPowerNormal = collect();
         if ($grupForQuery) {
-            $manPower = ManPower::with('station')
+            $manPowerNormal = ManPower::with('station')
                 ->where('grup', $grupForQuery)
-                ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) // <-- Filter Line
+                ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
+                ->whereNotIn('id', $replacedManPowerIds)
                 ->get();
         }
 
-        $henkatenManPowerIds = $activeManPowerHenkatens
-            ->pluck('man_power_id')
-            ->merge($activeManPowerHenkatens->pluck('man_power_id_after'))
-            ->filter()->unique()->toArray();
-
-        foreach ($manPower as $person) {
-            $person->setAttribute('status', in_array($person->id, $henkatenManPowerIds) ? 'Henkaten' : 'NORMAL');
+        // Mark all Normal Man Power as 'NORMAL'
+        foreach ($manPowerNormal as $person) {
+            $person->setAttribute('status', 'NORMAL');
         }
 
-        // === METHOD ===
-        // [DIUBAH] Tambahkan filter whereHas untuk line_area
-        $methods = Method::with('station')
-            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) // <-- Filter Line
-            ->get();
-        $henkatenMethodStationIds = $activeMethodHenkatens->pluck('station_id')->unique()->toArray();
-        foreach ($methods as $method) {
-            $method->setAttribute('status', in_array($method->station_id, $henkatenMethodStationIds) ? 'HENKATEN' : ($method->keterangan ?? 'NORMAL'));
+        // Construct data from Approved Henkaten
+        $manPowerHenkaten = collect();
+        foreach ($activeManPowerHenkatens as $henkatenData) {
+            // Old Worker (being replaced)
+            $oldWorker = (object) [
+                'id' => $henkatenData->man_power_id,
+                'nama' => $henkatenData->nama,
+                'keterangan' => $henkatenData->keterangan,
+                'grup' => $henkatenData->manPower->grup ?? $henkatenData->grup,
+                'station_id' => $henkatenData->station_id,
+                'station' => $henkatenData->station,
+                'status' => 'Henkaten',
+            ];
+            $manPowerHenkaten->push($oldWorker);
+
+            // New Worker (replacement)
+            $newWorker = (object) [
+                'id' => $henkatenData->man_power_id_after,
+                'nama' => $henkatenData->nama_after,
+                'keterangan' => $henkatenData->keterangan,
+                'grup' => $henkatenData->manPower->grup ?? $henkatenData->grup,
+                'station_id' => $henkatenData->station_id,
+                'station' => $henkatenData->station,
+                'status' => 'NORMAL',
+            ];
+            $manPowerHenkaten->push($newWorker);
         }
 
-        // === MACHINE ===
-        // [DIUBAH] Tambahkan filter whereHas untuk line_area
-        $machines = Machine::with('station')
-            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery)) // <-- Filter Line
-            ->get();
-        $henkatenMachineStationIds = $machineHenkatens->pluck('station_id')->unique()->toArray();
-        foreach ($machines as $machine) {
-            $machine->setAttribute('keterangan', in_array($machine->station_id, $henkatenMachineStationIds) ? 'HENKATEN' : ($machine->keterangan ?? 'NORMAL'));
-        }
+        // Merge Normal and Henkaten Man Power
+        $manPower = $manPowerNormal->merge($manPowerHenkaten);
 
-        // === MATERIAL ===
-        // [DIUBAH] Ambil station ID berdasarkan line area
-        $stationIdsForLine = Station::where('line_area', $lineForQuery)->pluck('id');
-        $materials = Material::whereIn('station_id', $stationIdsForLine)->get()->groupBy('station_id'); // <-- Filter Material
-        
-        $activeMaterialStationIds = $materialHenkatens->pluck('station_id')->unique()->toArray();
-        $stationWithMaterialIds = Material::whereIn('station_id', $stationIdsForLine)->pluck('station_id')->unique()->toArray(); // <-- Filter Station
-        
-        $stations = Station::whereIn('id', $stationWithMaterialIds)->get(); // <-- Station sudah terfilter by line
-
-        $stationStatuses = $stations->map(fn($station) => [
-            'id' => $station->id,
-            'name' => $station->station_name,
-            'status' => in_array($station->id, $activeMaterialStationIds) ? 'HENKATEN' : 'NORMAL',
-        ]);
-
-        // === GRUPING & VALIDASI ===
+        // === GROUPING & VALIDATION ===
         if (!$grupForQuery || $manPower->isEmpty()) {
             $dataManPowerKosong = true;
             $groupedManPower = collect();
@@ -162,29 +156,60 @@ class DashboardController extends Controller
             $groupedManPower = $manPower->groupBy('station_id');
         }
 
+        // === METHOD ===
+        $methods = Method::with('station')
+            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
+            ->get();
+        $henkatenMethodStationIds = $activeMethodHenkatens->pluck('station_id')->unique()->toArray();
+        foreach ($methods as $method) {
+            $method->setAttribute('status', in_array($method->station_id, $henkatenMethodStationIds) ? 'HENKATEN' : ($method->keterangan ?? 'NORMAL'));
+        }
+
+        // === MACHINE ===
+        $machines = Machine::with('station')
+            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
+            ->get();
+        $henkatenMachineStationIds = $machineHenkatens->pluck('station_id')->unique()->toArray();
+        foreach ($machines as $machine) {
+            $machine->setAttribute('keterangan', in_array($machine->station_id, $henkatenMachineStationIds) ? 'HENKATEN' : ($machine->keterangan ?? 'NORMAL'));
+        }
+
+        // === MATERIAL ===
+        $stationIdsForLine = Station::where('line_area', $lineForQuery)->pluck('id');
+        $materials = Material::whereIn('station_id', $stationIdsForLine)->get()->groupBy('station_id');
+
+        $activeMaterialStationIds = $materialHenkatens->pluck('station_id')->unique()->toArray();
+        $stationWithMaterialIds = Material::whereIn('station_id', $stationIdsForLine)->pluck('station_id')->unique()->toArray();
+
+        $stations = Station::whereIn('id', $stationWithMaterialIds)->get();
+
+        $stationStatuses = $stations->map(fn($station) => [
+            'id' => $station->id,
+            'name' => $station->station_name,
+            'status' => in_array($station->id, $activeMaterialStationIds) ? 'HENKATEN' : 'NORMAL',
+        ]);
+
         // ======================================================================
-        // SECTION: PILIH DASHBOARD BERDASARKAN ROLE USER
+        // SECTION: SELECT DASHBOARD BASED ON USER ROLE
         // ======================================================================
         $user = Auth::user();
         $role = $user ? $user->role : null;
 
-        // View berbeda untuk tiap role
+        // Different view for each role
         $view = match ($role) {
             'Leader FA' => 'dashboard.roles.leader_fa',
             'Leader SMT' => 'dashboard.roles.leader_smt',
             'Leader PPIC' => 'dashboard.roles.leader_ppic',
             'Leader QC' => 'dashboard.roles.leader_qc',
-            'Sect Head Produksi' => 'dashboard.roles.leader_fa', // [DIUBAH] Arahkan ke view yg sama
+            'Sect Head Produksi' => 'dashboard.roles.leader_fa',
             'Sect Head PPIC' => 'dashboard.roles.secthead_ppic',
             'Sect Head QC' => 'dashboard.roles.secthead_qc',
-            default => 'dashboard.index', // default dashboard
+            default => 'dashboard.index',
         };
 
-        // [DIUBAH] Tambahkan $lineAreas dan $selectedLineArea ke view
-        // INI AKAN MEMPERBAIKI ERROR 'Undefined variable $lineAreas'
         return view($view, [
-            'lineAreas' => $lineAreas,                 // <-- [BARU] Ini perbaikan errornya
-            'selectedLineArea' => $selectedLineArea,   // <-- [BARU] Ini untuk value dropdown
+            'lineAreas' => $lineAreas,
+            'selectedLineArea' => $selectedLineArea,
             'groupedManPower' => $groupedManPower,
             'currentGroup' => $grupForQuery,
             'currentShift' => $shiftNumForQuery,
@@ -215,15 +240,12 @@ class DashboardController extends Controller
         return redirect()->route('dashboard');
     }
 
-    // [DIUBAH] Fungsi setLine ini tidak lagi diperlukan jika Anda menggunakan
-    // dropdown <form GET>, tapi saya biarkan saja
     public function setLine(Request $request)
     {
         $request->validate([
-            'line' => 'required|string', // Validasi bisa lebih longgar
+            'line' => 'required|string',
         ]);
 
-        // Simpan line ke session
         session(['active_line' => $request->line]);
 
         return response()->json([
@@ -231,5 +253,4 @@ class DashboardController extends Controller
             'line' => $request->line
         ]);
     }
-
 }

@@ -325,93 +325,84 @@ class ManPowerController extends Controller
 
 public function search(Request $request)
 {
-    $request->validate([
-        'q' => 'nullable|string',
-        'grup' => 'required|string',
-    ]);
+    $q = $request->input('query', '');
+    $grupInput = $request->input('grup', '');
+    
+    // Validasi input
+    if (strlen($q) < 2 || empty($grupInput)) {
+        return response()->json([]);
+    }
 
-    $q = $request->input('q', '');
-    $grupInput = $request->input('grup');
-    $grupTs = str_contains($grupInput, 'Troubleshooting') ? substr($grupInput, 0, 1) : $grupInput;
+    // Tentukan grup untuk Troubleshooting
+    $grupTs = ($grupInput === 'A') ? 'B' : 'A';
 
-    // =================================================================
-    // AWAL BLOK LOGIKA BARU (LEBIH AKURAT)
-    // =================================================================
+    $nowFull = Carbon::now(); // Carbon object lengkap: 2025-11-13 14:08:18
 
-    $now = Carbon::now();
-    $today = $now->copy()->startOfDay(); // 2025-11-04 00:00:00
-    $currentTime = $now->toTimeString(); // 15:00:00 (misalnya)
+    // Ambil semua man power AFTER yang masih aktif
+    $activeManpowerIds = ManPowerHenkaten::whereIn('status', ['Approved', 'PENDING'])
+        ->where(function ($query) use ($nowFull) {
+            // 1. Henkaten yang end_date-nya NULL (permanen)
+            $query->whereNull('end_date')
+            // 2. Henkaten yang sudah memiliki end_date
+            ->orWhere(function($q) use ($nowFull) {
+                // Gunakan CONCAT untuk menggabungkan kolom tanggal dan waktu
+                // CONCAT(end_date, ' ', time_end) akan menghasilkan string DATETIME
+                // Contoh: '2025-11-13 19:00:00'
+                $q->whereRaw("CONCAT(end_date, ' ', time_end) >= ?", [$nowFull]);
+            });
+        })
+        ->pluck('man_power_id_after')
+        ->filter()
+        ->unique()
+        ->values()
+        ->all();
 
-    // 1. Dapatkan SEMUA ID man power yang sedang aktif henkaten
-    $allBusyIds = ManPowerHenkaten::where(function ($query) use ($today, $currentTime) {
-                        
-                        // Kriteria 1: Henkaten permanen (belum ada tgl berakhir)
-                        $query->whereNull('end_date');
-
-                        // Kriteria 2: Henkaten berakhir di masa depan (besok atau lusa, dst.)
-                        $query->orWhere('end_date', '>', $today); 
-
-                        // Kriteria 3: Henkaten berakhir HARI INI, tapi JAM-nya belum lewat
-                        $query->orWhere(function ($q) use ($today, $currentTime) {
-                            $q->where('end_date', $today) // end_date adalah hari ini
-                              ->where('time_end', '>', $currentTime); // dan jam berakhir > jam sekarang
-                        });
-
-                    })
-                    ->pluck('man_power_id_after')
-                    ->filter()
-                    ->unique()
-                    ->all();
-
-    // 2. Pisahkan ID regular dan ID Troubleshooting (TS)
+    // Pisahkan ID reguler dan TS
     $busyRegularIds = [];
     $busyTsIds = [];
 
-    foreach ($allBusyIds as $id) {
+    foreach ($activeManpowerIds as $id) {
         if (is_string($id) && str_starts_with($id, 't-')) {
-            $busyTsIds[] = substr($id, 2);
+            $busyTsIds[] = (int) substr($id, 2);
         } else {
-            $busyRegularIds[] = $id;
+            $busyRegularIds[] = (int) $id;
         }
     }
 
-    // =================================================================
-    // AKHIR BLOK LOGIKA BARU
-    // =================================================================
-
-    // Cari di manpower normal
+    // Query untuk man power reguler
     $manPower = ManPower::query()
-        ->where('nama', 'like', "%$q%")
         ->where('grup', $grupInput)
-        ->whereNotIn('id', $busyRegularIds) // <-- PASTIKAN BARIS INI ADA
+        ->where('nama', 'like', "%{$q}%")
+        ->whereNotIn('id', $busyRegularIds) // EXCLUDE yang sedang aktif
         ->get(['id', 'nama', 'grup']);
 
-    // Cari di troubleshooting
+    // Query untuk troubleshooting
     $troubleshooting = Troubleshooting::query()
-        ->where('nama', 'like', "%$q%")
         ->where('grup', $grupTs)
-        ->whereNotIn('id', $busyTsIds) // <-- PASTIKAN BARIS INI ADA
+        ->where('nama', 'like', "%{$q}%")
+        ->whereNotIn('id', $busyTsIds) // EXCLUDE yang sedang aktif
         ->get(['id', 'nama', 'grup']);
 
     // Gabungkan hasil
-    $resultManpower = $manPower->map(fn($item) => [
-        'id' => $item->id,
-        'nama' => $item->nama,
-        'grup' => $item->grup,
-    ]);
-
-    $resultTroubleshooting = $troubleshooting->map(fn($item) => [
-        'id' => 't-' . $item->id,
-        'nama' => $item->nama . ' (TS)',
-        'grup' => $item->grup,
-    ]);
-
-    $result = $resultManpower->merge($resultTroubleshooting)
-                             ->unique('nama')
-                             ->values();
+    $result = collect($manPower)
+        ->map(fn($item) => [
+            'id' => $item->id,
+            'nama' => $item->nama,
+            'grup' => $item->grup,
+        ])
+        ->merge(
+            $troubleshooting->map(fn($item) => [
+                'id' => 't-' . $item->id,
+                'nama' => $item->nama . ' (TS)',
+                'grup' => $item->grup,
+            ])
+        )
+        ->unique('nama')
+        ->values();
 
     return response()->json($result);
 }
+
 
 public function getManPower(Request $request)
 {
@@ -465,6 +456,79 @@ public function confirmation()
 
     return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials'));
 }
+
+public function searchAvailableReplacement(Request $request)
+{
+    $request->validate([
+        'query' => 'nullable|string',
+        'grup' => 'required|string',
+    ]);
+
+    $query = $request->input('query', '');
+    $grupInput = $request->input('grup');
+
+    // Ambil semua Man Power yang sedang aktif di tabel Henkaten (masih berlangsung)
+    $activeHenkatenIds = \App\Models\ManPowerHenkaten::where(function ($q) {
+            $q->whereNull('updated_at') // belum ditutup
+              ->orWhere('status', 'PENDING'); // atau masih menunggu approval
+        })
+        ->pluck('man_power_id_after')
+        ->filter()
+        ->unique()
+        ->values()
+        ->all();
+
+    // Pisahkan ID regular dan TS
+    $busyRegularIds = [];
+    $busyTsIds = [];
+
+    foreach ($activeHenkatenIds as $id) {
+        if (is_string($id) && str_starts_with($id, 't-')) {
+            $busyTsIds[] = (int) substr($id, 2);
+        } else {
+            $busyRegularIds[] = (int) $id;
+        }
+    }
+
+    // Ambil Man Power reguler yang bisa jadi pengganti
+    $availableRegular = \App\Models\ManPower::query()
+        ->where('grup', $grupInput)
+        ->where('status', 'aktif')
+        ->when($query, fn($q) => $q->where('nama', 'like', "%{$query}%"))
+        ->whereNotIn('id', $busyRegularIds)
+        ->get(['id', 'nama', 'grup']);
+
+    // Ambil Troubleshooting (TS)
+    $grupTs = str_contains($grupInput, 'Troubleshooting') ? substr($grupInput, 0, 1) : $grupInput;
+
+    $availableTs = \App\Models\Troubleshooting::query()
+        ->where('grup', $grupTs)
+        ->when($query, fn($q) => $q->where('nama', 'like', "%{$query}%"))
+        ->whereNotIn('id', $busyTsIds)
+        ->get(['id', 'nama', 'grup']);
+
+    // Gabungkan hasilnya
+    $result = collect()
+        ->merge(
+            $availableRegular->map(fn($item) => [
+                'id' => $item->id,
+                'nama' => $item->nama,
+                'grup' => $item->grup,
+            ])
+        )
+        ->merge(
+            $availableTs->map(fn($item) => [
+                'id' => 't-' . $item->id,
+                'nama' => $item->nama . ' (TS)',
+                'grup' => $item->grup,
+            ])
+        )
+        ->unique('nama')
+        ->values();
+
+    return response()->json($result);
+}
+
 
 
 

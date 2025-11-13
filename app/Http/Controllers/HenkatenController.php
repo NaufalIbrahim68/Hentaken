@@ -65,84 +65,83 @@ class HenkatenController extends Controller
         ));
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'shift'               => 'required|string',
-            'grup'                => 'required|string',
-            'man_power_id'        => 'required|integer|exists:man_power,id',
-            'man_power_id_after'  => 'required|integer|exists:man_power,id|different:man_power_id',
-            'station_id'          => 'required|integer|exists:stations,id',
-            'keterangan'          => 'required|string',
-            'line_area'           => 'required|string',
-            'effective_date'      => 'required|date',
-            'end_date'            => 'required|date|after_or_equal:effective_date',
-            'lampiran'            => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'time_start'          => 'required|date_format:H:i',
-            'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
-            'serial_number_start' => 'nullable|string|max:255',
-            'serial_number_end'   => 'nullable|string|max:255',
-        ], [
-            'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.'
-        ]);
+  public function store(Request $request)
+{
+    $validated = $request->validate([
+        'shift'               => 'required|string',
+        'grup'                => 'required|string',
+        'man_power_id'        => 'required|integer|exists:man_power,id',
+        'man_power_id_after'  => 'required|integer|exists:man_power,id|different:man_power_id',
+        'station_id'          => 'required|integer|exists:stations,id',
+        'keterangan'          => 'required|string',
+        'line_area'           => 'required|string',
+        'effective_date'      => 'required|date',
+        'end_date'            => 'required|date|after_or_equal:effective_date',
+        'lampiran'            => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        'time_start'          => 'required|date_format:H:i',
+        'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
+        'serial_number_start' => 'nullable|string|max:255',
+        'serial_number_end'   => 'nullable|string|max:255',
+    ], [
+        'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.'
+    ]);
 
-        $lampiranPath = null;
+    $lampiranPath = null;
 
-        try {
-            DB::beginTransaction();
+    try {
+        DB::beginTransaction();
 
-            // 1. Ambil data
-            $manPowerAsli = ManPower::findOrFail($validated['man_power_id']);
-            $manPowerAfter = ManPower::findOrFail($validated['man_power_id_after']);
-            $station = Station::findOrFail($validated['station_id']);
+        // 1. Ambil data terkait
+        $manPowerAsli = ManPower::findOrFail($validated['man_power_id']);
+        $manPowerAfter = ManPower::findOrFail($validated['man_power_id_after']);
+        $station = Station::findOrFail($validated['station_id']);
 
-            // 2. Handle file upload
-            if ($request->hasFile('lampiran')) {
-                $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
-            }
-
-            // 3. Siapkan data untuk tabel log Henkaten
-            $dataToCreate = $validated;
-            $dataToCreate['lampiran'] = $lampiranPath;
-            $dataToCreate['nama'] = $manPowerAsli->nama;
-            $dataToCreate['nama_after'] = $manPowerAfter->nama;
-            
-            // Atur status ke PENDING agar masuk ke alur approval
-            $dataToCreate['status'] = 'PENDING';
-            
-            // Atur note sebagai 'TEMPORER' (karena form ini memiliki end_date)
-            $dataToCreate['note'] = 'TEMPORER';
-
-            ManPowerHenkaten::create($dataToCreate);
-
-            // 4. Update Man Power Asli
-            $manPowerAsli->status = 'henkaten';
-            $manPowerAsli->save();
-
-            // 5. Update Man Power After (pengganti)
-            $manPowerAfter->status = 'aktif';
-            $manPowerAfter->station_id = $validated['station_id'];
-            $manPowerAfter->save();
-
-            DB::commit();
-
-            return redirect()->route('henkaten.create')
-                ->with('success', 'Data Henkaten berhasil dibuat. ' . $manPowerAfter->nama . ' sekarang ditugaskan di ' . $station->station_name);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            if ($lampiranPath && Storage::disk('public')->exists($lampiranPath)) {
-                Storage::disk('public')->delete($lampiranPath);
-            }
-
-            if ($e instanceof ModelNotFoundException) {
-                return back()->withErrors(['error' => 'Data Man Power atau Station tidak ditemukan di database.'])->withInput();
-            }
-
-            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
+        // 2. Upload lampiran
+        if ($request->hasFile('lampiran')) {
+            $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
         }
+
+        // 3. Siapkan data untuk tabel log Henkaten
+        $dataToCreate = $validated;
+        $dataToCreate['lampiran'] = $lampiranPath;
+        $dataToCreate['nama'] = $manPowerAsli->nama;
+        $dataToCreate['nama_after'] = $manPowerAfter->nama;
+        $dataToCreate['status'] = 'PENDING';
+        $dataToCreate['note'] = 'TEMPORER';
+        $dataToCreate['created_at'] = now();  // ✅ otomatis isi created_at
+        $dataToCreate['updated_at'] = now();  // ✅ otomatis isi updated_at
+
+        // 4. Simpan ke database
+        ManPowerHenkaten::create($dataToCreate);
+
+        // 5. Update status man power asli
+        $manPowerAsli->status = 'henkaten';
+        $manPowerAsli->save();
+
+        // 6. Update man power pengganti
+        $manPowerAfter->status = 'aktif';
+        $manPowerAfter->station_id = $validated['station_id'];
+        $manPowerAfter->save();
+
+        DB::commit();
+
+        return redirect()->route('henkaten.create')
+            ->with('success', 'Data Henkaten berhasil dibuat. ' . $manPowerAfter->nama . ' sekarang ditugaskan di ' . $station->station_name);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        if ($lampiranPath && Storage::disk('public')->exists($lampiranPath)) {
+            Storage::disk('public')->delete($lampiranPath);
+        }
+
+        if ($e instanceof ModelNotFoundException) {
+            return back()->withErrors(['error' => 'Data Man Power atau Station tidak ditemukan di database.'])->withInput();
+        }
+
+        return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
     }
+}
 
     // ==============================================================
     // BAGIAN 2: START PAGE HENKATEN MAN POWER
@@ -825,4 +824,44 @@ class HenkatenController extends Controller
                              ->withInput();
         }
     }
+
+    // HenkatenController.php
+public function checkAfter(Request $request)
+{
+    // Ambil semua parameter yang diperlukan dari request
+    $manPowerIdAfter = $request->query('man_power_id_after');
+    $shift = $request->query('shift');
+    $grup = $request->query('grup'); // Parameter baru
+    $newEffectiveDate = $request->query('effective_date');
+    $newEndDate = $request->query('end_date'); // Parameter baru
+
+    if (!$manPowerIdAfter || !$shift || !$grup || !$newEffectiveDate || !$newEndDate) {
+        // Tambahkan logging jika ada parameter yang hilang
+        \Log::warning('Parameter validasi Henkaten After tidak lengkap.', $request->query());
+        return response()->json(['error' => 'Parameter tidak lengkap'], 400);
+    }
+    
+    // --- Logika Deteksi Konflik (Date Range Overlap) ---
+    // Logika ini memeriksa apakah ada log yang sudah ada
+    // yang rentang waktunya (effective_date s/d end_date) 
+    // berpotongan dengan rentang waktu yang baru (newEffectiveDate s/d newEndDate).
+    
+    $exists = ManPowerHenkaten::where('man_power_id_after', $manPowerIdAfter)
+        ->where('shift', $shift)
+        ->where('grup', $grup)
+        
+        // Memeriksa Overlap: Rentang lama berakhir SETELAH rentang baru dimulai 
+        // DAN rentang lama dimulai SEBELUM rentang baru berakhir.
+        // Dengan kata lain: NOT (Lama Berakhir < Baru Mulai OR Lama Mulai > Baru Berakhir)
+        ->where(function ($query) use ($newEffectiveDate, $newEndDate) {
+            $query->where('end_date', '>=', $newEffectiveDate)
+                  ->where('effective_date', '<=', $newEndDate);
+        })
+        ->exists();
+
+    return response()->json(['exists' => $exists]);
+}
+
+
+
 }
