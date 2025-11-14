@@ -89,7 +89,7 @@
     {{-- INFORMASI FILTER --}}
     <div class="filter-info">
         @if(isset($filterDate) && $filterDate)
-            <strong>Tanggal Filter:</strong> {{ \Carbon\Carbon::parse($filterDate)->format('d M Y') }}<br>
+            <strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($filterDate)->format('d M Y') }}<br>
         @endif
         @if(isset($filterLine) && $filterLine)
             <strong>Line Area:</strong> {{ $filterLine }}

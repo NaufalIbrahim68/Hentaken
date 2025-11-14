@@ -123,34 +123,34 @@
                                             -
                                         @endif
                                     </td>
+                                    <td class="py-2 px-3 max-w-xs break-words">
+                                        @if ($log->status != 'Approved')
+                                            {{ $log->note ?? '-' }}
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    
                                     <td class="py-2 px-3">
                                         @php
-    $status = strtolower($log->status);
-    $badgeClass = '';
+                                            $status = $log->status; 
+                                            $badgeClass = '';
 
-    switch ($status) {
-        case 'pending':
-            $badgeClass = 'bg-yellow-200 text-yellow-800';   // Kuning
-            break;
-
-        case 'revisi':
-            $badgeClass = 'bg-red-200 text-red-800';         // Merah Soft
-            break;
-
-        case 'approve':
-            $badgeClass = 'bg-green-200 text-green-800';     // Hijau Soft
-            break;
-
-        default:
-            $badgeClass = 'bg-gray-200 text-gray-800';       // Abu-abu
-            break;
-    }
-@endphp
-
-                                      <span class="text-xs font-semibold inline-block py-1 px-2 rounded-full whitespace-nowrap {{ $badgeClass }}">
-    {{ ucfirst($log->status) ?? '-' }}
-</span>
+                                            if($status == 'Approved') {
+                                                $badgeClass = 'bg-green-100 text-green-700';
+                                            } elseif ($status == 'Pending') {
+                                                $badgeClass = 'bg-yellow-100 text-yellow-700';
+                                            } elseif ($status == 'Revisi') {
+                                                $badgeClass = 'bg-red-100 text-red-700';
+                                            } else {
+                                                $badgeClass = 'bg-gray-100 text-gray-700';
+                                            }
+                                        @endphp
+                                        <span class="text-xs font-semibold inline-block py-1 px-2 rounded-full whitespace-nowrap {{ $badgeClass }}">
+                                            {{ $status ?? '-' }}
+                                        </span>
                                     </td>
+
 
                                     <td class="py-2 px-3">
                                         @if ($log->lampiran)
