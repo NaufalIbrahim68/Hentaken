@@ -125,23 +125,31 @@
                                     </td>
                                     <td class="py-2 px-3">
                                         @php
-                                            $status = $log->status;
-                                            $badgeClass = '';
+    $status = strtolower($log->status);
+    $badgeClass = '';
 
-                                            if($status == 'Approve') {
-                                                $badgeClass = 'bg-green-100 text-green-700';
-                                            } elseif ($status == 'pending') {
-                                                $badgeClass = 'bg-yellow-200';
-                                            } elseif ($status == 'Revisi') {
-                                                $badgeClass = 'bg-red-700 text-red-200';
-                                            } else {
-                                                $badgeClass = 'bg-gray-100 text-gray-700';
-                                            }
-                                        @endphp
+    switch ($status) {
+        case 'pending':
+            $badgeClass = 'bg-yellow-200 text-yellow-800';   // Kuning
+            break;
 
-                                        <span class="text-xs font-semibold inline-block py-1 px-2 rounded-full whitespace-nowrap {{ $badgeClass }}">
-                                            {{ $status ?? '-' }}
-                                        </span>
+        case 'revisi':
+            $badgeClass = 'bg-red-200 text-red-800';         // Merah Soft
+            break;
+
+        case 'approve':
+            $badgeClass = 'bg-green-200 text-green-800';     // Hijau Soft
+            break;
+
+        default:
+            $badgeClass = 'bg-gray-200 text-gray-800';       // Abu-abu
+            break;
+    }
+@endphp
+
+                                      <span class="text-xs font-semibold inline-block py-1 px-2 rounded-full whitespace-nowrap {{ $badgeClass }}">
+    {{ ucfirst($log->status) ?? '-' }}
+</span>
                                     </td>
 
                                     <td class="py-2 px-3">

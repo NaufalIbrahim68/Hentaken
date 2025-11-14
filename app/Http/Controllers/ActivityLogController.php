@@ -53,23 +53,26 @@ class ActivityLogController extends Controller
     /**
      * Menampilkan form edit untuk log henkaten.
      */
-    public function edit(ManPowerHenkaten $log) // Gunakan Route Model Binding
-    {
-        // Mendapatkan Line Area unik dari database
-        $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
+  public function edit(ManPowerHenkaten $log)
+{
+    // Ambil semua station untuk dropdown
+    $station = Station::all();
 
-        // Mengambil shift dan grup dari session (hanya sebagai cadangan)
-        $currentShift = Session::get('shift');
-        $currentGroup = Session::get('grup');
+    // Ambil semua line area
+    $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
 
-        // PENTING: Kirim variabel $log ke view
-        return view('manpower.create_henkaten', compact(
-            'log', // <-- Data historis dikirim ke view
-            'lineAreas',
-            'currentShift',
-            'currentGroup'
-        ));
-    }
+    // Ambil shift dan grup (jika dibutuhkan)
+    $currentShift = Session::get('shift');
+    $currentGroup = Session::get('grup');
+
+    return view('manpower.create_henkaten', compact(
+        'log',
+        'station',
+        'lineAreas',
+        'currentShift',
+        'currentGroup'
+    ));
+}
 
     /**
      * Update data log henkaten yang ada.

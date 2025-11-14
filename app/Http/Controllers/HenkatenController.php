@@ -107,7 +107,6 @@ class HenkatenController extends Controller
         $dataToCreate['nama'] = $manPowerAsli->nama;
         $dataToCreate['nama_after'] = $manPowerAfter->nama;
         $dataToCreate['status'] = 'PENDING';
-        $dataToCreate['note'] = 'TEMPORER';
         $dataToCreate['created_at'] = now();  // ✅ otomatis isi created_at
         $dataToCreate['updated_at'] = now();  // ✅ otomatis isi updated_at
 
@@ -784,7 +783,7 @@ class HenkatenController extends Controller
             'grup' => 'required|string',
             'nama_sebelum' => 'required|string',
             'nama_sesudah' => 'required|string',
-            'jenis_henkaten' => 'required|string|in:PERMANEN,TEMPORER',
+            'jenis_henkaten' => 'required|string|in:PERMANEN',
             'tanggal_mulai' => 'required|date',
             'master_man_power_id' => 'required|integer|exists:man_power,id',
             'keterangan' => 'nullable|string|max:1000',

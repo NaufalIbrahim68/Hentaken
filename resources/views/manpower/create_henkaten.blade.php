@@ -328,19 +328,33 @@ document.addEventListener('alpine:init', () => {
         findStationsUrl: config.findStationsUrl,
         checkAfterUrl: config.checkAfterUrl, 
 
-        async init() {
-            if (this.selectedLineArea) await this.fetchStations(false);
-            if (!config.isEditing && this.selectedStation) await this.fetchManpowerBefore();
-            
-            // Tambahkan listener untuk memicu validasi saat tanggal berubah
-            document.getElementById('effective_date')?.addEventListener('change', () => this.validateAfter());
-            document.getElementById('end_date')?.addEventListener('change', () => this.validateAfter());
-            
-            // Panggil validateAfter() jika sedang mode edit dan data sudah ada
-            if (config.isEditing && this.selectedManpowerAfter) {
-                this.validateAfter();
-            }
-        },
+       async init() {
+
+    // Jika ada line area → ambil stations
+    if (this.selectedLineArea) {
+        await this.fetchStations(false);
+    }
+
+    // MODE EDIT: Trigger fetch data Manpower Before
+    if (config.isEditing && this.selectedStation && this.selectedGrup) {
+        await this.fetchManpowerBefore();
+    }
+
+    // MODE CREATE: seperti sebelumnya
+    if (!config.isEditing && this.selectedStation) {
+        await this.fetchManpowerBefore();
+    }
+
+    // Listener validasi tanggal
+    document.getElementById('effective_date')?.addEventListener('change', () => this.validateAfter());
+    document.getElementById('end_date')?.addEventListener('change', () => this.validateAfter());
+
+    // Validasi mode edit
+    if (config.isEditing && this.selectedManpowerAfter) {
+        this.validateAfter();
+    }
+},
+
 
         async fetchStations(resetStation = true) {
             if (!this.selectedLineArea) { this.stationList = []; this.selectedStation = ''; return; }
