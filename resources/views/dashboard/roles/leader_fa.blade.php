@@ -287,7 +287,7 @@
                                 @php
                                     $stationName = $currentWorker->station ? $currentWorker->station->station_name : 'Station ' . $stationId;
                                     $isHenkaten = ($currentWorker->status == 'Henkaten');
-                                    $bgColorHeader = $isHenkaten ? 'bg-red-500' : 'bg-gray-50';
+                                    $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
                                     $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
                                 @endphp
                                 <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium {{ $bgColorHeader }} {{ $textColorHeader }}">
@@ -302,19 +302,25 @@
                     <tr>
                         @foreach($groupedManPower as $stationId => $stationWorkers)
                             @foreach($stationWorkers as $currentWorker)
-                                @php
-                                    $isHenkaten = ($currentWorker->status == 'Henkaten');
-                                    $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
-                                @endphp
-                                <td class="border border-gray-300 p-2 {{ $bgColorCell }}">
-                                    <div class="flex justify-center items-center">
-                                        <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
-                                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </td>
+                           @php
+    // Lebih akurat: pakai status dari controller
+    $isHenkaten = ($currentWorker->status ?? '') === 'Henkaten';
+   $bgIcon = 'bg-purple-600';
+@endphp
+
+
+
+<td class="border border-gray-300 p-2 {{ $isHenkaten ? 'bg-red-600' : 'bg-white' }}">
+    <div class="flex justify-center items-center">
+        <div class="w-8 h-8 rounded-full {{ $bgIcon }} flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path>
+            </svg>
+        </div>
+    </div>
+</td>
+
+
                             @endforeach
                         @endforeach
                     </tr>
@@ -323,17 +329,15 @@
                     <tr>
                         @foreach($groupedManPower as $stationId => $stationWorkers)
                             @foreach($stationWorkers as $currentWorker)
-                                @php
-                                    $displayName = $currentWorker->nama;
-                                    $isHenkaten = ($currentWorker->status == 'Henkaten');
-                                    $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
-                                    $textColor = $isHenkaten ? 'text-white' : 'text-gray-700';
-                                @endphp
-                                <td class="border border-gray-300 px-1 py-1.5 text-center {{ $bgColorCell }}">
-                                    <p class="text-[9px] font-semibold {{ $textColor }} break-words leading-tight" title="{{ $displayName }}">
-                                        {{ $displayName }}
-                                    </p>
-                                </td>
+                             @php
+    $displayName = $currentWorker->nama; // SELALU nama asli
+    $isHenkaten = ($currentWorker->status == 'Henkaten');
+@endphp
+                                <td class="border border-gray-300 px-1 py-1.5 text-center {{ $isHenkaten ? 'bg-red-600' : 'bg-white' }}">
+    <p class="text-[9px] font-semibold {{ $isHenkaten ? 'text-white' : 'text-gray-700' }} break-words leading-tight">
+        {{ $displayName }}
+    </p>
+</td>
                             @endforeach
                         @endforeach
                     </tr>
@@ -343,7 +347,7 @@
                         @foreach($groupedManPower as $stationId => $stationWorkers)
                             @foreach($stationWorkers as $currentWorker)
                                 @php
-$isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status == 'Approved'); // Asumsi 'Approved' juga harus merah
+$isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status == 'approved'); // Asumsi 'Approved' juga harus merah
                                     $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
                                 @endphp
                                 <td class="border border-gray-300 p-2 {{ $bgColor }}">
@@ -487,7 +491,7 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
     </div>
 
     {{-- ============================================================= --}}
-    {{-- MODAL DETAIL HENKATEN (Tidak berubah) --}}
+    {{-- MODAL DETAIL HENKATEN  --}}
     {{-- ============================================================= --}}
     <div id="henkatenDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform transition-all scale-100">
@@ -957,14 +961,10 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
 
 
 
-   {{-- MACHINE HENKATEN CARD SECTION --}}
 <div class="border-t mt-4 pt-4 overflow-x-auto scrollbar-hide">
     <div class="flex justify-center gap-3 p-2">
-        {{-- GANTI KARTU LAMA ANDA DENGAN INI --}}
         @php
-            // LOGIKA BARU: Filter koleksi untuk hanya menyertakan status 'approved'
             $filteredMachineHenkatens = $machineHenkatens->filter(function ($henkaten) {
-                // Asumsi field status adalah 'status'
                 return strtolower($henkaten->status) === 'approved';
             });
         @endphp
@@ -1205,7 +1205,7 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                     @foreach($stationStatuses as $station)
                         @php
                             $isHenkaten = $station['status'] !== 'NORMAL';
-                            $bgColorCell = $isHenkaten ? 'bg-red-500' : 'bg-white';
+                            $bgColorCell = $isHenkaten ? 'bg-red-600' : 'bg-white';
                         @endphp
                         <td class="border border-gray-300 p-2 {{ $bgColorCell }}">
                             <div class="flex justify-center items-center">
@@ -1218,20 +1218,26 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                         </td>
                     @endforeach
                 </tr>
-                {{-- Row untuk Status --}}
-                <tr>
-                    @foreach($stationStatuses as $station)
-                        @php
-                            $isHenkaten = $station['status'] !== 'NORMAL';
-                            $bgColor = $isHenkaten ? 'bg-red-600' : 'bg-green-500';
-                        @endphp
-                        <td class="border border-gray-300 p-2 {{ $bgColor }}">
-                            <div class="flex justify-center">
-                                <div class="rounded-full {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }}" style="width: 12px; height: 12px; min-width: 12px; min-height: 12px;"></div>
-                            </div>
-                        </td>
-                    @endforeach
-                </tr>
+               {{-- Row untuk Status --}}
+              <tr>
+    @foreach ($stationStatuses as $station)
+        @php
+            // $station adalah array, bukan object
+            $isHenkaten = ($station['status'] === 'HENKATEN');
+            $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
+        @endphp
+
+        <td class="border border-gray-300 p-2 {{ $bgColor }}">
+            <div class="flex justify-center">
+                <div class="rounded-full {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }}"
+                     style="width: 12px; height: 12px; min-width: 12px; min-height: 12px;">
+                </div>
+            </div>
+        </td>
+    @endforeach
+</tr>
+
+
             </tbody>
         </table>
     </div>

@@ -42,38 +42,92 @@ class DashboardController extends Controller
         session(['active_line' => $lineForQuery]);
         // =========================================================================
 
-        $baseHenkatenQuery = function ($query) use ($now) {
-            $query->where(function ($q) use ($now) {
-                $q->where('effective_date', '<=', $now)
-                    ->where(function ($sub) use ($now) {
-                        $sub->where('end_date', '>=', $now)
-                            ->orWhereNull('end_date');
+      $baseHenkatenQuery = function ($query) use ($now) {
+    $today = $now->toDateString();
+    $currentTime = $now->toTimeString();
+
+    $query->where(function ($q) use ($today, $currentTime) {
+
+        // ============================================================
+        // CASE 1: TANPA JAM → FULL DAY
+        // ============================================================
+        $q->where(function ($sub) use ($today) {
+            $sub->whereNull('time_start')
+                ->whereNull('time_end')
+                ->whereDate('effective_date', '<=', $today)
+                ->where(function ($w) use ($today) {
+                    $w->whereDate('end_date', '>=', $today)
+                      ->orWhereNull('end_date');
+                });
+        });
+
+        // ============================================================
+        // CASE 2: ADA JAM → PER SHIFT
+        // ============================================================
+        $q->orWhere(function ($sub) use ($today, $currentTime) {
+            $sub->whereNotNull('time_start')
+                ->whereNotNull('time_end')
+                ->whereDate('effective_date', '<=', $today)
+                ->where(function ($w) use ($today) {
+                    $w->whereDate('end_date', '>=', $today)
+                      ->orWhereNull('end_date');
+                })
+                ->where(function ($time) use ($currentTime) {
+
+                    // CASE 2A: SHIFT NORMAL (Ex: 07:00–19:00)
+                    $time->where(function ($normal) use ($currentTime) {
+                        $normal->whereColumn('time_start', '<', 'time_end')
+                               ->whereTime('time_start', '<=', $currentTime)
+                               ->whereTime('time_end', '>=', $currentTime);
                     });
-            });
-            try {
-                $columns = Schema::getColumnListing($query->getModel()->getTable());
-                if (in_array('time_start', $columns) && in_array('time_end', $columns)) {
-                    $query->orWhere(function ($sameDay) use ($now) {
-$sameDay->whereDate('effective_date', '<=', $now->toDateString())
-    ->whereDate('end_date', '>=', $now->toDateString())
-    ->whereTime('time_start', '<=', $now->toTimeString())
-    ->whereTime('time_end', '>=', $now->toTimeString());
+
+                    // CASE 2B: SHIFT MALAM (Ex: 19:00–07:00)
+                    $time->orWhere(function ($night) use ($currentTime) {
+                        $night->whereColumn('time_start', '>', 'time_end')
+                              ->where(function ($n) use ($currentTime) {
+                                  $n->whereTime('time_start', '<=', $currentTime)
+                                    ->orWhereTime('time_end', '>=', $currentTime);
+                              });
                     });
-                }
-            } catch (\Exception $e) {
-                // Log error if needed
-            }
-        };
+                });
+        });
+
+    });
+};
+
 
         // === AMBIL SEMUA DATA HENKATEN ===
-        $activeManPowerHenkatens = ManPowerHenkaten::with(['station', 'manPower'])
-            ->where(fn($q) => $baseHenkatenQuery($q))
-            ->where('shift', $shiftNumForQuery)
-            ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
-            ->when($grupForQuery, fn($q) => $q->whereHas('manPower', fn($sq) => $sq->where('grup', $grupForQuery)))
-            ->whereIn('status', ['Approved', 'approved'])
-            ->latest('effective_date')
-            ->get();
+       $activeManPowerHenkatens = ManPowerHenkaten::query()
+    ->where('status', 'Approved')
+    ->where('shift', $shiftNumForQuery)
+    ->whereHas('station', function ($q) use ($lineForQuery) {
+        $q->where('line_area', $lineForQuery);
+    })
+    ->where(function ($q) {
+        $q->where(function ($dateQ) {
+            $dateQ->whereDate('effective_date', '<=', today())
+                  ->whereNull('end_date');
+        })->orWhere(function ($dateQ) {
+            $dateQ->whereDate('effective_date', '<=', today())
+                  ->whereDate('end_date', '>=', today());
+        });
+    })
+    ->get(); 
+
+$henkatenIds = $activeManPowerHenkatens
+    ->flatMap(function ($row) {
+        return [
+            $row->man_power_id,        // Old worker
+            $row->man_power_id_after,  // New worker
+        ];
+    })
+    ->filter()   // buang null
+    ->unique()   // hilangkan duplikat
+    ->values()   // reset index
+    ->toArray();
+
+
+
 
         $activeMethodHenkatens = MethodHenkaten::with('station')
             ->where(fn($q) => $baseHenkatenQuery($q))
@@ -100,61 +154,70 @@ $sameDay->whereDate('effective_date', '<=', $now->toDateString())
             ->get();
 
         // === DATA MANPOWER ===
-        $replacedManPowerIds = $activeManPowerHenkatens->pluck('man_power_id')->toArray();
+$manPower = collect();
+$dataManPowerKosong = true;
+$groupedManPower = collect();
 
-        $manPowerNormal = collect();
-        if ($grupForQuery) {
-            $manPowerNormal = ManPower::with('station')
-                ->where('grup', $grupForQuery)
-                ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
-                ->whereNotIn('id', $replacedManPowerIds)
-                ->get();
-        }
+if ($grupForQuery) {
+    // Ambil semua stations yang relevan (line + grup)
+    $stationsQuery = Station::where('line_area', $lineForQuery)->pluck('id');
 
-        // Mark all Normal Man Power as 'NORMAL'
-        foreach ($manPowerNormal as $person) {
-            $person->setAttribute('status', 'NORMAL');
-        }
+    // Ambil semua manpower di line+grup (bisa >1 per station)
+    $allManPower = ManPower::with('station')
+        ->where('grup', $grupForQuery)
+        ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
+        ->get();
 
-        // Construct data from Approved Henkaten
-        $manPowerHenkaten = collect();
-        foreach ($activeManPowerHenkatens as $henkatenData) {
-            // Old Worker (being replaced)
-            $oldWorker = (object) [
-                'id' => $henkatenData->man_power_id,
-                'nama' => $henkatenData->nama,
-                'keterangan' => $henkatenData->keterangan,
-                'grup' => $henkatenData->manPower->grup ?? $henkatenData->grup,
-                'station_id' => $henkatenData->station_id,
-                'station' => $henkatenData->station,
+    // Buat index manpower by station id (array of workers per station)
+    $manpowerByStation = $allManPower->groupBy('station_id');
+
+    // Index henkaten by station for quick lookup (we assume at most one active henkaten per station)
+    $henkatenByStation = $activeManPowerHenkatens->groupBy('station_id');
+
+    // For each station that has any manpower (or henkaten), determine displayed worker
+    $stationIds = $manpowerByStation->keys()->merge($henkatenByStation->keys())->unique();
+
+    foreach ($stationIds as $stationId) {
+        // If there is active henkaten for this station -> show OLD WORKER (man_power_id) as Henkaten
+        if ($henkatenByStation->has($stationId)) {
+            // if multiple henkaten, pick the latest by effective_date
+            $henk = $henkatenByStation[$stationId]->sortByDesc('effective_date')->first();
+
+            // Create a temporary ManPower-like object for OLD worker (keep nama lama)
+            $oldWorker = new ManPower([
+                'id' => $henk->man_power_id,
+                'nama' => $henk->nama,
+                'keterangan' => $henk->keterangan,
+                'grup' => $henk->manPower->grup ?? $henk->grup ?? $grupForQuery,
+                'station_id' => $stationId,
                 'status' => 'Henkaten',
-            ];
-            $manPowerHenkaten->push($oldWorker);
-
-            // New Worker (replacement)
-            $newWorker = (object) [
-                'id' => $henkatenData->man_power_id_after,
-                'nama' => $henkatenData->nama_after,
-                'keterangan' => $henkatenData->keterangan,
-                'grup' => $henkatenData->manPower->grup ?? $henkatenData->grup,
-                'station_id' => $henkatenData->station_id,
-                'station' => $henkatenData->station,
-                'status' => 'NORMAL',
-            ];
-            $manPowerHenkaten->push($newWorker);
-        }
-
-        // Merge Normal and Henkaten Man Power
-        $manPower = $manPowerNormal->merge($manPowerHenkaten);
-
-        // === GROUPING & VALIDATION ===
-        if (!$grupForQuery || $manPower->isEmpty()) {
-            $dataManPowerKosong = true;
-            $groupedManPower = collect();
+            ]);
+            $oldWorker->setRelation('station', $henk->station ?? Station::find($stationId));
+            $manPower->push($oldWorker);
         } else {
-            $dataManPowerKosong = false;
-            $groupedManPower = $manPower->groupBy('station_id');
+            // No henkaten -> take first normal worker in that station (or all if you prefer)
+            $workers = $manpowerByStation->get($stationId, collect());
+            if ($workers->isNotEmpty()) {
+                // choose display strategy: if multiple, pick the first (you can choose ordering)
+                $worker = $workers->first();
+                $worker->setAttribute('status', $worker->status ?? 'NORMAL');
+                $manPower->push($worker);
+            }
         }
+    }
+
+    if ($manPower->isNotEmpty()) {
+        $dataManPowerKosong = false;
+        $groupedManPower = $manPower->groupBy('station_id');
+    } else {
+        $dataManPowerKosong = true;
+        $groupedManPower = collect();
+    }
+} else {
+    $dataManPowerKosong = true;
+    $groupedManPower = collect();
+}
+
 
         // === METHOD ===
         $methods = Method::with('station')
@@ -224,6 +287,7 @@ $sameDay->whereDate('effective_date', '<=', $now->toDateString())
             'materialHenkatens' => $materialHenkatens,
             'dataManPowerKosong' => $dataManPowerKosong,
             'userRole' => $role,
+             'henkatenIds' => $henkatenIds, 
         ]);
     }
 
