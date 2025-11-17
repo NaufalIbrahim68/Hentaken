@@ -347,7 +347,7 @@
                         @foreach($groupedManPower as $stationId => $stationWorkers)
                             @foreach($stationWorkers as $currentWorker)
                                 @php
-$isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status == 'approved'); // Asumsi 'Approved' juga harus merah
+$isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status == 'PENDING'); 
                                     $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
                                 @endphp
                                 <td class="border border-gray-300 p-2 {{ $bgColor }}">
@@ -390,23 +390,19 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
             <div id="shiftChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
 
 @php
-    // Logika ini masih sama dan sudah benar
     if ($currentGroup) {
         $filteredHenkatens = $activeManPowerHenkatens->filter(function ($henkaten) use ($currentGroup) {
-            
-            // Menggunakan relasi manPower (Man Power LAMA) untuk validasi grup.
-            // Walaupun sudah difilter di controller, ini memastikan data aman.
             $isCorrectGroup = optional($henkaten->manPower)->grup === $currentGroup; 
-            
-            $isApproved = strtolower($henkaten->status) === 'approved';
-            
-            return $isCorrectGroup && $isApproved;
+
+            $isPending = strtolower($henkaten->status) === 'pending';
+
+            return $isCorrectGroup && $isPending;
         });
     } else {
-        // Jika $currentGroup = null (belum dipilih), $filteredHenkatens akan kosong
         $filteredHenkatens = collect();
     }
 @endphp
+
 
                 @if($filteredHenkatens->isNotEmpty())
                     <div class="flex justify-center gap-3 min-w-full px-2">
@@ -1321,11 +1317,9 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                             {{-- CURRENT & NEW PART --}}
                             <div class="grid grid-cols-2 gap-1">
                                 <div class="bg-white shadow rounded p-1 text-center">
-                                    <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
                                     <p class="text-xs font-medium py-1">{{ $henkaten->description_before ?? 'N/A' }}</p>
                                 </div>
                                 <div class="bg-white shadow rounded p-1 text-center">
-                                    <h3 class="text-[8px] font-bold mb-0.5 text-red-600">NEW PART</h3>
                                     <p class="text-xs font-medium py-1">{{ $henkaten->description_after ?? 'N/A' }}</p>
                                 </div>
                             </div>

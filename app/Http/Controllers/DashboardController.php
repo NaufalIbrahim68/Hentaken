@@ -26,7 +26,7 @@ class DashboardController extends Controller
         $shiftNumForQuery = ($currentTime >= '07:00:00' && $currentTime <= '18:59:59') ? 2 : 1;
         session(['active_shift' => $shiftNumForQuery]);
 
-        $grupForQuery = session('active_grup');
+$currentGroup = $request->input('group', session('active_grup'));
 
         // =========================================================================
         // LOGIKA DROPDOWN LINE AREA
@@ -96,12 +96,18 @@ class DashboardController extends Controller
 };
 
 
+
         // === AMBIL SEMUA DATA HENKATEN ===
        $activeManPowerHenkatens = ManPowerHenkaten::query()
-    ->where('status', 'Approved')
+    ->where('status', 'PENDING')
     ->where('shift', $shiftNumForQuery)
     ->whereHas('station', function ($q) use ($lineForQuery) {
         $q->where('line_area', $lineForQuery);
+    })
+    ->when($currentGroup, function ($q) use ($currentGroup) {
+        $q->whereHas('manPower', function ($mp) use ($currentGroup) {
+            $mp->where('grup', $currentGroup);
+        });
     })
     ->where(function ($q) {
         $q->where(function ($dateQ) {
@@ -112,7 +118,7 @@ class DashboardController extends Controller
                   ->whereDate('end_date', '>=', today());
         });
     })
-    ->get(); 
+    ->get();
 
 $henkatenIds = $activeManPowerHenkatens
     ->flatMap(function ($row) {
@@ -158,13 +164,13 @@ $manPower = collect();
 $dataManPowerKosong = true;
 $groupedManPower = collect();
 
-if ($grupForQuery) {
+if ($currentGroup) {
     // Ambil semua stations yang relevan (line + grup)
     $stationsQuery = Station::where('line_area', $lineForQuery)->pluck('id');
 
     // Ambil semua manpower di line+grup (bisa >1 per station)
     $allManPower = ManPower::with('station')
-        ->where('grup', $grupForQuery)
+    ->where('grup', $currentGroup)
         ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
         ->get();
 
@@ -188,7 +194,7 @@ if ($grupForQuery) {
                 'id' => $henk->man_power_id,
                 'nama' => $henk->nama,
                 'keterangan' => $henk->keterangan,
-                'grup' => $henk->manPower->grup ?? $henk->grup ?? $grupForQuery,
+                'grup' => $henk->manPower->grup ?? $henk->grup ?? $currentGroup,
                 'station_id' => $stationId,
                 'status' => 'Henkaten',
             ]);
@@ -274,7 +280,7 @@ if ($grupForQuery) {
             'lineAreas' => $lineAreas,
             'selectedLineArea' => $selectedLineArea,
             'groupedManPower' => $groupedManPower,
-            'currentGroup' => $grupForQuery,
+            'currentGroup' => $currentGroup,
             'currentShift' => $shiftNumForQuery,
             'methods' => $methods,
             'machines' => $machines,

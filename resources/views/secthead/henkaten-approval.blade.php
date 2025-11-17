@@ -7,7 +7,7 @@
 
     <div class="py-8 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="henkatenApproval()">
 
-    @foreach (['manpower', 'method', 'machine', 'material'] as $type)
+    @foreach (['method', 'machine', 'material'] as $type)
             @php
                 $items = ${$type.'s'} ?? collect(); 
             @endphp
