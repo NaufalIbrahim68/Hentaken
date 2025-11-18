@@ -160,38 +160,31 @@
         {{-- Kolom Kiri --}}
          <div class="w-1/3"></div>
 
-        {{-- Title & Date --}}
-       <div class="w-1/3 text-center">
-    <form action="{{ url()->current() }}" method="GET" class="flex justify-center">
+       {{-- Title, Area, dan Tanggal (Pusat, w-1/3) --}}
+{{-- Class diubah menjadi flex flex-col items-center untuk centering vertikal dan horizontal --}}
+<div class="w-1/3 flex flex-col items-center">
+    
+    {{-- BARIS 1: HENKATEN DAN LINE AREA (Samping-sampingan) --}}
+    <div class="flex items-center space-x-2"> 
         
-        <select name="line_area" 
-                onchange="this.form.submit()"
-                class="text-base font-bold border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-            
-            @php
-                $hasIncoming = false;
-            @endphp
+        {{-- JUDUL UTAMA --}}
+        <h1 class="text-base font-bold">
+            HENKATEN
+        </h1>
 
-            @foreach($lineAreas as $line)
-                @if(strtolower($line) === 'incoming') {{-- bisa diganti contains jika mau yang mirip --}}
-                    @php $hasIncoming = true; @endphp
-
-                    <option value="{{ $line }}" {{ $selectedLineArea == $line ? 'selected' : '' }}>
-                        {{ strtoupper($line) }} {{-- otomatis jadi INCOMING --}}
-                    </option>
-                @endif
-            @endforeach
-
-            @if(!$hasIncoming)
-                <option disabled selected>
-                    Tidak ada Line Incoming
-                </option>
-            @endif
-
-        </select>
-    </form>
+        {{-- AREA/DELIVERY (Teks Biasa) --}}
+        {{-- Kita perlu menentukan Area yang terpilih untuk ditampilkan sebagai teks --}}
+        <p class="text-base font-bold">
+            {{ strtoupper($selectedLineArea) }}
+        </p>
+        
+    </div>
+    
+    {{-- BARIS 2: TANGGAL (Di bawah Judul dan Area) --}}
+    {{-- Anda dapat menambahkan variabel tanggal yang sudah diinisialisasi di sini --}}
+    <p class="text-[10px] text-gray-600 mt-1" id="current-date"></p>
+    
 </div>
-
 
         {{-- Time & Shift --}}
         <div class="w-1/3 text-right">
@@ -211,11 +204,36 @@
     <div class="flex items-center mb-2 px-2 pt-1">
 
     <div class="flex-1">
-      
+        </div>
 
      <h2 class="text-sm font-semibold mb-3 text-center">MAN POWER</h2>
-      </div>
-    </div>
+    
+    <div class="flex-1 flex justify-end items-center space-x-2">
+        
+        {{-- Dropdown Anda (sudah benar) --}}
+        <div>
+            <select id="grupFilterDropdown" 
+                    {{-- Panggil JS setGrup HANYA JIKA nilainya bukan "" (bukan "Pilih Grup") --}}
+                    onchange="if(this.value) { setGrup(this.value); }"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                    style="padding-right: 1.75rem;"> {{-- Styling untuk panah dropdown --}}
+
+                {{-- Opsi "Pilih Grup" akan aktif jika session $currentGroup kosong --}}
+                <option value="" {{ is_null($currentGroup ?? null) ? 'selected' : '' }} disabled>
+                    Pilih Grup...
+                </option>
+
+                <option value="A" {{ ($currentGroup ?? null) == 'A' ? 'selected' : '' }}>
+                    Grup A
+                </option>
+
+                <option value="B" {{ ($currentGroup ?? null) == 'B' ? 'selected' : '' }}>
+                    Grup B
+                </option>
+            </select>
+        </div>
+</div>
+</div>
 
 {{-- ======================================================================= --}}
 {{-- BAGIAN ATAS: DAFTAR MAN POWER (TABEL HORIZONTAL) --}}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB; // <=== WAJIB DITAMBAHKAN
 use App\Models\ManPower;
 use App\Models\Method;
 use App\Models\Machine;
@@ -28,37 +29,43 @@ class DashboardController extends Controller
 
 $currentGroup = $request->input('group', session('active_grup'));
 
- $user = Auth::user();
-$role = $user ? $user->role : null;
+    // ============================================================
+        // ROLE + LINE AREA HANDLING
+        // ============================================================
+        $user = Auth::user();
+        $role = $user ? $user->role : null;
 
-// ============================================================
-// HANDLE LINE AREA
-// ============================================================
-if ($role === 'Leader QC') {
+        if ($role === 'Leader QC') {
+            // Leader QC = Incoming + Delivery
+            $allowedAreas = ['incoming', 'incomming', 'delivery'];
 
-    // Cari Incoming / Incomming
-    $selectedLineArea = Station::whereRaw("LOWER(line_area) IN ('incoming','incomming')")
-        ->value('line_area')
-        ?? Station::whereRaw("LOWER(line_area) LIKE '%incoming%'")
-            ->value('line_area')
-        ?? 'Incoming';
+            $lineAreas = Station::select('line_area')
+                ->whereIn(DB::raw('LOWER(line_area)'), $allowedAreas)
+                ->pluck('line_area')
+                ->unique();
+        }
+        elseif ($role === 'Leader PPIC') {
+            // Leader PPIC = Delivery only
+            $lineAreas = collect(['Delivery']);
+        }
+        elseif ($role === 'Incoming') {
+            $lineAreas = collect(['Incoming']);
+        }
+        else {
+            // Admin / other roles = full access
+            $lineAreas = Station::select('line_area')
+                ->distinct()
+                ->orderBy('line_area', 'asc')
+                ->pluck('line_area');
+        }
 
-    // Dropdown hanya menampilkan Incoming
-    $lineAreas = collect([$selectedLineArea]);
-    $lineForQuery = $selectedLineArea;
+        // Selected value
+        $selectedLineArea = request('line_area', $lineAreas->first());
+        $lineForQuery = $selectedLineArea;
 
-} else {
-    // Normal untuk role lain
-    $lineAreas = Station::select('line_area')
-        ->distinct()
-        ->orderBy('line_area', 'asc')
-        ->pluck('line_area');
+        session(['active_line' => $lineForQuery]); // <=== DIPINDAHKAN ke tempat yg benar
 
-    $selectedLineArea = $request->query('line_area', $lineAreas->first());
-    $lineForQuery = $selectedLineArea;
-}
-
-session(['active_line' => $lineForQuery]);
+   
 
       $baseHenkatenQuery = function ($query) use ($now) {
     $today = $now->toDateString();
