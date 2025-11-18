@@ -12,23 +12,37 @@ class MaterialController extends Controller
     /**
      * Menampilkan daftar material dengan pencarian dan pagination.
      */
-    public function index(Request $request)
-    {
-       $query = Material::with('station')->orderBy('id', 'desc'); 
+   public function index(Request $request)
+{
+    $query = Material::with('station')->orderBy('id', 'desc');
 
+    $selectedLineArea = $request->get('line_area');
 
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('material_name', 'like', '%'.$search.'%')
-                  ->orWhere('station_code', 'like', '%'.$search.'%')
-                  ->orWhere('keterangan', 'like', '%'.$search.'%');
-            });
-        }
+    $lineAreas = Station::select('line_area')
+        ->whereNotNull('line_area')
+        ->distinct()
+        ->orderBy('line_area', 'asc')
+        ->pluck('line_area');
 
-        $materials = $query->paginate(5);
-        return view('materials.index', compact('materials'));
+    if ($request->has('search') && $request->search !== '') {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('material_name', 'like', '%'.$search.'%')
+              ->orWhere('station_code', 'like', '%'.$search.'%')
+              ->orWhere('keterangan', 'like', '%'.$search.'%');
+        });
     }
+
+    if ($selectedLineArea) {
+        $query->whereHas('station', function($q) use ($selectedLineArea) {
+            $q->whereRaw('LOWER(line_area) = ?', [strtolower($selectedLineArea)]);
+        });
+    }
+
+    $materials = $query->paginate(5);
+
+    return view('materials.index', compact('materials', 'lineAreas', 'selectedLineArea'));
+}
 
     /**
      * Menampilkan form untuk membuat material baru.

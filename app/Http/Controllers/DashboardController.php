@@ -28,19 +28,37 @@ class DashboardController extends Controller
 
 $currentGroup = $request->input('group', session('active_grup'));
 
-        // =========================================================================
-        // LOGIKA DROPDOWN LINE AREA
-        // =========================================================================
-        $lineAreas = Station::select('line_area')
-            ->distinct()
-            ->orderBy('line_area', 'asc')
-            ->pluck('line_area');
+ $user = Auth::user();
+$role = $user ? $user->role : null;
 
-        $selectedLineArea = $request->query('line_area', $lineAreas->first());
+// ============================================================
+// HANDLE LINE AREA
+// ============================================================
+if ($role === 'Leader QC') {
 
-        $lineForQuery = $selectedLineArea;
-        session(['active_line' => $lineForQuery]);
-        // =========================================================================
+    // Cari Incoming / Incomming
+    $selectedLineArea = Station::whereRaw("LOWER(line_area) IN ('incoming','incomming')")
+        ->value('line_area')
+        ?? Station::whereRaw("LOWER(line_area) LIKE '%incoming%'")
+            ->value('line_area')
+        ?? 'Incoming';
+
+    // Dropdown hanya menampilkan Incoming
+    $lineAreas = collect([$selectedLineArea]);
+    $lineForQuery = $selectedLineArea;
+
+} else {
+    // Normal untuk role lain
+    $lineAreas = Station::select('line_area')
+        ->distinct()
+        ->orderBy('line_area', 'asc')
+        ->pluck('line_area');
+
+    $selectedLineArea = $request->query('line_area', $lineAreas->first());
+    $lineForQuery = $selectedLineArea;
+}
+
+session(['active_line' => $lineForQuery]);
 
       $baseHenkatenQuery = function ($query) use ($now) {
     $today = $now->toDateString();

@@ -10,12 +10,31 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
 
-                    {{-- Tombol Tambah --}}
-                    <div class="flex items-center justify-between mb-6">
-                        <a href="{{ route('methods.create') }}" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
-                            Tambah Data
-                        </a>
-                    </div>
+                              {{-- Header Actions (Tambah Data + Filter Area) --}}
+<div class="flex items-center justify-between mb-6">
+
+    {{-- Tombol Tambah Data (Kiri) --}}
+    <a href="{{ route('methods.create') }}"
+        class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
+        Tambah Data
+    </a>
+
+    {{-- Filter Line Area (Kanan) --}}
+    <form method="GET" action="{{ route('methods.index') }}" class="flex items-center space-x-2">
+        <label for="line_area" class="text-sm font-medium text-gray-700">Filter Area:</label>
+        <select name="line_area" id="line_area"
+            class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
+            onchange="this.form.submit()">
+            <option value="">Semua Line Area</option>
+            @foreach ($lineAreas as $area)
+                <option value="{{ $area }}" {{ $selectedLineArea == $area ? 'selected' : '' }}>
+                    {{ $area }}
+                </option>
+            @endforeach
+        </select>
+    </form>
+
+</div>
 
                     {{-- Tabel Data --}}
                     <div class="overflow-x-auto">

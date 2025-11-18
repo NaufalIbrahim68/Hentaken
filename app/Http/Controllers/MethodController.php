@@ -12,11 +12,33 @@ class MethodController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        $methods = Method::with('station')->orderBy('station_id')->paginate(5);
-        return view('methods.index', compact('methods'));
+   public function index(Request $request)
+{
+    $query = Method::with('station')->orderBy('id', 'desc');
+
+    // Filter line_area
+    $selectedLineArea = $request->get('line_area');
+
+    // Ambil list line_area unik dari tabel stations
+    $lineAreas = Station::select('line_area')
+        ->whereNotNull('line_area')
+        ->distinct()
+        ->orderBy('line_area', 'asc')
+        ->pluck('line_area');
+
+    // Jika filter dipilih
+    if ($selectedLineArea) {
+        $query->whereHas('station', function ($q) use ($selectedLineArea) {
+            $q->whereRaw('LOWER(line_area) = ?', [strtolower($selectedLineArea)]);
+        });
     }
+
+    // Pagination
+    $methods = $query->paginate(5);
+
+    return view('methods.index', compact('methods', 'lineAreas', 'selectedLineArea'));
+}
+
 
     /**
      * Show the form for creating a new resource.

@@ -12,22 +12,43 @@ class MachineController extends Controller
     /**
      * Menampilkan daftar master data machine.
      */
-    public function index(Request $request)
-    {
-        $query = Machine::with('station')->latest();
+  public function index(Request $request)
+{
+    $query = Machine::with('station')->orderBy('id', 'desc');
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where('deskripsi', 'like', '%' . $search . '%')
-                  ->orWhere('keterangan', 'like', '%' . $search . '%')
-                  ->orWhereHas('station', function ($q) use ($search) {
-                      $q->where('station_code', 'like', '%' . $search . '%');
-                  });
-        }
+    $selectedLineArea = $request->get('line_area');
 
-        $machines = $query->paginate(5);
-        return view('machines.index', compact('machines'));
+    // Dropdown Line Area
+    $lineAreas = Station::select('line_area')
+        ->whereNotNull('line_area')
+        ->distinct()
+        ->orderBy('line_area', 'asc')
+        ->pluck('line_area');
+
+    // Search
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('deskripsi', 'like', '%' . $search . '%')
+              ->orWhere('keterangan', 'like', '%' . $search . '%')
+              ->orWhereHas('station', function ($qs) use ($search) {
+                  $qs->where('station_code', 'like', '%' . $search . '%');
+              });
+        });
     }
+
+    // Filter Line Area (berdasarkan relasi station)
+    if ($selectedLineArea) {
+        $query->whereHas('station', function($q) use ($selectedLineArea) {
+            $q->whereRaw('LOWER(line_area) = ?', [strtolower($selectedLineArea)]);
+        });
+    }
+
+    $machines = $query->paginate(5);
+
+    return view('machines.index', compact('machines', 'lineAreas', 'selectedLineArea'));
+}
+
 
     /**
      * Menampilkan form untuk membuat data machine baru.

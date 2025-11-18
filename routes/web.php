@@ -59,6 +59,8 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('role:Sect Head Produksi')
         ->name('dashboard.secthead_produksi');
 
+        
+
     // Sect Head PPIC
     Route::get('/dashboard/secthead-ppic', [DashboardController::class, 'sectheadPpic'])
         ->middleware('role:Sect Head PPIC')
