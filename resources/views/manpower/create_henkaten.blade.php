@@ -257,11 +257,11 @@
                                 <div class="mb-6 mt-6">
                                     <label for="lampiran"
                                         class="block text-gray-700 text-sm font-bold mb-2">Lampiran (Wajib untuk Izin/Sakit)</label>
-                                    <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
-                                        class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                        {{-- PERUBAHAN: 'required' hanya jika BUKAN mode edit --}}
-                                        {{ !isset($log) ? 'required' : '' }}>
-                                    
+                                    <input type="file" id="lampiran" name="lampiran"
+                                             accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
+                                    class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    {{ !isset($log) ? 'required' : '' }}>
+
                                     {{-- PERUBAHAN: Tampilkan lampiran saat ini jika ada --}}
                                     @if (isset($log) && $log->lampiran)
                                         <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
@@ -297,7 +297,7 @@
 
                             </div>
 
-                        </div> {{-- Akhir dari wrapper x-data --}}
+                        </div> 
                     </form>
 
                 </div>
@@ -328,32 +328,28 @@ document.addEventListener('alpine:init', () => {
         findStationsUrl: config.findStationsUrl,
         checkAfterUrl: config.checkAfterUrl, 
 
-       async init() {
+        
 
-    // Jika ada line area → ambil stations
-    if (this.selectedLineArea) {
+      async init() {
+
+    // MODE EDIT → selalu load stations
+    if (config.isEditing) {
+        await this.fetchStations(false);
+        await this.fetchManpowerBefore();
+    } else if (this.selectedLineArea) {
         await this.fetchStations(false);
     }
 
-    // MODE EDIT: Trigger fetch data Manpower Before
-    if (config.isEditing && this.selectedStation && this.selectedGrup) {
-        await this.fetchManpowerBefore();
-    }
-
-    // MODE CREATE: seperti sebelumnya
-    if (!config.isEditing && this.selectedStation) {
-        await this.fetchManpowerBefore();
-    }
-
-    // Listener validasi tanggal
+    // Validasi tanggal
     document.getElementById('effective_date')?.addEventListener('change', () => this.validateAfter());
     document.getElementById('end_date')?.addEventListener('change', () => this.validateAfter());
 
-    // Validasi mode edit
+    // Validasi after di mode edit
     if (config.isEditing && this.selectedManpowerAfter) {
         this.validateAfter();
     }
 },
+
 
 
         async fetchStations(resetStation = true) {

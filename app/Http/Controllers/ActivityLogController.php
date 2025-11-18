@@ -56,7 +56,7 @@ class ActivityLogController extends Controller
   public function edit(ManPowerHenkaten $log)
 {
     // Ambil semua station untuk dropdown
-    $station = Station::all();
+$stations = Station::select('id', 'station_name')->get();
 
     // Ambil semua line area
     $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
@@ -67,7 +67,7 @@ class ActivityLogController extends Controller
 
     return view('manpower.create_henkaten', compact(
         'log',
-        'station',
+        'stations',
         'lineAreas',
         'currentShift',
         'currentGroup'
@@ -94,7 +94,7 @@ class ActivityLogController extends Controller
             'end_date'              => 'required|date|after_or_equal:effective_date',
             'time_start'            => 'required|date_format:H:i',
             'time_end'              => 'required|date_format:H:i|after_or_equal:time_start',
-            'lampiran'              => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+'lampiran' => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
             'serial_number_start'   => 'required|string|max:255',
             'serial_number_end'     => 'required|string|max:255',
         ], [

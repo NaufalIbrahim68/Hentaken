@@ -1317,9 +1317,11 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                             {{-- CURRENT & NEW PART --}}
                             <div class="grid grid-cols-2 gap-1">
                                 <div class="bg-white shadow rounded p-1 text-center">
+                                 <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
                                     <p class="text-xs font-medium py-1">{{ $henkaten->description_before ?? 'N/A' }}</p>
                                 </div>
                                 <div class="bg-white shadow rounded p-1 text-center">
+                                  <h3 class="text-[8px] font-bold mb-0.5 text-red-600">NEW PART</h3>
                                     <p class="text-xs font-medium py-1">{{ $henkaten->description_after ?? 'N/A' }}</p>
                                 </div>
                             </div>

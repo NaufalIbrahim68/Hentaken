@@ -77,7 +77,7 @@ class HenkatenController extends Controller
         'line_area'           => 'required|string',
         'effective_date'      => 'required|date',
         'end_date'            => 'required|date|after_or_equal:effective_date',
-        'lampiran'            => 'required|image|mimes:jpeg,png,jpg|max:2048',
+'lampiran' => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
         'time_start'          => 'required|date_format:H:i',
         'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
         'serial_number_start' => 'nullable|string|max:255',
@@ -142,55 +142,9 @@ class HenkatenController extends Controller
     }
 }
 
-    // ==============================================================
-    // BAGIAN 2: START PAGE HENKATEN MAN POWER
-    // ==============================================================
-    public function showStartPage()
-    {
-        $pendingHenkatens = ManPowerHenkaten::with('station')
-            ->whereNull('serial_number_start')
-            ->latest()
-            ->get();
+   
 
-        return view('manpower.create_henkaten_start', [
-            'henkatens' => $pendingHenkatens,
-        ]);
-    }
-
-    public function updateStartData(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'updates' => 'required|array',
-            'updates.*.serial_number_start' => 'nullable|string|max:255',
-            'updates.*.serial_number_end' => 'nullable|string|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $updates = $request->input('updates', []);
-
-        try {
-            DB::transaction(function () use ($updates) {
-                foreach ($updates as $id => $data) {
-                    $henkaten = ManPowerHenkaten::find($id);
-                    if ($henkaten && (!empty($data['serial_number_start']) || !empty($data['serial_number_end']))) {
-                        $henkaten->update([
-                            'serial_number_start' => $data['serial_number_start'] ?? $henkaten->serial_number_start,
-                            'serial_number_end' => $data['serial_number_end'] ?? $henkaten->serial_number_end,
-                            'status' => 'on_progress'
-                        ]);
-                    }
-                }
-            });
-
-            return redirect()->route('henkaten.manpower.start.page')
-                ->with('success', 'Data Serial Number berhasil diperbarui!');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui serial number: ' . $e->getMessage()]);
-        }
-    }
+   
 
     // ==============================================================
     // BAGIAN 3: FORM PEMBUATAN HENKATEN METHOD
@@ -231,7 +185,7 @@ class HenkatenController extends Controller
             'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
             'keterangan'          => 'required|string',
             'keterangan_after'    => 'required|string',
-            'lampiran'            => 'required|image|mimes:jpeg,png|max:2048',
+'lampiran' => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
             'serial_number_start' => 'nullable|string|max:255',
             'serial_number_end'   => 'nullable|string|max:255',
         ]);
@@ -262,35 +216,8 @@ class HenkatenController extends Controller
         }
     }
 
-    public function showMethodStartPage(): View
-    {
-        $methodsHenkatens = MethodHenkaten::with('station')
-                                        ->whereNull('serial_number_start')
-                                        ->get();
-        return view('methods.create_henkaten_start', [
-            'methodsHenkatens' => $methodsHenkatens
-        ]);
-    }
-
-    public function updateMethodStart(Request $request)
-    {
-        $updates = $request->input('updates', []);
-
-        foreach ($updates as $id => $data) {
-            if (!empty($data['serial_number_start'])) {
-                $henkaten = MethodHenkaten::find($id);
-                if ($henkaten) {
-                    $henkaten->update([
-                        'serial_number_start' => $data['serial_number_start'],
-                        'serial_number_end' => $data['serial_number_end'] ?? null,
-                        'status' => 'on_progress',
-                    ]);
-                }
-            }
-        }
-
-        return redirect()->back()->with('success', 'Serial number Henkaten Method berhasil diupdate.');
-    }
+   
+    
 
     // ==============================================================
     // BAGIAN 4: FORM PEMBUATAN HENKATEN MATERIAL
@@ -336,7 +263,7 @@ class HenkatenController extends Controller
             'description_before' => 'required|string|max:255',
             'description_after'  => 'required|string|max:255',
             'keterangan'         => 'required|string',
-            'lampiran'           => 'required|image|mimes:jpeg,png|max:2048',
+'lampiran' => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
             'serial_number_start' =>'nullable|string|max:255',
             'serial_number_end'  => 'nullable|string|max:255',
             'redirect_to'        => 'nullable|string'
@@ -372,37 +299,8 @@ class HenkatenController extends Controller
         }
     }
 
-    public function showMaterialStartPage(): View
-    {
-        $materialHenkatens = MaterialHenkaten::with('station')
-                                            ->whereNull('serial_number_start')
-                                            ->get();
-
-        return view('materials.create_henkaten_start', [
-            'materialHenkatens' => $materialHenkatens
-        ]);
-    }
-
-    public function updateMaterialStartData(Request $request)
-    {
-        $updates = $request->input('updates', []);
-
-        foreach ($updates as $id => $data) {
-            if (!empty($data['serial_number_start'])) {
-                $henkaten = MaterialHenkaten::find($id);
-
-                if ($henkaten) {
-                    $henkaten->update([
-                        'serial_number_start' => $data['serial_number_start'],
-                        'serial_number_end' => $data['serial_number_end'] ?? null,
-                        'status' => 'on_progress',
-                    ]);
-                }
-            }
-        }
-
-        return redirect()->back()->with('success', 'Serial number Henkaten Material berhasil diupdate.');
-    }
+    
+   
 
     // ==============================================================
     // BAGIAN 5: FORM PEMBUATAN HENKATEN MACHINE
@@ -453,7 +351,7 @@ class HenkatenController extends Controller
             'before_value'   => 'required|string|max:255',
             'after_value'    => 'required|string|max:255',
             'keterangan'     => 'required|string',
-            'lampiran'       => 'required|image|mimes:jpeg,png|max:2048',
+'lampiran' => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
             'serial_number_start'=> 'nullable|string|max:255',
             'serial_number_end' => 'nullable|string|max:255',
         ]);
@@ -497,37 +395,7 @@ class HenkatenController extends Controller
         }
     }
 
-    public function showMachineStartPage(): View
-    {
-        $machineHenkatens = MachineHenkaten::with('station')
-                                        ->whereNull('serial_number_start')
-                                        ->latest()
-                                        ->get();
-        return view('machines.create_henkaten_start', [
-            'henkatens' => $machineHenkatens
-        ]);
-    }
-
-    public function updateMachineStartData(Request $request)
-    {
-        $updates = $request->input('updates', []);
-
-        foreach ($updates as $id => $data) {
-            if (!empty($data['serial_number_start'])) {
-                $henkaten = MachineHenkaten::find($id);
-
-                if ($henkaten) {
-                    $henkaten->update([
-                        'serial_number_start' => $data['serial_number_start'],
-                        'serial_number_end' => $data['serial_number_end'] ?? null,
-                        'status' => 'on_progress',
-                    ]);
-                }
-            }
-        }
-
-        return redirect()->back()->with('success', 'Serial number Henkaten Machine berhasil diupdate.');
-    }
+   
 
     public function showMachineActivityLog(Request $request): View
     {
@@ -860,7 +728,5 @@ public function checkAfter(Request $request)
 
     return response()->json(['exists' => $exists]);
 }
-
-
 
 }

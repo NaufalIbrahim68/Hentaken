@@ -123,13 +123,6 @@
                                             -
                                         @endif
                                     </td>
-                                    <td class="py-2 px-3 max-w-xs break-words">
-                                        @if ($log->status != 'Approved')
-                                            {{ $log->note ?? '-' }}
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
                                     
                                     <td class="py-2 px-3">
                                         @php

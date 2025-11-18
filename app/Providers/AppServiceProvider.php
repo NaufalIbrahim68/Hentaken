@@ -33,12 +33,11 @@ class AppServiceProvider extends ServiceProvider
             if (Auth::check()) {
                 
                 // --- A. Hitung Total Henkaten Pending ---
-                $pendingManpower = ManPowerHenkaten::where('status', 'Pending')->count();
                 $pendingMachine  = MachineHenkaten::where('status', 'Pending')->count();
                 $pendingMethod   = MethodHenkaten::where('status', 'Pending')->count();
                 $pendingMaterial = MaterialHenkaten::where('status', 'Pending')->count();
                 
-                $totalHenkaten = $pendingManpower + $pendingMachine + $pendingMethod + $pendingMaterial;
+                $totalHenkaten = $pendingMachine + $pendingMethod + $pendingMaterial;
 
                 // --- B. Hitung Total Master Data Pending ---
                 // (INI BAGIAN YANG DIPERBAIKI)

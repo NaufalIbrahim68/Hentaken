@@ -135,13 +135,28 @@
                     <td style="text-center">{{ $log->keterangan ?? '-' }}</td>
                     <td class="text-center">{{ $log->status ?? '-' }}</td>
                     <td class="text-center">
-                        @if ($log->lampiran && file_exists(public_path('storage/' . $log->lampiran)))
-                            <img src="{{ public_path('storage/' . $log->lampiran) }}" alt="Lampiran" class="lampiran-img">
-                        @else
-                            -
-                        @endif
-                    </td>
-                    
+    @if ($log->lampiran && file_exists(public_path('storage/' . $log->lampiran)))
+        @php
+            $extension = strtolower(pathinfo($log->lampiran, PATHINFO_EXTENSION));
+        @endphp
+
+        {{-- Jika lampiran berupa gambar --}}
+        @if (in_array($extension, ['jpg', 'jpeg', 'png']))
+            <img src="{{ public_path('storage/' . $log->lampiran) }}" alt="Lampiran" class="lampiran-img">
+
+        {{-- Jika lampiran berupa zip/rar atau file lain --}}
+        @else
+            <span>Lampiran tersedia:</span>
+            <br>
+            <span style="font-size: 12px;">
+                {{ asset('storage/' . $log->lampiran) }}
+            </span>
+        @endif
+    @else
+        -
+    @endif
+</td>
+
                     <td class="text-center">
                         @if ($log->status == 'APPROVED')
                             {{ $log->note ?? '-' }}
