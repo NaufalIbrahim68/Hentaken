@@ -26,37 +26,68 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
-    {
-        View::composer('layouts.app', function ($view) {
-            
-            if (Auth::check()) {
-                
-                // --- A. Hitung Total Henkaten Pending ---
-                $pendingMachine  = MachineHenkaten::where('status', 'Pending')->count();
-                $pendingMethod   = MethodHenkaten::where('status', 'Pending')->count();
-                $pendingMaterial = MaterialHenkaten::where('status', 'Pending')->count();
-                
-                $totalHenkaten = $pendingMachine + $pendingMethod + $pendingMaterial;
+   public function boot(): void
+{
+    View::composer('layouts.app', function ($view) {
 
-                // --- B. Hitung Total Master Data Pending ---
-                // (INI BAGIAN YANG DIPERBAIKI)
-                // Sesuaikan 'status_approval' & 'Pending' jika nama kolom/value Anda berbeda
-                $pendingMasterManPower = ManPower::where('status', 'Pending')->count();
-                $pendingMasterMachine  = Machine::where('status', 'Pending')->count();
-                $pendingMasterMaterial = Material::where('status', 'Pending')->count();
-                $pendingMasterMethod   = Method::where('status', 'Pending')->count(); // Sesuaikan nama model ini
+        $user = Auth::user();
 
-                $totalMasterData = $pendingMasterManPower + $pendingMasterMachine + $pendingMasterMaterial + $pendingMasterMethod;
+        if ($user) {
 
-                // --- C. Kirim data ke View ---
-                $view->with('pendingHenkatenCount', $totalHenkaten);
-                $view->with('pendingMasterDataCount', $totalMasterData);
+            $role = $user->role;
 
-            } else {
-                $view->with('pendingHenkatenCount', 0);
-                $view->with('pendingMasterDataCount', 0);
+            // --- HENKATEN PENDING ---
+            $manpowers = ManPowerHenkaten::where('status', 'Pending');
+            $methods   = MethodHenkaten::where('status', 'Pending');
+            $materials = MaterialHenkaten::where('status', 'Pending');
+            $machines  = MachineHenkaten::where('status', 'Pending');
+
+            switch ($role) {
+                case 'Sect Head QC':
+                    $manpowers->whereRaw("LOWER(line_area) LIKE 'incoming%'");
+                    $methods->whereRaw("LOWER(line_area) LIKE 'incoming%'");
+                    $materials->whereRaw("LOWER(line_area) LIKE 'incoming%'");
+                    $machines->whereRaw("LOWER(line_area) LIKE 'incoming%'");
+                    break;
+
+                case 'Sect Head PPIC':
+                    $manpowers->where('line_area', 'Delivery');
+                    $methods->where('line_area', 'Delivery');
+                    $materials->where('line_area', 'Delivery');
+                    $machines->where('line_area', 'Delivery');
+                    break;
+
+                case 'Sect Head Produksi':
+                    $allowedLineAreas = [
+                        'FA L1','FA L2','FA L3','FA L5','FA L6',
+                        'SMT L1','SMT L2'
+                    ];
+                    $manpowers->whereIn('line_area', $allowedLineAreas);
+                    $methods->whereIn('line_area', $allowedLineAreas);
+                    $materials->whereIn('line_area', $allowedLineAreas);
+                    $machines->whereIn('line_area', $allowedLineAreas);
+                    break;
             }
-        });
-    }
+
+            $totalHenkaten = $manpowers->count() + $methods->count() + $materials->count() + $machines->count();
+
+            // --- MASTER DATA PENDING ---
+            $pendingMasterManPower = ManPower::where('status', 'Pending')->count();
+            $pendingMasterMachine  = Machine::where('status', 'Pending')->count();
+            $pendingMasterMaterial = Material::where('status', 'Pending')->count();
+            $pendingMasterMethod   = Method::where('status', 'Pending')->count();
+
+            $totalMasterData = $pendingMasterManPower + $pendingMasterMachine + $pendingMasterMaterial + $pendingMasterMethod;
+
+            // --- KIRIM KE VIEW ---
+            $view->with('pendingHenkatenCount', $totalHenkaten);
+            $view->with('pendingMasterDataCount', $totalMasterData);
+
+        } else {
+            $view->with('pendingHenkatenCount', 0);
+            $view->with('pendingMasterDataCount', 0);
+        }
+    });
+}
+
 }

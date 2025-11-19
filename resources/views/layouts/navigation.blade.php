@@ -67,7 +67,7 @@
 
                 {{-- KONFIRMASI HENKATEN --}}
                 {{-- MODIFIKASI DI BAWAH INI --}}
-                <a href="{{ route('henkaten.approval') }}"
+                <a href="{{ route('henkaten.approval.index') }}"
                    class="flex items-center justify-between px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
                     
                     {{-- Grup untuk Ikon dan Teks --}}

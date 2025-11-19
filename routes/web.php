@@ -12,6 +12,7 @@ use App\Http\Controllers\ActivityLogMethodController;
 use App\Http\Controllers\ActivityLogMaterialController;
 use App\Http\Controllers\ActivityLogMachineController;
 use App\Http\Controllers\MasterConfirmController;
+use App\Http\Controllers\HenkatenApprovalController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -23,11 +24,6 @@ use Illuminate\Support\Facades\Route;
 // ======================================================================
 // RUTE PUBLIK (TIDAK PERLU LOGIN)
 // ======================================================================
-
-// Rute untuk menampilkan halaman login, memproses login, logout,
-// register (jika ada), dll.
-// File ini HARUS berada DI LUAR middleware 'auth'
-// agar pengguna bisa mengakses halaman login.
 require __DIR__.'/auth.php';
 
 
@@ -35,8 +31,6 @@ require __DIR__.'/auth.php';
 // RUTE YANG DILINDUNGI (HARUS LOGIN)
 // ======================================================================
 
-// Semua rute di dalam grup ini mewajibkan pengguna untuk login.
-// Jika belum login, mereka akan otomatis diarahkan ke halaman login.
 Route::middleware(['auth'])->group(function () {
 
     // ======================================================================
@@ -59,8 +53,6 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('role:Sect Head Produksi')
         ->name('dashboard.secthead_produksi');
 
-        
-
     // Sect Head PPIC
     Route::get('/dashboard/secthead-ppic', [DashboardController::class, 'sectheadPpic'])
         ->middleware('role:Sect Head PPIC')
@@ -81,7 +73,6 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
-
     // ======================================================================
     // HENKATEN WORKFLOW
     // ======================================================================
@@ -90,26 +81,24 @@ Route::middleware(['auth'])->group(function () {
         // MAN POWER HENKATEN
         Route::get('/manpower/create', [HenkatenController::class, 'create'])->name('create');
 
-        // ==================================================
-        // BARU: Rute untuk tombol "Change" dari master manpower
-        // ==================================================
+        // Rute untuk tombol "Change" dari master manpower
         Route::get('/manpower/create-change/{id_manpower}', [HenkatenController::class, 'createChange'])
-                 ->name('manpower.createChange');
-        // ==================================================
+             ->name('manpower.createChange');
 
-        // !! TAMBAHKAN RUTE INI UNTUK MEMPERBAIKI ERROR !!
+        // Rute store change (dipindahkan/ditambahkan dari luar group)
         Route::post('/manpower/store-change', [HenkatenController::class, 'storeChange'])->name('manpower.storeChange');
-        // !! AKHIR TAMBAHAN !!
 
         Route::post('/manpower/store', [HenkatenController::class, 'store'])->name('store');
         Route::get('/manpower/start', [HenkatenController::class, 'showStartPage'])->name('manpower.start.page');
         Route::patch('/manpower/start/update', [HenkatenController::class, 'updateStartData'])->name('manpower.start.update');
+        
+        // Rute search ManPower
         Route::get('/manpower/search', [ManPowerController::class, 'search'])->name('manpower.search');
-        Route::get('/henkaten/search-replacement', [ManPowerController::class, 'searchAvailableReplacement'])
-        ->name('henkaten.searchReplacement');
-Route::get('/check-after', [HenkatenController::class, 'checkAfter'])->name('checkAfter');
-
-
+        
+        Route::get('/search-replacement', [ManPowerController::class, 'searchAvailableReplacement'])
+        ->name('searchReplacement');
+        
+        Route::get('/check-after', [HenkatenController::class, 'checkAfter'])->name('checkAfter');
 
 
         // METHOD HENKATEN
@@ -126,9 +115,7 @@ Route::get('/check-after', [HenkatenController::class, 'checkAfter'])->name('che
         Route::get('/material/search', [MaterialController::class, 'search'])->name('material.search');
 
 
-        // ==================================================
-        // BARU: MACHINE HENKATEN
-        // ==================================================
+        // MACHINE HENKATEN
         Route::get('/machine/create', [HenkatenController::class, 'createMachineHenkaten'])->name('machine.create');
         Route::post('/machine/store', [HenkatenController::class, 'storeMachineHenkaten'])->name('machine.store');
         Route::get('/machine/start', [HenkatenController::class, 'showMachineStartPage'])->name('machine.start.page');
@@ -137,11 +124,14 @@ Route::get('/check-after', [HenkatenController::class, 'checkAfter'])->name('che
 
     // ======================================================================
     // API / AJAX ROUTES
+    // (Note: The next route has the same URI as one inside the henkaten group, 
+    // but a different controller/name. This is acceptable, but might lead to 
+    // confusion if not documented.)
     // ======================================================================
     Route::get('/manpower/search', [HenkatenController::class, 'searchManPower'])->name('manpower.search');
     Route::get('/get-stations-by-line', [HenkatenController::class, 'getStationsByLine'])
         ->name('henkaten.stations.by_line');
-        Route::get('/get-materials-by-station', [HenkatenController::class, 'getMaterialsByStation'])
+    Route::get('/get-materials-by-station', [HenkatenController::class, 'getMaterialsByStation'])
         ->name('henkaten.materials.by_station');
     Route::get('/henkaten/get-manpower', [HenkatenController::class, 'getManPower'])->name('henkaten.getManPower');
 
@@ -155,7 +145,7 @@ Route::get('/check-after', [HenkatenController::class, 'checkAfter'])->name('che
 
         // 🔹 AJAX dropdown line → station
         Route::get('/stations/by_line', [ManPowerController::class, 'getStationsByLine'])->name('stations.by_line');
-        Route::put('/manpower/stations/{id}', [ManPowerController::class, 'updateStation'])->name('manpower.master.stations.update');
+        Route::put('/manpower/stations/{id}', [ManPowerController::class, 'updateStation'])->name('stations.update');
 
 
         // 🔹 AJAX tambah station
@@ -173,17 +163,13 @@ Route::resource('manpower', ManPowerController::class)->except([
     'update'
 ]);
 
-// 2. Daftarkan 'update' secara manual
-//    Ini memberi tahu Laravel: "Gunakan nama 'manpower.update',
-//    tapi arahkan ke method 'updateMaster'"
+// 2. Daftarkan 'update' secara manual (menggunakan updateMaster)
 Route::put('/manpower/{manpower}', [ManPowerController::class, 'updateMaster'])
-     ->name('manpower.update');   
-      Route::delete('/manpower-master/{id}', [ManPowerController::class, 'destroyMaster'])->name('manpower.destroyMaster');
+    ->name('manpower.update'); 
+Route::delete('/manpower-master/{id}', [ManPowerController::class, 'destroyMaster'])->name('manpower.destroyMaster');
 
 
-    // ----------------------------------------------------------------------
-// [BARU] Rute AJAX untuk form Material
-// ----------------------------------------------------------------------
+    // [BARU] Rute AJAX untuk form Material
 Route::get('/get-stations-by-line-area', [MaterialController::class, 'getStationsByLineArea'])
         ->name('get.stations.by.line.area');
 
@@ -195,20 +181,19 @@ Route::get('/get-stations-by-line-area', [MaterialController::class, 'getStation
     // ======================================================================
     // ACTIVITY LOG
     // ======================================================================
-    Route::prefix('activity-log')->name('activity.log.')->group(function () {
-        // Rute '/method' dipindahkan ke grup CRUD di bawah
-    });
+    // Rute '/method' dipindahkan ke grup CRUD di bawah
+    // Route::prefix('activity-log')->name('activity.log.')->group(function () {
+    // });
 
 
     // ======================================================================
 // ACTIVITY LOG - (MAN POWER - CRUD Lengkap)
 // ======================================================================
-// Kita buat grup terpisah khusus untuk Man Power agar lebih rapi
 Route::prefix('activity-log/manpower')
-    ->name('activity.log.manpower') // Nama dasar rute: 'activity.log.manpower'
-    ->controller(ActivityLogController::class) // Menggunakan Controller Grouping
+    ->name('activity.log.manpower') 
+    ->controller(ActivityLogController::class) 
     ->group(function () {
-    Route::get('/', 'manpower')->name(''); // name('') akan digabung dengan nama grup
+    Route::get('/', 'manpower')->name(''); 
     Route::get('/{log}/edit', 'edit')->name('.edit');
     Route::put('/{log}', 'update')->name('.update');
     Route::delete('/{log}', 'destroy')->name('.destroy');
@@ -219,43 +204,45 @@ Route::prefix('activity-log/manpower')
 // ACTIVITY LOG - (Method - CRUD Lengkap)
 // ======================================================================
 Route::prefix('activity-log/method')
-    ->name('activity.log.method') // Nama dasar rute: 'activity.log.method'
-    ->controller(ActivityLogMethodController::class) // Menggunakan Controller Grouping
+    ->name('activity.log.method') 
+    ->controller(ActivityLogMethodController::class) 
     ->group(function () {
-        Route::get('/', 'index')->name(''); // Rute: 'activity.log.method'
-        Route::get('/{log}/edit', 'edit')->name('.edit'); // Rute: 'activity.log.method.edit'
-        Route::put('/{log}', 'update')->name('.update'); // Rute: 'activity.log.method.update'
-        Route::delete('/{log}', 'destroy')->name('.destroy'); // Rute: 'activity.log.method.destroy'
-        Route::get('/pdf', action: 'downloadPDF')->name(name: '.pdf');
+        Route::get('/', 'index')->name(''); 
+        Route::get('/{log}/edit', 'edit')->name('.edit'); 
+        Route::put('/{log}', 'update')->name('.update'); 
+        Route::delete('/{log}', 'destroy')->name('.destroy'); 
+        // FIX: Hapus named arguments action: dan name:
+        Route::get('/pdf', 'downloadPDF')->name('.pdf');
     });
 
     // ======================================================================
 // ACTIVITY LOG - (MACHINE - CRUD Lengkap)
 // ======================================================================
 Route::prefix('activity-log/machine')
- ->name('activity.log.machine') 
-->controller(ActivityLogMachineController::class) // <-- INI PERBAIKANNYA
-->group(function () {
- Route::get('/', 'index')->name(''); 
- Route::get('/{log}/edit', 'edit')->name('.edit'); 
- Route::put('/{log}', 'update')->name('.update'); 
- Route::delete('/{log}', 'destroy')->name('.destroy');
-Route::get('/export-pdf', 'exportPdf')->name('.pdf'); 
+    ->name('activity.log.machine') 
+    ->controller(ActivityLogMachineController::class) 
+    ->group(function () {
+    Route::get('/', 'index')->name(''); 
+    Route::get('/{log}/edit', 'edit')->name('.edit'); 
+    Route::put('/{log}', 'update')->name('.update'); 
+    Route::delete('/{log}', 'destroy')->name('.destroy');
+    // FIX: Normalisasi URI dan method name agar konsisten dengan yang lain
+    Route::get('/pdf', 'downloadPDF')->name('.pdf'); 
 });
 
     // ======================================================================
 // ACTIVITY LOG - (MATERIAL - CRUD Lengkap)
 // ======================================================================
 Route::prefix('activity-log/material')
-    ->name('activity.log.material') // Nama dasar rute: 'activity.log.material'
-    ->controller(ActivityLogMaterialController::class) // Controller BARU
+    ->name('activity.log.material') 
+    ->controller(ActivityLogMaterialController::class) 
     ->group(function () {
-        Route::get('/', 'index')->name(''); // Rute: 'activity.log.material'
-        Route::get('/{log}/edit', 'edit')->name('.edit'); // Rute: 'activity.log.material.edit'
-        Route::put('/{log}', 'update')->name('.update'); // Rute: 'activity.log.material.update'
-        Route::delete('/{log}', 'destroy')->name('.destroy'); // Rute: 'activity.log.material.destroy'
-                Route::get('/pdf', action: 'downloadPDF')->name(name: '.pdf');
-
+        Route::get('/', 'index')->name(''); 
+        Route::get('/{log}/edit', 'edit')->name('.edit'); 
+        Route::put('/{log}', 'update')->name('.update'); 
+        Route::delete('/{log}', 'destroy')->name('.destroy'); 
+        // FIX: Hapus named arguments action: dan name:
+        Route::get('/pdf', 'downloadPDF')->name('.pdf');
     });
 
     
@@ -265,33 +252,33 @@ Route::prefix('activity-log/material')
 // ======================================================================
 
 Route::middleware(['auth', 'role:Sect Head Produksi|Sect Head PPIC|Sect Head QC'])->group(function () {
-    // --- Rute Master Data (Sudah Ada) ---
+    // --- Rute Master Data ---
     Route::get('/konfirmasi/master', [MasterConfirmController::class, 'index'])->name('konfirmasi.master');
     Route::post('/konfirmasi/master/{type}/{id}/approve', [MasterConfirmController::class, 'approve'])->name('konfirmasi.master.approve');
     Route::post('/konfirmasi/master/{type}/{id}/revisi', [MasterConfirmController::class, 'revisi'])->name('konfirmasi.master.revisi');
     Route::get('/master/confirmation', [ManPowerController::class, 'confirmation'])->name('master.confirmation');
     Route::get('/api/master-detail/{type}/{id}', [MasterConfirmController::class, 'show']);
 
-    // --- Rute Henkaten Approval ---
+    // ======================================================================
+    // HENKATEN APPROVAL - SECTION HEAD
+    // ======================================================================
 
-    // [Sudah Ada] Rute untuk menampilkan halaman approval henkaten
-    Route::get('/henkaten/approval', [HenkatenController::class, 'approval'])->name('henkaten.approval');
+    // Halaman approval
+    Route::get('/henkaten/approval', [HenkatenApprovalController::class, 'index'])
+        ->name('henkaten.approval.index');
 
-    // [BARU] Rute untuk menangani aksi approve henkaten
-    Route::post('/henkaten/approval/{type}/{id}/approve', [HenkatenController::class, 'approveHenkaten'])
-            ->name('henkaten.approve');
+    // Approve Henkaten
+    Route::post('/henkaten/approval/{type}/{id}/approve', [HenkatenApprovalController::class, 'approveHenkaten'])
+        ->name('henkaten.approval.approve');
 
-    // [BARU] Rute untuk menangani aksi revisi henkaten
-    Route::post('/henkaten/approval/{type}/{id}/revisi', [HenkatenController::class, 'revisiHenkaten'])
-            ->name('henkaten.revisi');
+    // Revisi Henkaten
+    Route::post('/henkaten/approval/{type}/{id}/revisi', [HenkatenApprovalController::class, 'revisiHenkaten'])
+        ->name('henkaten.approval.revisi');
 
-    // [BARU] Rute API untuk mengambil data detail henkaten (untuk modal)
-    // Pastikan URL-nya sama dengan yang ada di 'fetch' JavaScript
+
+    // Rute API untuk mengambil data detail henkaten (untuk modal)
     Route::get('/api/henkaten-detail/{type}/{id}', [HenkatenController::class, 'getHenkatenDetail']);
 
+
 });
-
-
-
-
 });
