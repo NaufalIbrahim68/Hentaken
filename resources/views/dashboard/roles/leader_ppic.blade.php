@@ -154,47 +154,48 @@
 
     
 
-<div class="w-full h-screen flex flex-col px-3 py-1">
-    {{-- HEADER --}}
+ <div class="w-full h-screen flex flex-col px-3 py-1">
+    {{-- HEADER - . --}}
     <div class="flex items-center justify-between border-b pb-1 mb-1 h-[8vh]">
+        {{-- Kolom Kiri --}}
+         <div class="w-1/3"></div>
 
-        {{-- Kolom Kiri (kosong, w-1/3) --}}
-        <div class="w-1/3"></div>
+       {{-- Title, Area, dan Tanggal (Pusat, w-1/3) --}}
+{{-- Class diubah menjadi flex flex-col items-center untuk centering vertikal dan horizontal --}}
+<div class="w-1/3 flex flex-col items-center">
+    
+    {{-- BARIS 1: HENKATEN DAN LINE AREA (Samping-sampingan) --}}
+    <div class="flex items-center space-x-2"> 
+        
+        {{-- JUDUL UTAMA --}}
+        <h1 class="text-base font-bold">
+            HENKATEN
+        </h1>
 
-        {{-- Title, Tanggal, dan Area (Pusat, w-1/3) --}}
-        {{-- Menggunakan flex flex-col items-center untuk menengahkan seluruh blok secara vertikal --}}
-        <div class="w-1/3 flex flex-col items-center">
-            
-            {{-- BARIS 1: JUDUL DAN AREA (Samping-sampingan) --}}
-            <div class="flex items-center space-x-2"> 
-                
-                {{-- JUDUL UTAMA --}}
-                <h1 class="text-base font-bold">
-                    HENKATEN
-                </h1>
-
-                {{-- AREA/DELIVERY (Teks Biasa) --}}
-                <p class="text-base font-bold">
-                    {{ strtoupper($selectedLineArea) }}
-                </p>
-                
-            </div>
-            
-            {{-- BARIS 2: TANGGAL (Di bawah Judul dan Area) --}}
-            <p class="text-[10px] text-gray-600 mt-1" id="current-date">18 November 2025</p>
-
-        </div>
+        {{-- AREA/DELIVERY (Teks Biasa) --}}
+        {{-- Kita perlu menentukan Area yang terpilih untuk ditampilkan sebagai teks --}}
+        <p class="text-base font-bold">
+            {{ strtoupper($selectedLineArea) }}
+        </p>
+        
+    </div>
+    
+    {{-- BARIS 2: TANGGAL (Di bawah Judul dan Area) --}}
+    {{-- Anda dapat menambahkan variabel tanggal yang sudah diinisialisasi di sini --}}
+    <p class="text-[10px] text-gray-600 mt-1" id="current-date"></p>
+    
+</div>
 
         {{-- Time & Shift --}}
-            <div class="w-1/3 text-right">
-                <p class="font-mono text-sm" id="current-time"></p>
-                <p class="text-xs" id="current-shift"></p>
-            </div>
+        <div class="w-1/3 text-right">
+            <p class="font-mono text-sm" id="current-time"></p>
+            <p class="text-xs" id="current-shift"></p>
         </div>
+    </div>
 
-    {{-- CONTENT GRID --}}
+    {{-- 4 SECTION GRID - . --}}
     <div class="grid grid-cols-2 gap-3 h-[92vh]">
-
+ 
 {{-- MAN POWER --}}
 <div class="bg-white shadow rounded p-1 flex flex-col">
     {{-- ======================================================================= --}}
@@ -203,10 +204,11 @@
     <div class="flex items-center mb-2 px-2 pt-1">
 
     <div class="flex-1">
+        </div>
+
      <h2 class="text-sm font-semibold mb-3 text-center">MAN POWER</h2>
     
-
-      <div class="flex-1 flex justify-end items-center space-x-2">
+    <div class="flex-1 flex justify-end items-center space-x-2">
         
         {{-- Dropdown Anda (sudah benar) --}}
         <div>
@@ -230,22 +232,8 @@
                 </option>
             </select>
         </div>
-
-        {{-- TOMBOL RESET BARU (sudah benar) --}}
-        <div>
-            <a href="{{ route('dashboard.resetGrup') }}" 
-               class="text-[10px] text-gray-500 hover:text-red-600 underline" 
-               title="Reset Pilihan Grup">
-                Reset
-            </a>
-        </div>
-
-    </div>
-    
 </div>
-    </div>
-    </div>
-
+</div>
 
 {{-- ======================================================================= --}}
 {{-- BAGIAN ATAS: DAFTAR MAN POWER (TABEL HORIZONTAL) --}}

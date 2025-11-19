@@ -29,43 +29,49 @@ class DashboardController extends Controller
 
 $currentGroup = $request->input('group', session('active_grup'));
 
-    // ============================================================
-        // ROLE + LINE AREA HANDLING
-        // ============================================================
-        $user = Auth::user();
-        $role = $user ? $user->role : null;
+   // ============================================================
+// ROLE + LINE AREA HANDLING
+// ============================================================
+$user = Auth::user();
+$role = $user ? $user->role : null;
 
-        if ($role === 'Leader QC') {
-            // Leader QC = Incoming + Delivery
-            $allowedAreas = ['incoming', 'incomming', 'delivery'];
+// Default: ambil semua line_area
+$lineAreas = Station::select('line_area')->distinct()->orderBy('line_area')->pluck('line_area');
 
-            $lineAreas = Station::select('line_area')
-                ->whereIn(DB::raw('LOWER(line_area)'), $allowedAreas)
-                ->pluck('line_area')
-                ->unique();
-        }
-        elseif ($role === 'Leader PPIC') {
-            // Leader PPIC = Delivery only
-            $lineAreas = collect(['Delivery']);
-        }
-        elseif ($role === 'Incoming') {
-            $lineAreas = collect(['Incoming']);
-        }
-        else {
-            // Admin / other roles = full access
-            $lineAreas = Station::select('line_area')
-                ->distinct()
-                ->orderBy('line_area', 'asc')
-                ->pluck('line_area');
-        }
+switch ($role) {
+    // ========================================================
+    // LEADER SPECIFIC
+    // ========================================================
+    case 'Leader QC':
+        $lineAreas = collect(['Incoming', 'Delivery']); // bisa adjust sesuai kebutuhan
+        break;
+    case 'Leader PPIC':
+        $lineAreas = collect(['Delivery']);
+        break;
+    case 'Leader FA':
+    case 'Leader SMT':
+        // tetap semua line_area atau bisa filter sesuai FA/SMT
+        break;
 
-        // Selected value
-        $selectedLineArea = request('line_area', $lineAreas->first());
-        $lineForQuery = $selectedLineArea;
+    // ========================================================
+    // SECT HEAD
+    // ========================================================
+    case 'Sect Head Produksi':
+        $lineAreas = collect(['FA L1','FA L2','FA L3','FA L5','FA L6','SMT L1','SMT L2']);
+        break;
+    case 'Sect Head QC':
+        $lineAreas = collect(['Incoming']);
+        break;
+    case 'Sect Head PPIC':
+        $lineAreas = collect(['Delivery']);
+        break;
+}
 
-        session(['active_line' => $lineForQuery]); // <=== DIPINDAHKAN ke tempat yg benar
+// Selected line area dari request atau default pertama
+$selectedLineArea = request('line_area', $lineAreas->first());
+$lineForQuery = $selectedLineArea;
 
-   
+session(['active_line' => $lineForQuery]);
 
       $baseHenkatenQuery = function ($query) use ($now) {
     $today = $now->toDateString();
