@@ -35,10 +35,8 @@
                             ? route('activity.log.material.update', $log->id)
                             : route('henkaten.material.store');
                         
-                        // --- LOGIC TAMBAHAN DI BLADE ---
-                        // Asumsi variabel $userRole, $predefinedLineArea, dan $materialListStatic sudah dikirim dari Controller
-                        // Karena Anda tidak punya Controller, saya buat simulasi di sini (seharusnya ada di Controller!)
-                        $userRole = Auth::user()->role ?? 'Guest'; // Contoh pengambilan role
+                        // --- LOGIC ROLE & LINE AREA ---
+                        $userRole = Auth::user()->role ?? 'Guest';
                         
                         $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
                         $predefinedLineArea = match ($userRole) {
@@ -47,11 +45,11 @@
                             default => null,
                         };
 
+                        // Data material statis (hanya nama, TIDAK ADA ID)
                         $materialListStatic = [
                             'Incoming' => ['Document IPP', 'Special Acceptance', 'IRD Supplier'],
                             'Delivery' => ['Document IPP', 'Label IPP', 'Packing Customer', 'Tag Produksi'],
                         ];
-                        // ----------------------------------
                         
                         $defaultMaterialOptions = $isPredefinedRole ? ($materialListStatic[$predefinedLineArea] ?? []) : [];
                         
@@ -69,7 +67,7 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
                             x-data="dependentDropdowns({
-                                // Hanya inisialisasi jika role TIDAK predefined
+                                // ... (Alpine config lama) ...
                                 @if (!$isPredefinedRole)
                                     oldLineArea: '{{ old('line_area', $log->station->line_area ?? '') }}',
                                     oldStation: {{ old('station_id', $log->station_id ?? 'null') }},
@@ -79,9 +77,10 @@
                                 @else
                                     // Untuk role predefined, set nilai statis
                                     selectedLineArea: '{{ $predefinedLineArea }}', 
-                                    selectedStation: {{ $log->station_id ?? 'null' }}, // Station tetap perlu diisi jika edit
-                                    selectedMaterial: {{ old('material_id', $log->material_id ?? 'null') }},
+                                    selectedStation: {{ $log->station_id ?? 'null' }},
+                                    selectedMaterial: '{{ old('material_name', $log->material_name ?? '') }}', // Menggunakan material_name string
                                 @endif
+                                isPredefined: {{ $isPredefinedRole ? 'true' : 'false' }},
                                 materialStaticList: {{ json_encode($defaultMaterialOptions) }} 
                             })"
                             x-init="init()">
@@ -97,34 +96,36 @@
                                         <input type="hidden" name="line_area" value="{{ $predefinedLineArea }}">
                                     </div>
                                     
-                                    {{-- Station ID HILANG/DI-HANDLE DI CONTROLLER --}}
-                                    {{-- Asumsi Anda akan mencari Station ID yang valid di Controller menggunakan Line Area dan Material ID --}}
+                                    {{-- HIDDEN INPUT UNTUK STATION ID (akan dicari Controller) --}}
+                                    <input type="hidden" name="station_id" :value="selectedStation"> 
+                                    
+                                    {{-- HIDDEN INPUT UNTUK MATERIAL ID (akan dicari Controller) --}}
+                                    {{-- Ini adalah perbaikan utama untuk 'material id must be an integer' --}}
+                                    <input type="hidden" name="material_id" :value="null"> 
                                     
                                     <div class="mb-4">
-                                        <label for="material_id" class="block text-sm font-medium text-gray-700">Material</label>
-                                        <select id="material_id" name="material_id" required
+                                        <label for="material_name" class="block text-sm font-medium text-gray-700">Material</label>
+                                        {{-- REVISI: Menggunakan name="material_name" dan value adalah string --}}
+                                        <select id="material_name" name="material_name" required
                                                 class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
-                                                x-model="selectedMaterial"
-                                                @change="updateStationIdBasedOnMaterial()">
+                                                x-model="selectedMaterial">
 
                                             <option value="">-- Pilih Material --</option>
                                             
-                                            {{-- List material statis untuk role ini --}}
+                                            {{-- List material statis (nama) --}}
                                             @foreach ($defaultMaterialOptions as $materialName)
+                                                {{-- Value yang dikirim adalah STRING NAMA MATERIAL --}}
                                                 <option value="{{ $materialName }}" 
-                                                    @selected(old('material_id', $log->material_id ?? '') == $materialName)>
+                                                    @selected(old('material_name', $log->material_name ?? '') == $materialName)>
                                                     {{ $materialName }}
                                                 </option>
                                             @endforeach
 
                                         </select>
-                                        
-                                        {{-- Hidden input untuk Station ID (diperlukan untuk submit) --}}
-                                        <input type="hidden" name="station_id" :value="selectedStation"> 
                                     </div>
                                     
                                 @else
-                                    {{-- MODE DEFAULT (DROPDOWN DINAMIS) --}}
+                                    {{-- MODE DEFAULT (DROPDOWN DINAMIS - TIDAK ADA PERUBAHAN SIGNIFIKAN DI SINI) --}}
                                     <div class="mb-4">
                                         <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
                                         <select id="line_area" name="line_area" required
@@ -132,7 +133,8 @@
                                                 x-model="selectedLineArea"
                                                 @change="fetchStations()">
                                             <option value="">-- Pilih Line Area --</option>
-                                            @foreach ($lineAreas as $area)
+                                            {{-- Asumsi $lineAreas dikirim dari Controller --}}
+                                            @foreach ($lineAreas ?? [] as $area)
                                                 <option value="{{ $area }}" @selected(old('line_area', $log->station->line_area ?? '') == $area)>
                                                     {{ $area }}
                                                 </option>
@@ -151,8 +153,8 @@
                                             <option value="">-- Pilih Station --</option>
                                             <template x-for="station in stationList" :key="station.id">
                                                 <option :value="station.id"
-                                                        :selected="station.id == selectedStation"
-                                                        x-text="station.station_name"></option>
+                                                    :selected="station.id == selectedStation"
+                                                    x-text="station.station_name"></option>
                                             </template>
                                         </select>
                                     </div>
@@ -167,10 +169,12 @@
                                             <option value="">-- Pilih Material --</option>
                                             <template x-for="material in materialList" :key="material.id">
                                                 <option :value="material.id"
-                                                        :selected="material.id == selectedMaterial"
-                                                        x-text="material.material_name"></option>
+                                                    :selected="material.id == selectedMaterial"
+                                                    x-text="material.material_name"></option>
                                             </template>
                                         </select>
+                                        {{-- Tambahkan hidden field untuk material_name jika diperlukan oleh Controller --}}
+                                        <input type="hidden" name="material_name" :value="materialList.find(m => m.id == selectedMaterial)?.material_name || ''">
                                     </div>
                                 @endif
                                 
@@ -178,11 +182,7 @@
                                 <div class="mb-4">
                                     <label for="serial_number_start" class="block text-sm font-medium text-gray-700">
                                         Serial Number Start
-                                        @if(isset($log))
-                                            <span class="text-red-500">*</span>
-                                        @else
-                                            <span class="text-gray-500 text-xs"></span>
-                                        @endif
+                                        @if(isset($log))<span class="text-red-500">*</span>@else<span class="text-gray-500 text-xs"></span>@endif
                                     </label>
                                     <input type="text" id="serial_number_start" name="serial_number_start"
                                         value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
@@ -194,11 +194,7 @@
                                 <div class="mb-4">
                                     <label for="serial_number_end" class="block text-sm font-medium text-gray-700">
                                         Serial Number End
-                                        @if(isset($log))
-                                            <span class="text-red-500">*</span>
-                                        @else
-                                            <span class="text-gray-500 text-xs"></span>
-                                        @endif
+                                        @if(isset($log))<span class="text-red-500">*</span>@else<span class="text-gray-500 text-xs"></span>@endif
                                     </label>
                                     <input type="text" id="serial_number_end" name="serial_number_end"
                                         value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
@@ -209,8 +205,9 @@
                             </div>
 
 
-                            {{-- Kolom Kanan (TIDAK DIUBAH) --}}
+                            {{-- Kolom Kanan (Tanggal & Waktu - TIDAK DIUBAH) --}}
                             <div>
+                                {{-- ... (Kode Tanggal & Waktu) ... --}}
                                 <div class="mb-4">
                                     <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
                                     <input type="date" id="effective_date" name="effective_date"
@@ -241,7 +238,7 @@
                             </div>
                         </div>
 
-                        {{-- Before & After (TIDAK DIUBAH) --}}
+                        {{-- Before & After (Deskripsi - TIDAK DIUBAH) --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                             <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md relative">
                                 <label class="text-gray-700 text-sm font-bold mb-2 block">Sebelum</label>
@@ -318,16 +315,17 @@
                 // --- Properti Data (STATE) ---
                 selectedLineArea: config.selectedLineArea || config.oldLineArea || '',
                 selectedStation: config.selectedStation || config.oldStation || null,
-                selectedMaterial: config.selectedMaterial || config.oldMaterial || null,
+                // Menggunakan selectedMaterial untuk menampung string (material_name)
+                selectedMaterial: config.selectedMaterial || config.oldMaterial || null, 
                 stationList: [], 
-                materialList: config.materialStaticList || [], // Jika statis, langsung isi
+                materialList: [], 
                 
                 // --- URL ---
                 findStationsUrl: config.findStationsUrl || '',
                 findMaterialsUrl: config.findMaterialsUrl || '',
                 
                 // --- FLAGS ---
-                isPredefined: !!config.selectedLineArea,
+                isPredefined: config.isPredefined,
 
                 // --- FUNGSI INIT (dijalankan oleh x-init) ---
                 async init() {
@@ -341,44 +339,27 @@
                                 await this.fetchMaterials(false); 
                             }
                         }
-                    } else {
-                        // MODE PREDEFINED (QC/PPIC)
-                        // Karena Line Area dan Material list sudah statis, hanya perlu menangani edit jika ada log->material_id
-                        // Jika ada data lama (edit), selectedMaterial akan diisi oleh oldMaterial
-                        // Kita perlu memanggil updateStationIdBasedOnMaterial jika ini mode edit dan station_id harus diisi.
-                        if (this.selectedMaterial) {
-                            this.updateStationIdBasedOnMaterial(false);
-                        }
-                    }
+                    } 
+                    // Mode Predefined: selectedStation akan diserahkan ke Controller saat submit
                 },
 
                 // Fungsi ini HANYA digunakan di MODE PREDEFINED (QC/PPIC)
-                // Karena station_id tidak dipilih, kita harus mencari atau mengasumsikan station_id
-                // (Ini membutuhkan endpoint baru di Controller: mencari Station ID berdasarkan Line Area dan Material ID)
+                // Karena Controller akan menangani pencarian ID
                 async updateStationIdBasedOnMaterial(resetMaterial = true) {
-                    // Dalam mode predefined, kita tidak bisa langsung tahu station_id dari material_name saja.
-                    // Oleh karena itu, kita asumsikan Controller akan menangani ini saat submit,
-                    // ATAU kita harus membuat endpoint baru.
-                    
-                    // Untuk sementara, kita hanya menjaga selectedStation agar tidak null jika diisi dari old
-                    // **Catatan:** Dalam mode 'Create', `selectedStation` akan dikirim `null` dan Controller harus mencari Station ID
-                    // yang memiliki material yang dipilih di Line Area yang ditentukan.
-                    
-                    // Jika ini mode Edit dan $log->station_id sudah ada, kita set
+                    // Cukup biarkan selectedStation null di mode create, Controller akan mencari
                     if (config.selectedStation) {
                         this.selectedStation = config.selectedStation;
                     } else {
-                        // Jika ini mode Create, biarkan null. Controller yang akan memproses.
                         this.selectedStation = null;
                     }
                 },
 
 
                 // --- FUNGSI FETCH STATIONS (HANYA UNTUK MODE DINAMIS) ---
-                async fetchStations(resetStation = true) {
+                async fetchStations(resetValues = true) {
                     if(this.isPredefined) return;
                     
-                    if(resetStation) {
+                    if(resetValues) {
                         this.selectedStation = null;
                         this.selectedMaterial = null; 
                         this.materialList = [];    

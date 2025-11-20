@@ -79,42 +79,46 @@
                             {{-- Kolom Kiri --}}
                             <div>
                                 
-                                @if ($isPredefinedRole)
-                                    {{-- MODE QC/PPIC (INPUT OTOMATIS/STATIC) --}}
-                                    
-                                    {{-- LINE AREA (Static) --}}
-                                    <div class="mb-4">
-                                        <label class="block text-sm font-medium text-gray-700">Line Area</label>
-                                        <input type="text" value="{{ $predefinedLineArea }}" readonly
-                                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
-                                        <input type="hidden" name="line_area" value="{{ $predefinedLineArea }}">
-                                    </div>
+                               @if ($isPredefinedRole)
+    {{-- MODE QC/PPIC (INPUT OTOMATIS/STATIC) --}}
+    
+    {{-- LINE AREA (Static) --}}
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700">Line Area</label>
+        <input type="text" value="{{ $predefinedLineArea }}" readonly
+            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
+        <input type="hidden" name="line_area" value="{{ $predefinedLineArea }}">
+    </div>
 
-                                    {{-- STATION (Hidden/Auto-processed) --}}
-                                    <input type="hidden" name="station_id" value="{{ old('station_id', $log->station_id ?? '') }}">
+    {{-- STATION NAME (Hidden, untuk pencarian di Controller) --}}
+    <input type="hidden" name="station_name_predefined" value="{{ $predefinedLineArea }}"> 
+    
+    {{-- STATION ID & METHOD ID (Hidden, NILAI AKAN DIISI CONTROLLER) --}}
+    <input type="hidden" name="station_id" value="{{ old('station_id', $log->station_id ?? '') }}">
+    <input type="hidden" name="method_id" value="{{ old('method_id', $log->method_id ?? '') }}">
+    
+    {{-- NEW: Dropdown Method Name (untuk QC/PPIC) --}}
+    <div class="mb-4">
+        <label for="methods_name_input" class="block text-sm font-medium text-gray-700">Nama Method</label>
+        {{-- Menggunakan nama berbeda agar tidak bentrok dengan mode dinamis --}}
+        <select id="methods_name_input" name="methods_name" required
+                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
+                x-model="selectedMethodName">
 
-                                    {{-- NEW: Dropdown Method Name (untuk QC/PPIC) --}}
-                                    <div class="mb-4">
-                                        <label for="methods_name" class="block text-sm font-medium text-gray-700">Nama Method</label>
-                                        <select id="methods_name" name="methods_name" required
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
-                                                x-model="selectedMethodName"
-                                                @change="updateStationIdBasedOnMethod()">
-
-                                            <option value="">-- Pilih Method --</option>
-                                            
-                                            {{-- List method statis untuk role ini (Ambil dari Controller) --}}
-                                            @foreach ($methodList as $methodName)
-                                                <option value="{{ $methodName }}" 
-                                                    @selected(old('methods_name', $log->methods_name ?? '') == $methodName)>
-                                                    {{ $methodName }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    
-                                @else
-                                    {{-- MODE DEFAULT (INPUT DINAMIS) --}}
+            <option value="">-- Pilih Method --</option>
+            
+            {{-- List method statis (Asumsi $predefinedMethodNames dikirim dari Controller) --}}
+            @foreach ($methodList as $methodName)
+                <option value="{{ $methodName }}" 
+                    @selected(old('methods_name', $log->methods_name ?? '') == $methodName)>
+                    {{ $methodName }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+    
+@else
+                                
                                     
                                     {{-- LINE AREA --}}
                                     <div class="mb-4">

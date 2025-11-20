@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User; // Import Model User
 
 class MaterialHenkaten extends Model
 {
@@ -11,7 +12,8 @@ class MaterialHenkaten extends Model
 
     protected $table = 'material_henkaten';
 
-   protected $fillable = [
+    protected $fillable = [
+        'user_id', 
         'shift',
         'line_area',
         'station_id',
@@ -35,7 +37,11 @@ class MaterialHenkaten extends Model
         'end_date' => 'datetime',
     ];
 
-    // ================= RELASI =================
+
+    public function user() // <-- TAMBAHAN: Relasi ke User
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
     public function station()
     {
@@ -44,8 +50,7 @@ class MaterialHenkaten extends Model
 
     public function material()
     {
-        return $this->belongsTo(Material::class, 'material_id'); // ✅ material sebelum
+        // ASUMSI: Anda memiliki Model Material
+        return $this->belongsTo(Material::class, 'material_id'); 
     }
-
-    
 }
