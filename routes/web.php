@@ -131,6 +131,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('henkaten.stations.by_line');
     Route::get('/get-materials-by-station', [HenkatenController::class, 'getMaterialsByStation'])
         ->name('henkaten.materials.by_station');
+        Route::get('/get-methods-by-station', [HenkatenController::class, 'getMethodsByStation'])
+        ->name('henkaten.methods.by_station'); 
     Route::get('/henkaten/get-manpower', [HenkatenController::class, 'getManPower'])->name('henkaten.getManPower');
 
     // ======================================================================

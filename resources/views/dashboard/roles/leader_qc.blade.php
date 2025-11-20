@@ -260,9 +260,7 @@
                                     $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
                                     $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
                                 @endphp
-                                <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium {{ $bgColorHeader }} {{ $textColorHeader }}">
-                                    <div class="text-center leading-tight break-words">{{ $stationName }}</div>
-                                </th>
+                              
                             @endforeach
                         @endforeach
                     </tr>
@@ -571,11 +569,7 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                         $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
                         $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
                     @endphp
-                    <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium {{ $bgColorHeader }} {{ $textColorHeader }}">
-                        <div class="text-center leading-tight break-words">
-                            {{ $m->station->station_name ?? 'N/A' }}
-                        </div>
-                    </th>
+                    
                 @endforeach
             </tr>
         </thead>
@@ -897,11 +891,7 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                         $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
                         $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
                     @endphp
-                    <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium {{ $bgColorHeader }} {{ $textColorHeader }}">
-                        <div class="text-center leading-tight break-words">
-                            {{ $mc->station->station_name ?? '-' }}
-                        </div>
-                    </th>
+                    
                 @endforeach
             </tr>
         </thead>
@@ -1221,11 +1211,7 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                         $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
                         $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
                     @endphp
-                    <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium {{ $bgColorHeader }} {{ $textColorHeader }}">
-                        <div class="text-center leading-tight break-words">
-                            {{ $station['name'] }}
-                        </div>
-                    </th>
+                    
                 @endforeach
             </tr>
         </thead>

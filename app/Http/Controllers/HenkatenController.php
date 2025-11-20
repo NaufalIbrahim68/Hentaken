@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Machine;
 use App\Models\ManPower;
 use App\Models\ManPowerHenkaten;
 use App\Models\MethodHenkaten;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use App\Models\Material;
+use App\Models\Method;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Carbon;
@@ -150,28 +152,80 @@ class HenkatenController extends Controller
     // BAGIAN 3: FORM PEMBUATAN HENKATEN METHOD
     // ==============================================================
     public function createMethodHenkaten()
-    {
-        // Ambil data shift dari session
-        $currentShift = session('active_shift', 1);
+{
+    // Ambil data shift dari session
+    $currentShift = session('active_shift', 1);
 
-        // Ambil line_areas
-        $lineAreas = Station::whereNotNull('line_area')
-                            ->orderBy('line_area', 'asc')
-                            ->pluck('line_area')
-                            ->unique();
+    $user = Auth::user();
+    $role = $user ? $user->role : null;
+    $isPredefinedRole = in_array($role, ['Leader QC', 'Leader PPIC']);
 
-        // Logika 'old' data untuk station
-        $stations = [];
-        if ($oldLineArea = old('line_area')) {
-            $stations = Station::where('line_area', $oldLineArea)->get();
-        }
+    // --- INISIALISASI VARIABEL BARU (PENTING!) ---
+    $selectedLineArea = null;
+    $predefinedLineArea = null; // <-- INISIALISASI
+    $methodList = collect();
+    $stations = collect(); // Pastikan stations diinisialisasi sebagai koleksi kosong
+    // ---------------------------------------------
 
-        return view('methods.create_henkaten', compact(
-            'stations',
-            'lineAreas',
-            'currentShift'
-        ));
+    // --- A. LOGIKA PENENTUAN LINE AREA ---
+    if ($role === 'Leader QC') {
+        $lineAreas = collect(['Incoming']);
+        $predefinedLineArea = 'Incoming'; // Set nilai
+    } elseif ($role === 'Leader PPIC') {
+        $lineAreas = collect(['Delivery']);
+        $predefinedLineArea = 'Delivery'; // Set nilai
+    } else {
+        // Default: Ambil semua line_area dari database
+        $lineAreas = Station::select('line_area')
+            ->distinct()
+            ->whereNotNull('line_area')
+            ->orderBy('line_area', 'asc')
+            ->pluck('line_area');
     }
+
+    // --- B. PENGAMBILAN DATA AWAL & OLD VALUE ---
+    if ($isPredefinedRole) {
+        // Mode Predefined: Line Area sudah pasti
+        $selectedLineArea = $predefinedLineArea; // Menggunakan variabel yang sudah diinisialisasi dan diisi
+        
+        // Ambil daftar method name unik di line area tersebut
+        $methodList = Method::whereHas('station', function ($query) use ($selectedLineArea) {
+                             $query->where('line_area', $selectedLineArea);
+                         })
+                         ->select('methods_name')
+                         ->distinct()
+                         ->orderBy('methods_name')
+                         ->pluck('methods_name');
+        
+        // Ambil semua station di line area tersebut
+        $stations = Station::where('line_area', $selectedLineArea)->get();
+
+    } elseif ($oldLineArea = old('line_area')) {
+        // Mode Dynamic (Ada old value): Ambil stations dan methods sesuai old value
+        $selectedLineArea = $oldLineArea;
+        $stations = Station::where('line_area', $oldLineArea)->get();
+        
+        // Jika ada old station ID, ambil method list-nya
+        if ($oldStationId = old('station_id')) {
+             $methodList = Method::where('station_id', $oldStationId)
+                                 ->select('id', 'methods_name')
+                                 ->get();
+        }
+    }
+
+
+    return view('methods.create_henkaten', compact(
+        'stations',
+        'lineAreas',
+        'currentShift',
+        
+        // --- VARIABEL UNTUK KONTROL BLADE ---
+        'isPredefinedRole',
+        'predefinedLineArea', // Sekarang variabel ini pasti terdefinisi
+        'selectedLineArea',
+        'methodList'
+    ));
+}
 
     public function storeMethodHenkaten(Request $request)
     {
@@ -214,6 +268,24 @@ class HenkatenController extends Controller
             }
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
         }
+    }
+
+
+    public function getMethodsByStation(Request $request)
+    {
+        $stationId = $request->input('station_id');
+
+        if (!$stationId) {
+            // Mengembalikan 400 Bad Request jika ID hilang
+            return response()->json(['error' => 'Station ID diperlukan.'], 400);
+        }
+
+       
+        $methods = Method::where('station_id', $stationId)
+                         ->select('id', 'methods_name') 
+                         ->get();
+
+        return response()->json($methods);
     }
 
    
@@ -305,38 +377,77 @@ class HenkatenController extends Controller
     // ==============================================================
     // BAGIAN 5: FORM PEMBUATAN HENKATEN MACHINE
     // ==============================================================
-    public function createMachineHenkaten()
-    {
-        // 1. Ambil data shift & grup dari session
-        $currentGroup = session('active_grup');
-        $currentShift = session('active_shift', 1);
+   public function createMachineHenkaten()
+{
+    // 1. Ambil data shift & grup dari session
+    $currentGroup = session('active_grup');
+    $currentShift = session('active_shift', 1);
 
-        // 2. Cek jika grup belum dipilih
-        if (!$currentGroup) {
-            return redirect()->route('dashboard')
-                             ->with('error', 'Silakan pilih Grup di Dashboard terlebih dahulu.');
-        }
-
-        // 3. Ambil line_areas
-        $lineAreas = Station::whereNotNull('line_area')
-                            ->orderBy('line_area', 'asc')
-                            ->pluck('line_area')
-                            ->unique();
-
-        // 4. Logika 'old' data untuk station
-        $stations = [];
-        if ($oldLineArea = old('line_area')) {
-            $stations = Station::where('line_area', $oldLineArea)->get();
-        }
-
-        return view('machines.create_henkaten', compact(
-            'lineAreas',
-            'stations',
-            'currentGroup',
-            'currentShift'
-        ));
+    // 2. Cek jika grup belum dipilih
+    if (!$currentGroup) {
+        return redirect()->route('dashboard')
+            ->with('error', 'Silakan pilih Grup di Dashboard terlebih dahulu.');
     }
 
+    // --- LOGIKA ROLE & LINE AREA ---
+    $user = Auth::user();
+    $role = $user ? $user->role : null;
+    $isPredefinedRole = in_array($role, ['Leader QC', 'Leader PPIC']);
+
+    // Tentukan Line Area berdasarkan role
+    if ($role === 'Leader QC') {
+        $lineAreas = collect(['Incoming']);
+    } elseif ($role === 'Leader PPIC') {
+        $lineAreas = collect(['Delivery']);
+    } else {
+        // Default: Ambil semua line_area dari database
+        $lineAreas = Station::select('line_area')
+            ->distinct()
+            ->whereNotNull('line_area')
+            ->orderBy('line_area', 'asc')
+            ->pluck('line_area');
+    }
+
+    // Tentukan Kategori Mesin
+    if ($isPredefinedRole) {
+        // Untuk Leader QC/PPIC: Ambil kategori unik dari database
+        $machineCategories = Machine::select('machines_category')
+            ->distinct()
+            ->whereNotNull('machines_category')
+            ->pluck('machines_category')
+            ->toArray();
+    } else {
+        // Untuk role lain: Gunakan daftar statis (atau yang didefinisikan secara default)
+        $machineCategories = ['Program', 'Machine & Jig', 'Equipment', 'Camera'];
+    }
+
+    // --- LOGIKA 'old' data untuk station (DIPERTAHANKAN) ---
+    $stations = [];
+    $selectedLineArea = null;
+
+    if ($isPredefinedRole) {
+        // Jika role predefined, Line Area sudah pasti (ambil yang pertama)
+        $selectedLineArea = $lineAreas->first();
+        if ($selectedLineArea) {
+            // Jika Line Area sudah pasti, ambil semua station di area tersebut untuk AJAX/initial load
+            $stations = Station::where('line_area', $selectedLineArea)->get();
+        }
+    } elseif ($oldLineArea = old('line_area')) {
+        // Jika mode dinamis (role lain), gunakan old('line_area')
+        $selectedLineArea = $oldLineArea;
+        $stations = Station::where('line_area', $oldLineArea)->get();
+    }
+
+    return view('machines.create_henkaten', compact(
+        'lineAreas',
+        'stations',
+        'currentGroup',
+        'currentShift',
+        'machineCategories', // <--- VARIABLE BARU
+        'isPredefinedRole', // <--- VARIABLE BARU
+        'selectedLineArea' // <--- VARIABLE BARU
+    ));
+}
     public function storeMachineHenkaten(Request $request)
     {
         $validated = $request->validate([
@@ -704,7 +815,7 @@ public function checkAfter(Request $request)
 
     if (!$manPowerIdAfter || !$shift || !$grup || !$newEffectiveDate || !$newEndDate) {
         // Tambahkan logging jika ada parameter yang hilang
-        \Log::warning('Parameter validasi Henkaten After tidak lengkap.', $request->query());
+        Log::warning('Parameter validasi Henkaten After tidak lengkap.', $request->query());
         return response()->json(['error' => 'Parameter tidak lengkap'], 400);
     }
     
