@@ -274,20 +274,53 @@ if ($currentGroup) {
             $machine->setAttribute('keterangan', in_array($machine->station_id, $henkatenMachineStationIds) ? 'HENKATEN' : ($machine->keterangan ?? 'NORMAL'));
         }
 
-        // === MATERIAL ===
-        $stationIdsForLine = Station::where('line_area', $lineForQuery)->pluck('id');
-        $materials = Material::whereIn('station_id', $stationIdsForLine)->get()->groupBy('station_id');
+    // === MATERIAL ===
 
-        $activeMaterialStationIds = $materialHenkatens->pluck('station_id')->unique()->toArray();
-        $stationWithMaterialIds = Material::whereIn('station_id', $stationIdsForLine)->pluck('station_id')->unique()->toArray();
+// 1. Ambil ID semua stasiun di line area tertentu. (Ini sudah benar)
+$stationIdsForLine = Station::where('line_area', $lineForQuery)->pluck('id');
 
-        $stations = Station::whereIn('id', $stationWithMaterialIds)->get();
+// 2. Ambil SEMUA material yang terkait di line tersebut untuk dikirim ke view.
+// Variabel $materials ini adalah KOLEKSI PENUH material di line tersebut.
+$materials = Material::with('station')
+                    ->whereIn('station_id', $stationIdsForLine)
+                    ->get();
+                    
+// 3. Buat PETA KUNCI material (keyBy) untuk pencarian cepat di mapping $stationStatuses.
+// Ini menghasilkan satu material (object) per station_id, siap untuk mapping.
+$materialsByStationId = $materials->keyBy('station_id');
 
-        $stationStatuses = $stations->map(fn($station) => [
-            'id' => $station->id,
-            'name' => $station->station_name,
-            'status' => in_array($station->id, $activeMaterialStationIds) ? 'HENKATEN' : 'NORMAL',
-        ]);
+
+// 4. Logika Henkaten: Ambil ID stasiun yang memiliki material Henkaten (Ini sudah benar)
+$activeMaterialStationIds = $materialHenkatens->pluck('station_id')->unique()->toArray();
+
+// 5. Ambil ID stasiun yang benar-benar memiliki material. (Ini sudah benar)
+$stationWithMaterialIds = $materialsByStationId->pluck('station_id')->unique()->toArray();
+
+// 6. Ambil koleksi stasiun yang memiliki material. (Ini sudah benar)
+$stations = Station::whereIn('id', $stationWithMaterialIds)->get();
+
+// --- Proses Mapping $stationStatuses ---
+
+$stationStatuses = $stations->map(function ($station) use ($activeMaterialStationIds, $materialsByStationId) {
+    
+    // 1. Ambil data material terkait menggunakan ID stasiun sebagai kunci.
+    // Variabel $material sekarang akan berisi object Material Eloquent jika ditemukan.
+    $material = $materialsByStationId->get($station->id); // Mengganti $materials menjadi $material
+
+    // 2. Tentukan status stasiun (menggunakan logika Henkaten yang sudah ada)
+    $stationStatus = in_array($station->id, $activeMaterialStationIds) ? 'HENKATEN' : 'NORMAL';
+
+    return [
+        'id' => $station->id,
+        'name' => $station->station_name,
+        'status' => $stationStatus, // Status stasiun (NORMAL/HENKATEN)
+        
+        // 3. Tambahkan data material: Jika $material bukan NULL, ambil properti dari objek tersebut.
+        // Karena $material adalah object Material, kita harus mengaksesnya seperti object.
+        'material_name' => $material ? $material->material_name : 'No Material Assigned',
+        'material_status' => $material ? $material->status : 'INACTIVE', 
+    ];
+});
 
         // ======================================================================
         // SECTION: SELECT DASHBOARD BASED ON USER ROLE
