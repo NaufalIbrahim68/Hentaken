@@ -20,4 +20,15 @@ class Station extends Model
     {
         return $this->hasMany(Material::class, 'station_id');
     }
+
+    public function manPowers()
+{
+    return $this->belongsToMany(
+        ManPower::class,
+        'man_power_many_stations',
+        'station_id',
+        'man_power_id'
+    );
+}
+
 }

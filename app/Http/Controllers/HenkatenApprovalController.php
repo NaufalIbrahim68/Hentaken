@@ -6,12 +6,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
 use App\Models\ManPowerHenkaten;
 use App\Models\MethodHenkaten;
 use App\Models\MaterialHenkaten;
 use App\Models\MachineHenkaten;
 use App\Models\ManPower;
+use App\Models\ManPowerManyStation;
 
 class HenkatenApprovalController extends Controller
 {
@@ -167,4 +167,28 @@ class HenkatenApprovalController extends Controller
 
         return redirect()->route('henkaten.approval.index')->with('success', 'Henkaten ' . ucfirst($type) . ' dikirim kembali untuk revisi.');
     }
+
+
+   public function editManPower($id)
+{
+    // Pastikan relasi stations pakai nama pivot man_power_many_stations di model ManPower
+    $mp = ManPower::with(['stations' => function ($q) {
+        $q->select('stations.id', 'station_name', 'line_area');
+    }])->find($id);
+
+    // Jika ingin mencegah error saat mp tidak ditemukan, Anda bisa gunakan findOrFail()
+    if (!$mp) {
+        return redirect()->route('henkaten.approval.manpower.index')
+            ->with('error', 'Manpower tidak ditemukan.');
+    }
+
+    $pivotData = DB::table('man_power_many_stations')
+                    ->where('man_power_id', $id)
+                    ->get();
+
+    return view('secthead.edit-approval', compact('mp', 'pivotData'));
+}
+
+
+
 }

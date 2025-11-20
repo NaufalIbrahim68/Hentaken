@@ -13,6 +13,7 @@ use App\Http\Controllers\ActivityLogMaterialController;
 use App\Http\Controllers\ActivityLogMachineController;
 use App\Http\Controllers\MasterConfirmController;
 use App\Http\Controllers\HenkatenApprovalController;
+use App\Http\Controllers\ManPowerStationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -124,9 +125,6 @@ Route::middleware(['auth'])->group(function () {
 
     // ======================================================================
     // API / AJAX ROUTES
-    // (Note: The next route has the same URI as one inside the henkaten group, 
-    // but a different controller/name. This is acceptable, but might lead to 
-    // confusion if not documented.)
     // ======================================================================
     Route::get('/manpower/search', [HenkatenController::class, 'searchManPower'])->name('manpower.search');
     Route::get('/get-stations-by-line', [HenkatenController::class, 'getStationsByLine'])
@@ -178,12 +176,7 @@ Route::get('/get-stations-by-line-area', [MaterialController::class, 'getStation
     Route::resource('machines', MachineController::class);
     Route::resource('methods', MethodController::class);
 
-    // ======================================================================
-    // ACTIVITY LOG
-    // ======================================================================
-    // Rute '/method' dipindahkan ke grup CRUD di bawah
-    // Route::prefix('activity-log')->name('activity.log.')->group(function () {
-    // });
+   
 
 
     // ======================================================================
@@ -258,6 +251,15 @@ Route::middleware(['auth', 'role:Sect Head Produksi|Sect Head PPIC|Sect Head QC'
     Route::post('/konfirmasi/master/{type}/{id}/revisi', [MasterConfirmController::class, 'revisi'])->name('konfirmasi.master.revisi');
     Route::get('/master/confirmation', [ManPowerController::class, 'confirmation'])->name('master.confirmation');
     Route::get('/api/master-detail/{type}/{id}', [MasterConfirmController::class, 'show']);
+    // Halaman list Matrix Man Power
+Route::get('/approval/omm', [ManPowerStationController::class, 'matrixApprovalIndex'])->name('approval.omm.index');
+
+// Rute untuk Aksi Approval
+Route::post('/approval/omm/{id}/approve', [ManPowerStationController::class, 'approveOmm']);
+Route::post('/approval/omm/{id}/revisi', [ManPowerStationController::class, 'reviseOmm']);
+
+// Rute API untuk Modal Detail (sesuai yang digunakan di Alpine.js)
+Route::get('/api/omm-detail/{id}', [ManPowerStationController::class, 'showOmmDetail']);
 
     // ======================================================================
     // HENKATEN APPROVAL - SECTION HEAD

@@ -529,9 +529,6 @@ public function searchAvailableReplacement(Request $request)
     return response()->json($result);
 }
 
-
-
-
-
+ 
 
 }

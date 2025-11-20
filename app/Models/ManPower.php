@@ -40,7 +40,7 @@ class ManPower extends Model
         // 1. 'man_power_station' -> Nama tabel pivot Anda
         // 2. 'man_power_id'    -> Foreign key untuk ManPower di tabel pivot
         // 3. 'station_id'       -> Foreign key untuk Station di tabel pivot
-        return $this->belongsToMany(Station::class, 'man_power_stations', 'man_power_id', 'station_id');
+        return $this->belongsToMany(Station::class, 'man_power_many_stations', 'man_power_id', 'station_id');
     }
 
  /**

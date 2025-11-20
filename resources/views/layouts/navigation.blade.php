@@ -45,19 +45,14 @@
                 </a>
 
                 {{-- KONFIRMASI MASTER DATA --}}
-                {{-- MODIFIKASI DI BAWAH INI --}}
                 <a href="{{ route('master.confirmation') }}"
                    class="flex items-center justify-between px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
-                    
-                    {{-- Grup untuk Ikon dan Teks --}}
                     <span class="flex items-center">
                         <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span>Konfirmasi Data Master</span>
                     </span>
-
-                    {{-- Badge Notifikasi --}}
                     @if(isset($pendingMasterDataCount) && $pendingMasterDataCount > 0)
                         <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                             {{ $pendingMasterDataCount }}
@@ -66,19 +61,14 @@
                 </a>
 
                 {{-- KONFIRMASI HENKATEN --}}
-                {{-- MODIFIKASI DI BAWAH INI --}}
                 <a href="{{ route('henkaten.approval.index') }}"
                    class="flex items-center justify-between px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
-                    
-                    {{-- Grup untuk Ikon dan Teks --}}
                     <span class="flex items-center">
                         <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span>Konfirmasi Henkaten</span>
                     </span>
-
-                    {{-- Badge Notifikasi --}}
                     @if(isset($pendingHenkatenCount) && $pendingHenkatenCount > 0)
                         <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                             {{ $pendingHenkatenCount }}
@@ -86,8 +76,27 @@
                     @endif
                 </a>
 
+                {{-- ✅ MENU BARU — KONFIRMASI MATRIX MAN POWER --}}
+                <a href="{{ route('approval.omm.index') }}"
+                   class="flex items-center justify-between px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+
+                    <span class="flex items-center">
+                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Konfirmasi Matrix Man Power</span>
+                    </span>
+
+                    @if(isset($pendingMatrixManpowerCount) && $pendingMatrixManpowerCount > 0)
+                        <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                            {{ $pendingMatrixManpowerCount }}
+                        </span>
+                    @endif
+                </a>
+
             {{-- === ROLE: ADMIN & LEADER === --}}
             @else
+
                 {{-- DASHBOARD --}}
                 <a href="{{ route('dashboard') }}"
                    class="flex items-center px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
@@ -140,8 +149,6 @@
                         <a href="{{ route('henkaten.method.create') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Method</a>
                     </div>
                 </div>
-
-               
 
                 {{-- ACTIVITY LOG --}}
                 <div x-data="{ activityOpen: false }" class="mb-2">
