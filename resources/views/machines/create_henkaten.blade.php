@@ -49,20 +49,30 @@
                             : route('henkaten.machine.store');
 
                         // 2. Definisikan variabel Role dan Line Area untuk logika Blade (Walaupun sudah ada di Controller, ini untuk akses di Blade)
-                        $userRole = Auth::user()->role ?? 'Guest';
-                        $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
-                        
-                        // Definisikan $predefinedLineArea (Perbaikan variabel yang Undefined)
-                        $predefinedLineArea = match ($userRole) {
-                            'Leader QC' => 'Incoming',
-                            'Leader PPIC' => 'Delivery',
-                            default => null,
-                        };
-                        
-                        // Siapkan daftar kategori yang akan digunakan (Perbaikan variabel yang Undefined)
-                        // Gunakan $machineCategories yang dikirim dari Controller atau fallback jika tidak ada
-                        $categoriesToUse = $machineCategories ?? ['Program', 'Machine & Jig', 'Equipment', 'Camera'];
-                    @endphp
+                      $userRole = Auth::user()->role ?? 'Guest';
+    $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
+    
+    // Definisikan $predefinedLineArea (Perbaikan variabel yang Undefined)
+    $predefinedLineArea = match ($userRole) {
+        'Leader QC' => 'Incoming',
+        'Leader PPIC' => 'Delivery',
+        default => null,
+    };
+    
+   
+    $defaultCategories = $machineCategories ?? ['Komputer', 'PACO Machine', 'Record Delivery', 'Program', 'Machine & Jig', 'Equipment', 'Camera'];
+
+    
+    $categoriesToUse = $defaultCategories;
+
+    if ($userRole === 'Leader PPIC') {
+        // Leader PPIC hanya boleh memilih Record Delivery
+        $categoriesToUse = ['Record Delivery']; 
+    } elseif ($userRole === 'Leader QC') {
+       
+    }
+    
+@endphp
 
                     <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data">
                         @csrf
@@ -78,7 +88,6 @@
                             oldCategory: '{{ old('category', $log->category ?? '') }}',
                             findStationsUrl: '{{ route('henkaten.stations.by_line') }}',
                             
-                            // VARIABEL SUDAH DIDEFINISIKAN DI BLOK @php DI ATAS
                             predefinedLineArea: '{{ $predefinedLineArea ?? '' }}', 
                             isPredefinedRole: {{ $isPredefinedRole ? 'true' : 'false' }},
                         })" x-init="init()">
