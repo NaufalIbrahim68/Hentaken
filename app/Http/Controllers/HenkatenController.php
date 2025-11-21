@@ -1101,14 +1101,26 @@ $dataToCreate['status'] = 'PENDING';
             $logHenkaten->nama_after = $validatedData['nama_sesudah'];
             $logHenkaten->effective_date = $validatedData['tanggal_mulai'];
             $logHenkaten->note = $validatedData['jenis_henkaten'];
-            $logHenkaten->status = 'PENDING';
+            $logHenkaten->status = 'Approved';
             
             $logHenkaten->save();
+
+            // Langsung update master manpower karena tidak ada approval
+$master = ManPower::find($validatedData['master_man_power_id']);
+
+if ($master) {
+    $master->nama = $validatedData['nama_sesudah'];   // update nama
+    $master->line_area = $validatedData['line_area']; // jika butuh update line
+    $master->station_id = $validatedData['station_id']; // jika berubah
+    $master->grup = $validatedData['grup']; // jika berubah
+    $master->save();
+}
+
 
             DB::commit();
 
             return redirect()->route('manpower.index')
-                             ->with('success', 'Pengajuan perubahan Man Power telah berhasil dicatat dan menunggu approval.');
+->with('success', 'Perubahan Man Power berhasil disimpan dan langsung disetujui.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -1121,7 +1133,10 @@ $dataToCreate['status'] = 'PENDING';
         }
     }
 
-    // HenkatenController.php
+
+    
+
+    
 public function checkAfter(Request $request)
 {
     // Ambil semua parameter yang diperlukan dari request
@@ -1137,10 +1152,6 @@ public function checkAfter(Request $request)
         return response()->json(['error' => 'Parameter tidak lengkap'], 400);
     }
     
-    // --- Logika Deteksi Konflik (Date Range Overlap) ---
-    // Logika ini memeriksa apakah ada log yang sudah ada
-    // yang rentang waktunya (effective_date s/d end_date) 
-    // berpotongan dengan rentang waktu yang baru (newEffectiveDate s/d newEndDate).
     
     $exists = ManPowerHenkaten::where('man_power_id_after', $manPowerIdAfter)
         ->where('shift', $shift)
