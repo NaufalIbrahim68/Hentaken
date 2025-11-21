@@ -486,31 +486,37 @@ class HenkatenController extends Controller
     // =========================================================
     // MODIFIKASI: Pencarian ID (Station & Material) untuk Role Predefined
     // =========================================================
-    if ($isPredefinedRole && $request->input('line_area') === 'Delivery') {
+    if ($isPredefinedRole) {
         
-        $materialName = $request->input('material_name');
+        $lineArea = $request->input('line_area'); // 'Incoming' atau 'Delivery'
+        $materialName = $request->input('material_name'); 
         
         // 1. Cari Material ID
+        // Material::where('material_name', $materialName)->first()
+        // PENTING: Jika material_name bisa sama di Line Area yang berbeda, Anda mungkin perlu membatasi pencarian.
+        // Tapi berdasarkan data statis di Blade sebelumnya, diasumsikan nama ini unik per Line Area atau Material Henkaten
         $material = Material::where('material_name', $materialName)->first();
 
         if ($material) { 
             $dataToValidate['material_id'] = $material->id; 
         } else {
+            // Jika Material tidak ditemukan, set ke null agar validasi 'required' Material ID gagal dengan pesan yang jelas.
             $dataToValidate['material_id'] = null; 
         }
 
         // 2. Cari Station ID
-        // TELAH DIREVISI: Menggunakan 'Delivery' sebagai station_name (sesuai data master)
-        $stationNameTarget = 'Delivery'; // <--- NILAI SUDAH DIPERBAIKI
+        // Mencari Station berdasarkan Line Area DAN Station Name (yang disetel sama dengan Line Area di data master)
+        $station = Station::where('line_area', $lineArea)
+                          ->where('station_name', $lineArea) 
+                          ->first(); 
         
-        $station = Station::where('line_area', 'Delivery')
-                          ->where('station_name', $stationNameTarget) 
-                          ->first();
+        // JIKA ANDA HANYA MENGINGINKAN SATU ID TERTENTU (misal ID 143 untuk Incoming):
+        // $station = Station::where('id', ($lineArea === 'Incoming' ? 143 : 1150))->first();
 
         if ($station) {
             $dataToValidate['station_id'] = $station->id;
         } else {
-            // Jika stasiun tidak ditemukan, atur pesan error yang spesifik (optional)
+            // Jika stasiun tidak ditemukan, set ke null.
             $dataToValidate['station_id'] = null;
         }
     }
@@ -518,13 +524,18 @@ class HenkatenController extends Controller
 
     // 3. Validasi Data
     try {
+        // Merge data yang baru ditemukan (material_id & station_id) ke dalam Request
         $request->merge($dataToValidate); 
 
         $validationRules = [
             'shift'               => 'required|string',
             'line_area'           => 'required|string',
+            
+            // karena kita sudah memastikan nilainya diisi di blok IF di atas
             'station_id'          => 'required|integer|exists:stations,id', 
             'material_id'         => 'required|integer|exists:materials,id', 
+            
+            // material_name hanya wajib jika role predefined (tapi tidak disimpan di DB)
             'material_name'       => $isPredefinedRole ? 'required|string|max:255' : 'nullable', 
             
             'effective_date'      => 'required|date',
@@ -534,7 +545,10 @@ class HenkatenController extends Controller
             'description_before'  => 'required|string|max:255',
             'description_after'   => 'required|string|max:255',
             'keterangan'          => 'required|string',
-            'lampiran'            => (isset($log) ? 'nullable' : 'required') . '|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
+            
+            // Sesuaikan aturan file, perhatikan mimetypes (zip/rar mungkin bermasalah)
+            'lampiran'            => (isset($log) ? 'nullable' : 'required') . '|file|mimes:jpeg,png,zip,rar|max:2048', 
+            
             'serial_number_start' => 'nullable|string|max:255',
             'serial_number_end'   => 'nullable|string|max:255',
             'redirect_to'         => 'nullable|string'
@@ -542,12 +556,20 @@ class HenkatenController extends Controller
         
         $customMessages = [];
 
-        // Penanganan error kustom yang disesuaikan
-        if ($isPredefinedRole && $request->input('line_area') === 'Delivery' && $dataToValidate['station_id'] === null) {
-             $customMessages['station_id.required'] = "Data master Stasiun dengan Line Area 'Delivery' dan nama '{$stationNameTarget}' tidak ditemukan. Mohon periksa tabel stations Anda.";
+        // Penanganan error kustom untuk kasus di mana ID tidak ditemukan (walaupun input ada)
+        if ($isPredefinedRole) {
+            if ($dataToValidate['station_id'] === null) {
+                // Menimpa pesan 'station_id.required' jika master data tidak ada
+                 $customMessages['station_id.required'] = "Data master Stasiun untuk '{$lineArea}' tidak ditemukan. Mohon periksa tabel stations Anda.";
+            }
+            if ($dataToValidate['material_id'] === null) {
+                // Menimpa pesan 'material_id.required' jika master data tidak ada
+                 $customMessages['material_id.required'] = "Data master Material '{$materialName}' tidak ditemukan. Mohon periksa tabel materials Anda.";
+            }
         }
 
         $validatedData = $request->validate($validationRules, $customMessages);
+        
     } catch (ValidationException $e) {
         return back()->withErrors($e->errors())->withInput();
     }
@@ -565,6 +587,7 @@ class HenkatenController extends Controller
         
         // Hapus field yang tidak ada di Model/Tabel sebelum create
         unset($dataToCreate['material_name']);
+        unset($dataToCreate['redirect_to']); // Tambahkan penghapusan ini agar tidak error di Model::create
         
         $dataToCreate['lampiran'] = $lampiranPath;
         $dataToCreate['status'] = 'PENDING';
@@ -574,7 +597,9 @@ class HenkatenController extends Controller
 
         DB::commit();
 
-        return redirect()->route('henkaten.material.create')
+        // Gunakan redirect_to jika tersedia
+        $redirectTo = $request->input('redirect_to', route('henkaten.material.create'));
+        return redirect($redirectTo)
             ->with('success', 'Data Material Henkaten berhasil disimpan!');
 
     } catch (\Exception $e) {
@@ -724,9 +749,8 @@ class HenkatenController extends Controller
             $validated = $request->validate([
                 'shift'              => 'required|string',
                 'line_area'          => 'required|string',
-                'station_id'         => 'required|integer|exists:stations,id', // Diperiksa setelah merge
-                'category'           => 'required|string|in:Program,Machine & Jig,Equipment,Camera,Record Delivery',
-                'effective_date'     => 'required|date',
+                'station_id'         => 'required|integer|exists:stations,id',
+                'category'           => 'required|string|in:Program,Machine & Jig,Equipment,Camera,Record Delivery,Komputer,PACO Machine',                'effective_date'     => 'required|date',
                 'end_date'           => 'nullable|date|after_or_equal:effective_date',
                 'time_start'         => 'required|date_format:H:i',
                 'time_end'           => 'required|date_format:H:i|after_or_equal:time_start',
