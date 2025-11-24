@@ -218,22 +218,23 @@ class HenkatenController extends Controller
     $role = $user ? $user->role : null;
     $isPredefinedRole = in_array($role, ['Leader QC', 'Leader PPIC']);
 
-    // --- INISIALISASI VARIABEL BARU (PENTING!) ---
+    // --- INISIALISASI VARIABEL BARU ---
     $selectedLineArea = null;
-    $predefinedLineArea = null; // <-- INISIALISASI
-    $methodList = collect();
-    $stations = collect(); // Pastikan stations diinisialisasi sebagai koleksi kosong
-    // ---------------------------------------------
+    $predefinedLineArea = null;
+    $methodList = collect(); // pastikan collection kosong
+    $stations = collect();
+    $lineAreas = collect();
+    // -----------------------------------
 
     // --- A. LOGIKA PENENTUAN LINE AREA ---
     if ($role === 'Leader QC') {
         $lineAreas = collect(['Incoming']);
-        $predefinedLineArea = 'Incoming'; // Set nilai
+        $predefinedLineArea = 'Incoming';
     } elseif ($role === 'Leader PPIC') {
         $lineAreas = collect(['Delivery']);
-        $predefinedLineArea = 'Delivery'; // Set nilai
+        $predefinedLineArea = 'Delivery';
     } else {
-        // Default: Ambil semua line_area dari database
+        // Semua line_area unik dari tabel station
         $lineAreas = Station::select('line_area')
             ->distinct()
             ->whereNotNull('line_area')
@@ -241,203 +242,179 @@ class HenkatenController extends Controller
             ->pluck('line_area');
     }
 
-    // --- B. PENGAMBILAN DATA AWAL & OLD VALUE ---
+    // --- B. PENGAMBILAN DATA AWAL & METHOD LIST ---
     if ($isPredefinedRole) {
-        // Mode Predefined: Line Area sudah pasti
-        $selectedLineArea = $predefinedLineArea; // Menggunakan variabel yang sudah diinisialisasi dan diisi
-        
-        // Ambil daftar method name unik di line area tersebut
-        $methodList = Method::whereHas('station', function ($query) use ($selectedLineArea) {
-                             $query->where('line_area', $selectedLineArea);
-                         })
-                         ->select('methods_name')
-                         ->distinct()
-                         ->orderBy('methods_name')
-                         ->pluck('methods_name');
-        
-        // Ambil semua station di line area tersebut
+        $selectedLineArea = $predefinedLineArea;
+
+        // Ambil semua station di line area predefined
         $stations = Station::where('line_area', $selectedLineArea)->get();
 
-    } elseif ($oldLineArea = old('line_area')) {
-        // Mode Dynamic (Ada old value): Ambil stations dan methods sesuai old value
-        $selectedLineArea = $oldLineArea;
-        $stations = Station::where('line_area', $oldLineArea)->get();
-        
-        // Jika ada old station ID, ambil method list-nya
+        // Ambil semua method untuk semua station di line area tersebut
+        $methodList = Method::whereIn('station_id', $stations->pluck('id'))
+                            ->select('id', 'methods_name', 'station_id')
+                            ->orderBy('methods_name')
+                            ->get();
+
+    } else {
+        // Mode dinamis (role lain)
+        $selectedLineArea = old('line_area');
+        if ($selectedLineArea) {
+            $stations = Station::where('line_area', $selectedLineArea)->get();
+        }
+
+        // Jika ada old station, ambil method untuk station tersebut
         if ($oldStationId = old('station_id')) {
-             $methodList = Method::where('station_id', $oldStationId)
-                                 ->select('id', 'methods_name')
-                                 ->get();
+            $methodList = Method::where('station_id', $oldStationId)
+                                ->select('id', 'methods_name', 'station_id')
+                                ->orderBy('methods_name')
+                                ->get();
         }
     }
-
 
     return view('methods.create_henkaten', compact(
         'stations',
         'lineAreas',
         'currentShift',
-        
-        // --- VARIABEL UNTUK KONTROL BLADE ---
         'isPredefinedRole',
-        'predefinedLineArea', // Sekarang variabel ini pasti terdefinisi
+        'predefinedLineArea',
         'selectedLineArea',
         'methodList'
     ));
 }
 
 
+
  public function storeMethodHenkaten(Request $request)
 {
-    // --- 1. Tentukan Role Pengguna ---
-    $userRole = Auth::user()->role ?? 'operator';
-    $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
+$userRole = Auth::user()->role ?? 'operator';
+$isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
 
-    $dataToValidate = $request->all();
-    $lineArea = $request->input('line_area');
-    $stationIdTarget = null;
-    $methodIdTarget = null;
-    $stationNameTarget = null;
+$dataToValidate = $request->all();
+$lineArea = $request->input('line_area');
+$stationIdTarget = null;
+$methodIdTarget = null;
+$stationNameTarget = null;
+$methodName = null;
 
-    // =========================================================
-    // PENCARIAN ID (Station & Method) untuk Role Predefined
-    // =========================================================
-    if ($isPredefinedRole) {
-
-        $stationNameTarget = $request->input('station_name_predefined');
-        $methodName = $request->input('methods_name');
-
-        // 1. CARI METHOD ID
-        $methodMaster = Method::where('methods_name', $methodName)->first();
-        if ($methodMaster) {
-            $methodIdTarget = $methodMaster->id;
+// =========================================================
+// PENCARIAN ID (Station & Method) untuk Role Predefined
+// =========================================================
+if ($isPredefinedRole) {
+        // Ambil Method Name dari form
+        $methodName = $request->input('methods_name'); 
+        
+        // Cek Method ID (Station ID diambil langsung dari hidden input form)
+        if ($methodName) {
+            $methodMaster = Method::where('methods_name', $methodName)->first();
+            $methodIdTarget = $methodMaster ? $methodMaster->id : null;
         }
 
-        // 2. CARI STATION ID
-        if ($lineArea && $stationNameTarget) {
+        // Ambil station_id langsung dari request (HARUS dikirim dari hidden input Blade)
+        $stationIdTarget = $request->input('station_id');
 
-            // PENCARIAN KETAT
-            $station = Station::whereRaw('LOWER(line_area) = ?', [Str::lower($lineArea)])
-                ->whereRaw('LOWER(station_name) = ?', [Str::lower($stationNameTarget)])
-                ->first();
-
-            // FALLBACK
-            if (!$station) {
-                $station = Station::whereRaw('LOWER(line_area) = ?', [Str::lower($lineArea)])
-                    ->first();
-                if ($station) {
-                    Log::warning("Method Henkaten: Fallback Station used for {$lineArea}.");
-                }
-            }
-
-            $stationIdTarget = $station ? $station->id : null;
-        }
-
-        // PASANG ID
-        $dataToValidate['station_id'] = $stationIdTarget;
+        // Update dataToValidate HANYA untuk method_id
         $dataToValidate['method_id'] = $methodIdTarget;
+
+        // Jika station_id dari hidden input kosong/null, ini akan memicu error validasi yang tepat
+        if (!$stationIdTarget) {
+            // Ini akan memastikan error "station_id is required" muncul
+            // atau jika Anda ingin error custom:
+            // throw ValidationException::withMessages(['station_id' => ['Station ID tidak terkirim dari form.']]);
+        }    $dataToValidate['station_id'] = $stationIdTarget;
+    $dataToValidate['method_id'] = $methodIdTarget;
+
+    Log::info('Predefined role search', [
+        'station_name' => $stationNameTarget,
+        'station_id' => $stationIdTarget,
+        'method_name' => $methodName,
+        'method_id' => $methodIdTarget
+    ]);
+}
+
+// =========================================================
+// VALIDASI
+// =========================================================
+try {
+    $request->merge($dataToValidate);
+
+    $validated = $request->validate([
+        'shift'               => 'required|string',
+        'line_area'           => 'required|string',
+        'station_id'          => 'required|integer|exists:stations,id',
+        'method_id'           => 'required|integer|exists:methods,id',
+        'methods_name'        => $isPredefinedRole ? 'required|string|max:255' : 'nullable',
+        'effective_date'      => 'required|date',
+        'end_date'            => 'required|date|after_or_equal:effective_date',
+        'time_start'          => 'required|date_format:H:i',
+        'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
+        'keterangan'          => 'required|string',
+        'keterangan_after'    => 'required|string',
+        'serial_number_start' => 'nullable|string|max:100',
+        'serial_number_end'   => 'nullable|string|max:100',
+        'note'                => 'nullable|string',
+        'lampiran'            => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
+    ]);
+
+    // custom error jika ID tidak ditemukan
+    if ($isPredefinedRole && (!$stationIdTarget || !$methodIdTarget)) {
+        $msg = "Gagal menemukan ID: Pastikan Stasiun '{$stationNameTarget}' dan Method '{$methodName}' ada di database master.";
+        throw ValidationException::withMessages(['station_id' => [$msg]]);
     }
 
-    // =========================================================
-    // 2. VALIDASI
-    // =========================================================
-    try {
-        $request->merge($dataToValidate);
+} catch (ValidationException $e) {
+    return back()->withErrors($e->errors())->withInput();
+}
 
-        $validated = $request->validate([
-            'shift'               => 'required|string',
-            'line_area'           => 'required|string',
-            'station_id'          => 'required|integer|exists:stations,id',
-            'method_id'           => 'required|integer|exists:methods,id',
-            'methods_name'        => $isPredefinedRole ? 'required|string|max:255' : 'nullable',
+// =========================================================
+// SIMPAN DATA
+// =========================================================
+try {
+    DB::beginTransaction();
 
-            'effective_date'      => 'required|date',
-            'end_date'            => 'required|date|after_or_equal:effective_date',
-
-            'time_start'          => 'required|date_format:H:i',
-            'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
-
-            'keterangan'          => 'required|string',
-            'keterangan_after'    => 'required|string',
-
-            'serial_number_start' => 'nullable|string|max:100',
-            'serial_number_end'   => 'nullable|string|max:100',
-            'note'                => 'nullable|string',
-
-            'lampiran'            => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
-        ]);
-
-        // Custom error jika ID tidak ditemukan
-        if ($isPredefinedRole && ($dataToValidate['station_id'] === null || $dataToValidate['method_id'] === null)) {
-            $msg = "Gagal menemukan ID: Pastikan Stasiun '{$stationNameTarget}' dan Method '{$methodName}' ada di database master.";
-            throw ValidationException::withMessages(['station_id' => [$msg]]);
-        }
-
-    } catch (ValidationException $e) {
-        return back()->withErrors($e->errors())->withInput();
+    $lampiranPath = null;
+    if ($request->hasFile('lampiran')) {
+        $lampiranPath = $request->file('lampiran')->store('lampiran_methods_henkaten', 'public');
     }
 
-    // =========================================================
-    // 3. PROSES SIMPAN DATA
-    // =========================================================
-    try {
-        DB::beginTransaction();
+    $timeStart = Carbon::createFromFormat('H:i', $validated['time_start']);
+    $timeEnd   = Carbon::createFromFormat('H:i', $validated['time_end']);
 
-        $lampiranPath = null;
-        if ($request->hasFile('lampiran')) {
-            $lampiranPath = $request->file('lampiran')->store('lampiran_methods_henkaten', 'public');
-        }
+    $dataToCreate = [
+        'station_id'            => $validated['station_id'],
+        'method_id'             => $validated['method_id'],
+        'shift'                 => $validated['shift'],
+        'line_area'             => $validated['line_area'],
+        'keterangan'            => $validated['keterangan'],
+        'keterangan_after'      => $validated['keterangan_after'],
+        'effective_date'        => $validated['effective_date'],
+        'end_date'              => $validated['end_date'],
+        'time_start'            => $timeStart,
+        'time_end'              => $timeEnd,
+        'lampiran'              => $lampiranPath,
+        'serial_number_start'   => $validated['serial_number_start'] ?? null,
+        'serial_number_end'     => $validated['serial_number_end'] ?? null,
+        'note'                  => $validated['note'] ?? null,
+        'status'                => 'PENDING',
+    ];
 
-        // KONVERSI WAKTU KE DATETIME SQL SERVER
-        $timeStart = Carbon::createFromFormat('H:i', $validated['time_start']);
-        $timeEnd   = Carbon::createFromFormat('H:i', $validated['time_end']);
+    MethodHenkaten::create($dataToCreate);
 
-        // =========================================================
-        // DATA YANG BENAR-BENAR SESUAI DENGAN TABEL
-        // =========================================================
-        $dataToCreate = [
-            'station_id'            => $validated['station_id'],
-            'method_id'             => $validated['method_id'],
-            'shift'                 => $validated['shift'],
-            'line_area'             => $validated['line_area'],
+    DB::commit();
 
-            'keterangan'            => $validated['keterangan'],
-            'keterangan_after'      => $validated['keterangan_after'],
+    return redirect()->route('henkaten.method.create')
+        ->with('success', 'Data Henkaten Method berhasil dibuat.');
 
-            'effective_date'        => $validated['effective_date'],
-            'end_date'              => $validated['end_date'],
+} catch (\Exception $e) {
+    DB::rollBack();
 
-            'time_start'            => $timeStart,
-            'time_end'              => $timeEnd,
+    if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
+        Storage::disk('public')->delete($lampiranPath);
+    }
 
-            'lampiran'              => $lampiranPath,
-
-            'serial_number_start'   => $validated['serial_number_start'] ?? null,
-            'serial_number_end'     => $validated['serial_number_end'] ?? null,
-
-            'note'                  => $validated['note'] ?? null,
-            'status'                => 'PENDING',
-        ];
-
-        // SIMPAN
-        MethodHenkaten::create($dataToCreate);
-
-        DB::commit();
-
-        return redirect()->route('henkaten.method.create')
-            ->with('success', 'Data Henkaten Method berhasil dibuat.');
-
-    } catch (\Exception $e) {
-
-        DB::rollBack();
-
-        if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
-            Storage::disk('public')->delete($lampiranPath);
-        }
-
-        Log::error('Method Henkaten store failed: ' . $e->getMessage(), [
-            'exception' => $e,
-            'input'     => $request->all()
-        ]);
+    Log::error('Method Henkaten store failed: ' . $e->getMessage(), [
+        'exception' => $e,
+        'input' => $request->all()
+    ]);
 
         return back()
             ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Error: ' . $e->getMessage()])
@@ -704,18 +681,43 @@ class HenkatenController extends Controller
             ->orderBy('line_area', 'asc')
             ->pluck('line_area');
     }
+    
+    // =========================================================
+    // 🟢 PERUBAHAN: Tentukan Kategori Mesin (Semua diambil dari Database)
+    // =========================================================
 
-    // Tentukan Kategori Mesin
-    if ($isPredefinedRole) {
-        // Untuk Leader QC/PPIC: Ambil kategori unik dari database
-        $machineCategories = Machine::select('machines_category')
-            ->distinct()
-            ->whereNotNull('machines_category')
-            ->pluck('machines_category')
-            ->toArray();
+    // Ambil SEMUA kategori unik yang ada di tabel 'machines'
+    $allMachineCategories = Machine::select('machines_category')
+        ->distinct()
+        ->whereNotNull('machines_category')
+        ->pluck('machines_category');
+        
+    // Inisialisasi daftar kategori yang akan digunakan
+    $categoriesToUse = $allMachineCategories->toArray();
+
+    if ($role === 'Leader QC') {
+        // Leader QC (Incoming) hanya berhak melihat kategori yang spesifik (Komputer, PACO Machine)
+        // Kita gunakan array_intersect untuk memfilter, memastikan kategori ini ADA di database.
+        $specificQCCategories = ['Komputer', 'PACO Machine'];
+        $categoriesToUse = $allMachineCategories->filter(function($item) use ($specificQCCategories) {
+            return in_array($item, $specificQCCategories);
+        })->toArray();
+
+    } elseif ($role === 'Leader PPIC') {
+        // Leader PPIC (Delivery) hanya berhak melihat kategori yang spesifik (Record Delivery)
+        $specificPPICCategory = 'Record Delivery';
+         $categoriesToUse = $allMachineCategories->filter(function($item) use ($specificPPICCategory) {
+            return $item === $specificPPICCategory;
+        })->toArray();
+
     } else {
-        // Untuk role lain: Gunakan daftar statis (atau yang didefinisikan secara default)
-        $machineCategories = ['Program', 'Machine & Jig', 'Equipment', 'Camera'];
+         // Untuk role lain (Operator/Default): 
+         // Hanya menampilkan kategori generik, meskipun ini bisa diambil dari database juga.
+         // Berdasarkan logika lama Anda, ini menggunakan daftar statis generik:
+         $categoriesToUse = ['Program', 'Machine & Jig', 'Equipment', 'Camera'];
+         
+         // Jika Anda ingin semua kategori mesin muncul untuk Operator/Role Lain:
+         // $categoriesToUse = $allMachineCategories->toArray(); 
     }
 
     // --- LOGIKA 'old' data untuk station (DIPERTAHANKAN) ---
@@ -735,16 +737,19 @@ class HenkatenController extends Controller
         $stations = Station::where('line_area', $oldLineArea)->get();
     }
 
+    $machineCategories = $categoriesToUse;
+
     return view('machines.create_henkaten', compact(
         'lineAreas',
         'stations',
         'currentGroup',
         'currentShift',
-        'machineCategories', // <--- VARIABLE BARU
-        'isPredefinedRole', // <--- VARIABLE BARU
-        'selectedLineArea' // <--- VARIABLE BARU
+        'isPredefinedRole',
+        'selectedLineArea',
+        'machineCategories'
     ));
 }
+
    public function storeMachineHenkaten(Request $request)
     {
         // --- 1. Tentukan Role Pengguna ---
