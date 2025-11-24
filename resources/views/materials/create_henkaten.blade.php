@@ -61,15 +61,15 @@
                             }
                         }
                         
-                        // Static material list for predefined roles
-                        $materialListStatic = [
-                            'Incoming' => ['Document IPP', 'Special Acceptance', 'IRD Supplier'],
-                            'Delivery' => ['Document IPP', 'Label IPP', 'Packing Customer', 'Tag Produksi'],
-                        ];
-                        
-                        $defaultMaterialOptions = $isPredefinedRole && $predefinedLineArea 
-                            ? ($materialListStatic[$predefinedLineArea] ?? []) 
-                            : [];
+                        // ✅ ASUMSI: $defaultMaterialOptions sudah diisi dengan objek Material Eloquent dari Controller.
+                        if (!isset($defaultMaterialOptions)) {
+                            $defaultMaterialOptions = collect();
+                        }
+                        // Ambil daftar Line Area untuk mode Dynamic
+                        if (!isset($lineAreas)) {
+                            // Ini hanya placeholder, harusnya diisi dari Controller
+                            $lineAreas = \App\Models\Station::pluck('line_area')->unique(); 
+                        }
                     @endphp
 
                     <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data">
@@ -92,8 +92,10 @@
                                 @else
                                     selectedLineArea: '{{ $predefinedLineArea }}',
                                     selectedStation: {{ $predefinedStationId ?? 'null' }},
-                                    selectedMaterial: '{{ old('material_name', $log->material_name ?? '') }}',
-                                    materialStaticList: {{ json_encode($defaultMaterialOptions) }},
+                                    // ✅ PERBAIKAN: Kirim ID material sebagai selectedMaterial di Alpine
+                                    selectedMaterial: {{ old('material_id', $log->material_id ?? 'null') }},
+                                    // Kirim data material ID dan Nama ke Alpine
+                                    materialStaticList: {{ $defaultMaterialOptions->toJson() }}, 
                                 @endif
                                 isPredefined: {{ $isPredefinedRole ? 'true' : 'false' }}
                             })"
@@ -101,7 +103,7 @@
                             
                             {{-- Left Column --}}
                             <div>
-                                @if ($isPredefinedRole)
+                               @if ($isPredefinedRole)
                                     {{-- PREDEFINED MODE (QC/PPIC) --}}
                                     <div class="mb-4">
                                         <label class="block text-sm font-medium text-gray-700">Line Area</label>
@@ -113,20 +115,31 @@
                                     {{-- Hidden Station ID --}}
                                     <input type="hidden" name="station_id" value="{{ $predefinedStationId }}">
                                     
-                                    {{-- Material Name Selection --}}
+                                    {{-- Material ID Selection --}}
                                     <div class="mb-4">
-                                        <label for="material_name" class="block text-sm font-medium text-gray-700">
+                                        <label for="material_name_select" class="block text-sm font-medium text-gray-700">
                                             Material <span class="text-red-500">*</span>
                                         </label>
-                                        <select id="material_name" name="material_name" required
+                                        
+                                        {{-- Input Hidden untuk Material Name (Wajib untuk Controller Store) --}}
+                                        <input type="hidden" 
+                                               name="material_name" 
+                                               id="material_name_hidden"
+                                               :value="getMaterialName(selectedMaterial)">
+                                        
+                                        <select id="material_name_select" name="material_id" required
                                                 class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                                 x-model="selectedMaterial">
                                             <option value="">-- Pilih Material --</option>
-                                            @foreach ($defaultMaterialOptions as $materialName)
-                                                <option value="{{ $materialName }}" 
-                                                    @selected(old('material_name', $log->material_name ?? '') == $materialName)>
-                                                    {{ $materialName }}
-                                                </option>
+                                            
+                                            @foreach ($defaultMaterialOptions as $item)
+                                                {{-- Cek jika $item adalah objek Eloquent --}}
+                                                @if (is_object($item) && isset($item->id))
+                                                    <option value="{{ $item->id }}" 
+                                                        @selected(old('material_id', $log->material_id ?? '') == $item->id)>
+                                                        {{ $item->material_name }}
+                                                    </option>
+                                                @endif
                                             @endforeach
                                         </select>
                                     </div>
@@ -149,7 +162,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-
+                                    
                                     <div class="mb-4">
                                         <label for="station_id" class="block text-sm font-medium text-gray-700">
                                             Station <span class="text-red-500">*</span>
@@ -371,9 +384,23 @@
                             }
                         }
                     } else {
-                        // Predefined mode: data is already set from PHP
-                        console.log('Static materials:', this.materialStaticList);
+                        // Predefined mode: data is already set from PHP (materialStaticList)
+                        // If materialStaticList contains objects (preferred way):
+                        if (this.materialStaticList.length > 0 && typeof this.materialStaticList[0] === 'object') {
+                             // Jika data yang dikirim adalah objek, Alpine tidak perlu fetch, kita sudah punya data materialnya.
+                             console.log('Static materials loaded as Objects.');
+                        } else {
+                             // Jika data yang dikirim masih string/array lama, ini hanya untuk console log.
+                             console.log('Static materials loaded as Strings (old format).');
+                        }
                     }
+                },
+
+                // Helper to get Material Name from ID in Predefined Mode
+                getMaterialName(materialId) {
+                    if (!materialId) return '';
+                    const material = this.materialStaticList.find(m => m.id == materialId);
+                    return material ? material.material_name : '';
                 },
 
                 // Fetch Stations (Dynamic Mode Only)

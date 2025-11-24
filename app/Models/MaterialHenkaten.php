@@ -29,7 +29,8 @@ class MaterialHenkaten extends Model
         'description_before', 
         'description_after',
         'status',
-        'note'
+        'note',
+        
     ];
 
     protected $casts = [

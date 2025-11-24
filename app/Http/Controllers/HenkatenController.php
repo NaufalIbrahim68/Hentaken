@@ -473,6 +473,7 @@ class HenkatenController extends Controller
     // ==============================================================
    public function createMaterialHenkaten()
 {
+    // Cek Role dan Shift saat ini
     $currentShift = session('active_shift', 1);
 
     // --- LOGIKA ROLE PREDEFINED ---
@@ -494,8 +495,8 @@ class HenkatenController extends Controller
     
     // 2. Inisialisasi daftar model
     $stations = collect();
-    $materials = collect(); // Untuk mode dinamis (operator)
-    $materialsForPredefinedRole = collect(); // Untuk mode Leader QC/PPIC
+    $materialsForDynamicRole = collect(); // ✅ Ganti nama agar tidak konflik
+    $defaultMaterialOptions = collect(); // ✅ Nama variabel yang dicari di Blade
 
     // 3. Logika mengisi data lama (old) untuk mode dinamis
     if (!$isPredefinedRole) {
@@ -504,175 +505,171 @@ class HenkatenController extends Controller
         }
         if ($oldStation = old('station_id')) {
             // Ambil material untuk stasiun yang dipilih (mode dinamis)
-            $materials = Material::where('station_id', $oldStation)->get();
+            $materialsForDynamicRole = Material::where('station_id', $oldStation)->get();
         }
     }
     
     // 4. LOGIKA KHUSUS untuk Leader QC/PPIC (Mode Predefined)
     if ($isPredefinedRole && $predefinedLineArea) {
-        
-        // REVISI INI: Hapus klausa where('line_area', $predefinedLineArea) yang menyebabkan error.
-        // Cukup gunakan whereHas('station') untuk mencari material yang stasiunnya berada di line area yang sesuai.
-        $materialsForPredefinedRole = Material::whereHas('station', function ($query) use ($predefinedLineArea) {
-                                            $query->where('line_area', $predefinedLineArea); 
-                                        })
-                                        ->select('id', 'material_name') // Ambil ID dan Nama
-                                        ->get();
+        // Ambil material yang stasiunnya berada di line area yang sesuai.
+        // Hasilnya adalah Collection objek Material Eloquent (dengan ID dan Nama).
+        $defaultMaterialOptions = Material::whereHas('station', function ($query) use ($predefinedLineArea) {
+                                                $query->where('line_area', $predefinedLineArea); 
+                                            })
+                                            ->select('id', 'material_name') // Ambil ID dan Nama
+                                            ->get();
     }
     
     return view('materials.create_henkaten', compact(
         'lineAreas',
         'stations',
-        'materials',
+        'materialsForDynamicRole', // Digunakan untuk mode dinamis (jika old() ada)
         'currentShift',
         'userRole', 
         'isPredefinedRole',
         'predefinedLineArea',
-        'materialsForPredefinedRole' 
+        'defaultMaterialOptions' // ✅ Variabel yang akan digunakan di Blade untuk Leader QC/PPIC
     ));
 }
 
-  public function storeMaterialHenkaten(Request $request)
-{
-    // 1. Tentukan Role Pengguna
-    $userRole = Auth::user()->role ?? 'operator'; 
-    $isPredefinedRole = ($userRole === 'Leader PPIC' || $userRole === 'Leader QC');
-    
-    $dataToValidate = $request->all();
-
-    // =========================================================
-    // MODIFIKASI: Pencarian ID (Station & Material) untuk Role Predefined
-    // =========================================================
-    if ($isPredefinedRole) {
+ public function storeMaterialHenkaten(Request $request)
+    {
+        // 1. Tentukan Role Pengguna
+        $userRole = Auth::user()->role ?? 'operator'; 
+        $isPredefinedRole = ($userRole === 'Leader PPIC' || $userRole === 'Leader QC');
         
-        $lineArea = $request->input('line_area'); // 'Incoming' atau 'Delivery'
-        $materialName = $request->input('material_name'); 
-        
-        // 1. Cari Material ID
-        // Material::where('material_name', $materialName)->first()
-        // PENTING: Jika material_name bisa sama di Line Area yang berbeda, Anda mungkin perlu membatasi pencarian.
-        // Tapi berdasarkan data statis di Blade sebelumnya, diasumsikan nama ini unik per Line Area atau Material Henkaten
-        $material = Material::where('material_name', $materialName)->first();
+        // ✅ PERBAIKAN: Inisialisasi variabel di luar scope IF agar selalu terdefinisi untuk pesan error
+        $stationIdValue = null; 
 
-        if ($material) { 
-            $dataToValidate['material_id'] = $material->id; 
-        } else {
-            // Jika Material tidak ditemukan, set ke null agar validasi 'required' Material ID gagal dengan pesan yang jelas.
-            $dataToValidate['material_id'] = null; 
-        }
-
-        // 2. Cari Station ID
-        // Mencari Station berdasarkan Line Area DAN Station Name (yang disetel sama dengan Line Area di data master)
-        $station = Station::where('line_area', $lineArea)
-                          ->where('station_name', $lineArea) 
-                          ->first(); 
-        
-        // JIKA ANDA HANYA MENGINGINKAN SATU ID TERTENTU (misal ID 143 untuk Incoming):
-        // $station = Station::where('id', ($lineArea === 'Incoming' ? 143 : 1150))->first();
-
-        if ($station) {
-            $dataToValidate['station_id'] = $station->id;
-        } else {
-            // Jika stasiun tidak ditemukan, set ke null.
-            $dataToValidate['station_id'] = null;
-        }
-    }
-    // =========================================================
-
-    // 3. Validasi Data
-    try {
-        // Merge data yang baru ditemukan (material_id & station_id) ke dalam Request
-        $request->merge($dataToValidate); 
-
-        $validationRules = [
-            'shift'               => 'required|string',
-            'line_area'           => 'required|string',
-            
-            // karena kita sudah memastikan nilainya diisi di blok IF di atas
-            'station_id'          => 'required|integer|exists:stations,id', 
-            'material_id'         => 'required|integer|exists:materials,id', 
-            
-            // material_name hanya wajib jika role predefined (tapi tidak disimpan di DB)
-            'material_name'       => $isPredefinedRole ? 'required|string|max:255' : 'nullable', 
-            
-            'effective_date'      => 'required|date',
-            'end_date'            => 'required|date|after_or_equal:effective_date', 
-            'time_start'          => 'required|date_format:H:i',
-            'time_end'            => 'required|date_format:H:i|after_or_equal:time_start', 
-            'description_before'  => 'required|string|max:255',
-            'description_after'   => 'required|string|max:255',
-            'keterangan'          => 'required|string',
-            
-            // Sesuaikan aturan file, perhatikan mimetypes (zip/rar mungkin bermasalah)
-            'lampiran'            => (isset($log) ? 'nullable' : 'required') . '|file|mimes:jpeg,png,zip,rar|max:2048', 
-            
-            'serial_number_start' => 'nullable|string|max:255',
-            'serial_number_end'   => 'nullable|string|max:255',
-            'redirect_to'         => 'nullable|string'
-        ];
-        
-        $customMessages = [];
-
-        // Penanganan error kustom untuk kasus di mana ID tidak ditemukan (walaupun input ada)
+        // =========================================================
+        // MODIFIKASI: Pencarian ID (Station & Material) untuk Role Predefined
+        // =========================================================
         if ($isPredefinedRole) {
-            if ($dataToValidate['station_id'] === null) {
-                // Menimpa pesan 'station_id.required' jika master data tidak ada
-                 $customMessages['station_id.required'] = "Data master Stasiun untuk '{$lineArea}' tidak ditemukan. Mohon periksa tabel stations Anda.";
+            
+            $lineArea = $request->input('line_area'); 
+            $materialName = $request->input('material_name'); 
+
+            // 1. Cari Material ID (Logika ini sudah benar dan spesifik per Line Area)
+            $material = Material::where('material_name', $materialName)
+                ->whereHas('station', function ($query) use ($lineArea) {
+                    $query->where('line_area', $lineArea);
+                })
+                ->first();
+
+            if ($material) { 
+                // ✅ Benar: Ambil Station ID dari objek Material yang ditemukan
+                $stationIdValue = $material->station_id; // Diperlukan untuk merge & pesan error
+                $station = Station::find($stationIdValue); 
+
+                if ($station) {
+                    $request->merge([
+                        'material_id' => $material->id, 
+                        'station_id' => $station->id    
+                    ]);
+                } else {
+                    // Fallback jika stasiun tidak ditemukan (set NULL)
+                    $request->merge(['material_id' => null, 'station_id' => null]); 
+                }
+            } else {
+                // Jika material tidak ditemukan, keduanya NULL
+                $request->merge(['material_id' => null, 'station_id' => null]); 
             }
-            if ($dataToValidate['material_id'] === null) {
-                // Menimpa pesan 'material_id.required' jika master data tidak ada
-                 $customMessages['material_id.required'] = "Data master Material '{$materialName}' tidak ditemukan. Mohon periksa tabel materials Anda.";
+        }
+        // =========================================================
+
+        // 3. Validasi Data
+        try {
+            // Kita sudah merge material_id dan station_id di Request di blok IF di atas.
+            
+            $validationRules = [
+                'shift'                  => 'required|string',
+                'line_area'              => 'required|string',
+                
+                // material_id dan station_id sekarang wajib
+                'station_id'             => 'required|integer|exists:stations,id', 
+                'material_id'            => 'required|integer|exists:materials,id', 
+                
+                // material_name hanya untuk resolusi ID, tidak perlu required
+                'material_name'          => 'nullable|string|max:255', 
+                
+                'effective_date'         => 'required|date',
+                'end_date'               => 'required|date|after_or_equal:effective_date', 
+                'time_start'             => 'required|date_format:H:i',
+                'time_end'               => 'required|date_format:H:i|after_or_equal:time_start', 
+                'description_before'     => 'required|string|max:255',
+                'description_after'      => 'required|string|max:255',
+                'keterangan'             => 'required|string',
+                
+                'lampiran'               => (isset($log) ? 'nullable' : 'required') . '|file|mimes:jpeg,png,zip,rar|max:2048', 
+                
+                'serial_number_start'    => 'nullable|string|max:255',
+                'serial_number_end'      => 'nullable|string|max:255',
+                'redirect_to'            => 'nullable|string'
+            ];
+            
+            $customMessages = [];
+
+            // Penanganan error kustom untuk kasus di mana ID tidak ditemukan
+            if ($isPredefinedRole) {
+                $resolvedStationId = $request->input('station_id');
+                $resolvedMaterialId = $request->input('material_id');
+                $inputLineArea = $request->input('line_area'); 
+                $inputMaterialName = $request->input('material_name'); 
+
+                if ($resolvedStationId === null) {
+                    $customMessages['station_id.required'] = "Data master Stasiun default untuk '{$inputLineArea}' tidak ditemukan (ID Material: {$resolvedMaterialId}). Mohon periksa tabel stations Anda.";
+                }
+                if ($resolvedMaterialId === null) {
+                    $customMessages['material_id.required'] = "Data master Material '{$inputMaterialName}' tidak ditemukan di Line Area '{$inputLineArea}'. Mohon periksa tabel materials Anda.";
+                }
             }
+            
+            $validatedData = $request->validate($validationRules, $customMessages);
+            
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
         }
 
-        $validatedData = $request->validate($validationRules, $customMessages);
-        
-    } catch (ValidationException $e) {
-        return back()->withErrors($e->errors())->withInput();
+        // 4. Proses Penyimpanan Data ke Database
+        try {
+            DB::beginTransaction();
+
+            $lampiranPath = null;
+            if ($request->hasFile('lampiran')) {
+                $lampiranPath = $request->file('lampiran')->store('lampiran_materials_henkaten', 'public');
+            }
+
+            $dataToCreate = $validatedData;
+            
+            // Wajib: Hapus field yang tidak ada di Model/Tabel sebelum create
+            unset($dataToCreate['material_name']); 
+            unset($dataToCreate['redirect_to']); 
+            
+            $dataToCreate['lampiran'] = $lampiranPath;
+            $dataToCreate['status'] = 'PENDING';
+            $dataToCreate['user_id'] = Auth::id();
+
+            MaterialHenkaten::create($dataToCreate);
+
+            DB::commit();
+
+            $redirectTo = $request->input('redirect_to', route('henkaten.material.create'));
+            return redirect($redirectTo)
+                ->with('success', 'Data Material Henkaten berhasil disimpan!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
+                Storage::disk('public')->delete($lampiranPath);
+            }
+            
+            Log::error('Material Henkaten store failed: ' . $e->getMessage(), ['exception' => $e, 'input' => $request->all()]);
+
+            return back()
+                ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Hubungi administrator.'])
+                ->withInput();
+        }
     }
-
-    // 4. Proses Penyimpanan Data ke Database
-    try {
-        DB::beginTransaction();
-
-        $lampiranPath = null;
-        if ($request->hasFile('lampiran')) {
-            $lampiranPath = $request->file('lampiran')->store('lampiran_materials_henkaten', 'public');
-        }
-
-        $dataToCreate = $validatedData;
-        
-        // Hapus field yang tidak ada di Model/Tabel sebelum create
-        unset($dataToCreate['material_name']);
-        unset($dataToCreate['redirect_to']); // Tambahkan penghapusan ini agar tidak error di Model::create
-        
-        $dataToCreate['lampiran'] = $lampiranPath;
-        $dataToCreate['status'] = 'PENDING';
-        $dataToCreate['user_id'] = Auth::id();
-
-        MaterialHenkaten::create($dataToCreate);
-
-        DB::commit();
-
-        // Gunakan redirect_to jika tersedia
-        $redirectTo = $request->input('redirect_to', route('henkaten.material.create'));
-        return redirect($redirectTo)
-            ->with('success', 'Data Material Henkaten berhasil disimpan!');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
-            Storage::disk('public')->delete($lampiranPath);
-        }
-        
-        Log::error('Material Henkaten store failed: ' . $e->getMessage(), ['exception' => $e, 'input' => $request->all()]);
-
-        return back()
-            ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()])
-            ->withInput();
-    }
-}
-   
 
     // ==============================================================
     // BAGIAN 5: FORM PEMBUATAN HENKATEN MACHINE
