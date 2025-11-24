@@ -8,13 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class MethodHenkaten extends Model
 {
     use HasFactory;
-
-    protected $table = 'methods_henkaten';
+protected $table = 'methods_henkaten';
     protected $fillable = [
         'shift',
         'keterangan',
         'keterangan_after',
         'station_id',
+        'method_id',
+        'methods_name',
         'line_area',
         'effective_date',
         'end_date',
@@ -47,5 +48,5 @@ class MethodHenkaten extends Model
         return $this->belongsTo(Method::class, 'method_id_after');
     }
 
-    
+
 }

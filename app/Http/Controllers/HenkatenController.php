@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException; 
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str; // <--- ADD THIS LINE
 
 class HenkatenController extends Controller
@@ -33,7 +33,7 @@ class HenkatenController extends Controller
 {
     $user = Auth::user();
     // Gunakan user->role yang sudah terformat Title Case jika memungkinkan
-    $userRole = $user->role ?? 'Operator'; 
+    $userRole = $user->role ?? 'Operator';
 
     // Cek apakah user punya record manpower
     $manpower = ManPower::where('nama', $user->name)->first();
@@ -50,7 +50,7 @@ class HenkatenController extends Controller
     $roleLineArea = ''; // Dipakai untuk role yang Line Area-nya fix
 
     // ============== ROLE: LEADER FA / SMT ==================
-    if ($userRole === 'Leader FA' || $userRole === 'Leader SMT') 
+    if ($userRole === 'Leader FA' || $userRole === 'Leader SMT')
     {
         $prefix = (str_ends_with($userRole, 'FA')) ? 'FA' : 'SMT';
 
@@ -62,10 +62,10 @@ class HenkatenController extends Controller
     }
 
     // ============== ROLE: LEADER PPIC / QC ==================
-  elseif (in_array($userRole, ['Leader PPIC', 'Leader QC'])) 
+  elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
 {
     // Tentukan Line Area berdasarkan role
-    $fixedLineArea = ($userRole === 'Leader QC') ? 'Incoming' : 'Delivery'; 
+    $fixedLineArea = ($userRole === 'Leader QC') ? 'Incoming' : 'Delivery';
 
     // REVISI KRUSIAL: Menggunakan JOIN untuk mengambil is_main_operator dari tabel man_powers.
     // Kita harus memastikan stasiun hanya muncul sekali, jadi gunakan DISTINCT.
@@ -78,18 +78,18 @@ class HenkatenController extends Controller
         ->select('stations.id', 'stations.station_name', 'stations.line_area', 'man_power.is_main_operator')
         ->distinct('stations.id') // Pastikan stasiun tidak ganda jika ada banyak manpower di stasiun itu
         ->orderBy('stations.station_name')
-        ->get(); 
+        ->get();
 
 
     $lineAreas = [$fixedLineArea]; // Hanya 1 line area yang boleh mereka lihat/input
     $roleLineArea = $fixedLineArea; // Set Line Area fixed
-    
+
     // Set $showStationDropdown = true agar Alpine menampilkan dropdown Station
-    $showStationDropdown = true; 
+    $showStationDropdown = true;
 }
 
     // ============== ROLE LAIN (Operator/Admin/DLL) ==================
-    else 
+    else
     {
         if ($manpower) {
             // Operator memiliki Line Area dan Station yang fix
@@ -100,7 +100,7 @@ class HenkatenController extends Controller
             // Jika dia Main Operator, dia bisa mengisi Henkaten (dan stationnya terpilih otomatis/readonly)
             // Jika dia non-Main Operator, dia mungkin hanya bisa melihat/tidak boleh mengisi
             $showStationDropdown = $isMainOperator;
-            
+
             // Jika dia bukan Main Operator, kita set station menjadi fix (hidden input)
             if (!$isMainOperator) {
                 $stations = Station::where('id', $manpower->station_id)->get();
@@ -120,7 +120,7 @@ class HenkatenController extends Controller
     // Asumsi shift 2: 07:00 - 18:59:59. Shift 1: 19:00 - 06:59:59 (+1 hari)
     $shift2Start = $now->copy()->setTime(7, 0, 0);
     $shift1Start = $now->copy()->setTime(19, 0, 0);
-    
+
     // Logika Shift: Shift 2 jika antara 7 pagi dan 7 malam, Shift 1 selain itu.
     $currentShift = ($now->gte($shift2Start) && $now->lt($shift1Start)) ? 2 : 1;
 
@@ -139,7 +139,7 @@ class HenkatenController extends Controller
         'userRole',
         'isMainOperator',
         'showStationDropdown',
-        'roleLineArea' 
+        'roleLineArea'
     ));
 }
 
@@ -301,8 +301,8 @@ $methodName = null;
 // =========================================================
 if ($isPredefinedRole) {
         // Ambil Method Name dari form
-        $methodName = $request->input('methods_name'); 
-        
+        $methodName = $request->input('methods_name');
+
         // Cek Method ID (Station ID diambil langsung dari hidden input form)
         if ($methodName) {
             $methodMaster = Method::where('methods_name', $methodName)->first();
@@ -382,6 +382,7 @@ try {
     $dataToCreate = [
         'station_id'            => $validated['station_id'],
         'method_id'             => $validated['method_id'],
+        'methods_name'          => $validated['methods_name'] ?? null,
         'shift'                 => $validated['shift'],
         'line_area'             => $validated['line_area'],
         'keterangan'            => $validated['keterangan'],
@@ -434,16 +435,16 @@ try {
             return response()->json(['error' => 'Station ID diperlukan.'], 400);
         }
 
-       
+
         $methods = Method::where('station_id', $stationId)
-                         ->select('id', 'methods_name') 
+                         ->select('id', 'methods_name')
                          ->get();
 
         return response()->json($methods);
     }
 
-   
-    
+
+
 
     // ==============================================================
     // BAGIAN 4: FORM PEMBUATAN HENKATEN MATERIAL
@@ -456,7 +457,7 @@ try {
     // --- LOGIKA ROLE PREDEFINED ---
     $userRole = Auth::user()->role ?? 'operator';
     $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
-    
+
     $predefinedLineArea = match ($userRole) {
         'Leader QC' => 'Incoming',
         'Leader PPIC' => 'Delivery',
@@ -469,7 +470,7 @@ try {
                         ->orderBy('line_area', 'asc')
                         ->pluck('line_area')
                         ->unique();
-    
+
     // 2. Inisialisasi daftar model
     $stations = collect();
     $materialsForDynamicRole = collect(); // ✅ Ganti nama agar tidak konflik
@@ -485,24 +486,24 @@ try {
             $materialsForDynamicRole = Material::where('station_id', $oldStation)->get();
         }
     }
-    
+
     // 4. LOGIKA KHUSUS untuk Leader QC/PPIC (Mode Predefined)
     if ($isPredefinedRole && $predefinedLineArea) {
         // Ambil material yang stasiunnya berada di line area yang sesuai.
         // Hasilnya adalah Collection objek Material Eloquent (dengan ID dan Nama).
         $defaultMaterialOptions = Material::whereHas('station', function ($query) use ($predefinedLineArea) {
-                                                $query->where('line_area', $predefinedLineArea); 
+                                                $query->where('line_area', $predefinedLineArea);
                                             })
                                             ->select('id', 'material_name') // Ambil ID dan Nama
                                             ->get();
     }
-    
+
     return view('materials.create_henkaten', compact(
         'lineAreas',
         'stations',
         'materialsForDynamicRole', // Digunakan untuk mode dinamis (jika old() ada)
         'currentShift',
-        'userRole', 
+        'userRole',
         'isPredefinedRole',
         'predefinedLineArea',
         'defaultMaterialOptions' // ✅ Variabel yang akan digunakan di Blade untuk Leader QC/PPIC
@@ -512,19 +513,19 @@ try {
  public function storeMaterialHenkaten(Request $request)
     {
         // 1. Tentukan Role Pengguna
-        $userRole = Auth::user()->role ?? 'operator'; 
+        $userRole = Auth::user()->role ?? 'operator';
         $isPredefinedRole = ($userRole === 'Leader PPIC' || $userRole === 'Leader QC');
-        
+
         // ✅ PERBAIKAN: Inisialisasi variabel di luar scope IF agar selalu terdefinisi untuk pesan error
-        $stationIdValue = null; 
+        $stationIdValue = null;
 
         // =========================================================
         // MODIFIKASI: Pencarian ID (Station & Material) untuk Role Predefined
         // =========================================================
         if ($isPredefinedRole) {
-            
-            $lineArea = $request->input('line_area'); 
-            $materialName = $request->input('material_name'); 
+
+            $lineArea = $request->input('line_area');
+            $materialName = $request->input('material_name');
 
             // 1. Cari Material ID (Logika ini sudah benar dan spesifik per Line Area)
             $material = Material::where('material_name', $materialName)
@@ -533,23 +534,23 @@ try {
                 })
                 ->first();
 
-            if ($material) { 
+            if ($material) {
                 // ✅ Benar: Ambil Station ID dari objek Material yang ditemukan
                 $stationIdValue = $material->station_id; // Diperlukan untuk merge & pesan error
-                $station = Station::find($stationIdValue); 
+                $station = Station::find($stationIdValue);
 
                 if ($station) {
                     $request->merge([
-                        'material_id' => $material->id, 
-                        'station_id' => $station->id    
+                        'material_id' => $material->id,
+                        'station_id' => $station->id
                     ]);
                 } else {
                     // Fallback jika stasiun tidak ditemukan (set NULL)
-                    $request->merge(['material_id' => null, 'station_id' => null]); 
+                    $request->merge(['material_id' => null, 'station_id' => null]);
                 }
             } else {
                 // Jika material tidak ditemukan, keduanya NULL
-                $request->merge(['material_id' => null, 'station_id' => null]); 
+                $request->merge(['material_id' => null, 'station_id' => null]);
             }
         }
         // =========================================================
@@ -557,41 +558,41 @@ try {
         // 3. Validasi Data
         try {
             // Kita sudah merge material_id dan station_id di Request di blok IF di atas.
-            
+
             $validationRules = [
                 'shift'                  => 'required|string',
                 'line_area'              => 'required|string',
-                
+
                 // material_id dan station_id sekarang wajib
-                'station_id'             => 'required|integer|exists:stations,id', 
-                'material_id'            => 'required|integer|exists:materials,id', 
-                
+                'station_id'             => 'required|integer|exists:stations,id',
+                'material_id'            => 'required|integer|exists:materials,id',
+
                 // material_name hanya untuk resolusi ID, tidak perlu required
-                'material_name'          => 'nullable|string|max:255', 
-                
+                'material_name'          => 'nullable|string|max:255',
+
                 'effective_date'         => 'required|date',
-                'end_date'               => 'required|date|after_or_equal:effective_date', 
+                'end_date'               => 'required|date|after_or_equal:effective_date',
                 'time_start'             => 'required|date_format:H:i',
-                'time_end'               => 'required|date_format:H:i|after_or_equal:time_start', 
+                'time_end'               => 'required|date_format:H:i|after_or_equal:time_start',
                 'description_before'     => 'required|string|max:255',
                 'description_after'      => 'required|string|max:255',
                 'keterangan'             => 'required|string',
-                
-                'lampiran'               => (isset($log) ? 'nullable' : 'required') . '|file|mimes:jpeg,png,zip,rar|max:2048', 
-                
+
+                'lampiran'               => (isset($log) ? 'nullable' : 'required') . '|file|mimes:jpeg,png,zip,rar|max:2048',
+
                 'serial_number_start'    => 'nullable|string|max:255',
                 'serial_number_end'      => 'nullable|string|max:255',
                 'redirect_to'            => 'nullable|string'
             ];
-            
+
             $customMessages = [];
 
             // Penanganan error kustom untuk kasus di mana ID tidak ditemukan
             if ($isPredefinedRole) {
                 $resolvedStationId = $request->input('station_id');
                 $resolvedMaterialId = $request->input('material_id');
-                $inputLineArea = $request->input('line_area'); 
-                $inputMaterialName = $request->input('material_name'); 
+                $inputLineArea = $request->input('line_area');
+                $inputMaterialName = $request->input('material_name');
 
                 if ($resolvedStationId === null) {
                     $customMessages['station_id.required'] = "Data master Stasiun default untuk '{$inputLineArea}' tidak ditemukan (ID Material: {$resolvedMaterialId}). Mohon periksa tabel stations Anda.";
@@ -600,9 +601,9 @@ try {
                     $customMessages['material_id.required'] = "Data master Material '{$inputMaterialName}' tidak ditemukan di Line Area '{$inputLineArea}'. Mohon periksa tabel materials Anda.";
                 }
             }
-            
+
             $validatedData = $request->validate($validationRules, $customMessages);
-            
+
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
         }
@@ -617,11 +618,11 @@ try {
             }
 
             $dataToCreate = $validatedData;
-            
+
             // Wajib: Hapus field yang tidak ada di Model/Tabel sebelum create
-            unset($dataToCreate['material_name']); 
-            unset($dataToCreate['redirect_to']); 
-            
+            unset($dataToCreate['material_name']);
+            unset($dataToCreate['redirect_to']);
+
             $dataToCreate['lampiran'] = $lampiranPath;
             $dataToCreate['status'] = 'PENDING';
             $dataToCreate['user_id'] = Auth::id();
@@ -639,7 +640,7 @@ try {
             if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
                 Storage::disk('public')->delete($lampiranPath);
             }
-            
+
             Log::error('Material Henkaten store failed: ' . $e->getMessage(), ['exception' => $e, 'input' => $request->all()]);
 
             return back()
@@ -681,17 +682,14 @@ try {
             ->orderBy('line_area', 'asc')
             ->pluck('line_area');
     }
-    
-    // =========================================================
-    // 🟢 PERUBAHAN: Tentukan Kategori Mesin (Semua diambil dari Database)
-    // =========================================================
+
 
     // Ambil SEMUA kategori unik yang ada di tabel 'machines'
     $allMachineCategories = Machine::select('machines_category')
         ->distinct()
         ->whereNotNull('machines_category')
         ->pluck('machines_category');
-        
+
     // Inisialisasi daftar kategori yang akan digunakan
     $categoriesToUse = $allMachineCategories->toArray();
 
@@ -711,13 +709,10 @@ try {
         })->toArray();
 
     } else {
-         // Untuk role lain (Operator/Default): 
-         // Hanya menampilkan kategori generik, meskipun ini bisa diambil dari database juga.
-         // Berdasarkan logika lama Anda, ini menggunakan daftar statis generik:
          $categoriesToUse = ['Program', 'Machine & Jig', 'Equipment', 'Camera'];
-         
+
          // Jika Anda ingin semua kategori mesin muncul untuk Operator/Role Lain:
-         // $categoriesToUse = $allMachineCategories->toArray(); 
+         // $categoriesToUse = $allMachineCategories->toArray();
     }
 
     // --- LOGIKA 'old' data untuk station (DIPERTAHANKAN) ---
@@ -753,25 +748,25 @@ try {
    public function storeMachineHenkaten(Request $request)
     {
         // --- 1. Tentukan Role Pengguna ---
-        $userRole = Auth::user()->role ?? 'operator'; 
+        $userRole = Auth::user()->role ?? 'operator';
         $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
-        
+
         $dataToValidate = $request->all();
         $stationNameTarget = null;
-        $lineArea = $request->input('line_area'); 
+        $lineArea = $request->input('line_area');
 
         // =========================================================
         // PENCARIAN Station ID untuk Role Predefined (Dengan Fallback yang Kuat)
         // =========================================================
         if ($isPredefinedRole) {
-            
+
             // Tentukan target station_name berdasarkan Line Area (sesuai data master Anda)
             if ($lineArea === 'Delivery') {
-                $stationNameTarget = 'Delivery'; 
+                $stationNameTarget = 'Delivery';
             } elseif ($lineArea === 'Incoming') {
-                $stationNameTarget = 'Incoming'; 
+                $stationNameTarget = 'Incoming';
             }
-            
+
             $stationIdTarget = null;
             $station = null;
 
@@ -781,20 +776,20 @@ try {
                                   ->where('station_name', $stationNameTarget)
                                   ->first();
             }
-            
+
             // 2. FALLBACK: Cari ID stasiun manapun di Line Area tersebut jika pencarian ketat gagal
             if (!$station) {
                 $station = Station::where('line_area', $lineArea)
                                     ->first();
-                
+
                 if ($station) {
                     Log::warning("Fallback used for Machine Henkaten: Defaulting to ID {$station->id} for line area {$lineArea}.");
                 }
             }
-            
+
             // Dapatkan ID yang ditemukan
             $stationIdTarget = $station ? $station->id : null;
-            
+
             // Tambahkan ID yang ditemukan (atau null) ke data validasi
             $dataToValidate['station_id'] = $stationIdTarget;
         }
@@ -803,7 +798,7 @@ try {
         // 2. Validasi Data
         try {
             // Gabungkan data yang sudah dicari ke Request
-            $request->merge($dataToValidate); 
+            $request->merge($dataToValidate);
 
             $validated = $request->validate([
                 'shift'              => 'required|string',
@@ -820,7 +815,7 @@ try {
                 'serial_number_start'=> 'nullable|string|max:255',
                 'serial_number_end'  => 'nullable|string|max:255',
             ]);
-            
+
             // Tambahkan custom error message jika stasiun tidak ditemukan (setelah proses fallback)
             if ($isPredefinedRole && $dataToValidate['station_id'] === null) {
                 $target = "Line Area '{$lineArea}' dan Nama Stasiun '{$stationNameTarget}'";
@@ -828,11 +823,11 @@ try {
                      'station_id' => ["Data master Stasiun untuk {$target} tidak ditemukan. Mohon periksa tabel stations."]
                 ]);
             }
-            
+
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
         }
-        
+
         // 3. Proses Penyimpanan Data
         try {
             DB::beginTransaction();
@@ -854,14 +849,14 @@ $dataToCreate['description_after'] = $validated['after_value'];
 
 $dataToCreate['status'] = 'PENDING';
             // $dataToCreate['user_id'] = Auth::id(); // DIHAPUS karena kolom tidak ada di DB
-            
+
             // Hapus key-key asli dari form yang tidak ada di tabel database
             unset($dataToCreate['category']);
             unset($dataToCreate['before_value']);
             unset($dataToCreate['after_value']);
 
             // PASTIKAN BARIS INI TIDAK DIKOMENTARI
-            MachineHenkaten::create($dataToCreate); 
+            MachineHenkaten::create($dataToCreate);
 
             DB::commit();
 
@@ -875,7 +870,7 @@ $dataToCreate['status'] = 'PENDING';
             }
             // Log error untuk debugging yang lebih mudah
             Log::error('Machine Henkaten store failed: ' . $e->getMessage(), ['exception' => $e, 'input' => $request->all()]);
-            
+
             return back()
                 ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Error: ' . $e->getMessage()])
                 ->withInput();
@@ -1076,7 +1071,7 @@ $dataToCreate['status'] = 'PENDING';
             // Logika khusus untuk manpower PERMANEN
             if ($type == 'manpower' && $item->note == 'PERMANEN') {
                 $masterManPower = ManPower::find($item->man_power_id);
-                
+
                 if ($masterManPower) {
                     $masterManPower->nama = $item->nama_after;
                     $masterManPower->save();
@@ -1091,14 +1086,14 @@ $dataToCreate['status'] = 'PENDING';
             $item->save();
 
             DB::commit();
-            
+
             return redirect()->route('henkaten.approval')->with('success', 'Henkaten ' . ucfirst($type) . ' berhasil di-approve.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Gagal approve Henkaten (ID: '.$item->id.', Tipe: '.$type.'): ' . $e->getMessage());
-            
+
             return redirect()->route('henkaten.approval')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -1125,7 +1120,7 @@ $dataToCreate['status'] = 'PENDING';
     public function createChange($id_manpower)
     {
         $manPower = ManPower::with('station')->findOrFail($id_manpower);
-        
+
         return view('manpower.create_change', [
             'manPower' => $manPower,
         ]);
@@ -1135,7 +1130,7 @@ $dataToCreate['status'] = 'PENDING';
     {
         $validatedData = $request->validate([
             'line_area' => 'required|string',
-            'station_id' => 'required|integer|exists:stations,id', 
+            'station_id' => 'required|integer|exists:stations,id',
             'grup' => 'required|string',
             'nama_sebelum' => 'required|string',
             'nama_sesudah' => 'required|string',
@@ -1150,7 +1145,7 @@ $dataToCreate['status'] = 'PENDING';
 
             // Catat log Henkaten sebagai pengajuan
             $logHenkaten = new ManPowerHenkaten();
-            
+
             $logHenkaten->man_power_id = $validatedData['master_man_power_id'];
             $logHenkaten->line_area = $validatedData['line_area'];
             $logHenkaten->station_id = $validatedData['station_id'];
@@ -1161,7 +1156,7 @@ $dataToCreate['status'] = 'PENDING';
             $logHenkaten->effective_date = $validatedData['tanggal_mulai'];
             $logHenkaten->note = $validatedData['jenis_henkaten'];
             $logHenkaten->status = 'Approved';
-            
+
             $logHenkaten->save();
 
             // Langsung update master manpower karena tidak ada approval
@@ -1183,9 +1178,9 @@ if ($master) {
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Gagal menyimpan Henkaten: ' . $e->getMessage());
-            
+
             return redirect()->back()
                              ->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.')
                              ->withInput();
@@ -1193,27 +1188,27 @@ if ($master) {
     }
 
 
-    
 
-    
+
+
 public function checkAfter(Request $request)
 {
     $manPowerIdAfter = $request->query('man_power_id_after');
     $shift = $request->query('shift');
-    $grup = $request->query('grup'); 
+    $grup = $request->query('grup');
     $newEffectiveDate = $request->query('effective_date');
-    $newEndDate = $request->query('end_date'); 
+    $newEndDate = $request->query('end_date');
 
     if (!$manPowerIdAfter || !$shift || !$grup || !$newEffectiveDate || !$newEndDate) {
         Log::warning('Parameter validasi Henkaten After tidak lengkap.', $request->query());
         return response()->json(['error' => 'Parameter tidak lengkap'], 400);
     }
-    
-    
+
+
     $exists = ManPowerHenkaten::where('man_power_id_after', $manPowerIdAfter)
         ->where('shift', $shift)
         ->where('grup', $grup)
-        
+
         ->where(function ($query) use ($newEffectiveDate, $newEndDate) {
             $query->where('end_date', '>=', $newEffectiveDate)
                   ->where('effective_date', '<=', $newEndDate);

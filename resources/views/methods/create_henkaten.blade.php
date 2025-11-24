@@ -57,7 +57,7 @@
                             // Contoh: ambil Station ID pertama untuk Line Area tersebut
                             $defaultStation = \App\Models\Station::where('line_area', $predefinedLineArea)->first();
                             $predefinedStationId = $defaultStation->id ?? null;
-                            
+
                             // Jika ini mode edit, gunakan station_id dari log
                             if (isset($log)) {
                                 $predefinedStationId = $log->station_id;
@@ -70,7 +70,7 @@
                         if (!$isPredefinedRole && (isset($log) || old('line_area'))) {
                             $initialLineArea = old('line_area', $log->station->line_area ?? '');
                             $initialStationId = old('station_id', $log->station_id ?? null);
-                            
+
                             // Asumsi Anda telah memuat data ini di Controller
                             // Contoh: $initialStations = \App\Models\Station::where('line_area', $initialLineArea)->get();
                             // Contoh: $initialMethods = \App\Models\HenkatenMethod::where('station_id', $initialStationId)->get();
@@ -93,15 +93,15 @@
                                 selectedLineArea: '{{ $isPredefinedRole ? $predefinedLineArea : old('line_area', $log->station->line_area ?? '') }}',
                                 selectedStation: '{{ old('station_id', $log->station_id ?? $predefinedStationId ?? '') }}',
                                 selectedMethodId: '{{ old('method_id', $log->method_id ?? '') }}',
-                                
-                                lineAreas: @json($lineAreas ?? []), 
+
+                                lineAreas: @json($lineAreas ?? []),
                                 stationList: @json($initialStations),
                                 methodList: @json($initialMethods),
-                                
+
                                 isPredefinedRole: {{ $isPredefinedRole ? 'true' : 'false' }},
                                 findStationsUrl: '{{ route('henkaten.stations.by_line') }}',
                                 findMethodsUrl: '{{ route('henkaten.methods.by_station') }}',
-                                
+
                                 async fetchStations() {
                                     this.selectedStation = '';
                                     this.methodList = [];
@@ -117,7 +117,7 @@
                                         console.error('Gagal fetch stations:', err);
                                     }
                                 },
-                                
+
                                 async fetchMethods() {
                                     this.methodList = [];
                                     this.selectedMethodId = '';
@@ -148,11 +148,11 @@
                                     {{-- STATION ID (Hidden) --}}
                                     <div class="mb-4">
                                         <label class="block text-sm font-medium text-gray-700">Station</label>
-                                        
+
                                         {{-- INI ADALAH PERBAIKAN KRITIS: Memastikan nilai ID stasiun ada --}}
-                                        <input type="hidden" name="station_id" 
+                                        <input type="hidden" name="station_id"
                                             value="{{ old('station_id', $log->station_id ?? $predefinedStationId ?? '') }}">
-                                        
+
                                         {{-- Tampilkan station name untuk verifikasi --}}
                                         <input type="text" value="{{ $log->station->station_name ?? \App\Models\Station::find($predefinedStationId)->station_name ?? 'Station Not Set / Missing ID' }}" readonly
                                             class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
@@ -166,7 +166,7 @@
                                                 x-model="selectedMethodName">
                                             <option value="">-- Pilih Method --</option>
                                             @foreach($methodList as $method)
-                                                <option value="{{ is_array($method) ? $method['methods_name'] : $method->methods_name }}" 
+                                                <option value="{{ is_array($method) ? $method['methods_name'] : $method->methods_name }}"
                                                     {{ old('methods_name', $log->methods_name ?? '') == (is_array($method) ? $method['methods_name'] : $method->methods_name) ? 'selected' : '' }}>
                                                     {{ is_array($method) ? $method['methods_name'] : $method->methods_name }}
                                                 </option>
@@ -296,25 +296,26 @@
                             </div>
                         </div>
 
-                        {{-- LAMPIRAN / FILE UPLOAD --}}
-                        <div class="mb-6 mt-6">
-                            <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran</label>
-                            <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
-                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                {{ isset($log) ? '' : 'required' }}>
-
-                            @if(isset($log) && $log->lampiran)
-                                <div class="mt-2 text-sm text-gray-600">
-                                    <p>File saat ini:
-                                        <a href="{{ asset('storage/'. $log->lampiran) }}" target="_blank"
-                                            class="text-blue-600 hover:underline font-medium">
-                                            Lihat Lampiran
-                                        </a>
-                                    </p>
-                                    <p class="text-xs italic text-gray-500">Kosongkan input file jika tidak ingin mengubah lampiran.</p>
+                        {{-- Lampiran --}}
+                                <div class="mb-6 mt-6">
+                                    <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran
+                                        (Wajib untuk Izin/Sakit)</label>
+                                    <input type="file" id="lampiran" name="lampiran"
+                                        accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
+                                        class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                        {{ !isset($log) ? 'required' : '' }}>
+                                    @if (isset($log) && $log->lampiran)
+                                        <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                            <p class="text-sm text-gray-700 font-medium mb-1">Lampiran saat ini:</p>
+                                            <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                                                class="text-blue-600 hover:text-blue-800 hover:underline">
+                                                Lihat Lampiran ({{ basename($log->lampiran) }})
+                                            </a>
+                                            <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda
+                                                ingin mengganti lampiran ini.</p>
+                                        </div>
+                                    @endif
                                 </div>
-                            @endif
-                        </div>
 
                         {{-- ACTION BUTTONS --}}
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">

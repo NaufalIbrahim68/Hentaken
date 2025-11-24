@@ -54,7 +54,7 @@
         'Leader PPIC' => 'Delivery',
         default => null,
     };
-    
+
     // Perbaikan: Hapus logika hardcode kategori di sini.
     // Asumsi $machineCategories dikirim dari Controller.
 
@@ -68,7 +68,7 @@
 
     // Asumsi $machineCategories dikirim dari Controller
     // Tambahkan cek agar tidak error jika controller lupa mengirimnya
-    $machineCategories = $machineCategories ?? []; 
+    $machineCategories = $machineCategories ?? [];
 
 @endphp
 
@@ -86,8 +86,8 @@
                             oldStation: {{ $isPredefinedRole ? ($log->station_id ?? $predefinedStationId) : (old('station_id', $log->station_id ?? 'null')) }},
                             oldCategory: '{{ old('category', $log->category ?? '') }}',
                             findStationsUrl: '{{ route('henkaten.stations.by_line') }}',
-                            
-                            predefinedLineArea: '{{ $predefinedLineArea ?? '' }}', 
+
+                            predefinedLineArea: '{{ $predefinedLineArea ?? '' }}',
                             isPredefinedRole: {{ $isPredefinedRole ? 'true' : 'false' }},
                         })" x-init="init()">
 
@@ -96,10 +96,10 @@
 
                                     {{-- Kolom Kiri --}}
                                     <div>
-                                        
+
                                         @if ($isPredefinedRole)
                                             {{-- MODE QC/PPIC (INPUT OTOMATIS/STATIC) --}}
-                                            
+
                                             {{-- LINE AREA (Static) --}}
                                             <div class="mb-4">
                                                 <label class="block text-sm font-medium text-gray-700">Line Area</label>
@@ -109,14 +109,14 @@
                                             </div>
 
                                             {{-- STATION NAME (Hidden, untuk pencarian di Controller) --}}
-                                            <input type="hidden" name="station_name_predefined" value="{{ $predefinedLineArea }}"> 
-                                            
+                                            <input type="hidden" name="station_name_predefined" value="{{ $predefinedLineArea }}">
+
                                             {{-- STATION ID (Hidden, NILAI DIISI DARI PREDEFINED DEFAULT ID) --}}
                                             <input type="hidden" name="station_id" value="{{ $log->station_id ?? $predefinedStationId }}">
-                                            
+
                                         @else
                                             {{-- MODE DEFAULT (INPUT DINAMIS) --}}
-                                            
+
                                             {{-- LINE AREA --}}
                                             <div class="mb-4">
                                                 <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
@@ -139,7 +139,7 @@
                                                              :disabled="!stationList.length && !selectedLineArea"
                                                              class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                                                              <option value="">-- Pilih Station --</option>
-                                                             
+
                                                              {{-- Fallback/Initial load --}}
                                                              @if (isset($stations) && !old('line_area'))
                                                                  @foreach ($stations as $station)
@@ -148,7 +148,7 @@
                                                                      </option>
                                                                  @endforeach
                                                              @endif
-                                                             
+
                                                              <template x-for="station in stationList" :key="station.id">
                                                                  <option :value="station.id" x-text="station.station_name"></option>
                                                              </template>
@@ -173,7 +173,7 @@
                                                              @endforeach
                                             </select>
                                         </div>
-                                        
+
                                         {{-- SERIAL NUMBER START & END (TIDAK DIUBAH) --}}
                                         <div class="mb-4">
                                             <label for="serial_number_start" class="block text-sm font-medium text-gray-700">
@@ -198,8 +198,8 @@
                                                 placeholder="Masukkan serial number akhir..."
                                                 {{ isset($log) ? 'required' : '' }}>
                                         </div>
-                                    </div> 
-                                    
+                                    </div>
+
                                     {{-- Kolom Kanan (Tanggal & Waktu) (TIDAK DIUBAH) --}}
                                     <div>
                                         <div class="mb-4">
@@ -250,7 +250,7 @@
                                     </div>
                                 </div>
 
-                                {{-- Keterangan, Lampiran, Tombol (TIDAK DIUBAH) --}}
+                                {{-- Keterangan --}}
                                 <div class="mb-6 mt-6">
                                     <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
                                     <textarea id="keterangan" name="keterangan" rows="4"
@@ -259,21 +259,23 @@
                                                 required>{{ old('keterangan', $log->keterangan ?? '') }}</textarea>
                                 </div>
 
+                               {{-- Lampiran --}}
                                 <div class="mb-6 mt-6">
-                                    <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran</label>
-                                    <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
-                                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                                {{ isset($log) ? '' : 'required' }}>
-
-                                    @if(isset($log) && $log->lampiran)
-                                        <div class="mt-2 text-sm text-gray-600">
-                                            <p>File saat ini:
-                                                <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
-                                                    class="text-blue-600 hover:underline font-medium">
-                                                    Lihat Lampiran
-                                                </a>
-                                            </p>
-                                            <p class="text-xs italic text-gray-500">Kosongkan input file jika tidak ingin mengubah lampiran.</p>
+                                    <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran
+                                        (Wajib untuk Izin/Sakit)</label>
+                                    <input type="file" id="lampiran" name="lampiran"
+                                        accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
+                                        class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                        {{ !isset($log) ? 'required' : '' }}>
+                                    @if (isset($log) && $log->lampiran)
+                                        <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                            <p class="text-sm text-gray-700 font-medium mb-1">Lampiran saat ini:</p>
+                                            <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                                                class="text-blue-600 hover:text-blue-800 hover:underline">
+                                                Lihat Lampiran ({{ basename($log->lampiran) }})
+                                            </a>
+                                            <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda
+                                                ingin mengganti lampiran ini.</p>
                                         </div>
                                     @endif
                                 </div>
@@ -290,7 +292,7 @@
                                 </button>
                             </div>
 
-                        </div> 
+                        </div>
                     </form>
 
                 </div>
@@ -305,10 +307,10 @@
         Alpine.data('henkatenForm', (config) => ({
             // STATE
             selectedLineArea: config.isPredefinedRole ? config.predefinedLineArea : (config.oldLineArea || ''),
-            selectedStation: config.oldStation || null, 
-            selectedCategory: config.oldCategory || null, 
+            selectedStation: config.oldStation || null,
+            selectedCategory: config.oldCategory || null,
             stationList: [], // Data ini akan di-fetch jika mode dynamic
-            
+
             // FLAGS
             isPredefinedRole: config.isPredefinedRole,
 
@@ -318,12 +320,12 @@
             // INIT
             async init() {
                 console.log(`✅ Alpine initialized (Henkaten Machine - Mode: ${this.isPredefinedRole ? 'Predefined' : 'Dynamic'})`);
-                
+
                 // Jika mode dynamic DAN ada Line Area lama, fetch stations
                 if (!this.isPredefinedRole && this.selectedLineArea) {
                     await this.fetchStations(false);
                 }
-                
+
                 // Jika role predefined dan mode edit, pastikan selectedStation di-set
                 if (this.isPredefinedRole && config.oldStation) {
                     this.selectedStation = config.oldStation;
@@ -333,7 +335,7 @@
             // FETCH STATIONS (Hanya untuk mode dinamis)
             async fetchStations(resetStation = true) {
                 if (this.isPredefinedRole) return;
-                
+
                 if (!this.selectedLineArea) {
                     this.stationList = [];
                     this.selectedStation = null;
@@ -342,7 +344,7 @@
                 if(resetStation) {
                     this.selectedStation = null;
                 }
-                
+
                 try {
                     const res = await fetch(`${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
                     const data = await res.json();

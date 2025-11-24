@@ -34,11 +34,11 @@
                         $formAction = isset($log)
                             ? route('activity.log.material.update', $log->id)
                             : route('henkaten.material.store');
-                        
+
                         // Role & Line Area Logic
                         $userRole = Auth::user()->role ?? 'Guest';
                         $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
-                        
+
                         $predefinedLineArea = match ($userRole) {
                             'Leader QC' => 'Incoming',
                             'Leader PPIC' => 'Delivery',
@@ -60,7 +60,7 @@
                                 };
                             }
                         }
-                        
+
                         // ✅ ASUMSI: $defaultMaterialOptions sudah diisi dengan objek Material Eloquent dari Controller.
                         if (!isset($defaultMaterialOptions)) {
                             $defaultMaterialOptions = collect();
@@ -68,7 +68,7 @@
                         // Ambil daftar Line Area untuk mode Dynamic
                         if (!isset($lineAreas)) {
                             // Ini hanya placeholder, harusnya diisi dari Controller
-                            $lineAreas = \App\Models\Station::pluck('line_area')->unique(); 
+                            $lineAreas = \App\Models\Station::pluck('line_area')->unique();
                         }
                     @endphp
 
@@ -95,12 +95,12 @@
                                     // ✅ PERBAIKAN: Kirim ID material sebagai selectedMaterial di Alpine
                                     selectedMaterial: {{ old('material_id', $log->material_id ?? 'null') }},
                                     // Kirim data material ID dan Nama ke Alpine
-                                    materialStaticList: {{ $defaultMaterialOptions->toJson() }}, 
+                                    materialStaticList: {{ $defaultMaterialOptions->toJson() }},
                                 @endif
                                 isPredefined: {{ $isPredefinedRole ? 'true' : 'false' }}
                             })"
                             x-init="init()">
-                            
+
                             {{-- Left Column --}}
                             <div>
                                @if ($isPredefinedRole)
@@ -111,31 +111,31 @@
                                             class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
                                         <input type="hidden" name="line_area" value="{{ $predefinedLineArea }}">
                                     </div>
-                                    
+
                                     {{-- Hidden Station ID --}}
                                     <input type="hidden" name="station_id" value="{{ $predefinedStationId }}">
-                                    
+
                                     {{-- Material ID Selection --}}
                                     <div class="mb-4">
                                         <label for="material_name_select" class="block text-sm font-medium text-gray-700">
                                             Material <span class="text-red-500">*</span>
                                         </label>
-                                        
+
                                         {{-- Input Hidden untuk Material Name (Wajib untuk Controller Store) --}}
-                                        <input type="hidden" 
-                                               name="material_name" 
+                                        <input type="hidden"
+                                               name="material_name"
                                                id="material_name_hidden"
                                                :value="getMaterialName(selectedMaterial)">
-                                        
+
                                         <select id="material_name_select" name="material_id" required
                                                 class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                                 x-model="selectedMaterial">
                                             <option value="">-- Pilih Material --</option>
-                                            
+
                                             @foreach ($defaultMaterialOptions as $item)
                                                 {{-- Cek jika $item adalah objek Eloquent --}}
                                                 @if (is_object($item) && isset($item->id))
-                                                    <option value="{{ $item->id }}" 
+                                                    <option value="{{ $item->id }}"
                                                         @selected(old('material_id', $log->material_id ?? '') == $item->id)>
                                                         {{ $item->material_name }}
                                                     </option>
@@ -143,7 +143,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    
+
                                 @else
                                     {{-- DYNAMIC MODE (Default) --}}
                                     <div class="mb-4">
@@ -162,7 +162,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    
+
                                     <div class="mb-4">
                                         <label for="station_id" class="block text-sm font-medium text-gray-700">
                                             Station <span class="text-red-500">*</span>
@@ -198,7 +198,7 @@
                                         </select>
                                     </div>
                                 @endif
-                                
+
                                 {{-- Serial Number Fields --}}
                                 <div class="mb-4">
                                     <label for="serial_number_start" class="block text-sm font-medium text-gray-700">
@@ -233,7 +233,7 @@
                                     </label>
                                     <input type="date" id="effective_date" name="effective_date"
                                         value="{{ old('effective_date', isset($log) ? \Carbon\Carbon::parse($log->effective_date)->format('Y-m-d') : '') }}"
-                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:ring-indigo-500 focus:border-indigo-500" 
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:ring-indigo-500 focus:border-indigo-500"
                                         required>
                                 </div>
 
@@ -243,7 +243,7 @@
                                     </label>
                                     <input type="date" id="end_date" name="end_date"
                                         value="{{ old('end_date', isset($log) ? \Carbon\Carbon::parse($log->end_date)->format('Y-m-d') : '') }}"
-                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:ring-indigo-500 focus:border-indigo-500" 
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:ring-indigo-500 focus:border-indigo-500"
                                         required>
                                 </div>
 
@@ -253,7 +253,7 @@
                                     </label>
                                     <input type="time" id="time_start" name="time_start"
                                         value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"
-                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:ring-indigo-500 focus:border-indigo-500" 
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:ring-indigo-500 focus:border-indigo-500"
                                         required>
                                 </div>
 
@@ -263,7 +263,7 @@
                                     </label>
                                     <input type="time" id="time_end" name="time_end"
                                         value="{{ old('time_end', isset($log) ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '') }}"
-                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:ring-indigo-500 focus:border-indigo-500" 
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:ring-indigo-500 focus:border-indigo-500"
                                         required>
                                 </div>
                             </div>
@@ -308,26 +308,25 @@
                         </div>
 
                         {{-- Lampiran --}}
-                        <div class="mb-6 mt-6">
-                            <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">
-                                Lampiran @if(!isset($log))<span class="text-red-500">*</span>@endif
-                            </label>
-                            <input type="file" id="lampiran" name="lampiran" accept="image/png,image/jpeg"
-                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                {{ isset($log) ? '' : 'required' }}>
-
-                            @if(isset($log) && $log->lampiran)
-                                <div class="mt-2 text-sm text-gray-600">
-                                    <p>File saat ini:
-                                        <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
-                                            class="text-blue-600 hover:underline font-medium">
-                                            Lihat Lampiran
-                                        </a>
-                                    </p>
-                                    <p class="text-xs italic text-gray-500">Kosongkan input file jika tidak ingin mengubah lampiran.</p>
+                                <div class="mb-6 mt-6">
+                                    <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran
+                                        (Wajib untuk Izin/Sakit)</label>
+                                    <input type="file" id="lampiran" name="lampiran"
+                                        accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
+                                        class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                        {{ !isset($log) ? 'required' : '' }}>
+                                    @if (isset($log) && $log->lampiran)
+                                        <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                            <p class="text-sm text-gray-700 font-medium mb-1">Lampiran saat ini:</p>
+                                            <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                                                class="text-blue-600 hover:text-blue-800 hover:underline">
+                                                Lihat Lampiran ({{ basename($log->lampiran) }})
+                                            </a>
+                                            <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda
+                                                ingin mengganti lampiran ini.</p>
+                                        </div>
+                                    @endif
                                 </div>
-                            @endif
-                        </div>
 
                         {{-- Action Buttons --}}
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
@@ -348,7 +347,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    
+
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('dependentDropdowns', (config) => ({
@@ -359,11 +358,11 @@
                 stationList: [],
                 materialList: [],
                 materialStaticList: config.materialStaticList || [],
-                
+
                 // URLs
                 findStationsUrl: config.findStationsUrl || '',
                 findMaterialsUrl: config.findMaterialsUrl || '',
-                
+
                 // Flags
                 isPredefined: config.isPredefined || false,
 
@@ -374,7 +373,7 @@
                     console.log('Line Area:', this.selectedLineArea);
                     console.log('Station:', this.selectedStation);
                     console.log('Material:', this.selectedMaterial);
-                    
+
                     if (!this.isPredefined) {
                         // Dynamic mode: fetch cascading data
                         if (this.selectedLineArea) {
@@ -406,7 +405,7 @@
                 // Fetch Stations (Dynamic Mode Only)
                 async fetchStations(resetValues = true) {
                     if (this.isPredefined) return;
-                    
+
                     if (resetValues) {
                         this.selectedStation = null;
                         this.selectedMaterial = null;
@@ -424,11 +423,11 @@
                     try {
                         const url = `${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}`;
                         const res = await fetch(url);
-                        
+
                         if (!res.ok) {
                             throw new Error(`HTTP ${res.status}: ${res.statusText}`);
                         }
-                        
+
                         const data = await res.json();
                         this.stationList = Array.isArray(data) ? data : (data.data ?? []);
                         console.log('✅ Stations loaded:', this.stationList.length);
@@ -441,7 +440,7 @@
                 // Fetch Materials (Dynamic Mode Only)
                 async fetchMaterials(resetMaterial = true) {
                     if (this.isPredefined) return;
-                    
+
                     if (resetMaterial) {
                         this.selectedMaterial = null;
                     }
@@ -457,11 +456,11 @@
                     try {
                         const url = `${this.findMaterialsUrl}?station_id=${this.selectedStation}`;
                         const res = await fetch(url);
-                        
+
                         if (!res.ok) {
                             throw new Error(`HTTP ${res.status}: ${res.statusText}`);
                         }
-                        
+
                         const data = await res.json();
                         this.materialList = Array.isArray(data) ? data : (data.data ?? []);
                         console.log('✅ Materials loaded:', this.materialList.length);
