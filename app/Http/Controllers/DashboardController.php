@@ -202,25 +202,20 @@ if ($currentGroup) {
     // Ambil semua manpower di line+grup (bisa >1 per station)
     $allManPower = ManPower::with('station')
     ->where('grup', $currentGroup)
+    ->where('is_main_operator', 1)
         ->whereHas('station', fn($q) => $q->where('line_area', $lineForQuery))
         ->get();
 
-    // Buat index manpower by station id (array of workers per station)
     $manpowerByStation = $allManPower->groupBy('station_id');
 
-    // Index henkaten by station for quick lookup (we assume at most one active henkaten per station)
     $henkatenByStation = $activeManPowerHenkatens->groupBy('station_id');
 
-    // For each station that has any manpower (or henkaten), determine displayed worker
     $stationIds = $manpowerByStation->keys()->merge($henkatenByStation->keys())->unique();
 
     foreach ($stationIds as $stationId) {
-        // If there is active henkaten for this station -> show OLD WORKER (man_power_id) as Henkaten
         if ($henkatenByStation->has($stationId)) {
-            // if multiple henkaten, pick the latest by effective_date
             $henk = $henkatenByStation[$stationId]->sortByDesc('effective_date')->first();
 
-            // Create a temporary ManPower-like object for OLD worker (keep nama lama)
             $oldWorker = new ManPower([
                 'id' => $henk->man_power_id,
                 'nama' => $henk->nama,

@@ -1141,11 +1141,12 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                     <p class="text-xs text-gray-500">Keterangan</p>
                     <p id="modalKeterangan" class="font-semibold text-sm">-</p>
                 </div>
-                <div class="bg-orange-50 p-3 rounded-lg">
-                    <p class="text-xs text-gray-500">Machine</p>
-                    <p id="modalMachine" class="font-semibold text-sm truncate">-</p>
-                </div>
-            </div>
+               {{-- MACHINE (Full Width Box) --}}
+    <div class="bg-orange-50 p-3 rounded-lg">
+        <p class="text-xs text-gray-500">Machine</p>
+        <p id="modalMachine" class="font-semibold text-sm">-</p>
+    </div>
+        </div>
         </div>
 
         {{-- DETAIL INFORMASI (Grid 2) --}}

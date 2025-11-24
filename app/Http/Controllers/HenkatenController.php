@@ -29,47 +29,125 @@ class HenkatenController extends Controller
     // ==============================================================
     // BAGIAN 1: FORM PEMBUATAN HENKATEN MAN POWER
     // ==============================================================
-    public function create()
+  public function create()
+{
+    $user = Auth::user();
+    // Gunakan user->role yang sudah terformat Title Case jika memungkinkan
+    $userRole = $user->role ?? 'Operator'; 
+
+    // Cek apakah user punya record manpower
+    $manpower = ManPower::where('nama', $user->name)->first();
+    // Gunakan ManPower::where('user_id', $user->id) jika sudah ada relasi
+    $isMainOperator = $manpower?->is_main_operator == 1;
+
+    // Ambil semua line area
+    $allLineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
+
+    // Default values
+    $stations = collect();
+    $lineAreas = $allLineAreas;
+    $showStationDropdown = false;
+    $roleLineArea = ''; // Dipakai untuk role yang Line Area-nya fix
+
+    // ============== ROLE: LEADER FA / SMT ==================
+    if ($userRole === 'Leader FA' || $userRole === 'Leader SMT') 
     {
-        // Mendapatkan Line Area unik dari database
-        $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
+        $prefix = (str_ends_with($userRole, 'FA')) ? 'FA' : 'SMT';
 
-        // --- LOGIKA SHIFT OTOMATIS (BARU) ---
-        // Atur timezone ke Waktu Indonesia Barat
-        $now = Carbon::now('Asia/Jakarta');
+        // Leader FA/SMT boleh melihat semua line area mereka
+        $stations = Station::where('line_area', 'LIKE', $prefix . '%')->get();
+        $lineAreas = array_values(array_filter($allLineAreas, fn($a) => str_starts_with($a, $prefix)));
 
-        // Tentukan jam mulai Shift 2 (07:00) dan Shift 1 (19:00)
-        $shift2Start = $now->copy()->setTime(7, 0, 0);
-        $shift1Start = $now->copy()->setTime(19, 0, 0);
-
-        $currentShift = 0; // Default
-        if ($now->gte($shift2Start) && $now->lt($shift1Start)) {
-            // Jika jam >= 07:00 DAN < 19:00 -> Shift 2
-            $currentShift = 2;
-        } else {
-            // Jika jam >= 19:00 ATAU < 07:00 -> Shift 1
-            $currentShift = 1;
-        }
-        // --- AKHIR LOGIKA SHIFT OTOMATIS ---
-
-        // Mengambil grup dari session
-        $currentGroup = Session::get('active_grup');
-        
-        // HANYA cek jika Grup belum dipilih
-        if (!$currentGroup) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Silakan pilih Grup di Dashboard terlebih dahulu.');
-        }
-
-        // Kirim data ke view 'create_henkaten'
-        return view('manpower.create_henkaten', compact(
-            'lineAreas',
-            'currentShift',
-            'currentGroup'
-        ));
+        $showStationDropdown = true;
     }
 
-  public function store(Request $request)
+    // ============== ROLE: LEADER PPIC / QC ==================
+  elseif (in_array($userRole, ['Leader PPIC', 'Leader QC'])) 
+{
+    // Tentukan Line Area berdasarkan role
+    $fixedLineArea = ($userRole === 'Leader QC') ? 'Incoming' : 'Delivery'; 
+
+    // REVISI KRUSIAL: Menggunakan JOIN untuk mengambil is_main_operator dari tabel man_powers.
+    // Kita harus memastikan stasiun hanya muncul sekali, jadi gunakan DISTINCT.
+    $stations = DB::table('stations')
+        ->where('stations.line_area', $fixedLineArea)
+        ->leftJoin('man_power', function($join) use ($fixedLineArea) {
+            $join->on('stations.id', '=', 'man_power.station_id')
+                 ->where('man_power.line_area', '=', $fixedLineArea);
+        })
+        ->select('stations.id', 'stations.station_name', 'stations.line_area', 'man_power.is_main_operator')
+        ->distinct('stations.id') // Pastikan stasiun tidak ganda jika ada banyak manpower di stasiun itu
+        ->orderBy('stations.station_name')
+        ->get(); 
+
+
+    $lineAreas = [$fixedLineArea]; // Hanya 1 line area yang boleh mereka lihat/input
+    $roleLineArea = $fixedLineArea; // Set Line Area fixed
+    
+    // Set $showStationDropdown = true agar Alpine menampilkan dropdown Station
+    $showStationDropdown = true; 
+}
+
+    // ============== ROLE LAIN (Operator/Admin/DLL) ==================
+    else 
+    {
+        if ($manpower) {
+            // Operator memiliki Line Area dan Station yang fix
+            $stations = Station::where('id', $manpower->station_id)->get();
+            $lineAreas = [$manpower->line_area];
+            $roleLineArea = $manpower->line_area;
+
+            // Jika dia Main Operator, dia bisa mengisi Henkaten (dan stationnya terpilih otomatis/readonly)
+            // Jika dia non-Main Operator, dia mungkin hanya bisa melihat/tidak boleh mengisi
+            $showStationDropdown = $isMainOperator;
+            
+            // Jika dia bukan Main Operator, kita set station menjadi fix (hidden input)
+            if (!$isMainOperator) {
+                $stations = Station::where('id', $manpower->station_id)->get();
+                $lineAreas = [$manpower->line_area];
+                $showStationDropdown = false;
+            }
+        } else {
+            // User bukan Manpower
+            $stations = collect();
+            $lineAreas = [];
+            $showStationDropdown = false;
+        }
+    }
+
+    // ================= SHIFT ==================
+    $now = Carbon::now('Asia/Jakarta');
+    // Asumsi shift 2: 07:00 - 18:59:59. Shift 1: 19:00 - 06:59:59 (+1 hari)
+    $shift2Start = $now->copy()->setTime(7, 0, 0);
+    $shift1Start = $now->copy()->setTime(19, 0, 0);
+    
+    // Logika Shift: Shift 2 jika antara 7 pagi dan 7 malam, Shift 1 selain itu.
+    $currentShift = ($now->gte($shift2Start) && $now->lt($shift1Start)) ? 2 : 1;
+
+    // ================= GROUP ==================
+    $currentGroup = Session::get('active_grup');
+    if (!$currentGroup) {
+        return redirect()->route('dashboard')
+            ->with('error', 'Silakan pilih Grup di Dashboard terlebih dahulu.');
+    }
+
+    return view('manpower.create_henkaten', compact(
+        'lineAreas',
+        'stations',
+        'currentShift',
+        'currentGroup',
+        'userRole',
+        'isMainOperator',
+        'showStationDropdown',
+        'roleLineArea' 
+    ));
+}
+
+
+    // ==============================================================
+    // BAGIAN 3: FORM PEMBUATAN HENKATEN METHOD
+    // ==============================================================
+    public function store(Request $request)
 {
     $validated = $request->validate([
         'shift'               => 'required|string',
@@ -81,13 +159,15 @@ class HenkatenController extends Controller
         'line_area'           => 'required|string',
         'effective_date'      => 'required|date',
         'end_date'            => 'required|date|after_or_equal:effective_date',
-'lampiran' => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
+        'lampiran'            => 'required|file|mimes:jpeg,png,zip,rar|max:2048',
         'time_start'          => 'required|date_format:H:i',
         'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
         'serial_number_start' => 'nullable|string|max:255',
         'serial_number_end'   => 'nullable|string|max:255',
     ], [
-        'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.'
+        'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.',
+        'lampiran.mimes'               => 'Lampiran harus berupa jpeg, png, zip, atau rar.',
+        'end_date.after_or_equal'      => 'Tanggal berakhir harus sama dengan atau setelah tanggal efektif.',
     ]);
 
     $lampiranPath = null;
@@ -95,41 +175,28 @@ class HenkatenController extends Controller
     try {
         DB::beginTransaction();
 
-        // 1. Ambil data terkait
-        $manPowerAsli = ManPower::findOrFail($validated['man_power_id']);
+        $manPowerAsli  = ManPower::findOrFail($validated['man_power_id']);
         $manPowerAfter = ManPower::findOrFail($validated['man_power_id_after']);
-        $station = Station::findOrFail($validated['station_id']);
 
-        // 2. Upload lampiran
         if ($request->hasFile('lampiran')) {
             $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
         }
 
-        // 3. Siapkan data untuk tabel log Henkaten
         $dataToCreate = $validated;
-        $dataToCreate['lampiran'] = $lampiranPath;
-        $dataToCreate['nama'] = $manPowerAsli->nama;
+        $dataToCreate['lampiran']   = $lampiranPath;
+        $dataToCreate['nama']       = $manPowerAsli->nama;
         $dataToCreate['nama_after'] = $manPowerAfter->nama;
-        $dataToCreate['status'] = 'PENDING';
-        $dataToCreate['created_at'] = now();  // ✅ otomatis isi created_at
-        $dataToCreate['updated_at'] = now();  // ✅ otomatis isi updated_at
+        $dataToCreate['status']     = 'PENDING';
+        $dataToCreate['created_at'] = now();
+        $dataToCreate['updated_at'] = now();
+        $dataToCreate['user_id']    = Auth::id();
 
-        // 4. Simpan ke database
         ManPowerHenkaten::create($dataToCreate);
-
-        // 5. Update status man power asli
-        $manPowerAsli->status = 'henkaten';
-        $manPowerAsli->save();
-
-        // 6. Update man power pengganti
-        $manPowerAfter->status = 'aktif';
-        $manPowerAfter->station_id = $validated['station_id'];
-        $manPowerAfter->save();
 
         DB::commit();
 
         return redirect()->route('henkaten.create')
-            ->with('success', 'Data Henkaten berhasil dibuat. ' . $manPowerAfter->nama . ' sekarang ditugaskan di ' . $station->station_name);
+            ->with('success', 'Henkaten Man Power Berhasil Di Buat');
 
     } catch (\Exception $e) {
         DB::rollBack();
@@ -138,22 +205,11 @@ class HenkatenController extends Controller
             Storage::disk('public')->delete($lampiranPath);
         }
 
-        if ($e instanceof ModelNotFoundException) {
-            return back()->withErrors(['error' => 'Data Man Power atau Station tidak ditemukan di database.'])->withInput();
-        }
-
-        return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
+        return back()->withErrors(['error' => 'Kesalahan: ' . $e->getMessage()])->withInput();
     }
 }
 
-   
-
-   
-
-    // ==============================================================
-    // BAGIAN 3: FORM PEMBUATAN HENKATEN METHOD
-    // ==============================================================
-    public function createMethodHenkaten()
+ public function createMethodHenkaten()
 {
     // Ambil data shift dari session
     $currentShift = session('active_shift', 1);
@@ -228,6 +284,7 @@ class HenkatenController extends Controller
         'methodList'
     ));
 }
+
 
  public function storeMethodHenkaten(Request $request)
 {
@@ -1139,15 +1196,13 @@ if ($master) {
     
 public function checkAfter(Request $request)
 {
-    // Ambil semua parameter yang diperlukan dari request
     $manPowerIdAfter = $request->query('man_power_id_after');
     $shift = $request->query('shift');
-    $grup = $request->query('grup'); // Parameter baru
+    $grup = $request->query('grup'); 
     $newEffectiveDate = $request->query('effective_date');
-    $newEndDate = $request->query('end_date'); // Parameter baru
+    $newEndDate = $request->query('end_date'); 
 
     if (!$manPowerIdAfter || !$shift || !$grup || !$newEffectiveDate || !$newEndDate) {
-        // Tambahkan logging jika ada parameter yang hilang
         Log::warning('Parameter validasi Henkaten After tidak lengkap.', $request->query());
         return response()->json(['error' => 'Parameter tidak lengkap'], 400);
     }
@@ -1157,9 +1212,6 @@ public function checkAfter(Request $request)
         ->where('shift', $shift)
         ->where('grup', $grup)
         
-        // Memeriksa Overlap: Rentang lama berakhir SETELAH rentang baru dimulai 
-        // DAN rentang lama dimulai SEBELUM rentang baru berakhir.
-        // Dengan kata lain: NOT (Lama Berakhir < Baru Mulai OR Lama Mulai > Baru Berakhir)
         ->where(function ($query) use ($newEffectiveDate, $newEndDate) {
             $query->where('end_date', '>=', $newEffectiveDate)
                   ->where('effective_date', '<=', $newEndDate);
