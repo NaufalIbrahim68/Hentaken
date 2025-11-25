@@ -52,33 +52,20 @@
 
                         // PENTING: Untuk Predefined Role, ambil Station ID default
                         $predefinedStationId = null;
+                        $predefinedStation = null;
                         if ($isPredefinedRole && $predefinedLineArea) {
-                            // Anda harus memastikan logic ini (atau di Controller) mengambil ID yang benar.
-                            // Contoh: ambil Station ID pertama untuk Line Area tersebut
                             $defaultStation = \App\Models\Station::where('line_area', $predefinedLineArea)->first();
                             $predefinedStationId = $defaultStation->id ?? null;
-
-                            // Jika ini mode edit, gunakan station_id dari log
+                            $predefinedStation = $defaultStation;
                             if (isset($log)) {
                                 $predefinedStationId = $log->station_id;
+                                $predefinedStation = $log->station ?? $predefinedStation;
                             }
-                        }
-
-                        // Untuk Dynamic Mode, siapkan data awal untuk Alpine
-                        $initialStations = [];
-                        $initialMethods = [];
-                        if (!$isPredefinedRole && (isset($log) || old('line_area'))) {
-                            $initialLineArea = old('line_area', $log->station->line_area ?? '');
-                            $initialStationId = old('station_id', $log->station_id ?? null);
-
-                            // Asumsi Anda telah memuat data ini di Controller
-                            // Contoh: $initialStations = \App\Models\Station::where('line_area', $initialLineArea)->get();
-                            // Contoh: $initialMethods = \App\Models\HenkatenMethod::where('station_id', $initialStationId)->get();
                         }
                     @endphp
 
                     {{-- FORM START --}}
-                    <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data" novalidate>
                         @csrf
                         @if(isset($log))
                             @method('PUT')
@@ -87,138 +74,91 @@
                         {{-- Hidden Shift Input --}}
                         <input type="hidden" name="shift" value="{{ old('shift', $log->shift ?? $currentShift) }}">
 
-                        {{-- GRID CONTAINER (Alpine.js Scope) --}}
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6"
-                            x-data="{
-                                selectedLineArea: '{{ $isPredefinedRole ? $predefinedLineArea : old('line_area', $log->station->line_area ?? '') }}',
-                                selectedStation: '{{ old('station_id', $log->station_id ?? $predefinedStationId ?? '') }}',
-                                selectedMethodId: '{{ old('method_id', $log->method_id ?? '') }}',
+                        {{-- GRID CONTAINER (single Alpine scope) --}}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" x-data="henkatenForm()" x-init="init()">
 
-                                lineAreas: @json($lineAreas ?? []),
-                                stationList: @json($initialStations),
-                                methodList: @json($initialMethods),
-
-                                isPredefinedRole: {{ $isPredefinedRole ? 'true' : 'false' }},
-                                findStationsUrl: '{{ route('henkaten.stations.by_line') }}',
-                                findMethodsUrl: '{{ route('henkaten.methods.by_station') }}',
-
-                                async fetchStations() {
-                                    this.selectedStation = '';
-                                    this.methodList = [];
-                                    this.selectedMethodId = '';
-                                    this.stationList = [];
-                                    if (!this.selectedLineArea) return;
-
-                                    try {
-                                        const res = await fetch(`${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
-                                        const data = await res.json();
-                                        this.stationList = Array.isArray(data) ? data : (data.data ?? []);
-                                    } catch (err) {
-                                        console.error('Gagal fetch stations:', err);
-                                    }
-                                },
-
-                                async fetchMethods() {
-                                    this.methodList = [];
-                                    this.selectedMethodId = '';
-                                    if (!this.selectedStation) return;
-                                    try {
-                                        const res = await fetch(`${this.findMethodsUrl}?station_id=${this.selectedStation}`);
-                                        const data = await res.json();
-                                        this.methodList = Array.isArray(data) ? data : (data.data ?? []);
-                                    } catch (err) {
-                                        console.error('Gagal fetch methods:', err);
-                                    }
-                                }
-                            }"
-                            x-init="!isPredefinedRole && selectedLineArea && stationList.length === 0 && fetchStations(false)">
-
-                            {{-- COLUMN KIRI: Dropdown & Serial Number --}}
+                            {{-- LEFT COLUMN: Line Area / Station / Method --}}
                             <div>
-                                {{-- PREDEFINED ROLE MODE (Leader QC/PPIC) --}}
-                                @if ($isPredefinedRole)
-                                    {{-- LINE AREA (Readonly) --}}
-                                    <div class="mb-4">
-                                        <label class="block text-sm font-medium text-gray-700">Line Area</label>
-                                        <input type="text" value="{{ $predefinedLineArea }}" readonly
-                                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
-                                        <input type="hidden" name="line_area" value="{{ $predefinedLineArea }}">
+                                {{-- PREDEFINED ROLE (Leader QC / Leader PPIC) --}}
+                                <template x-if="isPredefinedRole">
+                                    <div>
+                                        {{-- LINE AREA (readonly) --}}
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700">Line Area</label>
+                                            <input type="text" :value="predefinedLineArea" readonly
+                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
+                                            <input type="hidden" name="line_area" :value="predefinedLineArea">
+                                        </div>
+
+                                        {{-- STATION (hidden id + readonly name) --}}
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700">Station</label>
+                                            <input type="hidden" name="station_id" :value="predefinedStationId">
+                                            <input type="text" :value="predefinedStationName" readonly
+                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
+                                        </div>
+
+                                        {{-- METHOD (server-side methodList rendered server-side for reliability) --}}
+                                        <div class="mb-4">
+                                            <label for="methods_name_input" class="block text-sm font-medium text-gray-700">Nama Method</label>
+                                            <select id="methods_name_input" name="method_id" required
+                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
+                                                <option value="">-- Pilih Method --</option>
+                                                @foreach($methodList as $m)
+                                                    <option value="{{ $m->id }}" {{ old('method_id', $log->method_id ?? '') == $m->id ? 'selected' : '' }}>
+                                                        {{ $m->methods_name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
+                                </template>
 
-                                    {{-- STATION ID (Hidden) --}}
-                                    <div class="mb-4">
-                                        <label class="block text-sm font-medium text-gray-700">Station</label>
+                                {{-- DYNAMIC MODE (all other roles) --}}
+                                <template x-if="!isPredefinedRole">
+                                    <div>
+                                        {{-- LINE AREA (dropdown) --}}
+                                        <div class="mb-4">
+                                            <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
+                                            <select id="line_area" name="line_area" x-model="selectedLineArea" @change="fetchStations()"
+                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm" required>
+                                                <option value="">-- Pilih Line Area --</option>
+                                                {{-- server-side list for initial options --}}
+                                                @foreach ($lineAreas as $area)
+                                                    <option value="{{ $area }}" {{ old('line_area', $selectedLineArea ?? '') == $area ? 'selected' : '' }}>
+                                                        {{ $area }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
 
-                                        {{-- INI ADALAH PERBAIKAN KRITIS: Memastikan nilai ID stasiun ada --}}
-                                        <input type="hidden" name="station_id"
-                                            value="{{ old('station_id', $log->station_id ?? $predefinedStationId ?? '') }}">
+                                        {{-- STATION (dropdown populated by AJAX or initial server data) --}}
+                                        <div class="mb-4">
+                                            <label for="station_id" class="block text-sm font-medium text-gray-700">Station</label>
+                                            <select id="station_id" name="station_id" x-model="selectedStation" @change="fetchMethods()"
+                                                :disabled="stations.length === 0"
+                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm" required>
+                                                <option value="">-- Pilih Station --</option>
+                                                <template x-for="st in stations" :key="st.id">
+                                                    <option :value="st.id" x-text="st.station_name" :selected="st.id == '{{ old('station_id', $log->station_id ?? '') }}'"></option>
+                                                </template>
+                                            </select>
+                                        </div>
 
-                                        {{-- Tampilkan station name untuk verifikasi --}}
-                                        <input type="text" value="{{ $log->station->station_name ?? \App\Models\Station::find($predefinedStationId)->station_name ?? 'Station Not Set / Missing ID' }}" readonly
-                                            class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
+                                        {{-- METHOD (dropdown populated by AJAX) --}}
+                                        <div class="mb-4">
+                                            <label for="methods_name" class="block text-sm font-medium text-gray-700">Nama Method</label>
+                                            <select id="methods_name" name="method_id" x-model="selectedMethodId"
+                                                :disabled="methodList.length === 0"
+                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm" required>
+                                                <option value="">-- Pilih Method --</option>
+                                                <template x-for="m in methodList" :key="m.id">
+                                                    <option :value="m.id" x-text="m.methods_name" :selected="m.id == '{{ old('method_id', $log->method_id ?? '') }}'"></option>
+                                                </template>
+                                            </select>
+                                        </div>
                                     </div>
-
-                                    {{-- METHOD NAME (Dropdown - For Predefined Roles) --}}
-                                    <div class="mb-4">
-                                        <label for="methods_name_input" class="block text-sm font-medium text-gray-700">Nama Method</label>
-                                        <select id="methods_name_input" name="methods_name" required
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
-                                                x-model="selectedMethodName">
-                                            <option value="">-- Pilih Method --</option>
-                                            @foreach($methodList as $method)
-                                                <option value="{{ is_array($method) ? $method['methods_name'] : $method->methods_name }}"
-                                                    {{ old('methods_name', $log->methods_name ?? '') == (is_array($method) ? $method['methods_name'] : $method->methods_name) ? 'selected' : '' }}>
-                                                    {{ is_array($method) ? $method['methods_name'] : $method->methods_name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                @else
-                                    {{-- DYNAMIC MODE (General User/Non-Predefined Role) --}}
-
-                                    {{-- LINE AREA (Dropdown) --}}
-                                    <div class="mb-4">
-                                        <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
-                                        <select id="line_area" name="line_area" required
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
-                                                x-model="selectedLineArea"
-                                                @change="fetchStations()">
-                                            <option value="">-- Pilih Line Area --</option>
-                                            <template x-for="area in lineAreas" :key="area">
-                                                <option :value="area" x-text="area" :selected="area == selectedLineArea"></option>
-                                            </template>
-                                        </select>
-                                    </div>
-
-                                    {{-- STATION ID (Dropdown) --}}
-                                    <div class="mb-4">
-                                        <label for="station_id" class="block text-sm font-medium text-gray-700">Station</label>
-                                        <select id="station_id" name="station_id" required
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
-                                                x-model="selectedStation"
-                                                @change="fetchMethods()"
-                                                :disabled="stationList.length === 0">
-                                            <option value="">-- Pilih Station --</option>
-                                            <template x-for="station in stationList" :key="station.id">
-                                                <option :value="station.id" x-text="station.station_name" :selected="station.id == selectedStation"></option>
-                                            </template>
-                                        </select>
-                                    </div>
-
-                                    {{-- METHOD ID (Dropdown) --}}
-                                    <div class="mb-4">
-                                        <label for="methods_name" class="block text-sm font-medium text-gray-700">Nama Method</label>
-                                        <select id="methods_name" name="method_id" required
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"
-                                                x-model="selectedMethodId"
-                                                :disabled="methodList.length === 0">
-                                            <option value="">-- Pilih Method --</option>
-                                            <template x-for="method in methodList" :key="method.id">
-                                                <option :value="method.id" x-text="method.methods_name" :selected="method.id == selectedMethodId"></option>
-                                            </template>
-                                        </select>
-                                    </div>
-                                @endif
+                                </template>
 
                                 {{-- SERIAL NUMBER START --}}
                                 <div class="mb-4">
@@ -235,9 +175,9 @@
                                         value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
                                         class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
                                 </div>
-                            </div>
+                            </div> {{-- end left column --}}
 
-                            {{-- COLUMN KANAN: Tanggal & Waktu --}}
+                            {{-- RIGHT COLUMN: Dates & Times --}}
                             <div>
                                 {{-- EFFECTIVE DATE --}}
                                 <div class="mb-4">
@@ -271,6 +211,7 @@
                                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required>
                                 </div>
                             </div>
+
                         </div> {{-- End Grid/Alpine Scope --}}
 
                         {{-- KETERANGAN TEXTAREAS --}}
@@ -297,25 +238,25 @@
                         </div>
 
                         {{-- Lampiran --}}
-                                <div class="mb-6 mt-6">
-                                    <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran
-                                        (Wajib untuk Izin/Sakit)</label>
-                                    <input type="file" id="lampiran" name="lampiran"
-                                        accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
-                                        class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                        {{ !isset($log) ? 'required' : '' }}>
-                                    @if (isset($log) && $log->lampiran)
-                                        <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-                                            <p class="text-sm text-gray-700 font-medium mb-1">Lampiran saat ini:</p>
-                                            <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
-                                                class="text-blue-600 hover:text-blue-800 hover:underline">
-                                                Lihat Lampiran ({{ basename($log->lampiran) }})
-                                            </a>
-                                            <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda
-                                                ingin mengganti lampiran ini.</p>
-                                        </div>
-                                    @endif
+                        <div class="mb-6 mt-6">
+                            <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran
+                                (Wajib untuk Izin/Sakit)</label>
+                            <input type="file" id="lampiran" name="lampiran"
+                                accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
+                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                {{ !isset($log) ? 'required' : '' }}>
+                            @if (isset($log) && $log->lampiran)
+                                <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                    <p class="text-sm text-gray-700 font-medium mb-1">Lampiran saat ini:</p>
+                                    <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                                        class="text-blue-600 hover:text-blue-800 hover:underline">
+                                        Lihat Lampiran ({{ basename($log->lampiran) }})
+                                    </a>
+                                    <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda
+                                        ingin mengganti lampiran ini.</p>
                                 </div>
+                            @endif
+                        </div>
 
                         {{-- ACTION BUTTONS --}}
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
@@ -337,5 +278,96 @@
 
     {{-- ALPINE.JS SCRIPT --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+    <script>
+    document.addEventListener("alpine:init", () => {
+        Alpine.data("henkatenForm", () => ({
+
+            // initial state populated from server-side variables
+            lineAreas: @json($lineAreas ?? []),
+            stations: @json($stations ?? []),
+            methodList: @json($methodList ?? []),
+
+            isPredefinedRole: @json($isPredefinedRole),
+            predefinedLineArea: @json($predefinedLineArea),
+            predefinedStationId: @json($predefinedStationId),
+            predefinedStationName: @json(optional($predefinedStation)->station_name ?? ''),
+
+         selectedLineArea: @json($selectedLineArea ?? old('line_area') ?? '') || '',
+selectedStation: @json(old('station_id') ?? ($predefinedStationId ?? '')) || '',
+selectedMethodId: @json(old('method_id') ?? ($log->method_id ?? '')) || '',
+
+            // routes
+            stationsByLineUrl: '{{ route('henkaten.stations.by_line') }}',
+            methodsByStationUrl: '{{ route('henkaten.methods.by_station') }}',
+
+            init() {
+                // if dynamic mode and we have preloaded values, load dependent data
+                if (!this.isPredefinedRole) {
+                    if (this.selectedLineArea && (!this.stations || this.stations.length === 0)) {
+                        this.fetchStations();
+                    }
+                    if (this.selectedStation && (!this.methodList || this.methodList.length === 0)) {
+                        this.fetchMethods();
+                    }
+                }
+            },
+
+            async fetchStations() {
+                if (!this.selectedLineArea) {
+                    this.stations = [];
+                    this.selectedStation = '';
+                    this.methodList = [];
+                    return;
+                }
+
+                try {
+                    const q = encodeURIComponent(this.selectedLineArea);
+                    const res = await fetch(`${this.stationsByLineUrl}?line_area=${q}`);
+                    if (!res.ok) throw new Error('Network response not ok');
+                    const data = await res.json();
+                    this.stations = Array.isArray(data) ? data : (data.data ?? []);
+                    this.selectedStation = '';
+                    this.methodList = [];
+                } catch (err) {
+                    console.error('Gagal fetch stations:', err);
+                    this.stations = [];
+                    this.selectedStation = '';
+                    this.methodList = [];
+                }
+            },
+
+         async fetchMethods() {
+    if (!this.selectedStation) {
+        this.methodList = [];
+        // Jangan reset selectedMethodId ketika edit
+        return;
+    }
+
+    try {
+        const id = encodeURIComponent(this.selectedStation);
+        const res = await fetch(`${this.methodsByStationUrl}?station_id=${id}`);
+        if (!res.ok) throw new Error('Network response not ok');
+
+        const data = await res.json();
+        this.methodList = Array.isArray(data) ? data : (data.data ?? []);
+
+        // Kalau ini BUKAN edit (selectedMethodId kosong), reset.
+        // Kalau edit (selectedMethodId sudah ada), JANGAN reset.
+        if (!@json(isset($log))) {   // jika halaman CREATE
+            this.selectedMethodId = '';
+        }
+
+    } catch (err) {
+        console.error('Gagal fetch methods:', err);
+        this.methodList = [];
+        // Jangan reset selectedMethodId (penting untuk EDIT)
+    }
+}
+
+
+        }));
+    });
+    </script>
 
 </x-app-layout>

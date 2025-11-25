@@ -213,6 +213,7 @@ class HenkatenController extends Controller
 {
     // Ambil data shift dari session
     $currentShift = session('active_shift', 1);
+    
 
     $user = Auth::user();
     $role = $user ? $user->role : null;
@@ -342,7 +343,7 @@ try {
         'shift'               => 'required|string',
         'line_area'           => 'required|string',
         'station_id'          => 'required|integer|exists:stations,id',
-        'method_id'           => 'required|integer|exists:methods,id',
+        'method_id'           => $isPredefinedRole ? 'required|string|max:255' : 'nullable',
         'methods_name'        => $isPredefinedRole ? 'required|string|max:255' : 'nullable',
         'effective_date'      => 'required|date',
         'end_date'            => 'required|date|after_or_equal:effective_date',
