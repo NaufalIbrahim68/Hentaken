@@ -55,19 +55,19 @@
         default => null,
     };
 
-    // Perbaikan: Hapus logika hardcode kategori di sini.
-    // Asumsi $machineCategories dikirim dari Controller.
+    // 🟢 PERBAIKAN: Gunakan nullsafe (?) untuk mengambil id_machines
+    $logMachineId = $log?->id_machines ?? null;
+    
+    // Pastikan variabel $machinesToDisplay ada, walaupun kosong, jika Controller lupa mengirim
+    $machinesToDisplay = $machinesToDisplay ?? collect([]); 
 
-    // 🟢 PERBAIKAN 1: Tentukan Station ID Default
-    // NOTE: Karena $predefinedStationId tidak ada di controller sebelumnya,
-    // kita asumsikan nilainya diset dari controller, atau ambil nilai default jika tidak ada.
-    $predefinedStationId = 143; // Default dummy jika tidak diset dari Controller
+    // Tentukan Station ID Default
+    $predefinedStationId = $predefinedStationId ?? 143; // Pastikan ini juga aman
 
-    // Asumsi $lineAreas dikirim dari Controller untuk mode dinamis
-    $lineAreas = $lineAreas ?? ['Incoming', 'Delivery', 'Assembly', 'Machining'];
+    // Asumsi $lineAreas dikirim dari Controller
+    $lineAreas = $lineAreas ?? collect(['Incoming', 'Delivery', 'Assembly', 'Machining']);
 
     // Asumsi $machineCategories dikirim dari Controller
-    // Tambahkan cek agar tidak error jika controller lupa mengirimnya
     $machineCategories = $machineCategories ?? [];
 
 @endphp
@@ -78,17 +78,26 @@
                             @method('PUT')
                         @endif
 
-                        <input type="hidden" name="shift" value="{{ old('shift', $log->shift ?? ($currentShift ?? '')) }}">
+                        <input type="hidden" name="shift" value="{{ old('shift', $log?->shift ?? ($currentShift ?? '')) }}">
 
+                        {{-- 🟢 PERUBAHAN X-DATA UNTUK MACHINE ID & DATA MAPPING --}}
                         <div x-data="henkatenForm({
-                            oldLineArea: '{{ old('line_area', $log->station->line_area ?? '') }}',
-                            // Gunakan predefinedStationId jika mode predefined
-                            oldStation: {{ $isPredefinedRole ? ($log->station_id ?? $predefinedStationId) : (old('station_id', $log->station_id ?? 'null')) }},
-                            oldCategory: '{{ old('category', $log->category ?? '') }}',
+                            // 🟢 Perbaikan nullsafe untuk Line Area
+                            oldLineArea: '{{ old('line_area', $log?->station?->line_area ?? '') }}', 
+                            
+                            // 🟢 Perbaikan nullsafe untuk Station ID
+                            oldStation: {{ $isPredefinedRole ? ($log?->station_id ?? $predefinedStationId) : (old('station_id', $log?->station_id ?? 'null')) }},
+                            
+                            // 🟢 TAMBAHKAN oldMachineId
+                            oldMachineId: {{ old('id_machines', $logMachineId ?? 'null') }}, 
+                            
                             findStationsUrl: '{{ route('henkaten.stations.by_line') }}',
 
                             predefinedLineArea: '{{ $predefinedLineArea ?? '' }}',
                             isPredefinedRole: {{ $isPredefinedRole ? 'true' : 'false' }},
+                            
+                            // 🟢 KIRIM DATA MESIN UNTUK MAPPING
+                            machinesData: @json($machinesToDisplay),
                         })" x-init="init()">
 
                             <fieldset>
@@ -108,11 +117,11 @@
                                                 <input type="hidden" name="line_area" value="{{ $predefinedLineArea }}">
                                             </div>
 
-                                            {{-- STATION NAME (Hidden, untuk pencarian di Controller) --}}
+                                            {{-- STATION NAME (Hidden) --}}
                                             <input type="hidden" name="station_name_predefined" value="{{ $predefinedLineArea }}">
 
-                                            {{-- STATION ID (Hidden, NILAI DIISI DARI PREDEFINED DEFAULT ID) --}}
-                                            <input type="hidden" name="station_id" value="{{ $log->station_id ?? $predefinedStationId }}">
+                                            {{-- STATION ID (Hidden) --}}
+                                            <input type="hidden" name="station_id" value="{{ $log?->station_id ?? $predefinedStationId }}">
 
                                         @else
                                             {{-- MODE DEFAULT (INPUT DINAMIS) --}}
@@ -121,14 +130,14 @@
                                             <div class="mb-4">
                                                 <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
                                                 <select id="line_area" name="line_area" x-model="selectedLineArea"
-                                                             @change="fetchStations"
-                                                             class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required>
-                                                             <option value="">-- Pilih Line Area --</option>
-                                                             @foreach ($lineAreas as $area)
-                                                                 <option value="{{ $area }}" @selected(old('line_area', $log->station->line_area ?? '') == $area)>
-                                                                     {{ $area }}
-                                                                 </option>
-                                                             @endforeach
+                                                        @change="fetchStations"
+                                                        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required>
+                                                        <option value="">-- Pilih Line Area --</option>
+                                                        @foreach ($lineAreas as $area)
+                                                            <option value="{{ $area }}" @selected(old('line_area', $log?->station?->line_area ?? '') == $area)>
+                                                                {{ $area }}
+                                                            </option>
+                                                        @endforeach
                                                 </select>
                                             </div>
 
@@ -136,42 +145,50 @@
                                             <div class="mb-4">
                                                 <label for="station_id" class="block text-sm font-medium text-gray-700">Station</label>
                                                 <select id="station_id" name="station_id" x-model="selectedStation" required
-                                                             :disabled="!stationList.length && !selectedLineArea"
-                                                             class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                                             <option value="">-- Pilih Station --</option>
+                                                        :disabled="!stationList.length && !selectedLineArea"
+                                                        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                                        <option value="">-- Pilih Station --</option>
 
-                                                             {{-- Fallback/Initial load --}}
-                                                             @if (isset($stations) && !old('line_area'))
-                                                                 @foreach ($stations as $station)
-                                                                     <option value="{{ $station->id }}" @selected(old('station_id', $log->station_id ?? '') == $station->id)>
-                                                                         {{ $station->station_name }}
-                                                                     </option>
-                                                                 @endforeach
-                                                             @endif
+                                                        {{-- Fallback/Initial load --}}
+                                                        @if (isset($stations) && !old('line_area'))
+                                                            @foreach ($stations as $station)
+                                                                <option value="{{ $station->id }}" @selected(old('station_id', $log?->station_id ?? '') == $station->id)>
+                                                                    {{ $station->station_name }}
+                                                                </option>
+                                                            @endforeach
+                                                        @endif
 
-                                                             <template x-for="station in stationList" :key="station.id">
-                                                                 <option :value="station.id" x-text="station.station_name"></option>
-                                                             </template>
+                                                        <template x-for="station in stationList" :key="station.id">
+                                                            <option :value="station.id" x-text="station.station_name"></option>
+                                                        </template>
                                                 </select>
                                             </div>
                                         @endif
 
 
-                                        {{-- Kategori Henkaten Machine (MENGGUNAKAN $machineCategories dari Controller) --}}
+                                        {{-- 🟢 PERUBAHAN UTAMA: KATEGORI/MACHINE (Menggunakan Machine ID sebagai value, Category Name sebagai label) --}}
                                         <div class="mb-4">
-                                            <label for="category" class="block text-sm font-medium text-gray-700">Kategori Machines</label>
-                                            <select id="category" name="category" x-model="selectedCategory"
-                                                             class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                                             required>
-                                                             <option value="">-- Pilih Kategori --</option>
+                                            <label for="id_machines" class="block text-sm font-medium text-gray-700">Kategori Machines</label>
+                                            <select id="id_machines" name="id_machines" x-model="selectedMachineId"
+                                                    class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                                    required>
+                                                <option value="">-- Pilih Kategori --</option>
 
-                                                             {{-- PERUBAHAN UTAMA: Menggunakan variabel yang dikirim dari controller --}}
-                                                             @foreach ($machineCategories as $category)
-                                                                 <option value="{{ $category }}" @selected(old('category', $log->category ?? '') == $category)>
-                                                                     {{ $category }}
-                                                                 </option>
-                                                             @endforeach
+                                                {{-- Gunakan data $machinesToDisplay untuk mendapatkan ID unik --}}
+                                                @foreach ($machinesToDisplay->unique('machines_category') as $machine)
+                                                    <option value="{{ $machine->id }}" 
+                                                            data-category="{{ $machine->machines_category }}"
+                                                            @selected(old('id_machines', $logMachineId) == $machine->id)>
+                                                        {{ $machine->machines_category }} 
+                                                    </option>
+                                                @endforeach
                                             </select>
+                                            
+                                            {{-- 🟢 HIDDEN INPUT: Wajib ada untuk validasi 'category' di Controller --}}
+                                         <input type="hidden" id="hidden_category" name="category" 
+    x-bind:value="getCategoryName(selectedMachineId)"
+    {{-- 🟢 HANYA GUNAKAN X-BIND. Nilai lama akan dihandle oleh x-bind saat init. --}}
+    value="">
                                         </div>
 
                                         {{-- SERIAL NUMBER START & END (TIDAK DIUBAH) --}}
@@ -181,7 +198,7 @@
                                                 @if(isset($log)) <span class="text-red-500">*</span> @else <span class="text-gray-500 text-xs"></span> @endif
                                             </label>
                                             <input type="text" id="serial_number_start" name="serial_number_start"
-                                                value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
+                                                value="{{ old('serial_number_start', $log?->serial_number_start ?? '') }}"
                                                 class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                                 placeholder="Masukkan serial number awal..."
                                                 {{ isset($log) ? 'required' : '' }}>
@@ -193,7 +210,7 @@
                                                 @if(isset($log)) <span class="text-red-500">*</span> @else <span class="text-gray-500 text-xs"></span> @endif
                                             </label>
                                             <input type="text" id="serial_number_end" name="serial_number_end"
-                                                value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
+                                                value="{{ old('serial_number_end', $log?->serial_number_end ?? '') }}"
                                                 class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                                 placeholder="Masukkan serial number akhir..."
                                                 {{ isset($log) ? 'required' : '' }}>
@@ -205,26 +222,26 @@
                                         <div class="mb-4">
                                             <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
                                             <input type="date" id="effective_date" name="effective_date"
-                                                    value="{{ old('effective_date', isset($log) ? \Carbon\Carbon::parse($log->effective_date)->format('Y-m-d') : '') }}"
-                                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required>
+                                                     value="{{ old('effective_date', isset($log) ? \Carbon\Carbon::parse($log->effective_date)->format('Y-m-d') : '') }}"
+                                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required>
                                         </div>
                                         <div class="mb-4">
                                             <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
                                             <input type="date" id="end_date" name="end_date"
-                                                    value="{{ old('end_date', isset($log) ? \Carbon\Carbon::parse($log->end_date)->format('Y-m-d') : '') }}"
-                                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
+                                                     value="{{ old('end_date', isset($log) ? \Carbon\Carbon::parse($log->end_date)->format('Y-m-d') : '') }}"
+                                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700">
                                         </div>
                                         <div class="mb-4">
                                             <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
                                             <input type="time" id="time_start" name="time_start"
-                                                    value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"
-                                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required>
+                                                     value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"
+                                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required>
                                         </div>
                                         <div class="mb-4">
                                             <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
                                             <input type="time" id="time_end" name="time_end"
-                                                    value="{{ old('time_end', isset($log) ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '') }}"
-                                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required>
+                                                     value="{{ old('time_end', isset($log) ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '') }}"
+                                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required>
                                         </div>
                                     </div>
                                 </div>
@@ -234,18 +251,18 @@
                                     <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md">
                                         <label for="before_value" class="text-gray-700 text-sm font-bold">Kondisi Sebelum</label>
                                         <input type="text" id="before_value" name="before_value"
-                                                value="{{ old('before_value', $log->description_before ?? '') }}"
-                                                class="w-full py-3 px-4 border rounded bg-white text-gray-800"
-                                                placeholder="Deskripsi/Versi/Part No. Sebelum" required>
+                                                 value="{{ old('before_value', $log?->description_before ?? '') }}"
+                                                 class="w-full py-3 px-4 border rounded bg-white text-gray-800"
+                                                 placeholder="Deskripsi/Versi/Part No. Sebelum" required>
                                         <p class="text-xs text-gray-500 mt-2 italic">Deskripsikan kondisi sebelum perubahan.</p>
                                     </div>
 
                                     <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative">
                                         <label for="after_value" class="text-gray-700 text-sm font-bold">Kondisi Sesudah</label>
                                         <input type="text" id="after_value" name="after_value"
-                                                value="{{ old('after_value', $log->description_after ?? '') }}"
-                                                autocomplete="off" class="w-full py-3 px-4 border rounded"
-                                                placeholder="Deskripsi/Versi/Part No. Sesudah" required>
+                                                 value="{{ old('after_value', $log?->description_after ?? '') }}"
+                                                 autocomplete="off" class="w-full py-3 px-4 border rounded"
+                                                 placeholder="Deskripsi/Versi/Part No. Sesudah" required>
                                         <p class="text-xs text-green-600 mt-2 italic">Deskripsikan kondisi setelah perubahan.</p>
                                     </div>
                                 </div>
@@ -254,9 +271,9 @@
                                 <div class="mb-6 mt-6">
                                     <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan</label>
                                     <textarea id="keterangan" name="keterangan" rows="4"
-                                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                                placeholder="Jelaskan alasan perubahan machine/program..."
-                                                required>{{ old('keterangan', $log->keterangan ?? '') }}</textarea>
+                                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                                 placeholder="Jelaskan alasan perubahan machine/program..."
+                                                 required>{{ old('keterangan', $log?->keterangan ?? '') }}</textarea>
                                 </div>
 
                                {{-- Lampiran --}}
@@ -264,9 +281,9 @@
                                     <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran
                                         (Wajib untuk Izin/Sakit)</label>
                                     <input type="file" id="lampiran" name="lampiran"
-                                        accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
-                                        class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                        {{ !isset($log) ? 'required' : '' }}>
+                                         accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
+                                         class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                         {{ !isset($log) ? 'required' : '' }}>
                                     @if (isset($log) && $log->lampiran)
                                         <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
                                             <p class="text-sm text-gray-700 font-medium mb-1">Lampiran saat ini:</p>
@@ -300,7 +317,7 @@
         </div>
     </div>
 
-    {{-- Alpine.js (TIDAK DIUBAH) --}}
+    {{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
     document.addEventListener('alpine:init', () => {
@@ -308,8 +325,13 @@
             // STATE
             selectedLineArea: config.isPredefinedRole ? config.predefinedLineArea : (config.oldLineArea || ''),
             selectedStation: config.oldStation || null,
-            selectedCategory: config.oldCategory || null,
-            stationList: [], // Data ini akan di-fetch jika mode dynamic
+            // 🟢 UBAH: Menggunakan Machine ID sebagai state utama
+            selectedMachineId: config.oldMachineId || null, 
+            
+            stationList: [], 
+            
+            // 🟢 BARU: Data Mesin untuk Mapping
+            machinesData: config.machinesData, 
 
             // FLAGS
             isPredefinedRole: config.isPredefinedRole,
@@ -320,6 +342,11 @@
             // INIT
             async init() {
                 console.log(`✅ Alpine initialized (Henkaten Machine - Mode: ${this.isPredefinedRole ? 'Predefined' : 'Dynamic'})`);
+                
+                // Konversi ID Mesin ke integer jika ada
+                if (this.selectedMachineId && typeof this.selectedMachineId === 'string') {
+                    this.selectedMachineId = parseInt(this.selectedMachineId);
+                }
 
                 // Jika mode dynamic DAN ada Line Area lama, fetch stations
                 if (!this.isPredefinedRole && this.selectedLineArea) {
@@ -330,6 +357,16 @@
                 if (this.isPredefinedRole && config.oldStation) {
                     this.selectedStation = config.oldStation;
                 }
+            },
+
+            // 🟢 FUNGSI BARU: Mencari Nama Kategori berdasarkan Machine ID
+            getCategoryName(machineId) {
+                if (!machineId) return '';
+                // Cari objek mesin berdasarkan ID yang dipilih
+                // Pastikan machinesData adalah array/collection
+                const machine = this.machinesData.find(m => m.id == machineId);
+                // Kembalikan nama kategori
+                return machine ? machine.machines_category : '';
             },
 
             // FETCH STATIONS (Hanya untuk mode dinamis)

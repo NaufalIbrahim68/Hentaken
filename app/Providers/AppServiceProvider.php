@@ -37,21 +37,21 @@ class AppServiceProvider extends ServiceProvider
             $role = $user->role;
 
             // --- HENKATEN PENDING ---
-            $manpowers = ManPowerHenkaten::where('status', 'Pending');
+          
             $methods   = MethodHenkaten::where('status', 'Pending');
             $materials = MaterialHenkaten::where('status', 'Pending');
             $machines  = MachineHenkaten::where('status', 'Pending');
 
             switch ($role) {
                 case 'Sect Head QC':
-                    $manpowers->whereRaw("LOWER(line_area) LIKE 'incoming%'");
+                  
                     $methods->whereRaw("LOWER(line_area) LIKE 'incoming%'");
                     $materials->whereRaw("LOWER(line_area) LIKE 'incoming%'");
                     $machines->whereRaw("LOWER(line_area) LIKE 'incoming%'");
                     break;
 
                 case 'Sect Head PPIC':
-                    $manpowers->where('line_area', 'Delivery');
+                  
                     $methods->where('line_area', 'Delivery');
                     $materials->where('line_area', 'Delivery');
                     $machines->where('line_area', 'Delivery');
@@ -62,14 +62,14 @@ class AppServiceProvider extends ServiceProvider
                         'FA L1','FA L2','FA L3','FA L5','FA L6',
                         'SMT L1','SMT L2'
                     ];
-                    $manpowers->whereIn('line_area', $allowedLineAreas);
+                   
                     $methods->whereIn('line_area', $allowedLineAreas);
                     $materials->whereIn('line_area', $allowedLineAreas);
                     $machines->whereIn('line_area', $allowedLineAreas);
                     break;
             }
 
-            $totalHenkaten = $manpowers->count() + $methods->count() + $materials->count() + $machines->count();
+            $totalHenkaten =  $methods->count() + $materials->count() + $machines->count();
 
             // --- MASTER DATA PENDING ---
             $pendingMasterManPower = ManPower::where('status', 'Pending')->count();

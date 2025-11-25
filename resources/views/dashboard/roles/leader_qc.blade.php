@@ -160,8 +160,11 @@
         {{-- Kolom Kiri --}}
          <div class="w-1/3"></div>
 
+       {{-- Title, Area, dan Tanggal (Pusat, w-1/3) --}}
+{{-- Class diubah menjadi flex flex-col items-center untuk centering vertikal dan horizontal --}}
 <div class="w-1/3 flex flex-col items-center">
     
+    {{-- BARIS 1: HENKATEN DAN LINE AREA (Samping-sampingan) --}}
     <div class="flex items-center space-x-2"> 
         
         {{-- JUDUL UTAMA --}}
@@ -1138,7 +1141,7 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                     <p class="text-xs text-gray-500">Keterangan</p>
                     <p id="modalKeterangan" class="font-semibold text-sm">-</p>
                 </div>
-                 {{-- MACHINE (Full Width Box) --}}
+               {{-- MACHINE (Full Width Box) --}}
     <div class="bg-orange-50 p-3 rounded-lg">
         <p class="text-xs text-gray-500">Machine</p>
         <p id="modalMachine" class="font-semibold text-sm">-</p>
@@ -1315,27 +1318,6 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
         </button>
-        @php
-    // Kumpulkan nama material yang memiliki Henkaten Aktif & Approved
-    $activeHenkatenMaterialNames = collect();
-
-    // Cek jika $materialHenkatens ada, baru lakukan filter
-    if (isset($materialHenkatens)) {
-        $activeHenkatenMaterialNames = $materialHenkatens
-            // Filter hanya yang approved (seperti di kode Anda sebelumnya)
-            ->filter(function ($henkaten) {
-                return strtolower($henkaten->status) === 'approved';
-            })
-            // Ambil material_name dari relasi
-            ->pluck('material.material_name')
-            // Hapus duplikasi dan pastikan hanya nilai yang ada
-            ->filter()
-            ->unique()
-            ->values();
-    }
-    
-    // $activeHenkatenMaterialNames sekarang berisi array seperti: ['Document IPP', 'IRD Supplier']
-@endphp
 
         {{-- Container Scroll --}}
         <div class="overflow-x-auto scrollbar-hide scroll-smooth" id="materialHenkatenContainer">
@@ -1382,7 +1364,8 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                             data-effective-date="{{ $henkaten->effective_date ? \Carbon\Carbon::parse($henkaten->effective_date)->format('d M Y') : '-' }}"
                             data-end-date="{{ $henkaten->end_date ? \Carbon\Carbon::parse($henkaten->end_date)->format('d M Y') : 'Selanjutnya' }}"
                             data-lampiran="{{ $henkaten->lampiran ? asset('storage/' . $henkaten->lampiran) : '' }}"
-data-material="{{ $henkaten->material->material_name ?? 'NAMA KOSONG' }}"                        >
+                            data-material="{{ $henkaten->material->material_name ?? '-' }}"
+                        >
 
                             {{-- CURRENT & NEW PART --}}
                             <div class="grid grid-cols-2 gap-1">
