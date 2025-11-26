@@ -237,13 +237,16 @@ class DashboardController extends Controller
             ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
             ->get();
 
-        $henkatenMethodIds = $activeMethodHenkatens->pluck('method_id')->unique()->toArray();
+      $henkatenStationIds = $activeMethodHenkatens->pluck('station_id')->unique()->toArray();
 
-        foreach ($methods as $method) {
-            $method->setAttribute('status', in_array($method->id, $henkatenMethodIds)
-                ? 'HENKATEN'
-                : ($method->keterangan ?? 'NORMAL'));
-        }
+
+       foreach ($methods as $method) {
+    $method->setAttribute(
+        'status',
+        in_array($method->station_id, $henkatenStationIds) ? 'HENKATEN' : ($method->keterangan ?? 'NORMAL')
+    );
+}
+
 
         // ============================================================
         // MACHINE
