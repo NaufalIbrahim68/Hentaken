@@ -79,42 +79,42 @@
 
                             {{-- LEFT COLUMN: Line Area / Station / Method --}}
                             <div>
-                              {{-- PREDEFINED ROLE (Leader QC / Leader PPIC) --}}
-<template x-if="isPredefinedRole">
-    <div>
-        {{-- LINE AREA (readonly) --}}
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700">Line Area</label>
-            <input type="text" :value="predefinedLineArea" readonly
-                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
-            <input type="hidden" name="line_area" :value="predefinedLineArea">
-        </div>
+                                {{-- PREDEFINED ROLE (Leader QC / Leader PPIC) --}}
+                                <template x-if="isPredefinedRole">
+                                    <div>
+                                        {{-- LINE AREA (readonly) --}}
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700">Line Area</label>
+                                            <input type="text" :value="predefinedLineArea" readonly
+                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
+                                            <input type="hidden" name="line_area" :value="predefinedLineArea">
+                                        </div>
 
-        {{-- HAPUS STATION FORM --}}
-        {{-- Tidak ada input station sama sekali --}}
+                                        {{-- HAPUS STATION FORM --}}
+                                        <input type="hidden" name="station_id" :value="predefinedStationId">
 
-        {{-- METHOD (dropdown tetap) --}}
-        <div class="mb-4">
-            <label for="methods_name_input" class="block text-sm font-medium text-gray-700">Nama Method</label>
-            <select id="methods_name_input" name="method_id" required
-                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
-                <option value="">-- Pilih Method --</option>
-                @foreach($methodList as $m)
-                    <option value="{{ $m->id }}" {{ old('method_id', $log->method_id ?? '') == $m->id ? 'selected' : '' }}>
-                        {{ $m->methods_name }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-    </div>
-</template>
+                                        {{-- METHOD (dropdown tetap) --}}
+                                        <div class="mb-4">
+                                            <label for="methods_name_input" class="block text-sm font-medium text-gray-700">Nama Method <span class="text-red-500">*</span></label>
+                                            <select id="methods_name_input" name="method_id" required
+                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
+                                                <option value="">-- Pilih Method --</option>
+                                                @foreach($methodList as $m)
+                                                    <option value="{{ $m->id }}" {{ old('method_id', $log->method_id ?? '') == $m->id ? 'selected' : '' }}>
+                                                        {{ $m->methods_name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </template>
 
                                 {{-- DYNAMIC MODE (all other roles) --}}
                                 <template x-if="!isPredefinedRole">
                                     <div>
                                         {{-- LINE AREA (dropdown) --}}
                                         <div class="mb-4">
-                                            <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area</label>
+                                            <label for="line_area" class="block text-sm font-medium text-gray-700">Line Area <span class="text-red-500">*</span></label>
                                             <select id="line_area" name="line_area" x-model="selectedLineArea" @change="fetchStations()"
                                                 class="block w-full mt-1 border-gray-300 rounded-md shadow-sm" required>
                                                 <option value="">-- Pilih Line Area --</option>
@@ -129,7 +129,7 @@
 
                                         {{-- STATION (dropdown populated by AJAX or initial server data) --}}
                                         <div class="mb-4">
-                                            <label for="station_id" class="block text-sm font-medium text-gray-700">Station</label>
+                                            <label for="station_id" class="block text-sm font-medium text-gray-700">Station <span class="text-red-500">*</span></label>
                                             <select id="station_id" name="station_id" x-model="selectedStation" @change="fetchMethods()"
                                                 :disabled="stations.length === 0"
                                                 class="block w-full mt-1 border-gray-300 rounded-md shadow-sm" required>
@@ -142,7 +142,7 @@
 
                                         {{-- METHOD (dropdown populated by AJAX) --}}
                                         <div class="mb-4">
-                                            <label for="methods_name" class="block text-sm font-medium text-gray-700">Nama Method</label>
+                                            <label for="methods_name" class="block text-sm font-medium text-gray-700">Nama Method <span class="text-red-500">*</span></label>
                                             <select id="methods_name" name="method_id" x-model="selectedMethodId"
                                                 :disabled="methodList.length === 0"
                                                 class="block w-full mt-1 border-gray-300 rounded-md shadow-sm" required>
@@ -155,7 +155,7 @@
                                     </div>
                                 </template>
 
-                                {{-- SERIAL NUMBER START --}}
+                                {{-- SERIAL NUMBER START (Optional) --}}
                                 <div class="mb-4">
                                     <label for="serial_number_start" class="block text-sm font-medium text-gray-700">Serial Number Start</label>
                                     <input type="text" id="serial_number_start" name="serial_number_start"
@@ -163,7 +163,7 @@
                                         class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
                                 </div>
 
-                                {{-- SERIAL NUMBER END --}}
+                                {{-- SERIAL NUMBER END (Optional) --}}
                                 <div class="mb-4">
                                     <label for="serial_number_end" class="block text-sm font-medium text-gray-700">Serial Number End</label>
                                     <input type="text" id="serial_number_end" name="serial_number_end"
@@ -176,7 +176,7 @@
                             <div>
                                 {{-- EFFECTIVE DATE --}}
                                 <div class="mb-4">
-                                    <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif</label>
+                                    <label for="effective_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Efektif <span class="text-red-500">*</span></label>
                                     <input type="date" id="effective_date" name="effective_date"
                                         value="{{ old('effective_date', isset($log) ? \Carbon\Carbon::parse($log->effective_date)->format('Y-m-d') : '') }}"
                                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required>
@@ -184,7 +184,7 @@
 
                                 {{-- END DATE --}}
                                 <div class="mb-4">
-                                    <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir</label>
+                                    <label for="end_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Berakhir <span class="text-red-500">*</span></label>
                                     <input type="date" id="end_date" name="end_date"
                                         value="{{ old('end_date', isset($log) ? \Carbon\Carbon::parse($log->end_date)->format('Y-m-d') : '') }}"
                                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required>
@@ -192,7 +192,7 @@
 
                                 {{-- TIME START --}}
                                 <div class="mb-4">
-                                    <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai</label>
+                                    <label for="time_start" class="block text-gray-700 text-sm font-bold mb-2">Waktu Mulai <span class="text-red-500">*</span></label>
                                     <input type="time" id="time_start" name="time_start"
                                         value="{{ old('time_start', isset($log) ? \Carbon\Carbon::parse($log->time_start)->format('H:i') : '') }}"
                                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required>
@@ -200,7 +200,7 @@
 
                                 {{-- TIME END --}}
                                 <div class="mb-4">
-                                    <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir</label>
+                                    <label for="time_end" class="block text-gray-700 text-sm font-bold mb-2">Waktu Berakhir <span class="text-red-500">*</span></label>
                                     <input type="time" id="time_end" name="time_end"
                                         value="{{ old('time_end', isset($log) ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '') }}"
                                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required>
@@ -213,7 +213,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                             {{-- KETERANGAN SEBELUM --}}
                             <div class="bg-white rounded-lg p-4 border-2 border-blue-300 shadow-md">
-                                <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sebelum</label>
+                                <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sebelum <span class="text-red-500">*</span></label>
                                 <textarea id="keterangan" name="keterangan" rows="4"
                                     placeholder="Jelaskan kondisi method sebelum perubahan..."
                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
@@ -223,7 +223,7 @@
 
                             {{-- KETERANGAN SESUDAH --}}
                             <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md">
-                                <label for="keterangan_after" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sesudah Pergantian</label>
+                                <label for="keterangan_after" class="block text-gray-700 text-sm font-bold mb-2">Keterangan Sesudah Pergantian <span class="text-red-500">*</span></label>
                                 <textarea id="keterangan_after" name="keterangan_after" rows="4"
                                     placeholder="Jelaskan kondisi method setelah perubahan..."
                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
@@ -235,7 +235,10 @@
                         {{-- Lampiran --}}
                         <div class="mb-6 mt-6">
                             <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran
-                                (Wajib untuk Izin/Sakit)</label>
+                                @if (!isset($log) || (isset($log) && !$log->lampiran))
+                                    <span class="text-red-500">*</span>
+                                @endif
+                            </label>
                             <input type="file" id="lampiran" name="lampiran"
                                 accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
                                 class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
@@ -288,9 +291,9 @@
             predefinedStationId: @json($predefinedStationId),
             predefinedStationName: @json(optional($predefinedStation)->station_name ?? ''),
 
-         selectedLineArea: @json($selectedLineArea ?? old('line_area') ?? '') || '',
-selectedStation: @json(old('station_id') ?? ($predefinedStationId ?? '')) || '',
-selectedMethodId: @json(old('method_id') ?? ($log->method_id ?? '')) || '',
+            selectedLineArea: @json($selectedLineArea ?? old('line_area') ?? '') || '',
+            selectedStation: @json(old('station_id') ?? ($predefinedStationId ?? '')) || '',
+            selectedMethodId: @json(old('method_id') ?? ($log->method_id ?? '')) || '',
 
             // routes
             stationsByLineUrl: '{{ route('henkaten.stations.by_line') }}',
@@ -332,33 +335,33 @@ selectedMethodId: @json(old('method_id') ?? ($log->method_id ?? '')) || '',
                 }
             },
 
-         async fetchMethods() {
-    if (!this.selectedStation) {
-        this.methodList = [];
-        // Jangan reset selectedMethodId ketika edit
-        return;
-    }
+            async fetchMethods() {
+                if (!this.selectedStation) {
+                    this.methodList = [];
+                    // Jangan reset selectedMethodId ketika edit
+                    return;
+                }
 
-    try {
-        const id = encodeURIComponent(this.selectedStation);
-        const res = await fetch(`${this.methodsByStationUrl}?station_id=${id}`);
-        if (!res.ok) throw new Error('Network response not ok');
+                try {
+                    const id = encodeURIComponent(this.selectedStation);
+                    const res = await fetch(`${this.methodsByStationUrl}?station_id=${id}`);
+                    if (!res.ok) throw new Error('Network response not ok');
 
-        const data = await res.json();
-        this.methodList = Array.isArray(data) ? data : (data.data ?? []);
+                    const data = await res.json();
+                    this.methodList = Array.isArray(data) ? data : (data.data ?? []);
 
-        // Kalau ini BUKAN edit (selectedMethodId kosong), reset.
-        // Kalau edit (selectedMethodId sudah ada), JANGAN reset.
-        if (!@json(isset($log))) {   // jika halaman CREATE
-            this.selectedMethodId = '';
-        }
+                    // Kalau ini BUKAN edit (selectedMethodId kosong), reset.
+                    // Kalau edit (selectedMethodId sudah ada), JANGAN reset.
+                    if (!@json(isset($log))) {   // jika halaman CREATE
+                        this.selectedMethodId = '';
+                    }
 
-    } catch (err) {
-        console.error('Gagal fetch methods:', err);
-        this.methodList = [];
-        // Jangan reset selectedMethodId (penting untuk EDIT)
-    }
-}
+                } catch (err) {
+                    console.error('Gagal fetch methods:', err);
+                    this.methodList = [];
+                    // Jangan reset selectedMethodId (penting untuk EDIT)
+                }
+            }
 
 
         }));

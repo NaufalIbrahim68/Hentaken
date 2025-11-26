@@ -307,26 +307,30 @@
                                 required>{{ old('keterangan', $log->keterangan ?? '') }}</textarea>
                         </div>
 
-                        {{-- Lampiran --}}
-                                <div class="mb-6 mt-6">
-                                    <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran
-                                        (Wajib untuk Izin/Sakit)</label>
-                                    <input type="file" id="lampiran" name="lampiran"
-                                        accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
-                                        class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                        {{ !isset($log) ? 'required' : '' }}>
-                                    @if (isset($log) && $log->lampiran)
-                                        <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-                                            <p class="text-sm text-gray-700 font-medium mb-1">Lampiran saat ini:</p>
-                                            <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
-                                                class="text-blue-600 hover:text-blue-800 hover:underline">
-                                                Lihat Lampiran ({{ basename($log->lampiran) }})
-                                            </a>
-                                            <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda
-                                                ingin mengganti lampiran ini.</p>
-                                        </div>
-                                    @endif
+                         {{-- Lampiran --}}
+                        <div class="mb-6 mt-6">
+                            <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran
+                                @if (!isset($log) || (isset($log) && !$log->lampiran))
+                                    <span class="text-red-500">*</span>
+                                @endif
+                            </label>
+                            <input type="file" id="lampiran" name="lampiran"
+                                accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
+                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                {{ !isset($log) ? 'required' : '' }}>
+                            @if (isset($log) && $log->lampiran)
+                                <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                    <p class="text-sm text-gray-700 font-medium mb-1">Lampiran saat ini:</p>
+                                    <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                                        class="text-blue-600 hover:text-blue-800 hover:underline">
+                                        Lihat Lampiran ({{ basename($log->lampiran) }})
+                                    </a>
+                                    <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda
+                                        ingin mengganti lampiran ini.</p>
                                 </div>
+                            @endif
+                        </div>
+
 
                         {{-- Action Buttons --}}
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">

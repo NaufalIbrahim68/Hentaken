@@ -86,16 +86,17 @@
                                                     class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-md text-sm transition">
                                                     Change
                                                 </a>
-                                                <form action="{{ route('manpower.destroy', $man_power->id) }}"
-                                                        method="POST"
-                                                        onsubmit="return confirm('Yakin ingin hapus?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                            class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md text-sm transition">
-                                                        Hapus
-                                                    </button>
-                                                </form>
+                                               <form action="{{ route('manpower.master.destroy', $man_power->id) }}" 
+      method="POST" 
+      onsubmit="return confirm('Yakin ingin hapus?');">
+    @csrf
+    @method('DELETE')
+    <button type="submit" 
+            class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md text-sm transition">
+        Hapus
+    </button>
+</form>
+
                                             </div>
                                         </td>
                                     </tr>

@@ -14,9 +14,7 @@ use Illuminate\View\View;
 
 class ManPowerController extends Controller
 {
-    // ==============================================================
-    // INDEX: Tampilkan daftar Man Power
-    // ==============================================================
+    
    public function index(Request $request) 
     {
         // 1. Ambil nilai filter dari request

@@ -142,6 +142,7 @@ Route::middleware(['auth'])->group(function () {
         // CREATE / STORE MASTER
         Route::get('/create-master', [ManPowerController::class, 'create'])->name('create');
         Route::post('/store-master', [ManPowerController::class, 'storeMaster'])->name('store');
+    Route::delete('/destroy-master/{id}', [ManPowerController::class, 'destroyMaster'])->name('destroy');
 
         // 🔹 AJAX dropdown line → station
         Route::get('/stations/by_line', [ManPowerController::class, 'getStationsByLine'])->name('stations.by_line');
