@@ -188,6 +188,7 @@ class DashboardController extends Controller
 
             $allManPower = ManPower::with('station')
                 ->where('grup', $currentGroup)
+           ->where('is_main_operator', 1) // <<< tambahkan filter ini
                 ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
                 ->get();
 

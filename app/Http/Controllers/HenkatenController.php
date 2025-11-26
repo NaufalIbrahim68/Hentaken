@@ -288,63 +288,43 @@ class HenkatenController extends Controller
 
 public function storeMethodHenkaten(Request $request)
 {
-$userRole = Auth::user()->role ?? 'operator';
-$isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
+    $userRole = Auth::user()->role ?? 'operator';
+    $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
 
-$dataToValidate = $request->all();
-$lineArea = $request->input('line_area');
-$stationIdTarget = null;
-$methodIdTarget = null;
-$stationNameTarget = null;
-$methodName = null;
+    // =========================================================
+    // Tentukan station_id untuk predefined role
+    // =========================================================
+    if ($isPredefinedRole) {
+        $predefinedLineArea = match ($userRole) {
+            'Leader QC'   => 'Incoming',
+            'Leader PPIC' => 'Delivery',
+        };
 
-// =========================================================
-// PENCARIAN ID (Station & Method) untuk Role Predefined
-// =========================================================
-if ($isPredefinedRole) {
-        // Ambil Method Name dari form
-        $methodName = $request->input('methods_name');
+        $defaultStation = \App\Models\Station::where('line_area', $predefinedLineArea)->first();
+        $stationIdTarget = $defaultStation ? $defaultStation->id : null;
 
-        // Cek Method ID (Station ID diambil langsung dari hidden input form)
-        if ($methodName) {
-            $methodMaster = Method::where('methods_name', $methodName)->first();
-            $methodIdTarget = $methodMaster ? $methodMaster->id : null;
-        }
-
-        // Ambil station_id langsung dari request (HARUS dikirim dari hidden input Blade)
+        // Tetapkan line_area untuk predefined role
+        $request->merge(['line_area' => $predefinedLineArea]);
+    } else {
+        // Ambil dari request untuk role lainnya
         $stationIdTarget = $request->input('station_id');
+    }
 
-        // Update dataToValidate HANYA untuk method_id
-        $dataToValidate['method_id'] = $methodIdTarget;
+    $methodIdTarget = $request->input('method_id');
 
-        // Jika station_id dari hidden input kosong/null, ini akan memicu error validasi yang tepat
-        if (!$stationIdTarget) {
-            // Ini akan memastikan error "station_id is required" muncul
-            // atau jika Anda ingin error custom:
-            // throw ValidationException::withMessages(['station_id' => ['Station ID tidak terkirim dari form.']]);
-        }    $dataToValidate['station_id'] = $stationIdTarget;
-    $dataToValidate['method_id'] = $methodIdTarget;
-
-    Log::info('Predefined role search', [
-        'station_name' => $stationNameTarget,
-        'station_id' => $stationIdTarget,
-        'method_name' => $methodName,
-        'method_id' => $methodIdTarget
-    ]);
-}
-
-// =========================================================
-// VALIDASI
-// =========================================================
-try {
-    $request->merge($dataToValidate);
-
-    $validated = $request->validate([
+    // =========================================================
+    // Validasi kondisional
+    // =========================================================
+    $rules = [
         'shift'               => 'required|string',
         'line_area'           => 'required|string',
-        'station_id'          => 'required|integer|exists:stations,id',
-        'method_id'           => $isPredefinedRole ? 'required|string|max:255' : 'nullable',
-        'methods_name'        => $isPredefinedRole ? 'required|string|max:255' : 'nullable',
+        // hanya required untuk role non-predefined
+        'station_id'          => $isPredefinedRole 
+                                 ? 'nullable|integer|exists:stations,id'
+                                 : 'required|integer|exists:stations,id',
+        'method_id'           => $isPredefinedRole 
+                                 ? 'required|integer|exists:methods,id' 
+                                 : 'nullable|integer|exists:methods,id',
         'effective_date'      => 'required|date',
         'end_date'            => 'required|date|after_or_equal:effective_date',
         'time_start'          => 'required|date_format:H:i',
@@ -355,76 +335,76 @@ try {
         'serial_number_end'   => 'nullable|string|max:100',
         'note'                => 'nullable|string',
         'lampiran'            => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
-    ]);
-
-    // custom error jika ID tidak ditemukan
-    if ($isPredefinedRole && (!$stationIdTarget || !$methodIdTarget)) {
-        $msg = "Gagal menemukan ID: Pastikan Stasiun '{$stationNameTarget}' dan Method '{$methodName}' ada di database master.";
-        throw ValidationException::withMessages(['station_id' => [$msg]]);
-    }
-
-} catch (ValidationException $e) {
-    return back()->withErrors($e->errors())->withInput();
-}
-
-// =========================================================
-// SIMPAN DATA
-// =========================================================
-try {
-    DB::beginTransaction();
-
-    $lampiranPath = null;
-    if ($request->hasFile('lampiran')) {
-        $lampiranPath = $request->file('lampiran')->store('lampiran_methods_henkaten', 'public');
-    }
-
-    $timeStart = Carbon::createFromFormat('H:i', $validated['time_start']);
-    $timeEnd   = Carbon::createFromFormat('H:i', $validated['time_end']);
-
-    $dataToCreate = [
-        'station_id'            => $validated['station_id'],
-        'method_id'             => $validated['method_id'],
-        'methods_name'          => $validated['methods_name'] ?? null,
-        'shift'                 => $validated['shift'],
-        'line_area'             => $validated['line_area'],
-        'keterangan'            => $validated['keterangan'],
-        'keterangan_after'      => $validated['keterangan_after'],
-        'effective_date'        => $validated['effective_date'],
-        'end_date'              => $validated['end_date'],
-        'time_start'            => $timeStart,
-        'time_end'              => $timeEnd,
-        'lampiran'              => $lampiranPath,
-        'serial_number_start'   => $validated['serial_number_start'] ?? null,
-        'serial_number_end'     => $validated['serial_number_end'] ?? null,
-        'note'                  => $validated['note'] ?? null,
-        'status'                => 'PENDING',
     ];
 
-    MethodHenkaten::create($dataToCreate);
+    $validated = $request->validate($rules);
 
-    DB::commit();
+    // =========================================================
+    // Ambil methods_name dari DB jika ada method_id
+    // =========================================================
+    $methodName = $validated['method_id'] 
+                    ? Method::find($validated['method_id'])->methods_name 
+                    : null;
 
-    return redirect()->route('henkaten.method.create')
-        ->with('success', 'Data Henkaten Method berhasil dibuat.');
+    // =========================================================
+    // Simpan data
+    // =========================================================
+    try {
+        DB::beginTransaction();
 
-} catch (\Exception $e) {
-    DB::rollBack();
+        $lampiranPath = null;
+        if ($request->hasFile('lampiran')) {
+            $lampiranPath = $request->file('lampiran')->store('lampiran_methods_henkaten', 'public');
+        }
 
-    if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
-        Storage::disk('public')->delete($lampiranPath);
-    }
+        $timeStart = Carbon::createFromFormat('H:i', $validated['time_start']);
+        $timeEnd   = Carbon::createFromFormat('H:i', $validated['time_end']);
 
-    Log::error('Method Henkaten store failed: ' . $e->getMessage(), [
-        'exception' => $e,
-        'input' => $request->all()
-    ]);
+        $dataToCreate = [
+            'station_id'          => $isPredefinedRole ? $stationIdTarget : $validated['station_id'],
+            'method_id'           => $validated['method_id'] ?? null,
+            'methods_name'        => $methodName,
+            'shift'               => $validated['shift'],
+            'line_area'           => $validated['line_area'],
+            'keterangan'          => $validated['keterangan'],
+            'keterangan_after'    => $validated['keterangan_after'],
+            'effective_date'      => $validated['effective_date'],
+            'end_date'            => $validated['end_date'],
+            'time_start'          => $timeStart,
+            'time_end'            => $timeEnd,
+            'lampiran'            => $lampiranPath,
+            'serial_number_start' => $validated['serial_number_start'] ?? null,
+            'serial_number_end'   => $validated['serial_number_end'] ?? null,
+            'note'                => $validated['note'] ?? null,
+            'status'              => 'PENDING',
+        ];
+
+        MethodHenkaten::create($dataToCreate);
+
+        DB::commit();
+
+        return redirect()->route('henkaten.method.create')
+            ->with('success', 'Data Henkaten Method berhasil dibuat.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
+            Storage::disk('public')->delete($lampiranPath);
+        }
+
+        Log::error('Method Henkaten store failed: ' . $e->getMessage(), [
+            'exception' => $e,
+            'input' => $request->all()
+        ]);
 
         return back()
             ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Error: ' . $e->getMessage()])
             ->withInput();
     }
 }
- 
+
+
 
     public function getMethodsByStation(Request $request)
     {
@@ -669,7 +649,10 @@ public function createMachineHenkaten()
     // --- LOGIKA ROLE & FILTER LINE AREA ---
     $user = Auth::user();
     $role = $user ? $user->role : null;
+    
+    // 🟢 PERUBAHAN: Leader FA tidak termasuk isPredefinedRole
     $isPredefinedRole = in_array($role, ['Leader QC', 'Leader PPIC']);
+    $isLeaderFA = ($role === 'Leader FA');
 
     // Ambil SEMUA Line Area unik yang ada di tabel 'stations'
     $allLineAreas = Station::select('line_area')
@@ -683,6 +666,10 @@ public function createMachineHenkaten()
         $lineAreas = $allLineAreas->filter(fn($area) => $area === 'Incoming')->values();
     } elseif ($role === 'Leader PPIC') {
         $lineAreas = $allLineAreas->filter(fn($area) => $area === 'Delivery')->values();
+    } elseif ($isLeaderFA) {
+        // 🟢 BARU: Filter Line Area khusus Leader FA
+        $allowedFALineAreas = ['FA L1', 'FA L2', 'FA L3', 'FA L5', 'FA L6'];
+        $lineAreas = $allLineAreas->filter(fn($area) => in_array($area, $allowedFALineAreas))->values();
     } else {
         $lineAreas = $allLineAreas; // Role lain melihat semua
     }
@@ -699,32 +686,56 @@ public function createMachineHenkaten()
     
     // --- AMBIL DATA STATIONS DAN MACHINES BERDASARKAN SELECTED LINE AREA ---
     $stations = collect();
-    $machinesToDisplay = collect();
+   $machinesToDisplay = collect([
+    (object)['id' => 1, 'machines_category' => 'PROGRAM'],
+    (object)['id' => 2, 'machines_category' => 'Machine & JIG'],
+    (object)['id' => 3, 'machines_category' => 'Equipement'],
+    (object)['id' => 4, 'machines_category' => 'Kamera'],
+]);
+
     $machineCategories = collect(); // Nama kategori unik
 
-    if ($selectedLineArea) {
-        // 1. Ambil semua Stasiun di Line Area yang dipilih
-        $stations = Station::where('line_area', $selectedLineArea)->get();
+   if ($selectedLineArea) {
+
+    $stations = Station::where('line_area', $selectedLineArea)->get();
+
+    // khusus Leader FA → selalu gunakan hardcode
+    if ($isLeaderFA) {
+
+        $machinesToDisplay = collect([
+            (object)['id' => 1, 'machines_category' => 'PROGRAM'],
+            (object)['id' => 2, 'machines_category' => 'Machine & JIG'],
+            (object)['id' => 3, 'machines_category' => 'Equipement'],
+            (object)['id' => 4, 'machines_category' => 'Kamera'],
+        ]);
+
+        $machineCategories = collect([
+            'PROGRAM',
+            'Machine & JIG',
+            'Equipement',
+            'Kamera'
+        ]);
+
+    } else {
+
+        // role lain tetap pakai database
         $stationIds = $stations->pluck('id')->toArray();
-        
-        // 2. Ambil SEMUA Mesin yang berada di Stasiun-stasiun tersebut
-        $machinesToDisplay = Machine::select('id', 'machines_category', 'station_id', 'deskripsi')
+
+        $machinesToDisplay = Machine::select('id','machines_category','station_id','deskripsi')
             ->whereIn('station_id', $stationIds)
             ->whereNotNull('machines_category')
             ->get();
-        
-        // 3. Ambil daftar kategori unik untuk dropdown
+
         $machineCategories = $machinesToDisplay->pluck('machines_category')->unique();
     }
-    
-    // 🟢 Hapus logika kategori spesifik hardcode di sini. Semua mesin yang ada di Line Area yang dipilih akan muncul.
+
+
 
     // --- LOGIKA 'old' data untuk station ---
     // Di mode predefined, kita tidak perlu old('station_id') karena form hanya mengirim Line Area.
     $predefinedStationId = $stations->first()->id ?? null; // ID stasiun pertama di Line Area jika predefined
 
     // Untuk mode dynamic/operator, kita perlu old('station_id') untuk re-populasi.
-    
     $oldStationId = old('station_id', $log?->station_id);
 
     return view('machines.create_henkaten', compact(
@@ -741,40 +752,92 @@ public function createMachineHenkaten()
         'machinesToDisplay' // KUNCI: Daftar Mesin Lengkap (ID, Category, Station ID) untuk Blade/JS
     ));
 }
-
+}
 
 
 public function storeMachineHenkaten(Request $request)
-    {
-        // --- 1. Tentukan Role Pengguna dan Inisialisasi Variabel ---
-        $userRole = Auth::user()->role ?? 'operator';
-        $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
+{
+    // --- 1. Tentukan Role Pengguna dan Inisialisasi Variabel ---
+    $userRole = Auth::user()->role ?? 'operator';
+    $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
+    $isLeaderFA = ($userRole === 'Leader FA');
 
-        $dataToValidate = $request->all();
-        $lineArea = $request->input('line_area'); 
+    $dataToValidate = $request->all();
+    $lineArea = $request->input('line_area'); 
 
-        // 🟢 INISIALISASI: Mendeklarasikan variabel di scope fungsi
-        $machineIdTarget = $request->input('id_machines'); 
-        $targetMachineId = $machineIdTarget; 
-        $lampiranPath = null; // Diinisialisasi untuk digunakan di catch block
+    $machineIdTarget = null;
+    $targetMachineId = null;
+    $selectedMachine = null;
+    $lampiranPath = null;
 
-        // --- A. Mencari/Menentukan STATION_ID dan MACHINE_ID ---
+    // --- A. Mencari/Menentukan STATION_ID dan MACHINE_ID ---
+    
+    // 🟢 BARU: Untuk Leader FA, gunakan category (string) bukan id_machines
+    if ($isLeaderFA) {
+        $categoryInput = $request->input('category');
+        
+        if (!$categoryInput) {
+            throw ValidationException::withMessages([
+                'category' => 'Kategori mesin harus dipilih.'
+            ]);
+        }
+
+        // Validasi kategori yang diizinkan untuk Leader FA
+        $allowedFACategories = ['PROGRAM', 'Machine & JIG', 'Equipement', 'Kamera'];
+        if (!in_array($categoryInput, $allowedFACategories)) {
+            throw ValidationException::withMessages([
+                'category' => "Kategori '{$categoryInput}' tidak diizinkan untuk Leader FA."
+            ]);
+        }
+
+        // Validasi Line Area untuk Leader FA
+        $allowedFALineAreas = ['FA L1', 'FA L2', 'FA L3', 'FA L5', 'FA L6'];
+        if (!in_array($lineArea, $allowedFALineAreas)) {
+            throw ValidationException::withMessages([
+                'line_area' => "Line Area '{$lineArea}' tidak diizinkan untuk Leader FA."
+            ]);
+        }
+        
+        // Validasi Station ID yang dipilih harus ada di Line Area FA yang dipilih
+        $stationExists = Station::where('id', $request->input('station_id'))
+            ->where('line_area', $lineArea)
+            ->exists();
+            
+        if (!$stationExists) {
+            throw ValidationException::withMessages([
+                'station_id' => "Station yang dipilih tidak valid untuk Line Area '{$lineArea}'."
+            ]);
+        }
+        
+        // Untuk Leader FA: set station_id dari input, id_machines = null
+        $dataToValidate['station_id'] = $request->input('station_id');
+        $dataToValidate['id_machines'] = null; // Leader FA tidak pakai id_machines
+        
+        // Set variable untuk digunakan di validasi overlap (gunakan category sebagai identifier)
+        $machineCategory = $categoryInput;
+        
+    } else {
+        // Untuk role lain (non-Leader FA), gunakan id_machines seperti biasa
+        $machineIdTarget = $request->input('id_machines');
         
         // Cek awal: apakah Machine ID valid?
         $selectedMachine = Machine::find($machineIdTarget);
         if (!$selectedMachine) {
-            throw ValidationException::withMessages(['id_machines' => 'Machine ID tidak valid atau data master mesin tidak ditemukan.']);
+            throw ValidationException::withMessages([
+                'id_machines' => 'Machine ID tidak valid atau data master mesin tidak ditemukan.'
+            ]);
         }
 
-        // 🟢 Dapatkan Line Area yang ditargetkan role (untuk verifikasi)
-        $targetLineArea = null;
-        if ($userRole === 'Leader QC') {
-            $targetLineArea = 'Incoming';
-        } elseif ($userRole === 'Leader PPIC') {
-            $targetLineArea = 'Delivery';
-        }
-        
+        $targetMachineId = $machineIdTarget;
+        $machineCategory = $selectedMachine->machines_category;
+
         if ($isPredefinedRole) {
+            // Untuk Leader QC dan Leader PPIC
+            $targetLineArea = match($userRole) {
+                'Leader QC' => 'Incoming',
+                'Leader PPIC' => 'Delivery',
+                default => null
+            };
             
             // 1. Ambil Line Area dari Station ID Mesin yang dipilih di DB
             $machineStation = Station::find($selectedMachine->station_id);
@@ -782,51 +845,71 @@ public function storeMachineHenkaten(Request $request)
             
             // 2. Verifikasi apakah Line Area Mesin COCOK dengan Line Area Role
             if ($machineLineArea !== $targetLineArea) {
-                // Error jika Line Area Mesin tidak cocok dengan Line Area Role
                 throw ValidationException::withMessages([
-                    'id_machines' => ["Mesin '{$selectedMachine->machines_category}' tidak valid untuk Line Area '{$targetLineArea}'. Mesin ini berada di Line Area '{$machineLineArea}'."]
+                    'id_machines' => "Mesin '{$selectedMachine->machines_category}' tidak valid untuk Line Area '{$targetLineArea}'. Mesin ini berada di Line Area '{$machineLineArea}'."
                 ]);
             }
             
             // 3. Update data to validate dengan Station ID yang BENAR dari mesin yang dipilih
             $dataToValidate['station_id'] = $selectedMachine->station_id;
-        } 
+        }
         
-        // 🟢 Finalisasi Machine ID untuk validasi (sudah dilakukan saat inisialisasi)
+        // Finalisasi Machine ID untuk validasi
         $dataToValidate['id_machines'] = $targetMachineId;
+    }
 
-        // --- B. Validasi Data ---
+    // --- B. Validasi Data ---
 
-        try {
-            $request->merge($dataToValidate); 
+    try {
+        $request->merge($dataToValidate); 
 
-            $validated = $request->validate([
-                'shift'              => 'required|string',
-                'line_area'          => 'required|string',
-                'station_id'         => 'required|integer|exists:stations,id',
-                'id_machines'         => 'required|integer|exists:machines,id', 
-                // HAPUS RULE 'category'
-                
-                'effective_date'     => 'required|date',
-                'end_date'           => 'nullable|date|after_or_equal:effective_date',
-                'time_start'         => 'required|date_format:H:i',
-                'time_end'           => 'required|date_format:H:i|after_or_equal:time_start',
-                'before_value'       => 'required|string|max:255',
-                'after_value'        => 'required|string|max:255',
-                'keterangan'         => 'required|string',
-                'lampiran'           => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
-                'serial_number_start'=> 'nullable|string|max:255',
-                'serial_number_end'  => 'nullable|string|max:255',
-            ]);
-            
-            // --- C. Pengecekan Tumpang Tindih Waktu (Overlap Check) ---
-            
-            $newEffectiveDate = $validated['effective_date'];
-            $newEndDate = $validated['end_date'] ?? '2999-12-31';
-            $newTimeStart = $validated['time_start'];
-            $newTimeEnd = $validated['time_end'];
-            // $targetMachineId digunakan di sini (Baris ~832)
+        // 🟢 Validasi rules berbeda untuk Leader FA
+        $validationRules = [
+            'shift'              => 'required|string',
+            'line_area'          => 'required|string',
+            'station_id'         => 'required|integer|exists:stations,id',
+            'effective_date'     => 'required|date',
+            'end_date'           => 'nullable|date|after_or_equal:effective_date',
+            'time_start'         => 'required|date_format:H:i',
+            'time_end'           => 'required|date_format:H:i|after_or_equal:time_start',
+            'before_value'       => 'required|string|max:255',
+            'after_value'        => 'required|string|max:255',
+            'keterangan'         => 'required|string',
+            'lampiran'           => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
+            'serial_number_start'=> 'nullable|string|max:255',
+            'serial_number_end'  => 'nullable|string|max:255',
+        ];
 
+        // Tambahkan validasi sesuai role
+        if ($isLeaderFA) {
+            $validationRules['category'] = 'required|string';
+        } else {
+            $validationRules['id_machines'] = 'required|integer|exists:machines,id';
+        }
+
+        $validated = $request->validate($validationRules);
+        
+        // --- C. Pengecekan Tumpang Tindih Waktu (Overlap Check) ---
+        
+        $newEffectiveDate = $validated['effective_date'];
+        $newEndDate = $validated['end_date'] ?? '2999-12-31';
+        $newTimeStart = $validated['time_start'];
+        $newTimeEnd = $validated['time_end'];
+
+        // 🟢 Query overlap berbeda untuk Leader FA (by station_id + machine) vs role lain (by id_machines)
+        if ($isLeaderFA) {
+            // Untuk Leader FA: cek overlap berdasarkan station_id dan machine (nama kategori)
+            $overlappingHenkaten = MachineHenkaten::where('station_id', $validated['station_id'])
+                ->where('machine', $machineCategory)
+                ->whereIn('status', ['Approved', 'PENDING'])
+                ->where(function ($query) use ($newEffectiveDate, $newEndDate, $newTimeStart, $newTimeEnd) {
+                    $query->whereDate('effective_date', '<=', $newEndDate)
+                          ->where(fn($q) => $q->whereDate('end_date', '>=', $newEffectiveDate)->orWhereNull('end_date'))
+                          ->where(fn($q) => $q->whereTime('time_start', '<', $newTimeEnd)->whereTime('time_end', '>', $newTimeStart));
+                })
+                ->exists();
+        } else {
+            // Untuk role lain: cek overlap berdasarkan id_machines
             $overlappingHenkaten = MachineHenkaten::where('id_machines', $targetMachineId)
                 ->whereIn('status', ['Approved', 'PENDING'])
                 ->where(function ($query) use ($newEffectiveDate, $newEndDate, $newTimeStart, $newTimeEnd) {
@@ -835,64 +918,69 @@ public function storeMachineHenkaten(Request $request)
                           ->where(fn($q) => $q->whereTime('time_start', '<', $newTimeEnd)->whereTime('time_end', '>', $newTimeStart));
                 })
                 ->exists();
-
-            if ($overlappingHenkaten) {
-                $machineCategory = $selectedMachine->machines_category ?? 'Unknown'; 
-                throw ValidationException::withMessages([
-                    'effective_date' => ["Henkaten Mesin ('{$machineCategory}') sudah memiliki log yang masih aktif atau tumpang tindih dalam periode tanggal/waktu yang sama. Hanya satu Henkaten yang diizinkan per mesin pada waktu yang sama."]
-                ]);
-            }
-            
-            // --- D. Proses Penyimpanan Data (Dipindahkan ke dalam try) ---
-
-            DB::beginTransaction();
-
-            if ($request->hasFile('lampiran')) {
-                $lampiranPath = $request->file('lampiran')->store('lampiran_machines_henkaten', 'public');
-            }
-
-            $dataToCreate = $validated;
-
-            // Mapping kolom ke nama database yang benar
-            $dataToCreate['lampiran'] = $lampiranPath;
-            // 🟢 Ambil nama mesin dari Model Mesin yang sudah dicari di awal
-            $dataToCreate['machine'] = $selectedMachine->machines_category; 
-            $dataToCreate['id_machines'] = $targetMachineId; 
-            
-            $dataToCreate['description_before'] = $validated['before_value'];
-            $dataToCreate['description_after'] = $validated['after_value'];
-            $dataToCreate['status'] = 'PENDING';
-
-            // Hapus key-key asli dari form yang tidak ada di tabel database
-            unset($dataToCreate['before_value']);
-            unset($dataToCreate['after_value']);
-
-            MachineHenkaten::create($dataToCreate); // Baris 867 di contoh error sebelumnya
-
-            DB::commit();
-
-            return redirect()->route('henkaten.machine.create')
-                ->with('success', 'Data Henkaten Machine berhasil dibuat.');
-
-        } catch (ValidationException $e) {
-            // Jika terjadi ValidationException, kita tidak melakukan rollback lampiran karena lampiran belum disimpan di sini
-            return back()->withErrors($e->errors())->withInput();
-        } 
-        // 🟢 Catch untuk error sistem/database
-        catch (\Exception $e) {
-            DB::rollBack();
-            // Rollback lampiran hanya jika path sudah di-set (berarti sudah masuk ke DB::beginTransaction)
-            if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
-                Storage::disk('public')->delete($lampiranPath);
-            }
-            Log::error('Machine Henkaten store failed: ' . $e->getMessage(), ['exception' => $e, 'input' => $request->all()]);
-
-            return back()
-                ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Error: ' . $e->getMessage()])
-                ->withInput();
         }
-    }
 
+        if ($overlappingHenkaten) {
+            throw ValidationException::withMessages([
+                'effective_date' => "Henkaten Mesin ('{$machineCategory}') sudah memiliki log yang masih aktif atau tumpang tindih dalam periode tanggal/waktu yang sama."
+            ]);
+        }
+        
+        // --- D. Proses Penyimpanan Data ---
+
+        DB::beginTransaction();
+
+        if ($request->hasFile('lampiran')) {
+            $lampiranPath = $request->file('lampiran')->store('lampiran_machines_henkaten', 'public');
+        }
+
+        $dataToCreate = $validated;
+
+        // Mapping kolom ke nama database yang benar
+        $dataToCreate['lampiran'] = $lampiranPath;
+        
+        // 🟢 Set machine name dan id_machines sesuai role
+        if ($isLeaderFA) {
+            $dataToCreate['machine'] = $machineCategory; // Dari category input
+            $dataToCreate['id_machines'] = null; // Leader FA tidak pakai id_machines
+        } else {
+            $dataToCreate['machine'] = $selectedMachine->machines_category;
+            $dataToCreate['id_machines'] = $targetMachineId;
+        }
+        
+        $dataToCreate['description_before'] = $validated['before_value'];
+        $dataToCreate['description_after'] = $validated['after_value'];
+        $dataToCreate['status'] = 'PENDING';
+
+        // Hapus key-key asli dari form yang tidak ada di tabel database
+        unset($dataToCreate['before_value']);
+        unset($dataToCreate['after_value']);
+
+        MachineHenkaten::create($dataToCreate);
+
+        DB::commit();
+
+        return redirect()->route('henkaten.machine.create')
+            ->with('success', 'Data Henkaten Machine berhasil dibuat.');
+
+    } catch (ValidationException $e) {
+        return back()->withErrors($e->errors())->withInput();
+    } 
+    catch (\Exception $e) {
+        DB::rollBack();
+        if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
+            Storage::disk('public')->delete($lampiranPath);
+        }
+        Log::error('Machine Henkaten store failed: ' . $e->getMessage(), [
+            'exception' => $e, 
+            'input' => $request->all()
+        ]);
+
+        return back()
+            ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Error: ' . $e->getMessage()])
+            ->withInput();
+    }
+}
 
     // ==============================================================
     // BAGIAN 6: API BANTUAN

@@ -79,40 +79,35 @@
 
                             {{-- LEFT COLUMN: Line Area / Station / Method --}}
                             <div>
-                                {{-- PREDEFINED ROLE (Leader QC / Leader PPIC) --}}
-                                <template x-if="isPredefinedRole">
-                                    <div>
-                                        {{-- LINE AREA (readonly) --}}
-                                        <div class="mb-4">
-                                            <label class="block text-sm font-medium text-gray-700">Line Area</label>
-                                            <input type="text" :value="predefinedLineArea" readonly
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
-                                            <input type="hidden" name="line_area" :value="predefinedLineArea">
-                                        </div>
+                              {{-- PREDEFINED ROLE (Leader QC / Leader PPIC) --}}
+<template x-if="isPredefinedRole">
+    <div>
+        {{-- LINE AREA (readonly) --}}
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Line Area</label>
+            <input type="text" :value="predefinedLineArea" readonly
+                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
+            <input type="hidden" name="line_area" :value="predefinedLineArea">
+        </div>
 
-                                        {{-- STATION (hidden id + readonly name) --}}
-                                        <div class="mb-4">
-                                            <label class="block text-sm font-medium text-gray-700">Station</label>
-                                            <input type="hidden" name="station_id" :value="predefinedStationId">
-                                            <input type="text" :value="predefinedStationName" readonly
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed">
-                                        </div>
+        {{-- HAPUS STATION FORM --}}
+        {{-- Tidak ada input station sama sekali --}}
 
-                                        {{-- METHOD (server-side methodList rendered server-side for reliability) --}}
-                                        <div class="mb-4">
-                                            <label for="methods_name_input" class="block text-sm font-medium text-gray-700">Nama Method</label>
-                                            <select id="methods_name_input" name="method_id" required
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
-                                                <option value="">-- Pilih Method --</option>
-                                                @foreach($methodList as $m)
-                                                    <option value="{{ $m->id }}" {{ old('method_id', $log->method_id ?? '') == $m->id ? 'selected' : '' }}>
-                                                        {{ $m->methods_name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                </template>
+        {{-- METHOD (dropdown tetap) --}}
+        <div class="mb-4">
+            <label for="methods_name_input" class="block text-sm font-medium text-gray-700">Nama Method</label>
+            <select id="methods_name_input" name="method_id" required
+                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
+                <option value="">-- Pilih Method --</option>
+                @foreach($methodList as $m)
+                    <option value="{{ $m->id }}" {{ old('method_id', $log->method_id ?? '') == $m->id ? 'selected' : '' }}>
+                        {{ $m->methods_name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+</template>
 
                                 {{-- DYNAMIC MODE (all other roles) --}}
                                 <template x-if="!isPredefinedRole">
