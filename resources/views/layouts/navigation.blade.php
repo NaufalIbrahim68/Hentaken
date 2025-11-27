@@ -75,24 +75,23 @@
                         </span>
                     @endif
                 </a>
+{{-- ✅ KONFIRMASI MATRIX MAN POWER --}}
+<a href="{{ route('approval.omm.index') }}"
+   class="flex items-center justify-between px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
 
-                {{-- ✅ MENU BARU — KONFIRMASI MATRIX MAN POWER --}}
-                <a href="{{ route('approval.omm.index') }}"
-                   class="flex items-center justify-between px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+    <span class="flex items-center">
+        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Konfirmasi Matrix Man Power</span>
+    </span>
 
-                    <span class="flex items-center">
-                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>Konfirmasi Matrix Man Power</span>
-                    </span>
-
-                    @if(isset($pendingMatrixManpowerCount) && $pendingMatrixManpowerCount > 0)
-                        <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                            {{ $pendingMatrixManpowerCount }}
-                        </span>
-                    @endif
-                </a>
+    @if(isset($pendingMatrixManPowerCount) && $pendingMatrixManPowerCount > 0)
+        <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            {{ $pendingMatrixManPowerCount }}
+        </span>
+    @endif
+</a>
 
             {{-- === ROLE: ADMIN & LEADER === --}}
             @else

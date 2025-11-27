@@ -186,7 +186,7 @@ class HenkatenController extends Controller
         $dataToCreate['lampiran']   = $lampiranPath;
         $dataToCreate['nama']       = $manPowerAsli->nama;
         $dataToCreate['nama_after'] = $manPowerAfter->nama;
-        $dataToCreate['status']     = 'PENDING';
+        $dataToCreate['status']     = 'Approved';
         $dataToCreate['created_at'] = now();
         $dataToCreate['updated_at'] = now();
         $dataToCreate['user_id']    = Auth::id();

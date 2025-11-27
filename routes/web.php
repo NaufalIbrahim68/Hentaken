@@ -257,9 +257,11 @@ Route::middleware(['auth', 'role:Sect Head Produksi|Sect Head PPIC|Sect Head QC'
 Route::get('/approval/omm', [ManPowerStationController::class, 'matrixApprovalIndex'])->name('approval.omm.index');
 
 // Rute untuk Aksi Approval
-Route::post('/approval/omm/{id}/approve', [ManPowerStationController::class, 'approveOmm']);
-Route::post('/approval/omm/{id}/revisi', [ManPowerStationController::class, 'reviseOmm']);
-
+Route::post('/approval/omm/{id}/approve', [ManPowerStationController::class, 'approveOmm'])
+    ->name('approval.omm.approve');
+Route::post('/approval/omm/{id}/revisi', [ManPowerStationController::class, 'reviseOmm'])
+    ->name('approval.omm.revisi');
+    
 // Rute API untuk Modal Detail (sesuai yang digunakan di Alpine.js)
 Route::get('/api/omm-detail/{id}', [ManPowerStationController::class, 'showOmmDetail']);
 

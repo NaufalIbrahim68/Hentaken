@@ -118,32 +118,41 @@
                     <p class="text-gray-500">Data detail OMM tidak ditemukan.</p>
                 </div>
 
-                {{-- TOMBOL AKSI --}}
-                <div class="mt-6 border-t pt-4 flex justify-end space-x-3">
-                    {{-- Form Revisi --}}
-                    <form :action="`/approval/omm/${id}/revisi`" method="POST" id="revision-form">
-    @csrf
-    <textarea name="revision_notes" class="hidden" x-ref="revisionNotes"></textarea>
-</form>
+               {{-- TOMBOL AKSI --}}
+<div class="mt-6 border-t pt-4 flex justify-end space-x-3">
 
-                    <button
-    @click="$refs.revisionNotes.value = prompt('Catatan revisi (wajib)?'); if ($refs.revisionNotes.value) document.getElementById('revision-form').submit()"
-    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
-    Revisi
-</button>
+    {{-- FORM REVISI --}}
+    <form :action="`/approval/omm/${id}/revisi`" method="POST" id="revision-form">
+        @csrf
+        <textarea name="revision_notes" class="hidden" x-ref="revisionNotes"></textarea>
+    </form>
 
-                    {{-- Form Approve --}}
-                   <form :action="`/approval/omm/${id}/approve`" method="POST">
-    @csrf
-    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
-        Approve
+    <button
+        @click="
+            let note = prompt('Catatan revisi (wajib)?');
+            if (note) {
+                $refs.revisionNotes.value = note;
+                document.getElementById('revision-form').submit();
+            }
+        "
+        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+        Revisi
     </button>
-</form>
 
-                    <button @click="showModal = false" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded">
-                        Tutup
-                    </button>
-                </div>
+    {{-- FORM APPROVE --}}
+    <form :action="`/approval/omm/${id}/approve`" method="POST">
+        @csrf
+        <button type="submit"
+            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+            Approve
+        </button>
+    </form>
+
+    <button @click="showModal = false"
+        class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded">
+        Tutup
+    </button>
+</div>
 
             </div>
         </div>

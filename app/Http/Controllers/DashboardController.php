@@ -120,7 +120,7 @@ class DashboardController extends Controller
 
         // MANPOWER: hanya PENDING
         $activeManPowerHenkatens = ManPowerHenkaten::query()
-            ->where('status', 'PENDING')
+            ->where('status', 'Approved')
             ->where('shift', $shiftNumForQuery)
             ->whereHas('station', function ($q) use ($selectedLineArea) {
                 $q->where('line_area', $selectedLineArea);

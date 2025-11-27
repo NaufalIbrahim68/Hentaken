@@ -13,8 +13,8 @@ class ManPowerStationController extends Controller
     public function matrixApprovalIndex()
     {
         // Mengambil semua record dari tabel man_power_many_stations
-        // yang statusnya 'Pending', sekaligus memuat data Operator (manpower) dan Station.
-        $manpowerStations = ManPowerManyStation::where('status', 'Pending')
+        // yang statusnya 'PENDING', sekaligus memuat data Operator (manpower) dan Station.
+        $manpowerStations = ManPowerManyStation::where('status', 'PENDING')
             ->with(['manpower', 'station'])
             ->get();
 
@@ -44,90 +44,81 @@ class ManPowerStationController extends Controller
      * Mengubah status pengajuan OMM menjadi 'Approved'.
      * Endpoint: /approval/omm/{id}/approve
      */
-    public function approveOmm($id)
-    {
-        $omm = ManPowerManyStation::findOrFail($id);
-        
-        // Periksa apakah status sudah bukan Pending (opsional)
-        if ($omm->status !== 'Pending') {
-             return back()->with('error', 'Status OMM sudah bukan Pending.');
-        }
+   public function approveOmm($id)
+{
+    $omm = ManPowerManyStation::findOrFail($id);
 
-        $omm->update([
-            'status' => 'Approved',
-            'approved_by' => auth()->id(), // Asumsi Anda menggunakan sistem autentikasi
-            'approved_at' => now(),
-        ]);
-
+    // Jika sudah Approved → tidak error
+    if ($omm->status === 'Approved') {
         return redirect()->route('approval.omm.index')
-            ->with('success', 'Pengajuan One Man Can Many Stations berhasil di-Approve.');
+            ->with('success', 'Status OMM sudah Approved sebelumnya.');
     }
 
-    /**
-     * Mengubah status pengajuan OMM menjadi 'Revisi' atau 'Rejected'.
-     * Endpoint: /approval/omm/{id}/revisi
-     */
-    public function reviseOmm(Request $request, $id)
-    {
-        $request->validate([
-            'revision_notes' => 'required|string|max:500',
-        ]);
-        
-        $omm = ManPowerManyStation::findOrFail($id);
-
-        // Periksa apakah status sudah bukan Pending (opsional)
-        if ($omm->status !== 'Pending') {
-             return back()->with('error', 'Status OMM sudah bukan Pending.');
-        }
-
-        $omm->update([
-            'status' => 'Revision', // Atau 'Rejected'
-            'revision_notes' => $request->revision_notes,
-            'approved_by' => auth()->id(),
-            'approved_at' => now(), // Catat waktu dan siapa yang merevisi/mereject
-        ]);
-
-        return redirect()->route('approval.omm.index')
-            ->with('success', 'Pengajuan One Man Can Many Stations berhasil di-Revisi.');
+    // Jika status bukan PENDING dan bukan Approved → error valid
+    if ($omm->status !== 'PENDING') {
+        return back()->with('error', 'Status OMM sudah bukan PENDING.');
     }
+
+    // Approve jika masih PENDING
+    $omm->update([
+        'status'      => 'Approved',
+        'approved_by' => auth()->id(),
+        'approved_at' => now(),
+    ]);
+
+    return redirect()->route('approval.omm.index')
+        ->with('success', 'Pengajuan One Man Can Many Stations berhasil di-Approve.');
+}
+
+
     
-    // Fungsi updateManPowerStatus dihapus karena fungsinya sudah tercakup dalam approveOmm dan reviseOmm
-    // Fungsi editManPower dihapus karena tidak relevan dengan proses approval OMM.
+    public function reviseOmm(Request $request, $id)
+{
+    $request->validate([
+        'revision_notes' => 'required|string|max:500',
+    ]);
 
-    // GET: Ambil station berdasarkan line_area
+    $omm = ManPowerManyStation::findOrFail($id);
+
+    // Hanya boleh revisi jika masih PENDING
+    if ($omm->status !== 'PENDING') {
+        return back()->with('error', 'Status OMM sudah bukan PENDING.');
+    }
+
+    $omm->update([
+        'status'         => 'Revision',
+        'revision_notes' => $request->revision_notes,
+        'approved_by'    => auth()->id(),
+        'approved_at'    => now(),
+    ]);
+
+    return redirect()->route('approval.omm.index')
+        ->with('success', 'Pengajuan One Man Can Many Stations berhasil di-Revisi.');
+}
+
+
     public function stationsByLine(Request $request)
     {
         return Station::where('line_area', $request->line_area)->get();
     }
 
     // POST: Tambahkan relasi
-    public function store(Request $request)
-    {
-        $request->validate([
-            'man_power_id' => 'required|integer',
-            'station_id' => 'required|integer',
-                'status' => 'PENDING', 
+   public function store(Request $request)
+{
+    $request->validate([
+        'man_power_id' => 'required|integer|exists:man_power,id',
+        'station_id'   => 'required|integer|exists:stations,id',
+    ]);
 
-        ]);
+    ManPowerManyStation::create([
+        'man_power_id' => $request->man_power_id,
+        'station_id'   => $request->station_id,
+        'status'       => 'PENDING',      // default wajib
+        'created_at'   => now(),
+        'updated_at'   => now(),
+    ]);
 
-        $mp = ManPower::findOrFail($request->man_power_id);
+    return response()->json(['success' => true]);
+}
 
-        $mp->stations()->syncWithoutDetaching([$request->station_id]);
-
-        return response()->json(['success' => true]);
-    }
-
-    // DELETE: Hapus relasi
-    public function destroy($station_id, Request $request)
-    {
-        $request->validate([
-            'man_power_id' => 'required|integer',
-        ]);
-
-        $mp = ManPower::findOrFail($request->man_power_id);
-
-        $mp->stations()->detach($station_id);
-
-        return response()->json(['success' => true]);
-    }
 }

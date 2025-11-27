@@ -154,33 +154,37 @@
                                         </div>
 
                                         {{-- Serial number start --}}
-                                        <div class="mb-4">
-                                            <label for="serial_number_start"
-                                                class="block text-sm font-medium text-gray-700">
-                                                Serial Number Start
-                                                <span class="text-red-500">*</span>
-                                            </label>
-                                            <input type="text" id="serial_number_start" name="serial_number_start"
-                                                value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                                placeholder="Masukkan serial number awal..."
-                                                required>
-                                        </div>
+<div class="mb-4">
+    <label for="serial_number_start"
+        class="block text-sm font-medium text-gray-700">
+        Serial Number Start
+        @if(isset($log))
+            <span class="text-red-500">*</span>
+        @endif
+    </label>
+    <input type="text" id="serial_number_start" name="serial_number_start"
+        value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
+        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        placeholder="Masukkan serial number awal..."
+        @if(isset($log)) required @endif>
+</div>
 
-                                        {{-- Serial number end --}}
-                                        <div class="mb-4">
-                                            <label for="serial_number_end"
-                                                class="block text-sm font-medium text-gray-700">
-                                                Serial Number End
-                                                <span class="text-red-500">*</span>
-                                            </label>
-                                            <input type="text" id="serial_number_end" name="serial_number_end"
-                                                value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
-                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                                placeholder="Masukkan serial number akhir..."
-                                                required>
-                                        </div>
-                                    </div>
+{{-- Serial number end --}}
+<div class="mb-4">
+    <label for="serial_number_end"
+        class="block text-sm font-medium text-gray-700">
+        Serial Number End
+        @if(isset($log))
+            <span class="text-red-500">*</span>
+        @endif
+    </label>
+    <input type="text" id="serial_number_end" name="serial_number_end"
+        value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
+        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        placeholder="Masukkan serial number akhir..."
+        @if(isset($log)) required @endif>
+</div>
+</div>
 
                                     {{-- KANAN: tanggal & waktu --}}
                                     <div>
