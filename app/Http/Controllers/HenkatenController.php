@@ -985,38 +985,18 @@ public function storeMachineHenkaten(Request $request)
     // ==============================================================
     // BAGIAN 6: API BANTUAN
     // ==============================================================
-    public function searchManPower(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'query' => 'required|string|min:2',
-            'grup'  => 'required|string',
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
 
-        $query = $request->get('query');
-        $grup = $request->get('grup');
-
-        $results = ManPower::where('nama', 'like', "%{$query}%")
-            ->where('grup', 'LIKE', $grup . '%')
-            ->select('id', 'nama')
-            ->orderBy('nama', 'asc')
-            ->limit(10)
-            ->get();
-
-        return response()->json($results);
-    }
-
-    public function getStationsByLine(Request $request)
-    {
-        $request->validate(['line_area' => 'required|string']);
-        $stations = Station::where('line_area', $request->line_area)
-                            ->orderBy('station_name', 'asc')
-                            ->get(['id', 'station_name']);
-        return response()->json($stations);
-    }
+   public function getStationsByLine(Request $request)
+{
+    $request->validate(['line_area' => 'required|string']);
+    
+    $stations = Station::where('line_area', $request->line_area)
+                        ->orderBy('station_name', 'asc')
+                        ->get(['id', 'station_name', 'line_area']); // Tanpa is_main_operator dulu
+    
+    return response()->json($stations);
+}
 
     public function getMaterialsByStation(Request $request)
     {

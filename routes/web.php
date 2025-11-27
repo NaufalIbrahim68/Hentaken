@@ -126,7 +126,6 @@ Route::middleware(['auth'])->group(function () {
     // ======================================================================
     // API / AJAX ROUTES
     // ======================================================================
-    Route::get('/manpower/search', [HenkatenController::class, 'searchManPower'])->name('manpower.search');
     Route::get('/get-stations-by-line', [HenkatenController::class, 'getStationsByLine'])
         ->name('henkaten.stations.by_line');
     Route::get('/get-materials-by-station', [HenkatenController::class, 'getMaterialsByStation'])

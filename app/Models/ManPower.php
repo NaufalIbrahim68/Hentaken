@@ -56,6 +56,10 @@ class ManPower extends Model
 
     
 
+public function manyStations()
+{
+    return $this->hasMany(ManPowerManyStations::class, 'man_power_id');
+}
 
 
 public function troubleshooting()

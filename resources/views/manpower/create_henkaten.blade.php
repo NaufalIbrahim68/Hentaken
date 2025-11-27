@@ -66,7 +66,7 @@
                             oldManPowerAfterName: '{{ old('nama_after', $log->nama_after ?? '') }}',
 
                             findManpowerUrl: '{{ route('henkaten.getManPower') }}',
-                            searchManpowerUrl: '{{ route('manpower.search') }}',
+                            searchManpowerUrl: '{{ route('henkaten.manpower.search') }}',
                             findStationsUrl: '{{ route('henkaten.stations.by_line') }}',
                             checkAfterUrl: '{{ route('henkaten.checkAfter') }}'
                         })" x-init="init()">
@@ -333,257 +333,255 @@
 
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
-        document.addEventListener('alpine:init', () => {
-            // Deklarasi data stasiun mentah awal (data dari Controller)
-            const initialStationsData = @json($stations);
-            console.log('--- Initial Stations Data (allStations) ---');
-            console.log(initialStationsData);
+document.addEventListener('alpine:init', () => {
+    const initialStationsData = @json($stations);
+    
+    Alpine.data('henkatenForm', (config) => ({
+        userRole: config.userRole,
+        roleLineArea: config.roleLineArea,
+        isMainOperator: config.isMainOperator,
+        showStationDropdown: config.showStationDropdown,
 
-            Alpine.data('henkatenForm', (config) => ({
-                userRole: config.userRole,
-                roleLineArea: config.roleLineArea,
-                isMainOperator: config.isMainOperator,
-                showStationDropdown: config.showStationDropdown,
+        selectedGrup: config.oldGrup || '',
+        selectedLineArea: config.oldLineArea || '',
+        selectedStation: config.oldStation || '',
 
-                selectedGrup: config.oldGrup || '',
-                selectedLineArea: config.oldLineArea || '',
-                selectedStation: config.oldStation || '',
+        allStations: initialStationsData,
+        stationList: initialStationsData,
 
-                allStations: initialStationsData,
-                stationList: initialStationsData,
+        logId: config.logId,
+        manpowerBefore: {
+            id: config.oldManPowerBeforeId || '',
+            nama: config.oldManPowerBeforeName || ''
+        },
+        
+        // ✅ FIX: Pastikan ini diinisialisasi dengan benar
+        selectedManpowerAfter: config.oldManPowerAfterId || '',
+        autocompleteQuery: config.oldManPowerAfterName || '',
+        autocompleteResults: [],
+        afterValid: true,
 
-                logId: config.logId,
-                manpowerBefore: {
-                    id: config.oldManPowerBeforeId || '',
-                    nama: config.oldManPowerBeforeName || ''
-                },
-                selectedManpowerAfter: config.oldManPowerAfterId || '',
-                autocompleteQuery: config.oldManPowerAfterName || '',
-                autocompleteResults: [],
-                afterValid: true,
+        findManpowerUrl: config.findManpowerUrl,
+        searchManpowerUrl: config.searchManpowerUrl,
+        findStationsUrl: config.findStationsUrl,
+        checkAfterUrl: config.checkAfterUrl,
 
-                findManpowerUrl: config.findManpowerUrl,
-                searchManpowerUrl: config.searchManpowerUrl,
-                findStationsUrl: config.findStationsUrl,
-                checkAfterUrl: config.checkAfterUrl,
+        get isLeaderFAOrSMT() {
+            return this.userRole === 'Leader FA' || this.userRole === 'Leader SMT';
+        },
+        get isQCOrPPIC() {
+            return this.userRole === 'Leader QC' || this.userRole === 'Leader PPIC';
+        },
 
-                get isLeaderFAOrSMT() {
-                    return this.userRole === 'Leader FA' || this.userRole === 'Leader SMT';
-                },
-                get isQCOrPPIC() {
-                    return this.userRole === 'Leader QC' || this.userRole === 'Leader PPIC';
-                },
+        get filteredStationList() {
+            let list = this.stationList;
+            let lineArea = this.selectedLineArea;
 
-                // REVISI LOGIKA FILTER UTAMA
-                // REVISI LOGIKA FILTER UTAMA
-                get filteredStationList() {
-                    let list = this.stationList;
-                    let lineArea = this.selectedLineArea;
+            if (lineArea) {
+                list = list.filter(st => st.line_area === lineArea);
+            }
 
-                    // Asumsi: Line Area sudah terisi di init()
-
-                    // 1. Filter berdasarkan Line Area yang dipilih/terisi
-                    if (lineArea) {
-                        list = list.filter(st => st.line_area === lineArea);
+            if (this.isQCOrPPIC) {
+                const filteredByMainOp = list.filter(st => {
+                    const val = st.is_main_operator;
+                    if (val != null) {
+                        const isMain = String(val).trim() === '1';
+                        return isMain;
                     }
+                    return false;
+                });
+                return filteredByMainOp;
+            }
 
-                    if (this.isQCOrPPIC) {
-                        // Filter Main Operator menggunakan konversi string yang kuat
-                        const filteredByMainOp = list.filter(st => {
-                            const val = st.is_main_operator;
+            return list;
+        },
 
-                            // Cek apakah nilai ada dan, jika dikonversi menjadi string dan di-trim, sama dengan '1'
-                            if (val != null) {
-                                const isMain = String(val).trim() === '1';
-                                return isMain;
-                            }
-                            return false; // Abaikan jika is_main_operator null/undefined
-                        });
+        get currentStationName() {
+            if (this.selectedStation) {
+                const st = this.allStations.find(s => s.id == this.selectedStation);
+                return st ? st.station_name : 'Memuat...';
+            }
+            return 'Pilih Station';
+        },
 
-                        // DEBUGGING OUTPUT FINAL
-                        // console.log(`[QC/PPIC Filter] Stations by Main Op (${filteredByMainOp.length}):`, filteredByMainOp);
+        async init() {
+            console.log('=== ALPINE INIT ===');
+            console.log('Initial autocompleteQuery:', this.autocompleteQuery);
+            console.log('Initial selectedGrup:', this.selectedGrup);
+            console.log('Initial selectedLineArea:', this.selectedLineArea);
+            console.log('Initial selectedStation:', this.selectedStation);
 
-                        return filteredByMainOp;
-                    }
+            if (!this.isLeaderFAOrSMT && this.roleLineArea) {
+                this.selectedLineArea = this.roleLineArea;
+            }
 
-                    // Untuk Leader FA/SMT dan default
-                    return list;
-                },
+            if (this.isLeaderFAOrSMT && this.selectedLineArea) {
+                await this.fetchStations(false, false);
+            }
 
+            if (this.selectedStation) {
+                await this.fetchManpowerBefore();
+            }
 
-                get currentStationName() {
-                    if (this.selectedStation) {
-                        const st = this.allStations.find(s => s.id == this.selectedStation);
-                        return st ? st.station_name : 'Memuat...';
-                    }
-                    return 'Pilih Station';
-                },
+            document.getElementById('effective_date')?.addEventListener('change', () => this.validateAfter());
+            document.getElementById('end_date')?.addEventListener('change', () => this.validateAfter());
 
-                async init() {
-                    // 1. Set Line Area otomatis untuk QC/PPIC atau Operator yang Line Area-nya fix
-                    if (!this.isLeaderFAOrSMT && this.roleLineArea) {
-                        this.selectedLineArea = this.roleLineArea;
-                    }
+            if (config.isEditing && this.selectedManpowerAfter) {
+                this.validateAfter();
+            }
+        },
 
-                    // 2. Cek apakah ini Leader FA/SMT dengan Line Area yang sudah dipilih (dari old data)
-                    if (this.isLeaderFAOrSMT && this.selectedLineArea) {
-                        await this.fetchStations(false, false);
-                    }
+        async fetchStations(resetStation = true, loadFirstStation = false) {
+            if (!this.selectedLineArea || !this.isLeaderFAOrSMT) {
+                this.stationList = this.allStations;
+                if (resetStation) this.selectedStation = '';
+                this.manpowerBefore = { id: '', nama: '' };
+                return;
+            }
 
-                    // 3. Panggil computed property sekali untuk memicu debugging output di console
-                    this.filteredStationList;
-
-                    // 4. Jika selectedStation sudah ada (dari old data), fetch manpower before
-                    if (this.selectedStation) {
-                        await this.fetchManpowerBefore();
-                    }
-
-                    // Event listeners dan validasi
-                    document.getElementById('effective_date')?.addEventListener('change', () => this
-                        .validateAfter());
-                    document.getElementById('end_date')?.addEventListener('change', () => this
-                        .validateAfter());
-
-                    if (config.isEditing && this.selectedManpowerAfter) {
-                        this.validateAfter();
-                    }
-                },
-
-                // Fungsi fetchStations dan Man Power tidak diubah
-                async fetchStations(resetStation = true, loadFirstStation = false) {
-                    if (!this.selectedLineArea || !this.isLeaderFAOrSMT) {
-                        this.stationList = this.allStations;
-                        if (resetStation) this.selectedStation = '';
-                        this.manpowerBefore = {
-                            id: '',
-                            nama: ''
-                        };
-                        return;
-                    }
-
-                    try {
-                        const url = new URL(this.findStationsUrl, window.location.origin);
-                        url.searchParams.append('line_area', this.selectedLineArea);
-                        url.searchParams.append('role', this.userRole);
-
-                        const res = await fetch(url);
-                        const data = await res.json();
-
-                        this.stationList = Array.isArray(data) ? data : (data.data ?? []);
-
-                        if (resetStation) this.selectedStation = '';
-
-                        if (this.selectedStation) {
-                            this.fetchManpowerBefore();
-                        } else {
-                            this.manpowerBefore = {
-                                id: '',
-                                nama: ''
-                            };
-                        }
-                    } catch (e) {
-                        console.error('fetchStations error', e);
-                        this.stationList = [];
-                    }
-                },
-
-                async fetchManpowerBefore() {
-                    if (!this.selectedStation || !this.selectedLineArea || !this.selectedGrup) {
-                        this.manpowerBefore = {
-                            id: '',
-                            nama: ''
-                        };
-                        return;
-                    }
-                    try {
-                        const url = new URL(this.findManpowerUrl, window.location.origin);
-                        url.searchParams.append('station_id', this.selectedStation);
-                        url.searchParams.append('line_area', this.selectedLineArea);
-                        url.searchParams.append('grup', this.selectedGrup);
-
-                        const res = await fetch(url, {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        });
-                        const data = await res.json();
-                        this.manpowerBefore = data && data.nama ? {
-                            id: data.id,
-                            nama: data.nama
-                        } : {
-                            id: '',
-                            nama: ''
-                        };
-                    } catch (e) {
-                        console.error('fetchManpowerBefore error', e);
-                        this.manpowerBefore = {
-                            id: '',
-                            nama: ''
-                        };
-                    }
-                },
-
-                async searchAfter() {
-                    if (this.autocompleteQuery.length < 2 || !this.selectedGrup) {
-                        this.autocompleteResults = [];
-                        return;
-                    }
-                    try {
-                        const url = new URL(this.searchManpowerUrl, window.location.origin);
-                        url.searchParams.append('query', this.autocompleteQuery);
-                        url.searchParams.append('grup', this.selectedGrup);
-
-                        const res = await fetch(url);
-                        const data = await res.json();
-                        const list = Array.isArray(data) ? data : (data.data ?? []);
-                        this.autocompleteResults = list;
-                    } catch (e) {
-                        console.error('searchAfter error', e);
-                        this.autocompleteResults = [];
-                    }
-                },
-
-                selectAfter(item) {
-                    this.autocompleteQuery = item.nama;
-                    this.selectedManpowerAfter = item.id;
-                    this.autocompleteResults = [];
-                    this.validateAfter();
-                },
-
-                async validateAfter() {
-                    const effectiveDate = document.getElementById('effective_date')?.value;
-                    const endDate = document.getElementById('end_date')?.value;
-
-                    if (!this.selectedManpowerAfter || !this.checkAfterUrl || !effectiveDate || !
-                        endDate) {
-                        this.afterValid = true;
-                        return;
-                    }
-
-                    if (this.manpowerBefore.id && this.selectedManpowerAfter === this.manpowerBefore
-                        .id) {
-                        this.afterValid = false;
-                        return;
-                    }
-
-                    try {
-                        const url = new URL(this.checkAfterUrl, window.location.origin);
-                        url.searchParams.append('man_power_id_after', this.selectedManpowerAfter);
-                        url.searchParams.append('grup', this.selectedGrup);
-                        url.searchParams.append('shift', '{{ $currentShift }}');
-                        url.searchParams.append('effective_date', effectiveDate);
-                        url.searchParams.append('end_date', endDate);
-                        if (this.logId) url.searchParams.append('ignore_log_id', this.logId);
-
-                        const res = await fetch(url);
-                        const data = await res.json();
-                        this.afterValid = !data.exists;
-                    } catch (e) {
-                        console.error("validateAfter error", e);
-                        this.afterValid = true;
-                    }
+            try {
+                const url = `${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}&role=${encodeURIComponent(this.userRole)}`;
+                const res = await fetch(url);
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
                 }
-            }));
-        });
-    </script>
+                
+                const data = await res.json();
+                this.stationList = Array.isArray(data) ? data : (data.data ?? []);
+
+                if (resetStation) {
+                    this.selectedStation = '';
+                }
+
+                if (this.selectedStation) {
+                    await this.fetchManpowerBefore();
+                } else {
+                    this.manpowerBefore = { id: '', nama: '' };
+                }
+            } catch (e) {
+                console.error('fetchStations error:', e);
+                this.stationList = [];
+            }
+        },
+
+        async fetchManpowerBefore() {
+            if (!this.selectedStation || !this.selectedLineArea || !this.selectedGrup) {
+                this.manpowerBefore = { id: '', nama: '' };
+                return;
+            }
+            try {
+                const url = new URL(this.findManpowerUrl, window.location.origin);
+                url.searchParams.append('station_id', this.selectedStation);
+                url.searchParams.append('line_area', this.selectedLineArea);
+                url.searchParams.append('grup', this.selectedGrup);
+
+                const res = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                this.manpowerBefore = data && data.nama ? {
+                    id: data.id,
+                    nama: data.nama
+                } : { id: '', nama: '' };
+            } catch (e) {
+                console.error('fetchManpowerBefore error', e);
+                this.manpowerBefore = { id: '', nama: '' };
+            }
+        },
+
+        // ✅ FIX: Perbaiki searchAfter
+        async searchAfter() {
+            console.log('=== searchAfter CALLED ===');
+            console.log('autocompleteQuery:', this.autocompleteQuery);
+            console.log('selectedGrup:', this.selectedGrup);
+            console.log('selectedLineArea:', this.selectedLineArea);
+            console.log('selectedStation:', this.selectedStation);
+
+            // Validasi
+            if (!this.autocompleteQuery || this.autocompleteQuery.trim().length < 2) {
+                console.log('Query too short, clearing results');
+                this.autocompleteResults = [];
+                return;
+            }
+
+            try {
+                const params = new URLSearchParams({
+                    query: this.autocompleteQuery.trim(),
+                    grup: this.selectedGrup || '',
+                    line_area: this.selectedLineArea || '',
+                    station_id: this.selectedStation || ''
+                });
+
+                const url = `/henkaten/manpower/search?${params}`;
+                console.log('Fetching URL:', url);
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('API Response:', data);
+                
+                this.autocompleteResults = data;
+                console.log('autocompleteResults updated:', this.autocompleteResults);
+
+            } catch (error) {
+                console.error('Search error:', error);
+                this.autocompleteResults = [];
+            }
+        },
+
+        selectAfter(item) {
+            console.log('selectAfter called with:', item);
+            this.autocompleteQuery = item.nama;
+            this.selectedManpowerAfter = item.id;
+            this.autocompleteResults = [];
+            this.validateAfter();
+        },
+
+        async validateAfter() {
+            const effectiveDate = document.getElementById('effective_date')?.value;
+            const endDate = document.getElementById('end_date')?.value;
+
+            if (!this.selectedManpowerAfter || !this.checkAfterUrl || !effectiveDate || !endDate) {
+                this.afterValid = true;
+                return;
+            }
+
+            if (this.manpowerBefore.id && this.selectedManpowerAfter === this.manpowerBefore.id) {
+                this.afterValid = false;
+                return;
+            }
+
+            try {
+                const url = new URL(this.checkAfterUrl, window.location.origin);
+                url.searchParams.append('man_power_id_after', this.selectedManpowerAfter);
+                url.searchParams.append('grup', this.selectedGrup);
+                url.searchParams.append('shift', '{{ $currentShift }}');
+                url.searchParams.append('effective_date', effectiveDate);
+                url.searchParams.append('end_date', endDate);
+                if (this.logId) url.searchParams.append('ignore_log_id', this.logId);
+
+                const res = await fetch(url);
+                const data = await res.json();
+                this.afterValid = !data.exists;
+            } catch (e) {
+                console.error("validateAfter error", e);
+                this.afterValid = true;
+            }
+        }
+    }));
+});
+</script>
 </x-app-layout>

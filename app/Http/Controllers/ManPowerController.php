@@ -10,6 +10,8 @@ use App\Models\ManPower;
 use App\Models\ManPowerHenkaten;
 use App\Models\Troubleshooting;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;      
+use Illuminate\Support\Facades\Schema;
 
 
 class ManPowerController extends Controller
@@ -323,83 +325,144 @@ class ManPowerController extends Controller
 
 public function search(Request $request)
 {
-    $q = $request->input('query', '');
-    $grupInput = $request->input('grup', '');
-    
-    // Validasi input
-    if (strlen($q) < 2 || empty($grupInput)) {
-        return response()->json([]);
-    }
-
-    // Tentukan grup untuk Troubleshooting
-    $grupTs = ($grupInput === 'A') ? 'B' : 'A';
-
-    $nowFull = Carbon::now(); // Carbon object lengkap: 2025-11-13 14:08:18
-
-    // Ambil semua man power AFTER yang masih aktif
-    $activeManpowerIds = ManPowerHenkaten::whereIn('status', ['Approved', 'PENDING'])
-        ->where(function ($query) use ($nowFull) {
-            // 1. Henkaten yang end_date-nya NULL (permanen)
-            $query->whereNull('end_date')
-            // 2. Henkaten yang sudah memiliki end_date
-            ->orWhere(function($q) use ($nowFull) {
-                // Gunakan CONCAT untuk menggabungkan kolom tanggal dan waktu
-                // CONCAT(end_date, ' ', time_end) akan menghasilkan string DATETIME
-                // Contoh: '2025-11-13 19:00:00'
-                $q->whereRaw("CONCAT(end_date, ' ', time_end) >= ?", [$nowFull]);
-            });
-        })
-        ->pluck('man_power_id_after')
-        ->filter()
-        ->unique()
-        ->values()
-        ->all();
-
-    // Pisahkan ID reguler dan TS
-    $busyRegularIds = [];
-    $busyTsIds = [];
-
-    foreach ($activeManpowerIds as $id) {
-        if (is_string($id) && str_starts_with($id, 't-')) {
-            $busyTsIds[] = (int) substr($id, 2);
-        } else {
-            $busyRegularIds[] = (int) $id;
+    try {
+        $q = $request->input('query', '');
+        $grupInput = $request->input('grup', '');
+        $lineArea = $request->input('line_area', '');
+        $stationId = $request->input('station_id', null);
+        
+        if (strlen($q) < 2 || empty($grupInput)) {
+            return response()->json([]);
         }
-    }
 
-    // Query untuk man power reguler
-    $manPower = ManPower::query()
-        ->where('grup', $grupInput)
-        ->where('nama', 'like', "%{$q}%")
-        ->whereNotIn('id', $busyRegularIds) // EXCLUDE yang sedang aktif
-        ->get(['id', 'nama', 'grup']);
+        $nowFull = Carbon::now();
 
-    // Query untuk troubleshooting
-    $troubleshooting = Troubleshooting::query()
-        ->where('grup', $grupTs)
-        ->where('nama', 'like', "%{$q}%")
-        ->whereNotIn('id', $busyTsIds) // EXCLUDE yang sedang aktif
-        ->get(['id', 'nama', 'grup']);
+        // Ambil busy IDs
+        $activeManpowerIds = ManPowerHenkaten::whereIn('status', ['Approved', 'PENDING'])
+            ->where(function ($query) use ($nowFull) {
+                $query->whereNull('end_date')
+                    ->orWhere(function($q) use ($nowFull) {
+                        $q->whereRaw("CONCAT(end_date, ' ', time_end) >= ?", [$nowFull]);
+                    });
+            })
+            ->pluck('man_power_id_after')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
-    // Gabungkan hasil
-    $result = collect($manPower)
-        ->map(fn($item) => [
-            'id' => $item->id,
-            'nama' => $item->nama,
-            'grup' => $item->grup,
-        ])
-        ->merge(
-            $troubleshooting->map(fn($item) => [
-                'id' => 't-' . $item->id,
-                'nama' => $item->nama . ' (TS)',
+        $busyRegularIds = [];
+        $busyTsIds = [];
+
+        foreach ($activeManpowerIds as $id) {
+            if (is_string($id) && str_starts_with($id, 't-')) {
+                $busyTsIds[] = (int) substr($id, 2);
+            } else {
+                $busyRegularIds[] = (int) $id;
+            }
+        }
+
+        // ===============================
+        // 1. Man Power REGULER (Grup Specific)
+        // ===============================
+        $manPowerQuery = ManPower::query()
+            ->where('grup', $grupInput)
+            ->where('nama', 'like', "%{$q}%")
+            ->whereNotIn('id', $busyRegularIds);
+
+        if (!empty($lineArea)) {
+            $manPowerQuery->where('line_area', $lineArea);
+        }
+
+        if (!empty($stationId)) {
+            $manPowerQuery->whereHas('manyStations', function ($q) use ($stationId) {
+                $q->where('station_id', $stationId);
+            });
+        }
+
+        $manPower = $manPowerQuery->get(['id', 'nama', 'grup', 'line_area']);
+
+        // ===============================
+        // 2. Troubleshooting (Grup Specific)
+        // ===============================
+        $troubleshootingQuery = ManPower::query()
+            ->where('grup', 'like', "{$grupInput}(Troubleshooting)%")
+            ->where('nama', 'like', "%{$q}%")
+            ->whereNotIn('id', $busyTsIds);
+
+        if (!empty($lineArea)) {
+            $troubleshootingQuery->where(function($q) use ($lineArea) {
+                $q->where('line_area', $lineArea)
+                  ->orWhereNull('line_area');
+            });
+        }
+
+        $troubleshooting = $troubleshootingQuery->get(['id', 'nama', 'grup', 'line_area']);
+
+        // ===============================
+        // 3. ✅ UNIVERSAL TROUBLESHOOTING (Bebas Grup, Line, Station)
+        // ===============================
+        $universalQuery = ManPower::query()
+            ->where('grup', 'Universal(Troubleshooting)') // ✅ Match grup universal
+            ->where('nama', 'like', "%{$q}%")
+            ->whereNotIn('id', $busyTsIds);
+
+        $universal = $universalQuery->get(['id', 'nama', 'grup', 'line_area']);
+
+        Log::info('Search Results', [
+            'regular' => $manPower->count(),
+            'troubleshooting' => $troubleshooting->count(),
+            'universal' => $universal->count()
+        ]);
+
+        // ===============================
+        // Gabungkan Hasil
+        // ===============================
+        $result = collect($manPower)
+            ->map(fn($item) => [
+                'id' => $item->id,
+                'nama' => $item->nama,
                 'grup' => $item->grup,
+                'line_area' => $item->line_area,
+                'type' => 'regular'
             ])
-        )
-        ->unique('nama')
-        ->values();
+            ->merge(
+                $troubleshooting->map(fn($item) => [
+                    'id' => 't-' . $item->id,
+                    'nama' => $item->nama . ' (TS)',
+                    'grup' => $item->grup,
+                    'line_area' => $item->line_area,
+                    'type' => 'troubleshooting'
+                ])
+            )
+            ->merge(
+                $universal->map(fn($item) => [
+                    'id' => 't-' . $item->id,
+                    'nama' => $item->nama . ' (UNIVERSAL)', // ✅ Label khusus
+                    'grup' => 'Universal',
+                    'line_area' => 'ALL',
+                    'type' => 'universal'
+                ])
+            )
+            ->unique('id')
+            ->values();
 
-    return response()->json($result);
+        return response()->json($result);
+
+    } catch (\Exception $e) {
+        Log::error('ManPower Search Error', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
+
+        return response()->json([
+            'error' => 'Search failed',
+            'message' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+        ], 500);
+    }
 }
+
 
 
 public function getManPower(Request $request)
