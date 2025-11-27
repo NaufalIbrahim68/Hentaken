@@ -365,15 +365,14 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
         $filteredHenkatens = $activeManPowerHenkatens->filter(function ($henkaten) use ($currentGroup) {
             $isCorrectGroup = optional($henkaten->manPower)->grup === $currentGroup; 
 
-            $isPending = strtolower($henkaten->status) === 'pending';
+$isApproved = strtolower($henkaten->status) === 'approved';
 
-            return $isCorrectGroup && $isPending;
+             return $isCorrectGroup && $isApproved;
         });
     } else {
         $filteredHenkatens = collect();
     }
 @endphp
-
 
                 @if($filteredHenkatens->isNotEmpty())
                     <div class="flex justify-center gap-3 min-w-full px-2">

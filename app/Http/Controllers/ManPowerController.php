@@ -336,6 +336,9 @@ public function search(Request $request)
         }
 
         $nowFull = Carbon::now();
+        
+        // ✅ Ambil role user yang sedang login
+        $userRole = auth()->user()->role ?? null;
 
         // Ambil busy IDs
         $activeManpowerIds = ManPowerHenkaten::whereIn('status', ['Approved', 'PENDING'])
@@ -370,17 +373,35 @@ public function search(Request $request)
             ->where('nama', 'like', "%{$q}%")
             ->whereNotIn('id', $busyRegularIds);
 
-        if (!empty($lineArea)) {
+        // ✅ Filter berdasarkan role untuk regular manpower
+        if ($userRole === 'Leader QC') {
+            $manPowerQuery->where('line_area', 'Incoming');
+        } elseif ($userRole === 'Leader PPIC') {
+            $manPowerQuery->where('line_area', 'Delivery');
+        } elseif (!empty($lineArea)) {
             $manPowerQuery->where('line_area', $lineArea);
         }
 
+        // ✅ Filter station - hanya ambil yang is_main_operator = 0 (backup/support)
         if (!empty($stationId)) {
             $manPowerQuery->whereHas('manyStations', function ($q) use ($stationId) {
-                $q->where('station_id', $stationId);
+                $q->where('station_id', $stationId)
+                  ->where('is_main_operator', 0); // ✅ Hanya operator backup
             });
         }
 
         $manPower = $manPowerQuery->get(['id', 'nama', 'grup', 'line_area']);
+        
+        Log::info('ManPower Query Debug', [
+            'query' => $q,
+            'grup' => $grupInput,
+            'line_area' => $lineArea,
+            'station_id' => $stationId,
+            'user_role' => $userRole,
+            'busy_ids' => $busyRegularIds,
+            'result_count' => $manPower->count(),
+            'sql' => $manPowerQuery->toSql()
+        ]);
 
         // ===============================
         // 2. Troubleshooting (Grup Specific)
@@ -390,7 +411,18 @@ public function search(Request $request)
             ->where('nama', 'like', "%{$q}%")
             ->whereNotIn('id', $busyTsIds);
 
-        if (!empty($lineArea)) {
+        // ✅ Filter berdasarkan role untuk troubleshooting
+        if ($userRole === 'Leader QC') {
+            $troubleshootingQuery->where(function($q) {
+                $q->where('line_area', 'Incoming')
+                  ->orWhereNull('line_area');
+            });
+        } elseif ($userRole === 'Leader PPIC') {
+            $troubleshootingQuery->where(function($q) {
+                $q->where('line_area', 'Delivery')
+                  ->orWhereNull('line_area');
+            });
+        } elseif (!empty($lineArea)) {
             $troubleshootingQuery->where(function($q) use ($lineArea) {
                 $q->where('line_area', $lineArea)
                   ->orWhereNull('line_area');
@@ -398,18 +430,25 @@ public function search(Request $request)
         }
 
         $troubleshooting = $troubleshootingQuery->get(['id', 'nama', 'grup', 'line_area']);
+        
+        Log::info('Troubleshooting Query Debug', [
+            'query' => $q,
+            'grup_pattern' => "{$grupInput}(Troubleshooting)%",
+            'result_count' => $troubleshooting->count()
+        ]);
 
         // ===============================
         // 3. ✅ UNIVERSAL TROUBLESHOOTING (Bebas Grup, Line, Station)
         // ===============================
         $universalQuery = ManPower::query()
-            ->where('grup', 'Universal(Troubleshooting)') // ✅ Match grup universal
+            ->where('grup', 'Universal(Troubleshooting)')
             ->where('nama', 'like', "%{$q}%")
             ->whereNotIn('id', $busyTsIds);
 
         $universal = $universalQuery->get(['id', 'nama', 'grup', 'line_area']);
 
         Log::info('Search Results', [
+            'user_role' => $userRole,
             'regular' => $manPower->count(),
             'troubleshooting' => $troubleshooting->count(),
             'universal' => $universal->count()
@@ -438,7 +477,7 @@ public function search(Request $request)
             ->merge(
                 $universal->map(fn($item) => [
                     'id' => 't-' . $item->id,
-                    'nama' => $item->nama . ' (UNIVERSAL)', // ✅ Label khusus
+                    'nama' => $item->nama . ' (UNIVERSAL)',
                     'grup' => 'Universal',
                     'line_area' => 'ALL',
                     'type' => 'universal'
@@ -462,7 +501,6 @@ public function search(Request $request)
         ], 500);
     }
 }
-
 
 
 public function getManPower(Request $request)

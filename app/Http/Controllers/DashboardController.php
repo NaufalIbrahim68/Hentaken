@@ -241,6 +241,7 @@ class DashboardController extends Controller
       $henkatenStationIds = $activeMethodHenkatens->pluck('station_id')->unique()->toArray();
 
 
+
        foreach ($methods as $method) {
     $method->setAttribute(
         'status',
