@@ -121,23 +121,7 @@
                {{-- TOMBOL AKSI --}}
 <div class="mt-6 border-t pt-4 flex justify-end space-x-3">
 
-    {{-- FORM REVISI --}}
-    <form :action="`/approval/omm/${id}/revisi`" method="POST" id="revision-form">
-        @csrf
-        <textarea name="revision_notes" class="hidden" x-ref="revisionNotes"></textarea>
-    </form>
-
-    <button
-        @click="
-            let note = prompt('Catatan revisi (wajib)?');
-            if (note) {
-                $refs.revisionNotes.value = note;
-                document.getElementById('revision-form').submit();
-            }
-        "
-        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
-        Revisi
-    </button>
+  
 
     {{-- FORM APPROVE --}}
     <form :action="`/approval/omm/${id}/approve`" method="POST">

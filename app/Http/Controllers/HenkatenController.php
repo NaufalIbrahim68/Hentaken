@@ -1191,65 +1191,59 @@ public function storeMachineHenkaten(Request $request)
     }
 
     public function storeChange(Request $request)
-    {
-        $validatedData = $request->validate([
-            'line_area' => 'required|string',
-            'station_id' => 'required|integer|exists:stations,id',
-            'grup' => 'required|string',
-            'nama_sebelum' => 'required|string',
-            'nama_sesudah' => 'required|string',
-            'jenis_henkaten' => 'required|string|in:PERMANEN',
-            'tanggal_mulai' => 'required|date',
-            'master_man_power_id' => 'required|integer|exists:man_power,id',
-            'keterangan' => 'nullable|string|max:1000',
-        ]);
+{
+    $validatedData = $request->validate([
+        'line_area' => 'required|string',
+        'station_id' => 'required|integer|exists:stations,id',
+        'grup' => 'required|string',
+        'nama_sebelum' => 'required|string',
+        'nama_sesudah' => 'required|string',
+        'jenis_henkaten' => 'required|string|in:PERMANEN',
+        'tanggal_mulai' => 'required|date',
+        'master_man_power_id' => 'required|integer|exists:man_power,id',
+        'keterangan' => 'nullable|string|max:1000',
+    ]);
 
-        try {
-            DB::beginTransaction();
+    try {
+        DB::beginTransaction();
 
-            // Catat log Henkaten sebagai pengajuan
-            $logHenkaten = new ManPowerHenkaten();
+        // Tentukan apakah perubahan langsung aktif atau pending
+        $today = now()->toDateString();
+        $effectiveDate = $validatedData['tanggal_mulai'];
 
-            $logHenkaten->man_power_id = $validatedData['master_man_power_id'];
-            $logHenkaten->line_area = $validatedData['line_area'];
-            $logHenkaten->station_id = $validatedData['station_id'];
-            $logHenkaten->grup = $validatedData['grup'];
-            $logHenkaten->keterangan = $validatedData['keterangan'] ?? null;
-            $logHenkaten->nama = $validatedData['nama_sebelum'];
-            $logHenkaten->nama_after = $validatedData['nama_sesudah'];
-            $logHenkaten->effective_date = $validatedData['tanggal_mulai'];
-            $logHenkaten->note = $validatedData['jenis_henkaten'];
-            $logHenkaten->status = 'Approved';
+        $status = ($today >= $effectiveDate)
+                    ? 'Approved'     // Sudah waktunya → langsung aktif
+                    : 'Pending';     // Belum waktunya → pending dulu
 
-            $logHenkaten->save();
+        // Simpan log Henkaten
+        $logHenkaten = new ManPowerHenkaten();
+        $logHenkaten->man_power_id = $validatedData['master_man_power_id'];
+        $logHenkaten->line_area = $validatedData['line_area'];
+        $logHenkaten->station_id = $validatedData['station_id'];
+        $logHenkaten->grup = $validatedData['grup'];
+        $logHenkaten->keterangan = $validatedData['keterangan'] ?? null;
+        $logHenkaten->nama = $validatedData['nama_sebelum'];
+        $logHenkaten->nama_after = $validatedData['nama_sesudah'];
+        $logHenkaten->effective_date = $effectiveDate;
+        $logHenkaten->note = $validatedData['jenis_henkaten'];
+        $logHenkaten->status = $status; 
+        $logHenkaten->save();
 
-            // Langsung update master manpower karena tidak ada approval
-$master = ManPower::find($validatedData['master_man_power_id']);
+        DB::commit();
 
-if ($master) {
-    $master->nama = $validatedData['nama_sesudah'];   // update nama
-    $master->line_area = $validatedData['line_area']; // jika butuh update line
-    $master->station_id = $validatedData['station_id']; // jika berubah
-    $master->grup = $validatedData['grup']; // jika berubah
-    $master->save();
+        return redirect()->route('manpower.index')
+            ->with('success', 'Perubahan berhasil disimpan. Operator baru akan aktif pada tanggal efektif.');
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Gagal menyimpan Henkaten: ' . $e->getMessage());
+
+        return redirect()->back()
+            ->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.')
+            ->withInput();
+    }
 }
 
-
-            DB::commit();
-
-            return redirect()->route('manpower.index')
-->with('success', 'Perubahan Man Power berhasil disimpan dan langsung disetujui.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Gagal menyimpan Henkaten: ' . $e->getMessage());
-
-            return redirect()->back()
-                             ->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.')
-                             ->withInput();
-        }
-    }
 
 
 

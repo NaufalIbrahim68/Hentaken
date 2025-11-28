@@ -67,5 +67,23 @@ public function troubleshooting()
     return $this->belongsTo(Troubleshooting::class, 'troubleshooting_id', 'id');
 }
 
+public function henkatens()
+{
+    return $this->hasMany(ManPowerHenkaten::class, 'man_power_id');
+}
+
+public function getCurrentNameAttribute()
+{
+    $today = now()->toDateString();
+
+    $henkaten = $this->henkatens()
+                     ->where('effective_date', '<=', $today)
+                     ->orderByDesc('effective_date')
+                     ->first();
+
+    return $henkaten ? $henkaten->nama_after : $this->nama;
+}
+
+
 
 }

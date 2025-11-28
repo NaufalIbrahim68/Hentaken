@@ -17,7 +17,8 @@
     <div 
         x-data="manpowerEdit(
             '{{ $man_power->line_area }}',
-            {{ json_encode($stationIds) }} 
+            {{ json_encode($stationIds) }},
+            {{ json_encode($man_power->station_id) }}
         )"
         x-init="init()"
         class="py-12"
@@ -64,7 +65,7 @@
                                     required>
                                 <option value="">Pilih Line Area</option>
                                 @foreach ($lineAreas as $line)
-                                    <option value="{{ $line }}">{{ $line }}</option>
+                                    <option value="{{ $line }}" {{ $line === $man_power->line_area ? 'selected' : '' }}>{{ $line }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -80,11 +81,24 @@
 
                                 <template x-for="station in currentStations" :key="station.id">
                                     <div class="flex items-center justify-between border rounded px-3 py-2 bg-gray-50">
-                                        <span x-text="station.station_name" class="text-sm text-gray-800"></span>
-                                        <button type="button" @click="deleteStation(station.id)"
-                                                class="bg-red-500 text-white text-xs px-3 py-1 rounded hover:bg-red-600">
-                                            Hapus
-                                        </button>
+                                        <div>
+                                            <span x-text="station.station_name" class="text-sm text-gray-800"></span>
+                                            <template x-if="station.id === mainStationId">
+                                                <span class="ml-2 text-xs font-semibold text-green-600">(Main Station)</span>
+                                            </template>
+                                        </div>
+
+                                        <div class="flex items-center gap-2">
+                                            <template x-if="station.id !== mainStationId">
+                                                <button type="button" @click="deleteStation(station.id)"
+                                                        class="bg-red-500 text-white text-xs px-3 py-1 rounded hover:bg-red-600">
+                                                    Hapus
+                                                </button>
+                                            </template>
+                                            <template x-if="station.id === mainStationId">
+                                                <span class="text-xs text-gray-500 italic">Tidak bisa dihapus</span>
+                                            </template>
+                                        </div>
                                     </div>
                                 </template>
 
@@ -168,47 +182,69 @@
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
     <script>
-    function manpowerEdit(oldLineArea = '', oldStationIds = []) {
+    function manpowerEdit(oldLineArea = '', oldStationIds = [], mainStationId = null) {
         return {
             selectedLineArea: oldLineArea,
             oldStationIds: oldStationIds,
+            mainStationId: mainStationId !== null ? Number(mainStationId) : null,
             stationList: [],
             currentStations: [],
             isStationModalOpen: false,
             newStationId: '',
 
             async init() {
+                // Jika line area sudah ada, ambil daftar station sesuai line area
                 if (this.selectedLineArea) {
                     await this.fetchStations();
-                    // Penting: Pindahkan loadCurrentStations ke SETELAH fetchStations selesai
+                } else {
+                    // jika tidak ada selectedLineArea, kita tetap coba load currentStations
+                    // jika stationList belum ada, currentStations akan kosong
+                    this.loadCurrentStations();
                 }
             },
 
             async fetchStations() {
                 try {
                     const res = await fetch(`{{ route('manpower.master.stations.by_line') }}?line_area=${encodeURIComponent(this.selectedLineArea)}`);
+                    // asumsikan server mengembalikan array station { id, station_name, ... }
                     this.stationList = await res.json();
-                    
-                    // PINDAHKAN INI KE SINI:
-                    // Kita baru bisa memuat station yang dimiliki
-                    // SETELAH kita punya daftar lengkap (stationList)
-                    this.loadCurrentStations(); 
 
+                    // Setelah daftar station diterima, load current stations berdasar oldStationIds
+                    this.loadCurrentStations();
                 } catch (err) {
                     console.error('Fetch stations failed:', err);
+                    // tetap panggil loadCurrentStations untuk fallback
+                    this.loadCurrentStations();
                 }
             },
 
             loadCurrentStations() {
-                if (!Array.isArray(this.oldStationIds)) return;
+                if (!Array.isArray(this.oldStationIds)) {
+                    this.currentStations = [];
+                    return;
+                }
 
-                // Ubah semua 'oldStationIds' menjadi Angka (Number)
-                const numericOldIds = this.oldStationIds.map(id => parseInt(id, 10));
+                // Ubah semua 'oldStationIds' menjadi Number untuk perbandingan aman
+                const numericOldIds = this.oldStationIds.map(id => Number(id));
 
-                this.currentStations = this.stationList.filter(st =>
-                    // Sekarang kita membandingkan Angka dengan Angka
-                    numericOldIds.includes(st.id) 
-                );
+                // Jika stationList sudah ada (dari fetch), gunakan itu untuk detail station
+                if (Array.isArray(this.stationList) && this.stationList.length > 0) {
+                    this.currentStations = this.stationList.filter(st => numericOldIds.includes(Number(st.id)));
+                    // Namun mungkin ada station yang ada di oldStationIds tapi tidak ada di stationList (mis. sudah berubah line).
+                    // Untuk safety, jika ada id yang belum dimuat, tambahkan placeholder sederhana.
+                    numericOldIds.forEach(id => {
+                        if (!this.currentStations.some(s => Number(s.id) === id)) {
+                            // Tambahkan placeholder minimal (nama tidak lengkap)
+                            this.currentStations.push({ id: id, station_name: 'Station #' + id + ' (tidak di-list)' });
+                        }
+                    });
+                } else {
+                    // Jika stationList belum tersedia, buat placeholder saja dari oldStationIds
+                    this.currentStations = numericOldIds.map(id => ({ id: id, station_name: 'Station #' + id }));
+                }
+
+                // Pastikan tipe id sebagai Number
+                this.currentStations = this.currentStations.map(s => ({ ...s, id: Number(s.id) }));
             },
 
             openStationModal() {
@@ -220,75 +256,81 @@
             },
 
             // =============================================
-            // PERBAIKAN FUNGSI addStation()
+            // addStation()
             // =============================================
             async addStation() {
                 if (!this.newStationId) return alert('Pilih station baru terlebih dahulu.');
 
-                const selected = this.stationList.find(s => s.id == this.newStationId);
-                if (!selected) return;
-                if (this.currentStations.some(st => st.id === selected.id)) {
+                const selected = this.stationList.find(s => Number(s.id) === Number(this.newStationId));
+                if (!selected) return alert('Station tidak ditemukan pada daftar.');
+
+                if (this.currentStations.some(st => Number(st.id) === Number(selected.id))) {
                     alert('Station ini sudah ditambahkan.');
                     return;
                 }
 
-                this.currentStations.push(selected);
+                // Jika station yang ditambahkan sama dengan mainStationId, biarkan (boleh ditambahkan)
+                this.currentStations.push({ ...selected, id: Number(selected.id) });
                 this.newStationId = '';
                 this.isStationModalOpen = false;
 
                 try {
-                    // PERBAIKAN URL: Gunakan route() helper
-                    // PERBAIKAN BODY: Kirim man_power_id
                     await fetch(`{{ route('manpower.master.stations.store') }}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
-                        body: JSON.stringify({ 
-                            station_id: selected.id,
-                            man_power_id: {{ $man_power->id }} // <-- INI PENTING
+                        body: JSON.stringify({
+                            station_id: Number(selected.id),
+                            man_power_id: {{ $man_power->id }}
                         })
                     });
                 } catch (err) {
                     console.error('Gagal menyimpan station:', err);
                     // Jika gagal, hapus station dari tampilan
-                    this.currentStations = this.currentStations.filter(s => s.id !== selected.id);
+                    this.currentStations = this.currentStations.filter(s => Number(s.id) !== Number(selected.id));
                     alert('Gagal menyimpan station ke server.');
                 }
             },
 
             // =============================================
-            // PERBAIKAN FUNGSI deleteStation()
+            // deleteStation()
             // =============================================
             async deleteStation(id) {
+                // Pastikan id numerik
+                const numericId = Number(id);
+
+                // Cegah hapus station utama
+                if (this.mainStationId !== null && numericId === Number(this.mainStationId)) {
+                    alert('Station utama tidak boleh dihapus.');
+                    return;
+                }
+
                 if (!confirm('Yakin ingin menghapus station ini?')) return;
 
-                // Simpan dulu station yang akan dihapus, untuk jaga-jaga jika gagal
-                const stationToUndo = this.currentStations.find(s => s.id === id);
-                
+                // Simpan station yang akan dihapus untuk kemungkinan rollback
+                const stationToUndo = this.currentStations.find(s => Number(s.id) === numericId);
+
                 // Hapus dari UI dulu
-                this.currentStations = this.currentStations.filter(s => s.id !== id);
+                this.currentStations = this.currentStations.filter(s => Number(s.id) !== numericId);
 
                 try {
-                    // PERBAIKAN URL: Buat URL dinamis dari route() helper
-                    const deleteUrl = `{{ route('manpower.master.stations.destroy', ['id' => ':id']) }}`
-                                        .replace(':id', id);
+                    const deleteUrl = `{{ route('manpower.master.stations.destroy', ['id' => ':id']) }}`.replace(':id', numericId);
 
-                    // PERBAIKAN BODY: Kirim man_power_id
                     await fetch(deleteUrl, {
                         method: 'DELETE',
-                        headers: { 
-                            'Content-Type': 'application/json', // Tambahkan ini
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
                         body: JSON.stringify({
-                            man_power_id: {{ $man_power->id }} // <-- INI PENTING
+                            man_power_id: {{ $man_power->id }}
                         })
                     });
                 } catch (err) {
                     console.error('Gagal menghapus station:', err);
-                    // Jika gagal, kembalikan station ke tampilan
+                    // rollback UI jika gagal
                     if (stationToUndo) this.currentStations.push(stationToUndo);
                     alert('Gagal menghapus station dari server.');
                 }

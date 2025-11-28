@@ -17,29 +17,36 @@ use Illuminate\Support\Facades\Schema;
 class ManPowerController extends Controller
 {
     
-   public function index(Request $request) 
+    // ==============================================================
+    // ✅ INDEX - FIXED: Prevent Duplicates
+    // ==============================================================
+    public function index(Request $request) 
     {
         // 1. Ambil nilai filter dari request
         $selectedLineArea = $request->get('line_area');
 
         // 2. Ambil semua line_area yang unik untuk opsi dropdown
-        //    Ini akan mengambil semua 'line_area' yang ada di tabel Anda
         $lineAreas = ManPower::select('line_area')
                             ->whereNotNull('line_area')
                             ->distinct()
                             ->orderBy('line_area', 'asc')
                             ->pluck('line_area');
 
-        // 3. Buat query dasar, sama seperti yang Anda miliki
-        $query = ManPower::with('station');
+        // 3. ✅ Buat query dengan DISTINCT dan eager loading proper
+        $query = ManPower::query()
+            ->with(['station', 'stations']) // Load relasi station utama dan many stations
+            ->select('man_power.*') // Select semua kolom dari man_power
+            ->distinct(); // ✅ Hindari duplikasi
 
         // 4. Terapkan filter JIKA $selectedLineArea ada isinya
         if ($selectedLineArea) {
-            $query->where('line_area', $selectedLineArea);
+            $query->where('man_power.line_area', $selectedLineArea); // Specify table
         }
 
-       
-        $man_powers = $query->orderBy('nama', 'asc')->paginate(5);
+        // 5. ✅ Order by dan paginate dengan distinct
+        $man_powers = $query->orderBy('man_power.nama', 'asc')
+                           ->paginate(10)
+                           ->appends(['line_area' => $selectedLineArea]); // Keep filter on pagination
 
         // 6. Kirim semua data yang diperlukan ke view
         return view('manpower.index', [
@@ -52,26 +59,19 @@ class ManPowerController extends Controller
     // ==============================================================
     // CREATE MASTER MANPOWER
     // ==============================================================
-   public function create()
-{
-    // Ambil daftar 'line_area' yang unik dan tidak null
-    // Urutkan berdasarkan abjad (asc) agar rapi di dropdown
-    $lineAreas = Station::select('line_area')
-                        ->whereNotNull('line_area') // Hindari mengambil nilai NULL
-                        ->distinct()
-                        ->orderBy('line_area', 'asc') 
-                        ->pluck('line_area');
+    public function create()
+    {
+        $lineAreas = Station::select('line_area')
+                            ->whereNotNull('line_area')
+                            ->distinct()
+                            ->orderBy('line_area', 'asc') 
+                            ->pluck('line_area');
 
-    // $stations = Station::all(); // <-- TIDAK PERLU LAGI
-    // Data 'stations' akan di-load secara dinamis via AJAX
-    // setelah user memilih 'line_area'.
-
-    // Kirim HANYA 'lineAreas' ke view.
-    return view('manpower.create', compact('lineAreas'));
-}
+        return view('manpower.create', compact('lineAreas'));
+    }
 
     // ==============================================================
-    // GET STATIONS BY LINE AREA (AJAX) — dipakai juga untuk modal
+    // GET STATIONS BY LINE AREA (AJAX)
     // ==============================================================
     public function getStationsByLine(Request $request)
     {
@@ -90,115 +90,163 @@ class ManPowerController extends Controller
     }
 
     // ==============================================================
-    // STORE MASTER MANPOWER
+    // ✅ STORE MASTER MANPOWER - FIXED: No Duplicates
     // ==============================================================
-   public function storeMaster(Request $request)
-{
-    // 1. VALIDASI
-    $request->validate([
-        'nama' => 'required|string|max:255',
-        'station_id' => 'nullable|exists:stations,id',
-        'grup' => 'required|string',
-        'shift' => 'nullable|string',
-        'tanggal_mulai' => 'required|date',
-        'waktu_mulai' => 'required|date_format:H:i',
-    ]);
+    public function storeMaster(Request $request)
+    {
+        // 1. VALIDASI
+        $request->validate([
+            'nama' => 'required|string|max:255',
+            'station_id' => 'required|exists:stations,id', // ✅ Main station wajib
+            'grup' => 'required|string',
+            'shift' => 'nullable|string',
+            'tanggal_mulai' => 'required|date',
+            'waktu_mulai' => 'required|date_format:H:i',
+        ]);
 
-    // 2. AMBIL DATA REQUEST
-    $data = $request->only(['nama', 'station_id', 'shift', 'grup', 'tanggal_mulai', 'waktu_mulai']);
+        DB::beginTransaction();
+        try {
+            // 2. AMBIL DATA REQUEST
+            $data = $request->only(['nama', 'station_id', 'shift', 'grup', 'tanggal_mulai', 'waktu_mulai']);
 
-    // 3. CARI LINE AREA BERDASARKAN STATION_ID
-    $lineAreaOfStation = null; 
-    if (!empty($data['station_id'])) {
-        $station = Station::find($data['station_id']);
-        
-        if ($station) {
-            $lineAreaOfStation = $station->line_area;
+            // 3. CARI LINE AREA BERDASARKAN STATION_ID
+            $station = Station::find($data['station_id']);
+            $lineAreaOfStation = $station ? $station->line_area : null;
+
+            // 4. PROSES SIMPAN DATA
+            if (str_contains($data['grup'], 'Troubleshooting')) {
+                
+                // Simpan ke troubleshooting
+                $grupTs = substr($data['grup'], 0, 1);
+                $troubleshooting = Troubleshooting::create([
+                    'nama' => $data['nama'],
+                    'grup' => $grupTs,
+                    'status' => 'normal', 
+                ]);
+
+                // ✅ Buat 1 RECORD manpower saja
+                $manPower = ManPower::create([
+                    'nama' => $data['nama'],
+                    'grup' => $data['grup'],
+                    'station_id' => $data['station_id'], // Main station
+                    'shift' => $data['shift'] ?? null,
+                    'line_area' => $lineAreaOfStation,
+                    'status' => 'pending',
+                    'troubleshooting_id' => $troubleshooting->id,
+                    'tanggal_mulai' => $data['tanggal_mulai'],
+                    'waktu_mulai' => $data['waktu_mulai'],
+                ]);
+
+                // ✅ Simpan main station ke relasi dengan flag is_main_operator = 1
+                $manPower->stations()->attach($data['station_id'], [
+                    'is_main_operator' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            } else {
+                // ✅ Buat 1 RECORD manpower biasa
+                $manPower = ManPower::create([
+                    'nama' => $data['nama'],
+                    'grup' => $data['grup'],
+                    'station_id' => $data['station_id'], // Main station
+                    'line_area' => $lineAreaOfStation,
+                    'status' => 'pending',
+                    'tanggal_mulai' => $data['tanggal_mulai'],
+                    'waktu_mulai' => $data['waktu_mulai'],
+                ]);
+
+                // ✅ Simpan main station ke relasi dengan flag is_main_operator = 1
+                $manPower->stations()->attach($data['station_id'], [
+                    'is_main_operator' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            Log::info('ManPower Created Successfully', [
+                'id' => $manPower->id,
+                'nama' => $manPower->nama,
+                'station_id' => $data['station_id'],
+            ]);
+
+            return redirect()->route('manpower.index')
+                         ->with('success', 'Data Man Power berhasil ditambahkan.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('ManPower Store Error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Gagal menyimpan data: ' . $e->getMessage()]);
         }
     }
-
-    // 4. PROSES SIMPAN DATA
-    if (str_contains($data['grup'], 'Troubleshooting')) {
-        
-        // Simpan ke troubleshooting
-        // (Status di tabel troubleshooting tetap 'normal', 
-        //  asumsi 'pending' hanya untuk data man power baru)
-        $grupTs = substr($data['grup'], 0, 1);
-        $troubleshooting = Troubleshooting::create([
-            'nama' => $data['nama'],
-            'grup' => $grupTs,
-            'status' => 'normal', 
-        ]);
-
-        // Simpan ke master manpower
-        ManPower::create([
-            'nama' => $data['nama'],
-            'grup' => $data['grup'],
-            'station_id' => $data['station_id'] ?? null,
-            'shift' => $data['shift'] ?? null,
-            'line_area' => $lineAreaOfStation,
-            'status' => 'pending', // <-- DIUBAH
-            'troubleshooting_id' => $troubleshooting->id,
-            'tanggal_mulai' => $data['tanggal_mulai'],
-            'waktu_mulai' => $data['waktu_mulai'],
-        ]);
-
-    } else {
-        // Masuk ke manpower biasa
-        ManPower::create([
-            'nama' => $data['nama'],
-            'grup' => $data['grup'],
-            'station_id' => $data['station_id'],
-            'line_area' => $lineAreaOfStation,
-            'status' => 'pending', // <-- DIUBAH
-            'tanggal_mulai' => $data['tanggal_mulai'],
-            'waktu_mulai' => $data['waktu_mulai'],
-        ]);
-    }
-
-    return redirect()->route('manpower.index')
-                     ->with('success', 'Data Man Power berhasil ditambahkan.');
-}
-
-
-
 
     // ==============================================================
     // EDIT MASTER MANPOWER
     // ==============================================================
-   public function edit($id)
-{
-    
-    // MENJADI SEPERTI INI:
-    $man_power = ManPower::with('stations')->findOrFail($id);
-    
-    // Sisa kode Anda tetap sama
-    $lineAreas = Station::select('line_area')->distinct()->pluck('line_area');
-    $stations = Station::all();
-
-    return view('manpower.edit_master', compact('man_power', 'lineAreas', 'stations'));
-}
-    // ==============================================================
-    // UPDATE MASTER MANPOWER
-    // ==============================================================
-   public function updateMaster(Request $request, $id)
+    public function edit($id)
     {
-        // Sesuaikan validasi dengan input form
+        $man_power = ManPower::with('stations')->findOrFail($id);
+        
+        $lineAreas = Station::select('line_area')->distinct()->pluck('line_area');
+        $stations = Station::all();
+
+        return view('manpower.edit_master', compact('man_power', 'lineAreas', 'stations'));
+    }
+
+    // ==============================================================
+    // ✅ UPDATE MASTER MANPOWER - FIXED
+    // ==============================================================
+    public function updateMaster(Request $request, $id)
+    {
         $validatedData = $request->validate([
             'nama'      => 'required|string|max:255',
-            'line_area' => 'required|string|max:255', // <-- TAMBAHKAN INI
-            'group'     => 'required|in:A,B',         // <-- UBAH 'grup' JADI 'group'
-            // 'station_id' dihapus karena di-handle oleh AlpineJS
+            'line_area' => 'required|string|max:255',
+            'group'     => 'required|in:A,B',
         ]);
 
-        $man_power = ManPower::findOrFail($id);
-        
-        // Pastikan $fillable di Model ManPower Anda
-        // juga 'line_area' dan 'group' (bukan 'grup')
-        $man_power->update($validatedData);
+        DB::beginTransaction();
+        try {
+            $man_power = ManPower::findOrFail($id);
+            
+            // ✅ Update HANYA data utama, TIDAK update station_id
+            // karena station dikelola via relasi many-to-many
+            $man_power->update([
+                'nama' => $validatedData['nama'],
+                'line_area' => $validatedData['line_area'],
+                'grup' => $validatedData['group'], // Note: validasi pakai 'group', model pakai 'grup'
+            ]);
 
-        return redirect()->route('manpower.index')
-            ->with('success', 'Data Man Power berhasil diperbarui.');
+            DB::commit();
+
+            Log::info('ManPower Updated Successfully', [
+                'id' => $man_power->id,
+                'nama' => $man_power->nama,
+            ]);
+
+            return redirect()->route('manpower.index')
+                ->with('success', 'Data Man Power berhasil diperbarui.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('ManPower Update Error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Gagal mengupdate data: ' . $e->getMessage()]);
+        }
     }
 
     // ==============================================================
@@ -206,11 +254,34 @@ class ManPowerController extends Controller
     // ==============================================================
     public function destroyMaster($id)
     {
-        $man_power = ManPower::findOrFail($id);
-        $man_power->delete();
+        DB::beginTransaction();
+        try {
+            $man_power = ManPower::findOrFail($id);
+            
+            // ✅ Hapus relasi stations terlebih dahulu
+            $man_power->stations()->detach();
+            
+            // Hapus man power
+            $man_power->delete();
 
-        return redirect()->route('manpower.index')
-            ->with('success', 'Data Man Power berhasil dihapus.');
+            DB::commit();
+
+            Log::info('ManPower Deleted Successfully', [
+                'id' => $id,
+            ]);
+
+            return redirect()->route('manpower.index')
+                ->with('success', 'Data Man Power berhasil dihapus.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('ManPower Delete Error', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()->withErrors(['error' => 'Gagal menghapus data.']);
+        }
     }
 
     // ==============================================================
@@ -247,7 +318,7 @@ class ManPowerController extends Controller
             'effective_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:effective_date',
             'man_power_id' => 'required|exists:man_power,id',
-            'man_power_id_after' => 'required|exists:man_power,id',
+            'man_power_id_after' => 'required',
             'keterangan' => 'nullable|string',
             'lampiran' => 'nullable|image|mimes:jpeg,png|max:2048',
             'nama' => 'required|string|max:255',
@@ -276,77 +347,352 @@ class ManPowerController extends Controller
     }
 
     // ==============================================================
-    // STATION MANAGEMENT (MODAL)
+    // ✅ STATION MANAGEMENT (MODAL) - FIXED
     // ==============================================================
-   public function storeStation(Request $request)
-{
-    $data = $request->validate([
-        'man_power_id' => 'required|exists:man_power,id',
-        'station_id'   => 'required|exists:stations,id',
-    ]);
+    public function storeStation(Request $request)
+    {
+        $data = $request->validate([
+            'man_power_id' => 'required|exists:man_power,id',
+            'station_id'   => 'required|exists:stations,id',
+        ]);
 
-    $manPower = ManPower::find($data['man_power_id']);
+        DB::beginTransaction();
+        try {
+            $manPower = ManPower::findOrFail($data['man_power_id']);
 
-    // Cek dulu agar tidak duplikat
-    if ($manPower->stations()->where('station_id', $data['station_id'])->exists()) {
-        return response()->json(['message' => 'Station sudah ada.'], 422);
+            // ✅ Cek duplikat
+            if ($manPower->stations()->where('station_id', $data['station_id'])->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Station sudah ada.'
+                ], 422);
+            }
+
+            // ✅ PROTEKSI: Tidak boleh tambah station yang sama dengan main station
+            if ($manPower->station_id == $data['station_id']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Station ini sudah menjadi main station.'
+                ], 422);
+            }
+
+            // ✅ Attach dengan flag is_main_operator = 0 (backup)
+            $manPower->stations()->attach($data['station_id'], [
+                'is_main_operator' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::commit();
+
+            Log::info('Station Added to ManPower', [
+                'man_power_id' => $data['man_power_id'],
+                'station_id' => $data['station_id'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Station berhasil ditambahkan.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Add Station Error', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan station.'
+            ], 500);
+        }
     }
 
-    // attach() akan otomatis INSERT ke tabel man_power_stations
-    $manPower->stations()->attach($data['station_id']);
+    public function destroyStation(Request $request, $id)
+    {
+        $request->validate([
+            'man_power_id' => 'required|exists:man_power,id',
+        ]);
 
-    return response()->json(['message' => 'Station berhasil ditambahkan.']);
-}
+        DB::beginTransaction();
+        try {
+            $manPower = ManPower::findOrFail($request->man_power_id);
+            
+            // ✅ PROTEKSI: Tidak boleh hapus main station
+            if ($manPower->station_id == $id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '⚠️ Station utama tidak dapat dihapus!'
+                ], 403);
+            }
+            
+            // ✅ Detach station dari relasi
+            $deleted = $manPower->stations()->detach($id);
 
-   public function destroyStation(Request $request, $id)
-{
-    $request->validate([
-        'man_power_id' => 'required|exists:man_power,id',
-    ]);
+            if ($deleted === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Station tidak ditemukan.'
+                ], 404);
+            }
 
-    $manPower = ManPower::find($request->man_power_id);
-    
-    // detach() akan otomatis DELETE dari tabel man_power_stations
-    // di mana man_power_id = $manPower->id DAN station_id = $id
-    $manPower->stations()->detach($id);
+            DB::commit();
 
-    return response()->json(['message' => 'Station berhasil dihapus.']);
-}
+            Log::info('Station Removed from ManPower', [
+                'man_power_id' => $request->man_power_id,
+                'station_id' => $id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Station berhasil dihapus.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Delete Station Error', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus station.'
+            ], 500);
+        }
+    }
 
     public function updateStation(Request $request, $id)
-{
-    $request->validate(['station_name' => 'required|string|max:255']);
+    {
+        $request->validate(['station_name' => 'required|string|max:255']);
 
-    $station = Station::findOrFail($id);
-    $station->update(['station_name' => $request->station_name]);
+        $station = Station::findOrFail($id);
+        $station->update(['station_name' => $request->station_name]);
 
-    return response()->json($station);
-}
+        return response()->json($station);
+    }
 
-public function search(Request $request)
-{
-    try {
-        $q = $request->input('query', '');
-        $grupInput = $request->input('grup', '');
-        $lineArea = $request->input('line_area', '');
-        $stationId = $request->input('station_id', null);
-        
-        if (strlen($q) < 2 || empty($grupInput)) {
-            return response()->json([]);
+    // ==============================================================
+    // ✅ SEARCH - FIXED: Proper station filtering
+    // ==============================================================
+    public function search(Request $request)
+    {
+        try {
+            $q = $request->input('query', '');
+            $grupInput = $request->input('grup', '');
+            $lineArea = $request->input('line_area', '');
+            $stationId = $request->input('station_id', null);
+            
+            if (strlen($q) < 2 || empty($grupInput)) {
+                return response()->json([]);
+            }
+
+            $nowFull = Carbon::now();
+            $userRole = auth()->user()->role ?? null;
+
+            // Ambil busy IDs
+            $activeManpowerIds = ManPowerHenkaten::whereIn('status', ['Approved', 'PENDING'])
+                ->where(function ($query) use ($nowFull) {
+                    $query->whereNull('end_date')
+                        ->orWhere(function($q) use ($nowFull) {
+                            $q->whereRaw("CONCAT(end_date, ' ', time_end) >= ?", [$nowFull]);
+                        });
+                })
+                ->pluck('man_power_id_after')
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            $busyRegularIds = [];
+            $busyTsIds = [];
+
+            foreach ($activeManpowerIds as $id) {
+                if (is_string($id) && str_starts_with($id, 't-')) {
+                    $busyTsIds[] = (int) substr($id, 2);
+                } else {
+                    $busyRegularIds[] = (int) $id;
+                }
+            }
+
+            // ===============================
+            // 1. Man Power REGULER
+            // ===============================
+            $manPowerQuery = ManPower::query()
+                ->where('grup', $grupInput)
+                ->where('nama', 'like', "%{$q}%")
+                ->whereNotIn('id', $busyRegularIds);
+
+            // Filter berdasarkan role
+            if ($userRole === 'Leader QC') {
+                $manPowerQuery->where('line_area', 'Incoming');
+            } elseif ($userRole === 'Leader PPIC') {
+                $manPowerQuery->where('line_area', 'Delivery');
+            } elseif (!empty($lineArea)) {
+                $manPowerQuery->where('line_area', $lineArea);
+            }
+
+            // ✅ Filter station - ambil SEMUA operator di station tersebut
+            if (!empty($stationId)) {
+                $manPowerQuery->where(function($query) use ($stationId) {
+                    // Cek di relasi stations (man_power_stations)
+                    $query->whereHas('stations', function ($q) use ($stationId) {
+                        $q->where('station_id', $stationId);
+                    })
+                    // ATAU cek di station_id langsung (main station)
+                    ->orWhere('station_id', $stationId);
+                });
+            }
+
+            $manPower = $manPowerQuery->get(['id', 'nama', 'grup', 'line_area']);
+            
+            // ===============================
+            // 2. Troubleshooting
+            // ===============================
+            $troubleshootingQuery = ManPower::query()
+                ->where('grup', 'like', "{$grupInput}(Troubleshooting)%")
+                ->where('nama', 'like', "%{$q}%")
+                ->whereNotIn('id', $busyTsIds);
+
+            if ($userRole === 'Leader QC') {
+                $troubleshootingQuery->where(function($q) {
+                    $q->where('line_area', 'Incoming')->orWhereNull('line_area');
+                });
+            } elseif ($userRole === 'Leader PPIC') {
+                $troubleshootingQuery->where(function($q) {
+                    $q->where('line_area', 'Delivery')->orWhereNull('line_area');
+                });
+            } elseif (!empty($lineArea)) {
+                $troubleshootingQuery->where(function($q) use ($lineArea) {
+                    $q->where('line_area', $lineArea)->orWhereNull('line_area');
+                });
+            }
+
+            $troubleshooting = $troubleshootingQuery->get(['id', 'nama', 'grup', 'line_area']);
+            
+            // ===============================
+            // 3. UNIVERSAL TROUBLESHOOTING
+            // ===============================
+            $universalQuery = ManPower::query()
+                ->where('grup', 'Universal(Troubleshooting)')
+                ->where('nama', 'like', "%{$q}%")
+                ->whereNotIn('id', $busyTsIds);
+
+            $universal = $universalQuery->get(['id', 'nama', 'grup', 'line_area']);
+
+            // ===============================
+            // Gabungkan Hasil
+            // ===============================
+            $result = collect($manPower)
+                ->map(fn($item) => [
+                    'id' => $item->id,
+                    'nama' => $item->nama,
+                    'grup' => $item->grup,
+                    'line_area' => $item->line_area,
+                    'type' => 'regular'
+                ])
+                ->merge(
+                    $troubleshooting->map(fn($item) => [
+                        'id' => 't-' . $item->id,
+                        'nama' => $item->nama . ' (TS)',
+                        'grup' => $item->grup,
+                        'line_area' => $item->line_area,
+                        'type' => 'troubleshooting'
+                    ])
+                )
+                ->merge(
+                    $universal->map(fn($item) => [
+                        'id' => 't-' . $item->id,
+                        'nama' => $item->nama . ' (UNIVERSAL)',
+                        'grup' => 'Universal',
+                        'line_area' => 'ALL',
+                        'type' => 'universal'
+                    ])
+                )
+                ->unique('id')
+                ->values();
+
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            Log::error('ManPower Search Error', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json([
+                'error' => 'Search failed',
+                'message' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+            ], 500);
+        }
+    }
+
+    // ==============================================================
+    // OTHER METHODS (unchanged)
+    // ==============================================================
+    public function getManPower(Request $request)
+    {
+        $grup = $request->input('grup');
+        $line_area = $request->input('line_area');
+        $station_id = $request->input('station_id');
+
+        $result = [];
+
+        if ($station_id && $line_area) {
+            $manPowerQuery = ManPower::where('grup', $grup)
+                ->where('station_id', $station_id)
+                ->where('line_area', $line_area);
+
+            $manPowerInStation = $manPowerQuery->get();
+
+            if ($manPowerInStation->count() > 1) {
+                foreach ($manPowerInStation as $mp) {
+                    $result[] = [
+                        'id' => $mp->id,
+                        'nama' => $mp->nama,
+                    ];
+                }
+            }
         }
 
-        $nowFull = Carbon::now();
-        
-        // ✅ Ambil role user yang sedang login
-        $userRole = auth()->user()->role ?? null;
+        $tsGrup = substr($grup, 0, 1);
+        $troubleshooting = Troubleshooting::where('grup', $tsGrup)->get();
 
-        // Ambil busy IDs
-        $activeManpowerIds = ManPowerHenkaten::whereIn('status', ['Approved', 'PENDING'])
-            ->where(function ($query) use ($nowFull) {
-                $query->whereNull('end_date')
-                    ->orWhere(function($q) use ($nowFull) {
-                        $q->whereRaw("CONCAT(end_date, ' ', time_end) >= ?", [$nowFull]);
-                    });
+        foreach ($troubleshooting as $ts) {
+            $result[] = [
+                'id' => 't-' . $ts->id,
+                'nama' => $ts->nama . ' (TS)',
+            ];
+        }
+
+        return response()->json($result);
+    }
+
+    public function confirmation()
+    {
+        $manpowers = ManPower::where('status', 'pending')->get();
+        $methods   = \App\Models\Method::where('status', 'pending')->get();
+        $machines  = \App\Models\Machine::where('status', 'pending')->get();
+        $materials = \App\Models\Material::where('status', 'pending')->get();
+
+        return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials'));
+    }
+
+    public function searchAvailableReplacement(Request $request)
+    {
+        $request->validate([
+            'query' => 'nullable|string',
+            'grup' => 'required|string',
+        ]);
+
+        $query = $request->input('query', '');
+        $grupInput = $request->input('grup');
+
+        $activeHenkatenIds = \App\Models\ManPowerHenkaten::where(function ($q) {
+                $q->whereNull('updated_at')
+                  ->orWhere('status', 'PENDING');
             })
             ->pluck('man_power_id_after')
             ->filter()
@@ -357,7 +703,7 @@ public function search(Request $request)
         $busyRegularIds = [];
         $busyTsIds = [];
 
-        foreach ($activeManpowerIds as $id) {
+        foreach ($activeHenkatenIds as $id) {
             if (is_string($id) && str_starts_with($id, 't-')) {
                 $busyTsIds[] = (int) substr($id, 2);
             } else {
@@ -365,269 +711,39 @@ public function search(Request $request)
             }
         }
 
-        // ===============================
-        // 1. Man Power REGULER (Grup Specific)
-        // ===============================
-        $manPowerQuery = ManPower::query()
+        $availableRegular = \App\Models\ManPower::query()
             ->where('grup', $grupInput)
-            ->where('nama', 'like', "%{$q}%")
-            ->whereNotIn('id', $busyRegularIds);
+            ->where('status', 'aktif')
+            ->when($query, fn($q) => $q->where('nama', 'like', "%{$query}%"))
+            ->whereNotIn('id', $busyRegularIds)
+            ->get(['id', 'nama', 'grup']);
 
-        // ✅ Filter berdasarkan role untuk regular manpower
-        if ($userRole === 'Leader QC') {
-            $manPowerQuery->where('line_area', 'Incoming');
-        } elseif ($userRole === 'Leader PPIC') {
-            $manPowerQuery->where('line_area', 'Delivery');
-        } elseif (!empty($lineArea)) {
-            $manPowerQuery->where('line_area', $lineArea);
-        }
+        $grupTs = str_contains($grupInput, 'Troubleshooting') ? substr($grupInput, 0, 1) : $grupInput;
 
-        // ✅ Filter station - hanya ambil yang is_main_operator = 0 (backup/support)
-        if (!empty($stationId)) {
-            $manPowerQuery->whereHas('manyStations', function ($q) use ($stationId) {
-                $q->where('station_id', $stationId)
-                  ->where('is_main_operator', 0); // ✅ Hanya operator backup
-            });
-        }
+        $availableTs = \App\Models\Troubleshooting::query()
+            ->where('grup', $grupTs)
+            ->when($query, fn($q) => $q->where('nama', 'like', "%{$query}%"))
+            ->whereNotIn('id', $busyTsIds)
+            ->get(['id', 'nama', 'grup']);
 
-        $manPower = $manPowerQuery->get(['id', 'nama', 'grup', 'line_area']);
-        
-        Log::info('ManPower Query Debug', [
-            'query' => $q,
-            'grup' => $grupInput,
-            'line_area' => $lineArea,
-            'station_id' => $stationId,
-            'user_role' => $userRole,
-            'busy_ids' => $busyRegularIds,
-            'result_count' => $manPower->count(),
-            'sql' => $manPowerQuery->toSql()
-        ]);
-
-        // ===============================
-        // 2. Troubleshooting (Grup Specific)
-        // ===============================
-        $troubleshootingQuery = ManPower::query()
-            ->where('grup', 'like', "{$grupInput}(Troubleshooting)%")
-            ->where('nama', 'like', "%{$q}%")
-            ->whereNotIn('id', $busyTsIds);
-
-        // ✅ Filter berdasarkan role untuk troubleshooting
-        if ($userRole === 'Leader QC') {
-            $troubleshootingQuery->where(function($q) {
-                $q->where('line_area', 'Incoming')
-                  ->orWhereNull('line_area');
-            });
-        } elseif ($userRole === 'Leader PPIC') {
-            $troubleshootingQuery->where(function($q) {
-                $q->where('line_area', 'Delivery')
-                  ->orWhereNull('line_area');
-            });
-        } elseif (!empty($lineArea)) {
-            $troubleshootingQuery->where(function($q) use ($lineArea) {
-                $q->where('line_area', $lineArea)
-                  ->orWhereNull('line_area');
-            });
-        }
-
-        $troubleshooting = $troubleshootingQuery->get(['id', 'nama', 'grup', 'line_area']);
-        
-        Log::info('Troubleshooting Query Debug', [
-            'query' => $q,
-            'grup_pattern' => "{$grupInput}(Troubleshooting)%",
-            'result_count' => $troubleshooting->count()
-        ]);
-
-        // ===============================
-        // 3. ✅ UNIVERSAL TROUBLESHOOTING (Bebas Grup, Line, Station)
-        // ===============================
-        $universalQuery = ManPower::query()
-            ->where('grup', 'Universal(Troubleshooting)')
-            ->where('nama', 'like', "%{$q}%")
-            ->whereNotIn('id', $busyTsIds);
-
-        $universal = $universalQuery->get(['id', 'nama', 'grup', 'line_area']);
-
-        Log::info('Search Results', [
-            'user_role' => $userRole,
-            'regular' => $manPower->count(),
-            'troubleshooting' => $troubleshooting->count(),
-            'universal' => $universal->count()
-        ]);
-
-        // ===============================
-        // Gabungkan Hasil
-        // ===============================
-        $result = collect($manPower)
-            ->map(fn($item) => [
-                'id' => $item->id,
-                'nama' => $item->nama,
-                'grup' => $item->grup,
-                'line_area' => $item->line_area,
-                'type' => 'regular'
-            ])
+        $result = collect()
             ->merge(
-                $troubleshooting->map(fn($item) => [
+                $availableRegular->map(fn($item) => [
+                    'id' => $item->id,
+                    'nama' => $item->nama,
+                    'grup' => $item->grup,
+                ])
+            )
+            ->merge(
+                $availableTs->map(fn($item) => [
                     'id' => 't-' . $item->id,
                     'nama' => $item->nama . ' (TS)',
                     'grup' => $item->grup,
-                    'line_area' => $item->line_area,
-                    'type' => 'troubleshooting'
                 ])
             )
-            ->merge(
-                $universal->map(fn($item) => [
-                    'id' => 't-' . $item->id,
-                    'nama' => $item->nama . ' (UNIVERSAL)',
-                    'grup' => 'Universal',
-                    'line_area' => 'ALL',
-                    'type' => 'universal'
-                ])
-            )
-            ->unique('id')
+            ->unique('nama')
             ->values();
 
         return response()->json($result);
-
-    } catch (\Exception $e) {
-        Log::error('ManPower Search Error', [
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
-        ]);
-
-        return response()->json([
-            'error' => 'Search failed',
-            'message' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-        ], 500);
     }
-}
-
-
-public function getManPower(Request $request)
-{
-    $grup = $request->input('grup');
-    $line_area = $request->input('line_area');
-    $station_id = $request->input('station_id');
-
-    $result = [];
-
-    // --- 1. Ambil Man Power biasa yang station_id sama dan line_area sama ---
-    if ($station_id && $line_area) {
-        $manPowerQuery = ManPower::where('grup', $grup)
-            ->where('station_id', $station_id)
-            ->where('line_area', $line_area);
-
-        // Ambil semua orang di station itu
-        $manPowerInStation = $manPowerQuery->get();
-
-        // Hanya tampilkan jika ada lebih dari 1 orang
-        if ($manPowerInStation->count() > 1) {
-            foreach ($manPowerInStation as $mp) {
-                $result[] = [
-                    'id' => $mp->id,
-                    'nama' => $mp->nama,
-                ];
-            }
-        }
-    }
-
-    // --- 2. Ambil Troubleshooting berdasarkan grup saja ---
-    $tsGrup = substr($grup, 0, 1); // ambil 'A' atau 'B' saja
-    $troubleshooting = Troubleshooting::where('grup', $tsGrup)->get();
-
-    foreach ($troubleshooting as $ts) {
-        $result[] = [
-            'id' => 't-' . $ts->id, // prefix agar tidak bentrok
-            'nama' => $ts->nama . ' (TS)',
-        ];
-    }
-
-    return response()->json($result);
-}
-
-// Tambahkan di ManPowerController
-public function confirmation()
-{
-    $manpowers = ManPower::where('status', 'pending')->get(); // contoh filter status pending
-    $methods   = \App\Models\Method::where('status', 'pending')->get();
-    $machines  = \App\Models\Machine::where('status', 'pending')->get();
-    $materials = \App\Models\Material::where('status', 'pending')->get();
-
-    return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials'));
-}
-
-public function searchAvailableReplacement(Request $request)
-{
-    $request->validate([
-        'query' => 'nullable|string',
-        'grup' => 'required|string',
-    ]);
-
-    $query = $request->input('query', '');
-    $grupInput = $request->input('grup');
-
-    // Ambil semua Man Power yang sedang aktif di tabel Henkaten (masih berlangsung)
-    $activeHenkatenIds = \App\Models\ManPowerHenkaten::where(function ($q) {
-            $q->whereNull('updated_at') // belum ditutup
-              ->orWhere('status', 'PENDING'); // atau masih menunggu approval
-        })
-        ->pluck('man_power_id_after')
-        ->filter()
-        ->unique()
-        ->values()
-        ->all();
-
-    // Pisahkan ID regular dan TS
-    $busyRegularIds = [];
-    $busyTsIds = [];
-
-    foreach ($activeHenkatenIds as $id) {
-        if (is_string($id) && str_starts_with($id, 't-')) {
-            $busyTsIds[] = (int) substr($id, 2);
-        } else {
-            $busyRegularIds[] = (int) $id;
-        }
-    }
-
-    // Ambil Man Power reguler yang bisa jadi pengganti
-    $availableRegular = \App\Models\ManPower::query()
-        ->where('grup', $grupInput)
-        ->where('status', 'aktif')
-        ->when($query, fn($q) => $q->where('nama', 'like', "%{$query}%"))
-        ->whereNotIn('id', $busyRegularIds)
-        ->get(['id', 'nama', 'grup']);
-
-    // Ambil Troubleshooting (TS)
-    $grupTs = str_contains($grupInput, 'Troubleshooting') ? substr($grupInput, 0, 1) : $grupInput;
-
-    $availableTs = \App\Models\Troubleshooting::query()
-        ->where('grup', $grupTs)
-        ->when($query, fn($q) => $q->where('nama', 'like', "%{$query}%"))
-        ->whereNotIn('id', $busyTsIds)
-        ->get(['id', 'nama', 'grup']);
-
-    // Gabungkan hasilnya
-    $result = collect()
-        ->merge(
-            $availableRegular->map(fn($item) => [
-                'id' => $item->id,
-                'nama' => $item->nama,
-                'grup' => $item->grup,
-            ])
-        )
-        ->merge(
-            $availableTs->map(fn($item) => [
-                'id' => 't-' . $item->id,
-                'nama' => $item->nama . ' (TS)',
-                'grup' => $item->grup,
-            ])
-        )
-        ->unique('nama')
-        ->values();
-
-    return response()->json($result);
-}
-
- 
-
 }

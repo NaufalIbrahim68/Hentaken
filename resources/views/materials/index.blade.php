@@ -50,9 +50,7 @@
                                     <th
                                         class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase">
                                         Line Area</th>
-                                    <th
-                                        class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600 uppercase">
-                                        Status</th>
+                                    
                                     <th
                                         class="py-3 px-4 border-b text-center text-sm font-semibold text-gray-600 uppercase">
                                         Aksi</th>
@@ -64,24 +62,6 @@
                                         <td class="py-3 px-4">{{ $material->station->station_name ?? 'N/A' }}</td>
                                         <td class="py-3 px-4 font-medium">{{ $material->material_name }}</td>
                                        <td class="py-3 px-4 font-medium">{{ $material->station->line_area }}</td>
-                                        <td class="py-3 px-4">
-                                            @if($material->status == 'normal')
-                                                <span
-                                                    class="bg-green-100 text-green-800 text-xs font-medium me-2 px-0.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">
-                                                    Normal
-                                                </span>
-                                            @elseif($material->status == 'henkaten')
-                                                <span
-                                                    class="bg-yellow-100 text-yellow-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-yellow-900 dark:text-yellow-300">
-                                                    Henkaten
-                                                </span>
-                                            @else
-                                                <span
-                                                    class="bg-gray-100 text-gray-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-gray-300">
-                                                    N/A
-                                                </span>
-                                            @endif
-                                        </td>
                                         <td class="py-3 px-4 text-center">
                                             <div class="flex items-center justify-center space-x-2">
                                                 <a href="{{ route('materials.edit', $material->id) }}"

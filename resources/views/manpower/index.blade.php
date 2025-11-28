@@ -70,7 +70,11 @@
                                         <td class="py-3 px-4">
                                             {{ $loop->iteration + ($man_powers->currentPage() - 1) * $man_powers->perPage() }}
                                         </td>
-                                        <td class="py-3 px-4 font-medium">{{ $man_power->nama }}</td>
+                                  <td class="py-3 px-4 font-medium">
+    {{ $man_power->nama }}
+</td>
+
+
                                         <td class="py-3 px-4 font-medium">{{ $man_power->line_area }}</td>
                                         <td class="py-3 px-4">{{ $man_power->station?->station_name }}</td>
                                         <td class="py-3 px-4">{{ $man_power->grup }}</td>

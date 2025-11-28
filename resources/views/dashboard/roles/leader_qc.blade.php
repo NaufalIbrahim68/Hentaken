@@ -599,15 +599,12 @@ $isApproved = strtolower($henkaten->status) === 'approved';
                 @endforeach
             </tr>
             
-            {{-- Pengecekan Role: Tampilkan Nama Method hanya untuk Leader QC dan PPIC --}}
             @php
-                // Mengambil role pengguna yang sedang login
                 $currentUserRole = auth()->user()->role ?? 'guest'; 
                 $showMethodDetails = in_array($currentUserRole, ['Leader QC', 'Leader PPIC']);
             @endphp
             
             @if ($showMethodDetails)
-                {{-- Row 2: Nama Method (Hanya untuk Leader QC & PPIC) --}}
                 <tr>
                     @foreach ($methods as $m)
                         @php
@@ -627,7 +624,6 @@ $isApproved = strtolower($henkaten->status) === 'approved';
                 </tr>
             @endif
 
-            {{-- Row 3: Status Dot --}}
             <tr>
                 @foreach ($methods as $m)
                     @php
@@ -672,16 +668,13 @@ $isApproved = strtolower($henkaten->status) === 'approved';
 
         <div id="methodChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
             @php
-                // LOGIKA BARU: Filter koleksi untuk hanya menyertakan status 'approved'
                 $filteredMethodHenkatens = $activeMethodHenkatens->filter(function ($henkaten) {
-                    // Asumsi field status adalah 'status'
                     return strtolower($henkaten->status) === 'approved';
                 });
             @endphp
 
             @if($filteredMethodHenkatens->isNotEmpty())
                 <div class="flex justify-center gap-3 min-w-full px-2">
-                    {{-- Loop menggunakan variabel baru yang sudah difilter --}}
                     @foreach($filteredMethodHenkatens as $henkaten)
                         @php
                             $startDate = strtoupper($henkaten->effective_date->format('j/M/y'));
