@@ -15,7 +15,7 @@
                         <form action="{{ route('activity.log.manpower') }}" method="GET"
                             class="flex items-end space-x-2">
 
-                            {{-- 1. TAMBAHAN: FILTER LINE AREA --}}
+                            {{-- 1. FILTER LINE AREA --}}
                             <div>
                                 <label for="line_area" class="block text-xs font-medium text-gray-700">
                                     Filter Line Area
@@ -23,7 +23,6 @@
                                 <select name="line_area" id="line_area" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm 
                                         focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                     <option value="">Semua Line</option>
-                                    {{-- Pastikan $lineAreas (array) dan $line_area (string) dikirim dari controller --}}
                                     @isset($lineAreas)
                                         @foreach ($lineAreas as $line)
                                             <option value="{{ $line }}" {{ ($line_area ?? '') == $line ? 'selected' : '' }}>
@@ -34,7 +33,7 @@
                                 </select>
                             </div>
 
-                            {{-- Filter Tanggal (Sudah Ada) --}}
+                            {{-- Filter Tanggal --}}
                             <div>
                                 <label for="created_date" class="block text-xs font-medium text-gray-700">
                                     Filter Tanggal
@@ -55,7 +54,7 @@
                                 Reset
                             </a>
 
-                            {{-- 2. TAMBAHAN: TOMBOL DOWNLOAD PDF --}}
+                            {{-- TOMBOL DOWNLOAD PDF --}}
                             <button type="submit" 
                                     formaction="{{ route('activity.log.manpower.pdf') }}" 
                                     formtarget="_blank"
@@ -71,7 +70,7 @@
 
 
                 {{-- NOTIFIKASI JIKA DATA TIDAK DITEMUKAN --}}
-                @if ($logs->isEmpty() && ($created_date || $line_area)) {{-- 3. TAMBAHAN: Cek $line_area juga --}}
+                @if ($logs->isEmpty() && ($created_date || $line_area))
                     <div class="mb-4 p-4 rounded-md bg-yellow-100 border border-yellow-400 text-yellow-700">
                         Tidak ada data Henkaten Man power untuk filter yang dipilih.
                     </div>
@@ -144,16 +143,38 @@
                                         </span>
                                     </td>
 
-
+                                    {{-- ✅ KOLOM LAMPIRAN DENGAN 3 FILE --}}
                                     <td class="py-2 px-3">
-                                        @if ($log->lampiran)
-                                            <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
-                                                class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-2 py-1 rounded-md transition whitespace-nowrap">
-                                                Lihat Lampiran
-                                            </a>
-                                        @else
-                                            <span class="text-gray-400">Tidak ada</span>
-                                        @endif
+                                        <div class="flex flex-col space-y-1">
+                                            {{-- Lampiran 1 --}}
+                                            @if ($log->lampiran)
+                                                <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                                                    class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-2 py-1 rounded-md transition whitespace-nowrap text-center">
+                                                    📄 Lampiran 1
+                                                </a>
+                                            @endif
+
+                                            {{-- Lampiran 2 --}}
+                                            @if ($log->lampiran_2)
+                                                <a href="{{ asset('storage/' . $log->lampiran_2) }}" target="_blank"
+                                                    class="inline-block bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-2 py-1 rounded-md transition whitespace-nowrap text-center">
+                                                    📄 Lampiran 2
+                                                </a>
+                                            @endif
+
+                                            {{-- Lampiran 3 --}}
+                                            @if ($log->lampiran_3)
+                                                <a href="{{ asset('storage/' . $log->lampiran_3) }}" target="_blank"
+                                                    class="inline-block bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium px-2 py-1 rounded-md transition whitespace-nowrap text-center">
+                                                    📄 Lampiran 3
+                                                </a>
+                                            @endif
+
+                                            {{-- Jika tidak ada lampiran sama sekali --}}
+                                            @if (!$log->lampiran && !$log->lampiran_2 && !$log->lampiran_3)
+                                                <span class="text-gray-400 text-xs">Tidak ada lampiran</span>
+                                            @endif
+                                        </div>
                                     </td>
                                     
                                     <td class="py-2 px-3">

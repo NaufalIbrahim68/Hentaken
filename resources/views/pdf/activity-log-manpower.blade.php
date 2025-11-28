@@ -66,6 +66,18 @@
             border: 1px solid #ccc;
             padding: 2px;
             border-radius: 3px;
+            margin-bottom: 3px;
+        }
+        .lampiran-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .lampiran-label {
+            font-size: 8px;
+            color: #666;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -110,8 +122,7 @@
                 <th>Supp. Part No. End</th>
                 <th>Keterangan</th>
                 <th>Status</th>
-                <th>Lampiran</th> 
-                {{-- 1. TAMBAHAN HEADER NOTE --}}
+                <th>Lampiran</th>
                 <th>Note</th>
             </tr>
         </thead>
@@ -130,32 +141,65 @@
                         -
                         {{ $log->time_end ? \Carbon\Carbon::parse($log->time_end)->format('H:i') : '-' }}
                     </td>
-                        <td class="text-center">{{ $log->serial_number_start ?? '-' }}</td>
-                        <td class="text-center">{{ $log->serial_number_end ?? '-' }}</td>
-                    <td style="text-center">{{ $log->keterangan ?? '-' }}</td>
+                    <td class="text-center">{{ $log->serial_number_start ?? '-' }}</td>
+                    <td class="text-center">{{ $log->serial_number_end ?? '-' }}</td>
+                    <td class="text-center">{{ $log->keterangan ?? '-' }}</td>
                     <td class="text-center">{{ $log->status ?? '-' }}</td>
+
+                    {{-- ✅ KOLOM LAMPIRAN DENGAN 3 FILE --}}
                     <td class="text-center">
-    @if ($log->lampiran && file_exists(public_path('storage/' . $log->lampiran)))
-        @php
-            $extension = strtolower(pathinfo($log->lampiran, PATHINFO_EXTENSION));
-        @endphp
+                        <div class="lampiran-container">
+                            {{-- Lampiran 1 --}}
+                            @if ($log->lampiran && file_exists(public_path('storage/' . $log->lampiran)))
+                                @php
+                                    $extension1 = strtolower(pathinfo($log->lampiran, PATHINFO_EXTENSION));
+                                @endphp
+                                <div>
+                                    <div class="lampiran-label">Lampiran 1</div>
+                                    @if (in_array($extension1, ['jpg', 'jpeg', 'png']))
+                                        <img src="{{ public_path('storage/' . $log->lampiran) }}" alt="Lampiran 1" class="lampiran-img">
+                                    @else
+                                        <span style="font-size: 8px;">File: {{ basename($log->lampiran) }}</span>
+                                    @endif
+                                </div>
+                            @endif
 
-        {{-- Jika lampiran berupa gambar --}}
-        @if (in_array($extension, ['jpg', 'jpeg', 'png']))
-            <img src="{{ public_path('storage/' . $log->lampiran) }}" alt="Lampiran" class="lampiran-img">
+                            {{-- Lampiran 2 --}}
+                            @if ($log->lampiran_2 && file_exists(public_path('storage/' . $log->lampiran_2)))
+                                @php
+                                    $extension2 = strtolower(pathinfo($log->lampiran_2, PATHINFO_EXTENSION));
+                                @endphp
+                                <div>
+                                    <div class="lampiran-label">Lampiran 2</div>
+                                    @if (in_array($extension2, ['jpg', 'jpeg', 'png']))
+                                        <img src="{{ public_path('storage/' . $log->lampiran_2) }}" alt="Lampiran 2" class="lampiran-img">
+                                    @else
+                                        <span style="font-size: 8px;">File: {{ basename($log->lampiran_2) }}</span>
+                                    @endif
+                                </div>
+                            @endif
 
-        {{-- Jika lampiran berupa zip/rar atau file lain --}}
-        @else
-            <span>Lampiran tersedia:</span>
-            <br>
-            <span style="font-size: 12px;">
-                {{ asset('storage/' . $log->lampiran) }}
-            </span>
-        @endif
-    @else
-        -
-    @endif
-</td>
+                            {{-- Lampiran 3 --}}
+                            @if ($log->lampiran_3 && file_exists(public_path('storage/' . $log->lampiran_3)))
+                                @php
+                                    $extension3 = strtolower(pathinfo($log->lampiran_3, PATHINFO_EXTENSION));
+                                @endphp
+                                <div>
+                                    <div class="lampiran-label">Lampiran 3</div>
+                                    @if (in_array($extension3, ['jpg', 'jpeg', 'png']))
+                                        <img src="{{ public_path('storage/' . $log->lampiran_3) }}" alt="Lampiran 3" class="lampiran-img">
+                                    @else
+                                        <span style="font-size: 8px;">File: {{ basename($log->lampiran_3) }}</span>
+                                    @endif
+                                </div>
+                            @endif
+
+                            {{-- Jika tidak ada lampiran sama sekali --}}
+                            @if (!$log->lampiran && !$log->lampiran_2 && !$log->lampiran_3)
+                                -
+                            @endif
+                        </div>
+                    </td>
 
                     <td class="text-center">
                         @if ($log->status == 'APPROVED')

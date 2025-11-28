@@ -24,7 +24,7 @@ class ManPowerHenkaten extends Model
     /**
      * Kolom yang dapat diisi (mass assignment).
      */
-    protected $fillable = [
+     protected $fillable = [
         'man_power_id',
         'station_id',
         'shift',
@@ -36,6 +36,8 @@ class ManPowerHenkaten extends Model
         'end_date',
         'keterangan',
         'lampiran',
+        'lampiran_2',      
+        'lampiran_3',      
         'man_power_id_after',
         'serial_number_start',
         'serial_number_end',
@@ -45,7 +47,7 @@ class ManPowerHenkaten extends Model
         'status',
         'note',
         'created_at',
-        'updated_at', // tambahkan agar bisa diisi manual
+        'updated_at', 
     ];
 
     /**

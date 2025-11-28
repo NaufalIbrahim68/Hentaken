@@ -160,13 +160,15 @@ class HenkatenController extends Controller
         'effective_date'      => 'required|date',
         'end_date'            => 'required|date|after_or_equal:effective_date',
         'lampiran'            => 'required|file|mimes:jpeg,png,zip,rar|max:2048',
+        'lampiran_2' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
+        'lampiran_3' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
         'time_start'          => 'required|date_format:H:i',
         'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
         'serial_number_start' => 'nullable|string|max:255',
         'serial_number_end'   => 'nullable|string|max:255',
     ], [
         'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.',
-        'lampiran.mimes'               => 'Lampiran harus berupa jpeg, png, zip, atau rar.',
+        'lampiran.mimes'               => 'harus berupa jpeg, png, zip, atau rar.',
         'end_date.after_or_equal'      => 'Tanggal berakhir harus sama dengan atau setelah tanggal efektif.',
     ]);
 
@@ -181,6 +183,14 @@ class HenkatenController extends Controller
         if ($request->hasFile('lampiran')) {
             $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
         }
+
+         if ($request->hasFile('lampiran_2')) {
+        $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_man_power_lampiran', 'public');
+    }
+
+    if ($request->hasFile('lampiran_3')) {
+        $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_man_power_lampiran', 'public');
+    }
 
         $dataToCreate = $validated;
         $dataToCreate['lampiran']   = $lampiranPath;
@@ -1133,7 +1143,7 @@ public function storeMachineHenkaten(Request $request)
             $statusToSet = 'Approved';
 
             // Logika khusus untuk manpower PERMANEN
-            if ($type == 'manpower' && $item->note == 'PERMANEN') {
+            if ($type == 'manpower' && $item->note == '-') {
                 $masterManPower = ManPower::find($item->man_power_id);
 
                 if ($masterManPower) {

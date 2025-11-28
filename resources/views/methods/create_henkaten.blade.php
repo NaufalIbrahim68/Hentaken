@@ -232,31 +232,74 @@
                             </div>
                         </div>
 
-                        {{-- Lampiran --}}
-                        <div class="mb-6 mt-6">
-                            <label for="lampiran" class="block text-gray-700 text-sm font-bold mb-2">Lampiran
-                                @if (!isset($log) || (isset($log) && !$log->lampiran))
-                                    <span class="text-red-500">*</span>
-                                @endif
-                            </label>
-                            <input type="file" id="lampiran" name="lampiran"
-                                accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
-                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                {{ !isset($log) ? 'required' : '' }}>
-                            @if (isset($log) && $log->lampiran)
-                                <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-                                    <p class="text-sm text-gray-700 font-medium mb-1">Lampiran saat ini:</p>
-                                    <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
-                                        class="text-blue-600 hover:text-blue-800 hover:underline">
-                                        Lihat Lampiran ({{ basename($log->lampiran) }})
-                                    </a>
-                                    <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda
-                                        ingin mengganti lampiran ini.</p>
-                                </div>
-                            @endif
-                        </div>
+                       
+                               {{-- Lampiran (3 Field) --}}
+<div class="mb-6 mt-6">
+    <h3 class="block text-gray-700 text-sm font-bold mb-4">Lampiran</h3>
+    
+    {{-- Lampiran 1 (Required) --}}
+    <div class="mb-4">
+        <label for="lampiran" class="block text-gray-700 text-sm font-medium mb-2">
+            Lampiran 1 (Wajib untuk Izin/Sakit)
+            @if (!isset($log) || (isset($log) && !$log->lampiran))
+                <span class="text-red-500">*</span>
+            @endif
+        </label>
+        <input type="file" id="lampiran" name="lampiran"
+            accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
+            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            {{ !isset($log) ? 'required' : '' }}>
+        @if (isset($log) && $log->lampiran)
+            <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                <p class="text-sm text-gray-700 font-medium mb-1">Lampiran 1 saat ini:</p>
+                <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                    class="text-blue-600 hover:text-blue-800 hover:underline">
+                    Lihat Lampiran ({{ basename($log->lampiran) }})
+                </a>
+                <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda ingin mengganti lampiran ini.</p>
+            </div>
+        @endif
+    </div>
 
-                        {{-- ACTION BUTTONS --}}
+    {{-- Lampiran 2 (Optional) --}}
+    <div class="mb-4">
+        <label for="lampiran_2" class="block text-gray-700 text-sm font-medium mb-2">
+            Lampiran 2 (Opsional)
+        </label>
+        <input type="file" id="lampiran_2" name="lampiran_2"
+            accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
+            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+        @if (isset($log) && $log->lampiran_2)
+            <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                <p class="text-sm text-gray-700 font-medium mb-1">Lampiran 2 saat ini:</p>
+                <a href="{{ asset('storage/' . $log->lampiran_2) }}" target="_blank"
+                    class="text-blue-600 hover:text-blue-800 hover:underline">
+                    Lihat Lampiran ({{ basename($log->lampiran_2) }})
+                </a>
+                <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda ingin mengganti lampiran ini.</p>
+            </div>
+        @endif
+    </div>
+
+    {{-- Lampiran 3 (Optional) --}}
+    <div class="mb-4">
+        <label for="lampiran_3" class="block text-gray-700 text-sm font-medium mb-2">
+            Lampiran 3 (Opsional)
+        </label>
+        <input type="file" id="lampiran_3" name="lampiran_3"
+            accept=".png,.jpg,.jpeg,.zip,.rar,application/zip,application/x-rar-compressed"
+            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+        @if (isset($log) && $log->lampiran_3)
+            <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                <p class="text-sm text-gray-700 font-medium mb-1">Lampiran 3 saat ini:</p>
+                <a href="{{ asset('storage/' . $log->lampiran_3) }}" target="_blank"
+                    class="text-blue-600 hover:text-blue-800 hover:underline">
+                    Lihat Lampiran ({{ basename($log->lampiran_3) }})
+                </a>
+                <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda ingin mengganti lampiran ini.</p>
+            </div>
+        @endif
+    </div>                        {{-- ACTION BUTTONS --}}
                         <div class="flex items-center justify-end space-x-4 pt-4 border-t">
                             <a href="{{ route('activity.log.method') }}"
                                 class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">

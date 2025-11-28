@@ -284,69 +284,7 @@ class ManPowerController extends Controller
         }
     }
 
-    // ==============================================================
-    // CREATE HENKATEN FORM
-    // ==============================================================
-    public function createHenkatenForm()
-    {
-        $man_power = ManPower::with('station')->first();
-        $stations = Station::all();
-
-        return view('manpower.create_henkaten', compact('man_power', 'stations'));
-    }
-
-    public function createHenkaten($id)
-    {
-        $man_power = ManPower::findOrFail($id);
-        $stations = Station::all();
-        $lineAreas = Station::whereNotNull('line_area')
-            ->orderBy('line_area', 'asc')
-            ->pluck('line_area')
-            ->unique();
-
-        return view('manpower.create_henkaten', compact('man_power', 'stations', 'lineAreas'));
-    }
-
-    // ==============================================================
-    // STORE HENKATEN DATA
-    // ==============================================================
-    public function storeHenkaten(Request $request)
-    {
-        $validated = $request->validate([
-            'shift' => 'required|in:1,2',
-            'line_area' => 'required|string|max:255',
-            'effective_date' => 'required|date',
-            'end_date' => 'nullable|date|after_or_equal:effective_date',
-            'man_power_id' => 'required|exists:man_power,id',
-            'man_power_id_after' => 'required',
-            'keterangan' => 'nullable|string',
-            'lampiran' => 'nullable|image|mimes:jpeg,png|max:2048',
-            'nama' => 'required|string|max:255',
-            'nama_after' => 'required|string|max:255',
-        ]);
-
-        $lampiranPath = $request->hasFile('lampiran')
-            ? $request->file('lampiran')->store('lampiran_henkaten', 'public')
-            : null;
-
-        ManPowerHenkaten::create([
-            ...$validated,
-            'lampiran' => $lampiranPath,
-        ]);
-
-        return redirect()->route('manpower.index')
-            ->with('success', 'Data Henkaten berhasil disimpan.');
-    }
-
-    // ==============================================================
-    // SCHEDULER VIEW
-    // ==============================================================
-    public function createManpowerScheduler(Request $request): View
-    {
-        return view('manpower.schedulers');
-    }
-
-    // ==============================================================
+        // ==============================================================
     // ✅ STATION MANAGEMENT (MODAL) - FIXED
     // ==============================================================
     public function storeStation(Request $request)
@@ -378,7 +316,7 @@ class ManPowerController extends Controller
 
             // ✅ Attach dengan flag is_main_operator = 0 (backup)
             $manPower->stations()->attach($data['station_id'], [
-                'is_main_operator' => 0,
+                    'status' => 'PENDING',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

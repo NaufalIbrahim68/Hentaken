@@ -263,9 +263,7 @@
                                     $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
                                     $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
                                 @endphp
-                                <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium {{ $bgColorHeader }} {{ $textColorHeader }}">
-                                    <div class="text-center leading-tight break-words">{{ $stationName }}</div>
-                                </th>
+                              
                             @endforeach
                         @endforeach
                     </tr>
@@ -367,14 +365,15 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
         $filteredHenkatens = $activeManPowerHenkatens->filter(function ($henkaten) use ($currentGroup) {
             $isCorrectGroup = optional($henkaten->manPower)->grup === $currentGroup; 
 
-            $isPending = strtolower($henkaten->status) === 'pending';
+$isApproved = strtolower($henkaten->status) === 'approved';
 
-            return $isCorrectGroup && $isPending;
+             return $isCorrectGroup && $isApproved;
         });
     } else {
         $filteredHenkatens = collect();
     }
 @endphp
+
 
 
                 @if($filteredHenkatens->isNotEmpty())
@@ -562,62 +561,85 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
 {{-- METHOD  --}}
 <div class="bg-white shadow rounded p-4 flex flex-col">
     <h2 class="text-sm font-semibold mb-3 text-center">METHOD</h2>
-
-    <div class="w-full">
-        <table class="w-full border-collapse">
-            <thead>
-                <tr class="bg-gray-50">
-                    @foreach ($methods as $m)
-                        @php
-                            $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
-                            $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
-                            $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
-                        @endphp
-                        <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium {{ $bgColorHeader }} {{ $textColorHeader }}">
-                            <div class="text-center leading-tight break-words">
-                                {{ $m->station->station_name ?? 'N/A' }}
+{{-- Method Table --}}
+<div class="w-full">
+    <table class="w-full border-collapse">
+        <thead>
+            <tr class="bg-gray-50">
+                @foreach ($methods as $m)
+                    @php
+                        // Logika Header (Nama Stasiun)
+                        $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
+                        $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
+                        $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
+                    @endphp
+                    
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            
+            {{-- Row 1: Icon --}}
+            <tr>
+                @foreach ($methods as $m)
+                    @php
+                        $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
+                        $bgColorCell = $isHenkaten ? 'bg-red-600' : 'bg-white';
+                    @endphp
+                    <td class="border border-gray-300 p-2 {{ $bgColorCell }}">
+                        <div class="flex justify-center items-center">
+                            <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
                             </div>
-                        </th>
-                    @endforeach
-                </tr>
-            </thead>
-            <tbody>
-                {{-- Row untuk Icon --}}
+                        </div>
+                    </td>
+                @endforeach
+            </tr>
+            
+            @php
+                $currentUserRole = auth()->user()->role ?? 'guest'; 
+                $showMethodDetails = in_array($currentUserRole, ['Leader QC', 'Leader PPIC']);
+            @endphp
+            
+            @if ($showMethodDetails)
                 <tr>
                     @foreach ($methods as $m)
                         @php
                             $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
                             $bgColorCell = $isHenkaten ? 'bg-red-600' : 'bg-white';
+                            $textColor = $isHenkaten ? 'text-white' : 'text-gray-800';
+                            
+                            // *** ASUMSI: Nama kolom di model Method adalah 'methods_name' ***
+                            $methodName = $m->methods_name ?? 'N/A'; 
                         @endphp
-                        <td class="border border-gray-300 p-2 {{ $bgColorCell }}">
-                            <div class="flex justify-center items-center">
-                                <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                </div>
+                        <td class="border border-gray-300 px-1 py-1 text-[9px] text-center {{ $bgColorCell }} {{ $textColor }} font-semibold">
+                            <div class="leading-tight break-words">
+                                {{ $methodName }} 
                             </div>
                         </td>
                     @endforeach
                 </tr>
-                {{-- Row untuk Status --}}
-                <tr>
-                    @foreach ($methods as $m)
-                        @php
-                            $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
-                            $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-                        @endphp
-                        <td class="border border-gray-300 p-2 {{ $bgColor }}">
-                            <div class="flex justify-center">
-                                <div class="w-3 h-3 rounded-full {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }}"></div>
-                            </div>
-                        </td>
-                    @endforeach
-                </tr>
-            </tbody>
-        </table>
-    </div>
+            @endif
+
+            <tr>
+                @foreach ($methods as $m)
+                    @php
+                        $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
+                        $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
+                    @endphp
+                    <td class="border border-gray-300 p-2 {{ $bgColor }}">
+                        <div class="flex justify-center">
+                            <div class="w-3 h-3 rounded-full {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }}"></div>
+                        </div>
+                    </td>
+                @endforeach
+            </tr>
+        </tbody>
+    </table>
+</div>
 
     {{-- Legend --}}
     <div class="flex justify-center gap-4 mt-3 text-[10px]">
@@ -646,16 +668,13 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
 
         <div id="methodChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
             @php
-                // LOGIKA BARU: Filter koleksi untuk hanya menyertakan status 'approved'
                 $filteredMethodHenkatens = $activeMethodHenkatens->filter(function ($henkaten) {
-                    // Asumsi field status adalah 'status'
                     return strtolower($henkaten->status) === 'approved';
                 });
             @endphp
 
             @if($filteredMethodHenkatens->isNotEmpty())
                 <div class="flex justify-center gap-3 min-w-full px-2">
-                    {{-- Loop menggunakan variabel baru yang sudah difilter --}}
                     @foreach($filteredMethodHenkatens as $henkaten)
                         @php
                             $startDate = strtoupper($henkaten->effective_date->format('j/M/y'));
@@ -858,63 +877,92 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
     <h2 class="text-sm font-semibold mb-3 text-center">MACHINE</h2>
 
     {{-- Machine Table --}}
-    <div class="w-full">
-        <table class="w-full border-collapse">
-            <thead>
-                <tr class="bg-gray-50">
-                    @foreach ($machines as $mc)
-                        @php
-                            $isHenkaten = ($mc->keterangan === 'HENKATEN');
-                            $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
-                            $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
-                        @endphp
-                        <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium {{ $bgColorHeader }} {{ $textColorHeader }}">
-                            <div class="text-center leading-tight break-words">
-                                {{ $mc->station->station_name ?? '-' }}
+<div class="w-full">
+    <table class="w-full border-collapse">
+        <thead>
+            <tr class="bg-gray-50">
+                @foreach ($machines as $mc)
+                    @php
+                        // Logika Header (Nama Stasiun)
+                        $isHenkaten = ($mc->keterangan === 'HENKATEN');
+                        $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
+                        $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
+                    @endphp
+                    
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            
+            {{-- Row 1: Icon (TIDAK DIUBAH) --}}
+            <tr>
+                @foreach ($machines as $mc)
+                    @php
+                        $isHenkaten = ($mc->keterangan === 'HENKATEN');
+                        $bgColorCell = $isHenkaten ? 'bg-red-600' : 'bg-white';
+                    @endphp
+                    <td class="border border-gray-300 p-2 {{ $bgColorCell }}">
+                        <div class="flex justify-center items-center">
+                            {{-- START ICON CODE --}}
+                            <div class="machine-status rounded-full flex items-center justify-center cursor-pointer" 
+                                style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; background-color: #9333ea;"
+                                onclick="toggleMachine(this)">
+                                <svg class="text-white" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
                             </div>
-                        </th>
-                    @endforeach
-                </tr>
-            </thead>
-            <tbody>
-                {{-- Row untuk Icon --}}
+                            {{-- END ICON CODE --}}
+                        </div>
+                    </td>
+                @endforeach
+            </tr>
+            
+            {{-- Pengecekan Role: Tampilkan Kategori Mesin hanya untuk Leader QC dan PPIC --}}
+            @php
+                // Mengambil role pengguna yang sedang login
+                $currentUserRole = auth()->user()->role ?? 'guest'; 
+                $showMachineDetails = in_array($currentUserRole, ['Leader QC', 'Leader PPIC']);
+            @endphp
+            
+            @if ($showMachineDetails)
+                {{-- Row 2: Kategori Mesin (Hanya untuk Leader QC & PPIC) --}}
                 <tr>
                     @foreach ($machines as $mc)
                         @php
                             $isHenkaten = ($mc->keterangan === 'HENKATEN');
                             $bgColorCell = $isHenkaten ? 'bg-red-600' : 'bg-white';
+                            $textColor = $isHenkaten ? 'text-white' : 'text-gray-800';
+                            
+                            // Mengambil kategori mesin
+                            $categoryName = $mc->machines_category ?? 'N/A'; 
                         @endphp
-                        <td class="border border-gray-300 p-2 {{ $bgColorCell }}">
-                            <div class="flex justify-center items-center">
-                                <div class="machine-status rounded-full flex items-center justify-center cursor-pointer" 
-                                     style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; background-color: #9333ea;"
-                                     onclick="toggleMachine(this)">
-                                    <svg class="text-white" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    </svg>
-                                </div>
+                        <td class="border border-gray-300 px-1 py-1 text-[9px] text-center {{ $bgColorCell }} {{ $textColor }} font-semibold">
+                            <div class="leading-tight break-words">
+                                {{ $categoryName }} 
                             </div>
                         </td>
                     @endforeach
                 </tr>
-                {{-- Row untuk Status --}}
-                <tr>
-                    @foreach ($machines as $mc)
-                        @php
-                            $isHenkaten = ($mc->keterangan === 'HENKATEN');
-                            $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-                        @endphp
-                        <td class="border border-gray-300 p-2 {{ $bgColor }}">
-                            <div class="flex justify-center">
-                                <div class="rounded-full {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }}" style="width: 12px; height: 12px; min-width: 12px; min-height: 12px;"></div>
-                            </div>
-                        </td>
-                    @endforeach
-                </tr>
-            </tbody>
-        </table>
-    </div>
+            @endif
+
+            {{-- Row 3: Status Dot --}}
+            <tr>
+                @foreach ($machines as $mc)
+                    @php
+                        $isHenkaten = ($mc->keterangan === 'HENKATEN');
+                        $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
+                    @endphp
+                    <td class="border border-gray-300 p-2 {{ $bgColor }}">
+                        <div class="flex justify-center">
+                            <div class="rounded-full {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }}" style="width: 12px; height: 12px; min-width: 12px; min-height: 12px;"></div>
+                        </div>
+                    </td>
+                @endforeach
+            </tr>
+        </tbody>
+    </table>
+</div>
 
     {{-- Legend --}}
     <div class="flex justify-center gap-4 mt-3 text-[10px]">
@@ -1087,11 +1135,12 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                     <p class="text-xs text-gray-500">Keterangan</p>
                     <p id="modalKeterangan" class="font-semibold text-sm">-</p>
                 </div>
-                <div class="bg-orange-50 p-3 rounded-lg">
-                    <p class="text-xs text-gray-500">Machine</p>
-                    <p id="modalMachine" class="font-semibold text-sm truncate">-</p>
-                </div>
-            </div>
+               {{-- MACHINE (Full Width Box) --}}
+    <div class="bg-orange-50 p-3 rounded-lg">
+        <p class="text-xs text-gray-500">Machine</p>
+        <p id="modalMachine" class="font-semibold text-sm">-</p>
+    </div>
+        </div>
         </div>
 
         {{-- DETAIL INFORMASI (Grid 2) --}}
@@ -1148,68 +1197,93 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
 {{-- ============================================= --}}
 <div class="bg-white shadow rounded p-4 flex flex-col mt-1">
     <h2 class="text-sm font-semibold mb-3 text-center">MATERIAL</h2>
-
-    {{-- Material Table --}}
-    <div class="w-full">
-        <table class="w-full border-collapse">
-            <thead>
-                <tr class="bg-gray-50">
-                    @foreach($stationStatuses as $station)
-                        @php
-                            $isHenkaten = $station['status'] !== 'NORMAL';
-                            $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
-                            $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
-                        @endphp
-                        <th class="border border-gray-300 px-1 py-2 text-[9px] font-medium {{ $bgColorHeader }} {{ $textColorHeader }}">
-                            <div class="text-center leading-tight break-words">
-                                {{ $station['name'] }}
+{{-- Material Table --}}
+<div class="w-full">
+    <table class="w-full border-collapse">
+        <thead>
+            <tr class="bg-gray-50">
+                @foreach($stationStatuses as $station)
+                    @php
+                        // Logika Header (Nama Stasiun)
+                        $isHenkaten = $station['status'] !== 'NORMAL';
+                        $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
+                        $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
+                    @endphp
+                    
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            
+            {{-- Row 1: Icon --}}
+            <tr>
+                @foreach($stationStatuses as $station)
+                    @php
+                        $isHenkaten = $station['status'] !== 'NORMAL';
+                        $bgColorCell = $isHenkaten ? 'bg-red-600' : 'bg-white';
+                    @endphp
+                    <td class="border border-gray-300 p-2 {{ $bgColorCell }}">
+                        <div class="flex justify-center items-center">
+                            {{-- Icon --}}
+                            <div class="material-status rounded-full bg-purple-600 flex items-center justify-center cursor-pointer" data-id="{{ $station['id'] }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px;">
+                                <svg class="text-white" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                </svg>
                             </div>
-                        </th>
-                    @endforeach
-                </tr>
-            </thead>
-            <tbody>
-                {{-- Row untuk Icon --}}
+                        </div>
+                    </td>
+                @endforeach
+            </tr>
+            
+            {{-- Pengecekan Role (Perlu Diulang untuk logika @if) --}}
+            @php
+                // Tentukan logic role di sini untuk mengontrol tampilan nama material
+                $currentUserRole = auth()->user()->role ?? 'guest'; 
+                $showMaterialDetails = in_array($currentUserRole, ['Leader QC', 'Leader PPIC']);
+            @endphp
+            
+            @if ($showMaterialDetails)
+                {{-- Row 2: Nama Material (DIPINDAHKAN KE SINI - Hanya untuk Leader QC & PPIC) --}}
                 <tr>
                     @foreach($stationStatuses as $station)
                         @php
+                            // Menggunakan bgColorCell yang sama dengan Icon jika Henkaten
                             $isHenkaten = $station['status'] !== 'NORMAL';
                             $bgColorCell = $isHenkaten ? 'bg-red-600' : 'bg-white';
+                            $textColor = $isHenkaten ? 'text-white' : 'text-gray-800';
+                            
+                            $materialName = $station['material_name'] ?? 'N/A';
                         @endphp
-                        <td class="border border-gray-300 p-2 {{ $bgColorCell }}">
-                            <div class="flex justify-center items-center">
-                                <div class="material-status rounded-full bg-purple-600 flex items-center justify-center cursor-pointer" data-id="{{ $station['id'] }}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px;">
-                                    <svg class="text-white" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                                    </svg>
-                                </div>
+                        <td class="border border-gray-300 px-1 py-1 text-[9px] text-center {{ $bgColorCell }} {{ $textColor }} font-semibold">
+                            <div class="leading-tight break-words">
+                                {{ $materialName }} 
                             </div>
                         </td>
                     @endforeach
                 </tr>
-               {{-- Row untuk Status --}}
-              <tr>
-    @foreach ($stationStatuses as $station)
-        @php
-            // $station adalah array, bukan object
-            $isHenkaten = ($station['status'] === 'HENKATEN');
-            $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
-        @endphp
+            @endif
 
-        <td class="border border-gray-300 p-2 {{ $bgColor }}">
-            <div class="flex justify-center">
-                <div class="rounded-full {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }}"
-                     style="width: 12px; height: 12px; min-width: 12px; min-height: 12px;">
-                </div>
-            </div>
-        </td>
-    @endforeach
-</tr>
-
-
-            </tbody>
-        </table>
-    </div>
+            {{-- Row 3: Status Stasiun (Dot Merah/Hijau) --}}
+            <tr>
+                @foreach ($stationStatuses as $station)
+                    @php
+                        // Logika Status Stasiun (Dot)
+                        $isHenkaten = $station['status'] !== 'NORMAL';
+                        $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
+                    @endphp
+                
+                    <td class="border border-gray-300 p-2 {{ $bgColor }}">
+                        <div class="flex justify-center">
+                            <div class="rounded-full {{ $isHenkaten ? 'bg-red-600' : 'bg-green-600' }}"
+                                style="width: 12px; height: 12px; min-width: 12px; min-height: 12px;">
+                            </div>
+                        </div>
+                    </td>
+                @endforeach
+            </tr>
+        </tbody>
+    </table>
+</div>
 
     {{-- Legend --}}
     <div class="flex justify-center gap-4 mt-3 text-[10px]">
