@@ -174,16 +174,40 @@
                                         </span>
                                     </td>
 
+                                       {{-- ✅ KOLOM LAMPIRAN DENGAN 3 FILE --}}
                                     <td class="py-2 px-3">
-                                        @if ($log->lampiran)
-                                            <a href="{{ asset('storage/'. $log->lampiran) }}" target="_blank"
-                                               class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-2 py-1 rounded-md transition whitespace-nowrap">
-                                                Lihat Lampiran
-                                            </a>
-                                        @else
-                                            <span class="text-gray-400">Tidak ada</span>
-                                        @endif
+                                        <div class="flex flex-col space-y-1">
+                                            {{-- Lampiran 1 --}}
+                                            @if ($log->lampiran)
+                                                <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                                                    class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-2 py-1 rounded-md transition whitespace-nowrap text-center">
+                                                    📄 Lampiran 1
+                                                </a>
+                                            @endif
+
+                                            {{-- Lampiran 2 --}}
+                                            @if ($log->lampiran_2)
+                                                <a href="{{ asset('storage/' . $log->lampiran_2) }}" target="_blank"
+                                                    class="inline-block bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-2 py-1 rounded-md transition whitespace-nowrap text-center">
+                                                    📄 Lampiran 2
+                                                </a>
+                                            @endif
+
+                                            {{-- Lampiran 3 --}}
+                                            @if ($log->lampiran_3)
+                                                <a href="{{ asset('storage/' . $log->lampiran_3) }}" target="_blank"
+                                                    class="inline-block bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium px-2 py-1 rounded-md transition whitespace-nowrap text-center">
+                                                    📄 Lampiran 3
+                                                </a>
+                                            @endif
+
+                                            {{-- Jika tidak ada lampiran sama sekali --}}
+                                            @if (!$log->lampiran && !$log->lampiran_2 && !$log->lampiran_3)
+                                                <span class="text-gray-400 text-xs">Tidak ada lampiran</span>
+                                            @endif
+                                        </div>
                                     </td>
+                                    
 
                                     <td class="py-2 px-3">
                                         <div class="flex space-x-1">

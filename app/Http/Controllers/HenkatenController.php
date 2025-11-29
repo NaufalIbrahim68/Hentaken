@@ -345,6 +345,8 @@ public function storeMethodHenkaten(Request $request)
         'serial_number_end'   => 'nullable|string|max:100',
         'note'                => 'nullable|string',
         'lampiran'            => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
+        'lampiran_2' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
+        'lampiran_3' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
     ];
 
     $validated = $request->validate($rules);
@@ -364,9 +366,16 @@ public function storeMethodHenkaten(Request $request)
 
         $lampiranPath = null;
         if ($request->hasFile('lampiran')) {
-            $lampiranPath = $request->file('lampiran')->store('lampiran_methods_henkaten', 'public');
+            $lampiranPath = $request->file('lampiran')->store('henkaten_methods_lampiran', 'public');
         }
 
+         if ($request->hasFile('lampiran_2')) {
+        $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_methods_lampiran', 'public');
+    }
+
+    if ($request->hasFile('lampiran_3')) {
+        $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_methods_lampiran', 'public');
+    }
         $timeStart = Carbon::createFromFormat('H:i', $validated['time_start']);
         $timeEnd   = Carbon::createFromFormat('H:i', $validated['time_end']);
 
@@ -399,9 +408,18 @@ public function storeMethodHenkaten(Request $request)
     } catch (\Exception $e) {
         DB::rollBack();
 
-        if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
-            Storage::disk('public')->delete($lampiranPath);
+         if ($request->hasFile('lampiran')) {
+            $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
         }
+
+         if ($request->hasFile('lampiran_2')) {
+        $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_man_power_lampiran', 'public');
+    }
+
+    if ($request->hasFile('lampiran_3')) {
+        $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_man_power_lampiran', 'public');
+    }
+
 
         Log::error('Method Henkaten store failed: ' . $e->getMessage(), [
             'exception' => $e,
@@ -567,9 +585,9 @@ public function storeMethodHenkaten(Request $request)
                 'description_before'     => 'required|string|max:255',
                 'description_after'      => 'required|string|max:255',
                 'keterangan'             => 'required|string',
-
                 'lampiran'               => (isset($log) ? 'nullable' : 'required') . '|file|mimes:jpeg,png,zip,rar|max:2048',
-
+            'lampiran_2' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
+            'lampiran_3' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
                 'serial_number_start'    => 'nullable|string|max:255',
                 'serial_number_end'      => 'nullable|string|max:255',
                 'redirect_to'            => 'nullable|string'
@@ -603,9 +621,17 @@ public function storeMethodHenkaten(Request $request)
             DB::beginTransaction();
 
             $lampiranPath = null;
-            if ($request->hasFile('lampiran')) {
-                $lampiranPath = $request->file('lampiran')->store('lampiran_materials_henkaten', 'public');
-            }
+           if ($request->hasFile('lampiran')) {
+            $lampiranPath = $request->file('lampiran')->store('henkaten_materials_lampiran', 'public');
+        }
+
+         if ($request->hasFile('lampiran_2')) {
+        $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_materials_lampiran', 'public');
+    }
+
+    if ($request->hasFile('lampiran_3')) {
+        $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_materials_lampiran', 'public');
+    }
 
             $dataToCreate = $validatedData;
 
@@ -886,6 +912,8 @@ public function storeMachineHenkaten(Request $request)
             'after_value'        => 'required|string|max:255',
             'keterangan'         => 'required|string',
             'lampiran'           => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
+        'lampiran_2' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
+        'lampiran_3' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
             'serial_number_start'=> 'nullable|string|max:255',
             'serial_number_end'  => 'nullable|string|max:255',
         ];
@@ -940,9 +968,17 @@ public function storeMachineHenkaten(Request $request)
 
         DB::beginTransaction();
 
-        if ($request->hasFile('lampiran')) {
-            $lampiranPath = $request->file('lampiran')->store('lampiran_machines_henkaten', 'public');
+      if ($request->hasFile('lampiran')) {
+            $lampiranPath = $request->file('lampiran')->store('henkaten_machines_lampiran', 'public');
         }
+
+         if ($request->hasFile('lampiran_2')) {
+        $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_machines_lampiran', 'public');
+    }
+
+    if ($request->hasFile('lampiran_3')) {
+        $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_machines_lampiran', 'public');
+    }
 
         $dataToCreate = $validated;
 

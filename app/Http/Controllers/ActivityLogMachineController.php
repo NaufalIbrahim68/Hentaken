@@ -179,4 +179,44 @@ public function edit(MachineHenkaten $log): View
     // UBAH: Nama file download
     return $pdf->download('Laporan_Henkaten_machine.pdf');
 }
+
+public function downloadPDF(Request $request)
+{
+    // Ambil input filter
+    $created_date = $request->input('created_date');
+    $line_area = $request->input('line_area');
+
+    // MENGGUNAKAN MODEL: MethodHenkaten (Sesuai dengan kode Anda)
+    $query = MachineHenkaten::with('station'); // Pastikan 'station' adalah relasi yang benar
+
+    // Filter Tanggal
+    if ($created_date) {
+        $query->whereDate('created_at', $created_date);
+    }
+
+    // Filter Line Area
+    if ($line_area) {
+        // Kolom 'line_area' diasumsikan ada di tabel methods_henkaten
+        $query->where('line_area', $line_area); 
+    }
+
+    // Ambil SEMUA data
+    $logs = $query->latest('created_at')->get();
+
+    // Data untuk dikirim ke view PDF
+    $data = [
+        'logs' => $logs,
+        // Nama variabel filter di PDF view disamakan dengan template sebelumnya
+        'filterDate' => $created_date,
+        'filterLine' => $line_area,
+    ];
+
+    // UBAH: Menggunakan view PDF 'method' (Asumsi nama view Anda adalah 'pdf.activity-log-method')
+    $pdf = Pdf::loadView('pdf.activity-log-machine', $data) 
+              ->setPaper('a4', 'landscape');
+    
+    // UBAH: Nama file download disesuaikan dengan Method Henkaten
+    return $pdf->download('Laporan_Henkaten_Machine.pdf');
+}
+
 }
