@@ -211,11 +211,9 @@ public function downloadPDF(Request $request)
         'filterLine' => $line_area,
     ];
 
-    // UBAH: Menggunakan view PDF 'method' (Asumsi nama view Anda adalah 'pdf.activity-log-method')
     $pdf = Pdf::loadView('pdf.activity-log-machine', $data) 
               ->setPaper('a4', 'landscape');
     
-    // UBAH: Nama file download disesuaikan dengan Method Henkaten
     return $pdf->download('Laporan_Henkaten_Machine.pdf');
 }
 
