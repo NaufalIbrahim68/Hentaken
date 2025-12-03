@@ -363,11 +363,14 @@
                                     class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-md">Batal</a>
 
                                 <button type="submit" :disabled="!afterValid"
-                                    class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
-                                    {{ isset($log) ? 'Update Data' : 'Simpan Data' }}
-                                </button>
-                                <p x-show="!afterValid" class="text-red-500 text-sm mt-1">Karyawan ini sudah
-                                    dijadwalkan sebagai Man Power After untuk shift ini.</p>
+    class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md">
+    {{ isset($log) ? 'Update Data' : 'Simpan Data' }}
+</button>
+
+<p x-show="!afterValid" class="text-red-500 text-sm mt-1">
+    Karyawan ini sudah dijadwalkan sebagai Man Power After untuk shift ini.
+</p>
+
                             </div>
 
                         </div>
@@ -378,137 +381,130 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script>
+   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script>
 document.addEventListener('alpine:init', () => {
-    const initialStationsData = @json($stations);
-    
+    // Pastikan $stations tersedia dan didefinisikan di Blade
+    const initialStationsData = @json($stations ?? []);
+
     Alpine.data('henkatenForm', (config) => ({
+        // --- Data Properties ---
+        isEditing: config.isEditing,
+        logId: config.logId,
         userRole: config.userRole,
         roleLineArea: config.roleLineArea,
-        isMainOperator: config.isMainOperator,
-        showStationDropdown: config.showStationDropdown,
 
         selectedGrup: config.oldGrup || '',
-        selectedLineArea: config.oldLineArea || '',
+        selectedLineArea: config.oldLineArea || config.roleLineArea || '',
         selectedStation: config.oldStation || '',
 
         allStations: initialStationsData,
-        stationList: initialStationsData,
-
-        logId: config.logId,
+        
         manpowerBefore: {
             id: config.oldManPowerBeforeId || '',
             nama: config.oldManPowerBeforeName || ''
         },
+
+        // Bersihkan prefix 't-' dan konversi ke integer untuk man_power_id_after
+        selectedManpowerAfter: config.oldManPowerAfterId ? (() => {
+            let id = config.oldManPowerAfterId;
+            if (typeof id === 'string' && id.startsWith('t-')) {
+                return parseInt(id.slice(2));
+            }
+            return parseInt(id);
+        })() : null,
         
-        // ✅ FIX: Pastikan ini diinisialisasi dengan benar
-        selectedManpowerAfter: config.oldManPowerAfterId || '',
         autocompleteQuery: config.oldManPowerAfterName || '',
         autocompleteResults: [],
-        afterValid: true,
+        afterValid: true, 
 
+        // URL Helpers
         findManpowerUrl: config.findManpowerUrl,
         searchManpowerUrl: config.searchManpowerUrl,
         findStationsUrl: config.findStationsUrl,
         checkAfterUrl: config.checkAfterUrl,
 
+        // --- Computed Properties ---
         get isLeaderFAOrSMT() {
-            return this.userRole === 'Leader FA' || this.userRole === 'Leader SMT';
+            return ['Leader FA', 'Leader SMT'].includes(this.userRole);
         },
+        
         get isQCOrPPIC() {
-            return this.userRole === 'Leader QC' || this.userRole === 'Leader PPIC';
+            return ['QC', 'PPIC', 'Leader QC', 'Leader PPIC'].includes(this.userRole);
         },
 
-        get filteredStationList() {
-            let list = this.stationList;
-            let lineArea = this.selectedLineArea;
+       get filteredStationList() {
+    let list = this.allStations;
+    let lineArea = this.selectedLineArea;
 
-            if (lineArea) {
-                list = list.filter(st => st.line_area === lineArea);
-            }
-
-            if (this.isQCOrPPIC) {
-                const filteredByMainOp = list.filter(st => {
-                    const val = st.is_main_operator;
-                    if (val != null) {
-                        const isMain = String(val).trim() === '1';
-                        return isMain;
-                    }
-                    return false;
-                });
-                return filteredByMainOp;
-            }
-
-            return list;
-        },
+    if (lineArea) {
+        list = list.filter(st => st.line_area === lineArea);
+    }
+    
+    if (this.isQCOrPPIC) {
+        // PENTING: Convert ke integer karena dari database bisa jadi string
+        list = list.filter(st => {
+            const isMainOp = parseInt(st.is_main_operator);
+            return isMainOp === 1;
+        });
+    }
+    
+    console.log('Filtered Station List:', list); // Debug
+    
+    return list;
+},
 
         get currentStationName() {
             if (this.selectedStation) {
                 const st = this.allStations.find(s => s.id == this.selectedStation);
-                return st ? st.station_name : 'Memuat...';
+                return st ? st.station_name : 'Pilih Station';
             }
             return 'Pilih Station';
         },
 
+        // --- Methods ---
         async init() {
-            console.log('=== ALPINE INIT ===');
-            console.log('Initial autocompleteQuery:', this.autocompleteQuery);
-            console.log('Initial selectedGrup:', this.selectedGrup);
-            console.log('Initial selectedLineArea:', this.selectedLineArea);
-            console.log('Initial selectedStation:', this.selectedStation);
-
-            if (!this.isLeaderFAOrSMT && this.roleLineArea) {
+            // Set Line Area otomatis untuk non-Leader/QC
+            if (!this.isLeaderFAOrSMT && !this.isQCOrPPIC && this.roleLineArea) {
                 this.selectedLineArea = this.roleLineArea;
             }
 
-            if (this.isLeaderFAOrSMT && this.selectedLineArea) {
-                await this.fetchStations(false, false);
+            // Panggil fetchStations (untuk filtering dropdown)
+            if (this.isLeaderFAOrSMT || this.isQCOrPPIC) {
+                this.fetchStations(false); 
             }
 
-            if (this.selectedStation) {
+            // Load Man Power Before jika semua data sudah ada
+            if (this.selectedStation && this.selectedGrup && this.selectedLineArea) {
                 await this.fetchManpowerBefore();
             }
 
-            document.getElementById('effective_date')?.addEventListener('change', () => this.validateAfter());
-            document.getElementById('end_date')?.addEventListener('change', () => this.validateAfter());
-
-            if (config.isEditing && this.selectedManpowerAfter) {
+            // Validasi Man Power After saat inisialisasi (jika edit)
+            if (this.isEditing && this.selectedManpowerAfter) {
                 this.validateAfter();
             }
+            
+            // Tambahkan event listener untuk validasi tanggal
+            document.getElementById('effective_date')?.addEventListener('change', () => {
+                this.validateDateInputs();
+                this.validateAfter();
+            });
+            document.getElementById('end_date')?.addEventListener('change', () => {
+                this.validateDateInputs();
+                this.validateAfter();
+            });
         },
 
-        async fetchStations(resetStation = true, loadFirstStation = false) {
-            if (!this.selectedLineArea || !this.isLeaderFAOrSMT) {
-                this.stationList = this.allStations;
-                if (resetStation) this.selectedStation = '';
-                this.manpowerBefore = { id: '', nama: '' };
-                return;
-            }
-
-            try {
-                const url = `${this.findStationsUrl}?line_area=${encodeURIComponent(this.selectedLineArea)}&role=${encodeURIComponent(this.userRole)}`;
-                const res = await fetch(url);
+        fetchStations(resetStation = true) {
+            // Logika filtering station dilakukan di computed property
+            // Cukup handle reset state dropdown jika line area berubah
+            if (resetStation) {
+                const currentStationExists = this.filteredStationList.some(st => st.id == this.selectedStation);
                 
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                }
-                
-                const data = await res.json();
-                this.stationList = Array.isArray(data) ? data : (data.data ?? []);
-
-                if (resetStation) {
+                if (!currentStationExists) {
                     this.selectedStation = '';
-                }
-
-                if (this.selectedStation) {
-                    await this.fetchManpowerBefore();
-                } else {
                     this.manpowerBefore = { id: '', nama: '' };
                 }
-            } catch (e) {
-                console.error('fetchStations error:', e);
-                this.stationList = [];
             }
         },
 
@@ -517,51 +513,43 @@ document.addEventListener('alpine:init', () => {
                 this.manpowerBefore = { id: '', nama: '' };
                 return;
             }
+            this.manpowerBefore = { id: '', nama: 'Memuat...' };
+            
             try {
                 const url = new URL(this.findManpowerUrl, window.location.origin);
                 url.searchParams.append('station_id', this.selectedStation);
                 url.searchParams.append('line_area', this.selectedLineArea);
                 url.searchParams.append('grup', this.selectedGrup);
 
-                const res = await fetch(url, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
+                const res = await fetch(url);
                 const data = await res.json();
-                this.manpowerBefore = data && data.nama ? {
+                
+                this.manpowerBefore = data && data.id ? {
                     id: data.id,
                     nama: data.nama
-                } : { id: '', nama: '' };
+                } : { id: '', nama: 'Tidak ada Man Power bertugas' };
             } catch (e) {
                 console.error('fetchManpowerBefore error', e);
-                this.manpowerBefore = { id: '', nama: '' };
+                this.manpowerBefore = { id: '', nama: 'Gagal memuat data' };
             }
         },
 
-        // ✅ FIX: Perbaiki searchAfter
         async searchAfter() {
-            console.log('=== searchAfter CALLED ===');
-            console.log('autocompleteQuery:', this.autocompleteQuery);
-            console.log('selectedGrup:', this.selectedGrup);
-            console.log('selectedLineArea:', this.selectedLineArea);
-            console.log('selectedStation:', this.selectedStation);
-
-            // Validasi
-            if (!this.autocompleteQuery || this.autocompleteQuery.trim().length < 2) {
-                console.log('Query too short, clearing results');
-                this.autocompleteResults = [];
-                return;
-            }
+            this.autocompleteResults = [];
+            if (!this.autocompleteQuery || this.autocompleteQuery.trim().length < 2) return;
+            
+            // Bersihkan station ID sebelum dikirim (kirim string kosong jika tidak ada)
+            const stationIdToSend = this.selectedStation || ''; 
 
             try {
                 const params = new URLSearchParams({
                     query: this.autocompleteQuery.trim(),
                     grup: this.selectedGrup || '',
                     line_area: this.selectedLineArea || '',
-                    station_id: this.selectedStation || ''
+                    station_id: stationIdToSend 
                 });
 
-                const url = `/henkaten/manpower/search?${params}`;
-                console.log('Fetching URL:', url);
+                const url = `${this.searchManpowerUrl}?${params.toString()}`;
 
                 const response = await fetch(url, {
                     method: 'GET',
@@ -571,17 +559,14 @@ document.addEventListener('alpine:init', () => {
                     }
                 });
 
-                console.log('Response status:', response.status);
-
                 if (!response.ok) {
+                    // Mencegah parsing JSON jika status bukan OK (misal 500)
+                    const errorText = await response.text();
+                    console.error('API Response Text:', errorText); 
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const data = await response.json();
-                console.log('API Response:', data);
-                
-                this.autocompleteResults = data;
-                console.log('autocompleteResults updated:', this.autocompleteResults);
+                this.autocompleteResults = await response.json();
 
             } catch (error) {
                 console.error('Search error:', error);
@@ -590,44 +575,101 @@ document.addEventListener('alpine:init', () => {
         },
 
         selectAfter(item) {
-            console.log('selectAfter called with:', item);
             this.autocompleteQuery = item.nama;
-            this.selectedManpowerAfter = item.id;
+            
+            // Bersihkan prefix 't-' jika ada, simpan sebagai integer
+            let cleanId = item.id;
+            if (typeof cleanId === 'string' && cleanId.startsWith('t-')) {
+                cleanId = parseInt(cleanId.slice(2));
+            } else {
+                cleanId = parseInt(cleanId);
+            }
+            
+            // Pastikan hasil parsing valid
+            this.selectedManpowerAfter = isNaN(cleanId) ? null : cleanId;
             this.autocompleteResults = [];
             this.validateAfter();
         },
 
-        async validateAfter() {
+        // Validasi format tanggal dan berikan visual feedback
+        validateDateInputs() {
             const effectiveDate = document.getElementById('effective_date')?.value;
             const endDate = document.getElementById('end_date')?.value;
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            
+            const effectiveInput = document.getElementById('effective_date');
+            const endInput = document.getElementById('end_date');
+            
+            // Add red border if invalid
+            if (effectiveDate && !dateRegex.test(effectiveDate)) {
+                effectiveInput?.classList.add('border-red-500');
+                effectiveInput?.classList.remove('border-gray-300');
+            } else {
+                effectiveInput?.classList.remove('border-red-500');
+                effectiveInput?.classList.add('border-gray-300');
+            }
+            
+            if (endDate && !dateRegex.test(endDate)) {
+                endInput?.classList.add('border-red-500');
+                endInput?.classList.remove('border-gray-300');
+            } else {
+                endInput?.classList.remove('border-red-500');
+                endInput?.classList.add('border-gray-300');
+            }
+        },
 
-            if (!this.selectedManpowerAfter || !this.checkAfterUrl || !effectiveDate || !endDate) {
+        async validateAfter() {
+            const shift = document.querySelector('input[name="shift"]')?.value;
+            const effectiveDate = document.getElementById('effective_date')?.value;
+            const endDate = document.getElementById('end_date')?.value;
+            
+            // Validate that we have all required values
+            if (!this.selectedManpowerAfter || !shift || !effectiveDate || !endDate) {
                 this.afterValid = true;
                 return;
             }
 
-            if (this.manpowerBefore.id && this.selectedManpowerAfter === this.manpowerBefore.id) {
-                this.afterValid = false;
+            // Validate date format (YYYY-MM-DD) to prevent malformed API calls
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!dateRegex.test(effectiveDate) || !dateRegex.test(endDate)) {
+                console.warn('Invalid date format detected. Expected YYYY-MM-DD format.');
+                this.afterValid = true; // Don't block form if dates are invalid, let backend validation handle it
                 return;
             }
+
+            // manpowerId sudah dalam bentuk integer, tidak perlu dibersihkan lagi
+            let manpowerId = this.selectedManpowerAfter;
 
             try {
                 const url = new URL(this.checkAfterUrl, window.location.origin);
-                url.searchParams.append('man_power_id_after', this.selectedManpowerAfter);
+                url.searchParams.append('man_power_id_after', manpowerId);
                 url.searchParams.append('grup', this.selectedGrup);
-                url.searchParams.append('shift', '{{ $currentShift }}');
+                url.searchParams.append('shift', shift);
                 url.searchParams.append('effective_date', effectiveDate);
                 url.searchParams.append('end_date', endDate);
-                if (this.logId) url.searchParams.append('ignore_log_id', this.logId);
+                
+                // Fixed: use this.isEditing instead of config.isEditing
+                if (this.logId && this.isEditing) {
+                    url.searchParams.append('ignore_log_id', this.logId);
+                }
 
                 const res = await fetch(url);
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+
                 const data = await res.json();
-                this.afterValid = !data.exists;
+                this.afterValid = !data.exists; 
+                
             } catch (e) {
                 console.error("validateAfter error", e);
-                this.afterValid = true;
+                // Set afterValid to true to prevent blocking the form
+                // Backend validation will catch any real issues
+                this.afterValid = true; 
             }
         }
+
     }));
 });
 </script>

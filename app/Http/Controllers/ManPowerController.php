@@ -12,6 +12,7 @@ use App\Models\Troubleshooting;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;      
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Auth;
 
 
 class ManPowerController extends Controller
@@ -414,158 +415,148 @@ class ManPowerController extends Controller
     // ==============================================================
     // ✅ SEARCH - FIXED: Proper station filtering
     // ==============================================================
-    public function search(Request $request)
-    {
-        try {
-            $q = $request->input('query', '');
-            $grupInput = $request->input('grup', '');
-            $lineArea = $request->input('line_area', '');
-            $stationId = $request->input('station_id', null);
-            
-            if (strlen($q) < 2 || empty($grupInput)) {
-                return response()->json([]);
+   public function search(Request $request)
+{
+    try {
+        $q = $request->input('query', '');
+        $grupInput = $request->input('grup', '');
+        $lineArea = $request->input('line_area', '');
+        
+        // Mengubah input station_id menjadi integer (akan jadi 0 jika inputnya '', null, atau 'null')
+        $stationIdInput = $request->input('station_id');
+        $stationIdInt = filter_var($stationIdInput, FILTER_VALIDATE_INT) ? (int)$stationIdInput : 0;
+        
+        if (strlen($q) < 2 || empty($grupInput)) {
+            return response()->json([]);
+        }
+
+        $nowFull = Carbon::now();
+        $userRole = Auth::check() ? Auth::user()->role : null;
+        
+        // --- 1. Ambil ID Man Power yang SEDANG BERTUGAS (Busy IDs) ---
+        $activeManpowerIds = ManPowerHenkaten::whereIn('status', ['Approved', 'PENDING'])
+            ->where(function ($query) use ($nowFull) {
+                $query->whereNull('end_date')
+                    ->orWhere(fn($q) => 
+                        $q->whereRaw("CONCAT(end_date, ' ', time_end) >= ?", [$nowFull->toDateTimeString()])
+                    );
+            })
+            ->pluck('man_power_id_after')
+            ->filter()
+            ->unique();
+        
+        $busyRegularIds = [];
+        $busyTsIds = [];
+
+        foreach ($activeManpowerIds as $id) {
+            if (is_string($id) && str_starts_with($id, 't-')) {
+                $busyTsIds[] = (int) substr($id, 2); 
+            } else {
+                $busyRegularIds[] = (int) $id; 
             }
+        }
+        
+        // --- 2. Query Man Power REGULER ---
+        $manPowerQuery = ManPower::query()
+            ->select('id', 'nama', 'grup', 'line_area')
+            ->where('grup', $grupInput)
+            ->where('nama', 'like', "%{$q}%")
+            ->whereNotIn('id', $busyRegularIds);
 
-            $nowFull = Carbon::now();
-            $userRole = auth()->user()->role ?? null;
+        // Filter role/line area
+        if ($userRole === 'Leader QC') {
+            $manPowerQuery->where('line_area', 'Incoming');
+        } elseif ($userRole === 'Leader PPIC') {
+            $manPowerQuery->where('line_area', 'Delivery');
+        } elseif (!empty($lineArea)) {
+            $manPowerQuery->where('line_area', $lineArea);
+        }
 
-            // Ambil busy IDs
-            $activeManpowerIds = ManPowerHenkaten::whereIn('status', ['Approved', 'PENDING'])
-                ->where(function ($query) use ($nowFull) {
-                    $query->whereNull('end_date')
-                        ->orWhere(function($q) use ($nowFull) {
-                            $q->whereRaw("CONCAT(end_date, ' ', time_end) >= ?", [$nowFull]);
-                        });
+        // Filter Station: Hanya jalankan jika stationId terdeteksi (yaitu > 0)
+        if ($stationIdInt > 0) {
+            $manPowerQuery->where(function($query) use ($stationIdInt) {
+                // Asumsi: ManPower memiliki relasi belongsToMany 'stations'
+                $query->whereHas('stations', function ($q) use ($stationIdInt) {
+                    $q->where('station_id', $stationIdInt);
                 })
-                ->pluck('man_power_id_after')
-                ->filter()
-                ->unique()
-                ->values()
-                ->all();
+                // Opsi 2: Hapus atau perbaiki jika kolom 'station_id' tidak ada di tabel man_power
+                ->orWhere('station_id', $stationIdInt); 
+            });
+        }
+        
+        $manPower = $manPowerQuery->get();
+        
+        // --- 3. Query Man Power TROUBLESHOOTING (Grup spesifik) ---
+        $troubleshootingQuery = ManPower::query()
+            ->select('id', 'nama', 'grup', 'line_area')
+            ->where('grup', 'like', "{$grupInput}(Troubleshooting)%")
+            ->where('nama', 'like', "%{$q}%")
+            ->whereNotIn('id', $busyTsIds);
 
-            $busyRegularIds = [];
-            $busyTsIds = [];
+        // Filter role/line area untuk TS
+        if ($userRole === 'Leader QC') {
+            $troubleshootingQuery->where(fn($q) => $q->where('line_area', 'Incoming')->orWhereNull('line_area'));
+        } elseif ($userRole === 'Leader PPIC') {
+            $troubleshootingQuery->where(fn($q) => $q->where('line_area', 'Delivery')->orWhereNull('line_area'));
+        } elseif (!empty($lineArea)) {
+            $troubleshootingQuery->where(fn($q) => $q->where('line_area', $lineArea)->orWhereNull('line_area'));
+        }
 
-            foreach ($activeManpowerIds as $id) {
-                if (is_string($id) && str_starts_with($id, 't-')) {
-                    $busyTsIds[] = (int) substr($id, 2);
-                } else {
-                    $busyRegularIds[] = (int) $id;
-                }
-            }
+        $troubleshooting = $troubleshootingQuery->get();
+        
+        // --- 4. Query Man Power UNIVERSAL TROUBLESHOOTING ---
+        $universalQuery = ManPower::query()
+            ->select('id', 'nama', 'grup', 'line_area')
+            ->where('grup', 'Universal(Troubleshooting)')
+            ->where('nama', 'like', "%{$q}%")
+            ->whereNotIn('id', $busyTsIds); 
+        
+        $universal = $universalQuery->get();
 
-            // ===============================
-            // 1. Man Power REGULER
-            // ===============================
-            $manPowerQuery = ManPower::query()
-                ->where('grup', $grupInput)
-                ->where('nama', 'like', "%{$q}%")
-                ->whereNotIn('id', $busyRegularIds);
-
-            // Filter berdasarkan role
-            if ($userRole === 'Leader QC') {
-                $manPowerQuery->where('line_area', 'Incoming');
-            } elseif ($userRole === 'Leader PPIC') {
-                $manPowerQuery->where('line_area', 'Delivery');
-            } elseif (!empty($lineArea)) {
-                $manPowerQuery->where('line_area', $lineArea);
-            }
-
-            // ✅ Filter station - ambil SEMUA operator di station tersebut
-            if (!empty($stationId)) {
-                $manPowerQuery->where(function($query) use ($stationId) {
-                    // Cek di relasi stations (man_power_stations)
-                    $query->whereHas('stations', function ($q) use ($stationId) {
-                        $q->where('station_id', $stationId);
-                    })
-                    // ATAU cek di station_id langsung (main station)
-                    ->orWhere('station_id', $stationId);
-                });
-            }
-
-            $manPower = $manPowerQuery->get(['id', 'nama', 'grup', 'line_area']);
-            
-            // ===============================
-            // 2. Troubleshooting
-            // ===============================
-            $troubleshootingQuery = ManPower::query()
-                ->where('grup', 'like', "{$grupInput}(Troubleshooting)%")
-                ->where('nama', 'like', "%{$q}%")
-                ->whereNotIn('id', $busyTsIds);
-
-            if ($userRole === 'Leader QC') {
-                $troubleshootingQuery->where(function($q) {
-                    $q->where('line_area', 'Incoming')->orWhereNull('line_area');
-                });
-            } elseif ($userRole === 'Leader PPIC') {
-                $troubleshootingQuery->where(function($q) {
-                    $q->where('line_area', 'Delivery')->orWhereNull('line_area');
-                });
-            } elseif (!empty($lineArea)) {
-                $troubleshootingQuery->where(function($q) use ($lineArea) {
-                    $q->where('line_area', $lineArea)->orWhereNull('line_area');
-                });
-            }
-
-            $troubleshooting = $troubleshootingQuery->get(['id', 'nama', 'grup', 'line_area']);
-            
-            // ===============================
-            // 3. UNIVERSAL TROUBLESHOOTING
-            // ===============================
-            $universalQuery = ManPower::query()
-                ->where('grup', 'Universal(Troubleshooting)')
-                ->where('nama', 'like', "%{$q}%")
-                ->whereNotIn('id', $busyTsIds);
-
-            $universal = $universalQuery->get(['id', 'nama', 'grup', 'line_area']);
-
-            // ===============================
-            // Gabungkan Hasil
-            // ===============================
-            $result = collect($manPower)
-                ->map(fn($item) => [
-                    'id' => $item->id,
+        // --- 5. Gabungkan dan Format Hasil ---
+        $result = collect($manPower)
+            ->map(fn($item) => [
+                'id' => (string) $item->id,
+                'nama' => $item->nama,
+                'grup' => $item->grup,
+                'line_area' => $item->line_area,
+                'type' => 'regular'
+            ])
+            ->merge(
+                $troubleshooting->map(fn($item) => [
+                    'id' => 't-' . $item->id, // Format ID dengan prefix 't-'
                     'nama' => $item->nama,
                     'grup' => $item->grup,
                     'line_area' => $item->line_area,
-                    'type' => 'regular'
+                    'type' => 'troubleshooting'
                 ])
-                ->merge(
-                    $troubleshooting->map(fn($item) => [
-                        'id' => 't-' . $item->id,
-                        'nama' => $item->nama . ' (TS)',
-                        'grup' => $item->grup,
-                        'line_area' => $item->line_area,
-                        'type' => 'troubleshooting'
-                    ])
-                )
-                ->merge(
-                    $universal->map(fn($item) => [
-                        'id' => 't-' . $item->id,
-                        'nama' => $item->nama . ' (UNIVERSAL)',
-                        'grup' => 'Universal',
-                        'line_area' => 'ALL',
-                        'type' => 'universal'
-                    ])
-                )
-                ->unique('id')
-                ->values();
+            )
+            ->merge(
+                $universal->map(fn($item) => [
+                    'id' => 't-' . $item->id, // Format ID dengan prefix 't-'
+                    'nama' => $item->nama,
+                    'grup' => 'Universal',
+                    'line_area' => 'ALL',
+                    'type' => 'universal'
+                ])
+            )
+            ->unique('id')
+            ->values();
 
-            return response()->json($result);
+        return response()->json($result);
 
-        } catch (\Exception $e) {
-            Log::error('ManPower Search Error', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ]);
-
-            return response()->json([
-                'error' => 'Search failed',
-                'message' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
-        }
+    } catch (\Exception $e) {
+        Log::error('ManPower Search Error', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'request_params' => $request->all(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json(['error' => 'Search failed', 'message' => config('app.debug') ? $e->getMessage() : 'An error occurred'], 500);
     }
+}
 
     // ==============================================================
     // OTHER METHODS (unchanged)

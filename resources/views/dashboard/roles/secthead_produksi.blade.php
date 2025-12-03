@@ -152,13 +152,30 @@
 
     </style>
 
+
+@auth
+    <div style="background: red; color: white; padding: 10px; font-size: 20px;">
+        AUTHENTICATED: {{ Auth::user()->name }}
+    </div>
+@else
+    <div style="background: orange; color: white; padding: 10px; font-size: 20px;">
+        NOT AUTHENTICATED - PLEASE LOGIN
+    </div>
+@endauth
     
 
  <div class="w-full h-screen flex flex-col px-3 py-1">
-    {{-- HEADER - . --}}
+    {{-- HEADER --}}
     <div class="flex items-center justify-between border-b pb-1 mb-1 h-[8vh]">
         {{-- Kolom Kiri --}}
-         <div class="w-1/3"></div>
+        <div class="w-1/3">
+            {{-- 🔍 DEBUG INFO --}}
+            <div class="text-[10px] bg-yellow-100 p-1 rounded">
+                <strong>User:</strong> {{ Auth::user()->name }}<br>
+                <strong>Role:</strong> "{{ Auth::user()->role }}"<br>
+                <strong>Length:</strong> {{ strlen(Auth::user()->role) }}
+            </div>
+        </div>
 
         {{-- Title & Date --}}
         <div class="w-1/3 text-center">
@@ -173,6 +190,7 @@
         </div>
     </div>
 
+    
     {{-- 4 SECTION GRID - . --}}
     <div class="grid grid-cols-2 gap-3 h-[92vh]">
  

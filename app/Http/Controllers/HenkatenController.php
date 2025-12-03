@@ -61,34 +61,37 @@ class HenkatenController extends Controller
         $showStationDropdown = true;
     }
 
-    // ============== ROLE: LEADER PPIC / QC ==================
-  elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
+elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
 {
-    // Tentukan Line Area berdasarkan role
     $fixedLineArea = ($userRole === 'Leader QC') ? 'Incoming' : 'Delivery';
 
-    // REVISI KRUSIAL: Menggunakan JOIN untuk mengambil is_main_operator dari tabel man_powers.
-    // Kita harus memastikan stasiun hanya muncul sekali, jadi gunakan DISTINCT.
     $stations = DB::table('stations')
         ->where('stations.line_area', $fixedLineArea)
-        ->leftJoin('man_power', function($join) use ($fixedLineArea) {
-            $join->on('stations.id', '=', 'man_power.station_id')
-                 ->where('man_power.line_area', '=', $fixedLineArea);
-        })
-        ->select('stations.id', 'stations.station_name', 'stations.line_area', 'man_power.is_main_operator')
-        ->distinct('stations.id') // Pastikan stasiun tidak ganda jika ada banyak manpower di stasiun itu
+        ->select(
+            'stations.id',
+            'stations.station_name',
+            'stations.line_area',
+            DB::raw("(
+                SELECT TOP 1 CAST(ISNULL(mp.is_main_operator, 0) AS INT)
+                FROM man_power mp
+                WHERE mp.station_id = stations.id
+                  AND mp.line_area = '{$fixedLineArea}'
+                ORDER BY mp.is_main_operator DESC, mp.id DESC
+            ) as is_main_operator")
+        )
         ->orderBy('stations.station_name')
         ->get();
 
-
-    $lineAreas = [$fixedLineArea]; // Hanya 1 line area yang boleh mereka lihat/input
-    $roleLineArea = $fixedLineArea; // Set Line Area fixed
-
-    // Set $showStationDropdown = true agar Alpine menampilkan dropdown Station
+    $lineAreas = [$fixedLineArea];
+    $roleLineArea = $fixedLineArea;
     $showStationDropdown = true;
+
+    // DEBUG
+    Log::info('=== LEADER QC/PPIC DEBUG ===');
+    Log::info('Stations Data: ', $stations->toArray());
 }
 
-    // ============== ROLE LAIN (Operator/Admin/DLL) ==================
+// ============== ROLE LAIN (Operator/Admin/DLL) ==================
     else
     {
         if ($manpower) {
@@ -1297,29 +1300,108 @@ public function storeMachineHenkaten(Request $request)
 
 public function checkAfter(Request $request)
 {
-    $manPowerIdAfter = $request->query('man_power_id_after');
-    $shift = $request->query('shift');
-    $grup = $request->query('grup');
-    $newEffectiveDate = $request->query('effective_date');
-    $newEndDate = $request->query('end_date');
+    try {
+        // ✅ Validasi input dengan Laravel validator
+        $validated = $request->validate([
+            'man_power_id_after' => 'required|integer',
+            'shift' => 'required|string',
+            'grup' => 'required|string|in:A,B',
+            'effective_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:effective_date',
+            'ignore_log_id' => 'nullable|integer',
+        ]);
 
-    if (!$manPowerIdAfter || !$shift || !$grup || !$newEffectiveDate || !$newEndDate) {
-        Log::warning('Parameter validasi Henkaten After tidak lengkap.', $request->query());
-        return response()->json(['error' => 'Parameter tidak lengkap'], 400);
+        // ✅ Cek apakah man_power_id_after ada di database
+        $manPowerExists = ManPower::where('id', $validated['man_power_id_after'])->exists();
+        
+        if (!$manPowerExists) {
+            return response()->json([
+                'exists' => false,
+                'error' => 'Man Power tidak ditemukan'
+            ], 404);
+        }
+
+        // ✅ Cek konflik jadwal
+        $query = ManPowerHenkaten::where('man_power_id_after', $validated['man_power_id_after'])
+            ->where('shift', $validated['shift'])
+            ->where('grup', $validated['grup'])
+            ->where(function ($q) use ($validated) {
+                // Cek overlap tanggal
+                $q->where(function ($query) use ($validated) {
+                    // Case 1: effective_date baru berada di antara range existing
+                    $query->whereBetween('effective_date', [
+                        $validated['effective_date'], 
+                        $validated['end_date']
+                    ]);
+                })
+                ->orWhere(function ($query) use ($validated) {
+                    // Case 2: end_date baru berada di antara range existing
+                    $query->whereBetween('end_date', [
+                        $validated['effective_date'], 
+                        $validated['end_date']
+                    ]);
+                })
+                ->orWhere(function ($query) use ($validated) {
+                    // Case 3: range baru mencakup range existing
+                    $query->where('effective_date', '>=', $validated['effective_date'])
+                          ->where('end_date', '<=', $validated['end_date']);
+                })
+                ->orWhere(function ($query) use ($validated) {
+                    // Case 4: range existing mencakup range baru
+                    $query->where('effective_date', '<=', $validated['effective_date'])
+                          ->where('end_date', '>=', $validated['end_date']);
+                });
+            });
+
+        // ✅ Jika edit, ignore record yang sedang diedit
+        if (!empty($validated['ignore_log_id'])) {
+            $query->where('id', '!=', $validated['ignore_log_id']);
+        }
+
+        $exists = $query->exists();
+
+        // ✅ Log untuk debugging (optional)
+        if ($exists) {
+            Log::info('Konflik jadwal Henkaten ditemukan', [
+                'man_power_id_after' => $validated['man_power_id_after'],
+                'shift' => $validated['shift'],
+                'grup' => $validated['grup'],
+                'date_range' => $validated['effective_date'] . ' - ' . $validated['end_date']
+            ]);
+        }
+
+        return response()->json([
+            'exists' => $exists,
+            'message' => $exists 
+                ? 'Karyawan ini sudah dijadwalkan pada periode tersebut' 
+                : 'Jadwal tersedia'
+        ]);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        // ✅ Tangani validation error
+        Log::warning('Validasi checkAfter gagal', [
+            'errors' => $e->errors(),
+            'input' => $request->all()
+        ]);
+
+        return response()->json([
+            'exists' => false,
+            'error' => 'Validasi gagal',
+            'message' => $e->errors()
+        ], 422);
+
+    } catch (\Exception $e) {
+        // ✅ Tangani error umum
+        Log::error('Error checkAfter: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+            'input' => $request->all()
+        ]);
+
+        return response()->json([
+            'exists' => false,
+            'error' => 'Terjadi kesalahan server',
+            'message' => config('app.debug') ? $e->getMessage() : 'Silakan coba lagi'
+        ], 500);
     }
-
-
-    $exists = ManPowerHenkaten::where('man_power_id_after', $manPowerIdAfter)
-        ->where('shift', $shift)
-        ->where('grup', $grup)
-
-        ->where(function ($query) use ($newEffectiveDate, $newEndDate) {
-            $query->where('end_date', '>=', $newEffectiveDate)
-                  ->where('effective_date', '<=', $newEndDate);
-        })
-        ->exists();
-
-    return response()->json(['exists' => $exists]);
 }
-
 }

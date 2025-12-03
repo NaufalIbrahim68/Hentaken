@@ -45,7 +45,6 @@ class HenkatenApprovalController extends Controller
                 break;
 
             case 'Sect Head Produksi':
-                // Line area yang diizinkan
                 $allowedLineAreas = [
                     'FA L1','FA L2','FA L3','FA L5','FA L6',
                     'SMT L1','SMT L2'
@@ -101,7 +100,7 @@ class HenkatenApprovalController extends Controller
         }
 
         // Validasi akses Sect Head Produksi
-        if ($user->role === 'Section Head Produksi' && !in_array($item->line_area, $allowedLineAreas)) {
+        if ($user->role === 'Sect Head Produksi' && !in_array($item->line_area, $allowedLineAreas)) {
             return redirect()->route('henkaten.approval.index')->with('error', 'Anda tidak memiliki akses untuk approve Henkaten di line ini.');
         }
 
@@ -156,7 +155,7 @@ class HenkatenApprovalController extends Controller
         }
 
         // Validasi akses Sect Head Produksi
-        if ($user->role === 'Section Head Produksi' && !in_array($item->line_area, $allowedLineAreas)) {
+        if ($user->role === 'Sect Head Produksi' && !in_array($item->line_area, $allowedLineAreas)) {
             return redirect()->route('henkaten.approval.index')->with('error', 'Anda tidak memiliki akses untuk merevisi Henkaten di line ini.');
         }
 
