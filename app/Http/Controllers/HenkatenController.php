@@ -1247,7 +1247,6 @@ public function storeMachineHenkaten(Request $request)
         'grup' => 'required|string',
         'nama_sebelum' => 'required|string',
         'nama_sesudah' => 'required|string',
-        'jenis_henkaten' => 'required|string|in:PERMANEN',
         'tanggal_mulai' => 'required|date',
         'master_man_power_id' => 'required|integer|exists:man_power,id',
         'keterangan' => 'nullable|string|max:1000',
@@ -1274,7 +1273,6 @@ public function storeMachineHenkaten(Request $request)
         $logHenkaten->nama = $validatedData['nama_sebelum'];
         $logHenkaten->nama_after = $validatedData['nama_sesudah'];
         $logHenkaten->effective_date = $effectiveDate;
-        $logHenkaten->note = $validatedData['jenis_henkaten'];
         $logHenkaten->status = $status; 
         $logHenkaten->save();
 

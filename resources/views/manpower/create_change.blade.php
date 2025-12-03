@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Form Perubahan Man Power (Permanen)') }}
+            {{ __('Form Perubahan Man Power') }}
         </h2>
     </x-slot>
 
@@ -27,7 +27,7 @@
                         
                         <input type="hidden" name="grup" value="{{ $manPower->grup }}">
                         
-                        <input type="hidden" name="jenis_henkaten" value="PERMANEN">
+                       
                         
                         <input type="hidden" name="line_area" value="{{ $manPower->line_area }}">
 

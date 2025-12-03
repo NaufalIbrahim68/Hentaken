@@ -137,8 +137,9 @@ public function edit(MachineHenkaten $log): View
         // Hapus data dari database
         $log->delete();
 
-        return redirect()->route('machines.activity-log')
-                         ->with('success', 'Data log Machine berhasil dihapus.');
+            return redirect()->route('activity.log.machine')
+                     ->with('success', 'Data log Machine berhasil dihapus.');
+
     }
 
     public function exportPDF(Request $request)

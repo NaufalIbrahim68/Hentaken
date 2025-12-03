@@ -110,7 +110,7 @@ class HenkatenApprovalController extends Controller
             $statusToSet = 'Approved';
 
             // Logika khusus untuk manpower PERMANEN
-            if ($type == 'manpower' && $item->note == 'PERMANEN') {
+            if ($type == 'manpower' && $item->note == '-') {
                 $masterManPower = ManPower::find($item->man_power_id);
 
                 if ($masterManPower) {
