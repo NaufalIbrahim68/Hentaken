@@ -601,7 +601,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
             
             @php
                 $currentUserRole = auth()->user()->role ?? 'guest'; 
-                $showMethodDetails = in_array($currentUserRole, ['Leader QC', 'Leader PPIC']);
+                $showMethodDetails = in_array($currentUserRole, ['Sect Head QC']);
             @endphp
             
             @if ($showMethodDetails)
@@ -922,7 +922,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
             @php
                 // Mengambil role pengguna yang sedang login
                 $currentUserRole = auth()->user()->role ?? 'guest'; 
-                $showMachineDetails = in_array($currentUserRole, ['Leader QC', 'Leader PPIC']);
+                $showMachineDetails = in_array($currentUserRole, ['Sect Head QC']);
             @endphp
             
             @if ($showMachineDetails)
@@ -1239,7 +1239,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
             @php
                 // Tentukan logic role di sini untuk mengontrol tampilan nama material
                 $currentUserRole = auth()->user()->role ?? 'guest'; 
-                $showMaterialDetails = in_array($currentUserRole, ['Leader QC', 'Leader PPIC']);
+                $showMaterialDetails = in_array($currentUserRole, ['Sect Head QC']);
             @endphp
             
             @if ($showMaterialDetails)
