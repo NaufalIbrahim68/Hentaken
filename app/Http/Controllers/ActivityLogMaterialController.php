@@ -53,39 +53,53 @@ class ActivityLogMaterialController extends Controller
     /**
      * Menampilkan form untuk mengedit log material.
      */
-   public function edit(MaterialHenkaten $log): View
-    {
-        // Ganti 'Material' dengan nama model Anda jika beda
-        // use App\Models\Material;
+ public function edit(MaterialHenkaten $log): View
+{
+    // Load relasi
+    $log->load('station');
 
-        // 1. Eager load relasi
-        $log->load('station', 'material'); // Asumsi relasinya 'station' dan 'material'
+    // Dropdown Line Area (jika butuh)
+    $lineAreas = Station::select('line_area')
+                        ->distinct()
+                        ->orderBy('line_area', 'asc')
+                        ->pluck('line_area');
 
-        // 2. Ambil data Line Area
-        $lineAreas = Station::pluck('line_area')->unique()->filter()->toArray();
+    $role = auth()->user()->role;
 
-        // 3. Ambil daftar station untuk line_area yang sedang dipilih
-        $stations = [];
-        if ($log->station) {
-            $stations = Station::where('line_area', $log->station->line_area)
-                               ->get(['id', 'station_name']);
-        }
-
-        // 4. BARU: Ambil daftar material untuk station yang sedang dipilih
-        $materials = [];
-        if ($log->station_id) {
-            $materials = Material::where('station_id', $log->station_id) // Ganti 'Material'
-                                 ->get(['id', 'material_name']);
-        }
-
-        // 5. Arahkan ke file form terpadu Anda
-        return view('materials.create_henkaten', [
-            'log'       => $log,
-            'lineAreas' => $lineAreas,
-            'stations'  => $stations,
-            'materials' => $materials // DIUBAH: Kirim data material
-        ]);
+    // =============================
+    // ROLE: Leader PPIC → only Delivery
+    // =============================
+    if ($role === 'Leader PPIC') {
+        $defaultMaterialOptions = Material::select('materials.*')
+            ->join('stations', 'materials.station_id', '=', 'stations.id')
+            ->where('stations.line_area', 'Delivery')
+            ->orderBy('materials.material_name')
+            ->get();
     }
+    // =============================
+    // ROLE: Leader QC → only Incoming
+    // =============================
+    elseif ($role === 'Leader QC') {
+        $defaultMaterialOptions = Material::select('materials.*')
+            ->join('stations', 'materials.station_id', '=', 'stations.id')
+            ->where('stations.line_area', 'Incoming')
+            ->orderBy('materials.material_name')
+            ->get();
+    }
+    // =============================
+    // ROLE: Leader FA + role lain → full DB
+    // =============================
+    else {
+        $defaultMaterialOptions = Material::orderBy('material_name')->get();
+    }
+
+    return view('materials.create_henkaten', [
+        'log'                     => $log,
+        'lineAreas'               => $lineAreas,
+        'defaultMaterialOptions'  => $defaultMaterialOptions  // 👈 Ubah nama di sini
+    ]);
+}
+
 
  public function update(Request $request, MaterialHenkaten $log): RedirectResponse
 {

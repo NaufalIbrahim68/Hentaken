@@ -669,7 +669,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
         <div id="methodChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
             @php
                 $filteredMethodHenkatens = $activeMethodHenkatens->filter(function ($henkaten) {
-                    return strtolower($henkaten->status) === 'approved';
+                    return strtolower($henkaten->status) === 'pending';
                 });
             @endphp
 
@@ -736,7 +736,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
                 {{-- ========================================================== --}}
                 {{-- 🔔 PERUBAHAN DI SINI: Teks pemberitahuan --}}
                 {{-- ========================================================== --}}
-                <div class="text-center text-xs text-gray-400 py-4">No Active & Approved Method Henkaten</div>
+                <div class="text-center text-xs text-gray-400 py-4">No Active Method Henkaten</div>
             @endif
         </div>
 
@@ -982,7 +982,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
     <div class="flex justify-center gap-3 p-2">
         @php
             $filteredMachineHenkatens = $machineHenkatens->filter(function ($henkaten) {
-                return strtolower($henkaten->status) === 'approved';
+                return strtolower($henkaten->status) === 'pending';
             });
         @endphp
         
@@ -1055,7 +1055,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
             {{-- ========================================================== --}}
             {{-- 🔔 PERUBAHAN DI SINI: Teks pemberitahuan --}}
             {{-- ========================================================== --}}
-            <div class="text-center text-xs text-gray-400 py-4 w-full">No Active & Approved Machine Henkaten</div>
+            <div class="text-center text-xs text-gray-400 py-4 w-full">No Active Machine Henkaten</div>
         @endforelse
     </div>
 </div>
@@ -1329,7 +1329,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
                         $filteredMaterialHenkatens = $materialHenkatens->filter(function ($henkaten) {
                             // Filter hanya tampilkan yang statusnya 'approved'
                             // Asumsi nama field adalah 'status'
-                            return strtolower($henkaten->status) === 'approved';
+                            return strtolower($henkaten->status) === 'pending';
                         });
                     }
                 @endphp

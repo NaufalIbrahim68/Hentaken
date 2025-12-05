@@ -64,22 +64,49 @@ public function edit(MachineHenkaten $log): View
                         ->orderBy('line_area', 'asc')
                         ->pluck('line_area');
 
-    // Cek apakah user adalah Leader FA
-    $isLeaderFA = auth()->user()->role === 'Leader FA';
+    $role = auth()->user()->role;
 
-    // Jika Leader FA → pakai kategori hardcode
-    if ($isLeaderFA) {
+    // =============================
+    // ROLE: Leader FA → Hardcode
+    // =============================
+    if ($role === 'Leader FA') {
 
-    $machinesToDisplay = collect([
-        (object)['id' => 1, 'machines_category' => 'PROGRAM'],
-        (object)['id' => 2, 'machines_category' => 'Machine & JIG'],
-        (object)['id' => 3, 'machines_category' => 'Equipement'],
-        (object)['id' => 4, 'machines_category' => 'Kamera'],
-    ]);
+        $machinesToDisplay = collect([
+            (object)['id' => 1, 'machines_category' => 'PROGRAM'],
+            (object)['id' => 2, 'machines_category' => 'Machine & JIG'],
+            (object)['id' => 3, 'machines_category' => 'Equipement'],
+            (object)['id' => 4, 'machines_category' => 'Kamera'],
+        ]);
 
-} else {
+    } 
+    // =============================
+    // ROLE: Leader PPIC → hanya dari line_area Delivery
+    // =============================
+    elseif ($role === 'Leader PPIC') {
 
-        // Untuk role lain: ambil dari DB (yang punya id_machines)
+        $machinesToDisplay = Machine::select('machines.*')
+            ->join('stations', 'machines.station_id', '=', 'stations.id')
+            ->where('stations.line_area', 'Delivery')
+            ->orderBy('machines.machines_category')
+            ->get();
+
+    } 
+    // =============================
+    // ROLE: Leader QC → hanya dari line_area Incoming
+    // =============================
+    elseif ($role === 'Leader QC') {
+
+        $machinesToDisplay = Machine::select('machines.*')
+            ->join('stations', 'machines.station_id', '=', 'stations.id')
+            ->where('stations.line_area', 'Incoming')
+            ->orderBy('machines.machines_category')
+            ->get();
+    } 
+    // =============================
+    // ROLE lain → full list DB
+    // =============================
+    else {
+
         $machinesToDisplay = Machine::orderBy('machines_category')->get();
     }
 
@@ -87,9 +114,11 @@ public function edit(MachineHenkaten $log): View
         'log'               => $log,
         'lineAreas'         => $lineAreas,
         'machinesToDisplay' => $machinesToDisplay,
-        'isLeaderFA'        => $isLeaderFA
+        'isLeaderFA'        => ($role === 'Leader FA')
     ]);
 }
+
+
 
 
  public function update(Request $request, MachineHenkaten $log)
