@@ -47,11 +47,9 @@
                             isEditing: {{ isset($log) ? 'true' : 'false' }},
                             logId: {{ isset($log) ? $log->id : 'null' }},
 
-                            // nilai dari controller
                             userRole: '{{ $userRole ?? 'Operator' }}',
                             roleLineArea: '{{ $roleLineArea ?? '' }}',
 
-                            // flags dari controller (pastikan controller mengirimkan ini)
                             isMainOperator: {{ isset($isMainOperator) && $isMainOperator ? 'true' : 'false' }},
                             showStationDropdown: {{ isset($showStationDropdown) && $showStationDropdown ? 'true' : 'false' }},
 
@@ -69,6 +67,7 @@
                             searchManpowerUrl: '{{ route('henkaten.manpower.search') }}',
                             findStationsUrl: '{{ route('henkaten.stations.by_line') }}',
                             checkAfterUrl: '{{ route('henkaten.checkAfter') }}'
+
                         })" x-init="init()">
 
                             <fieldset>
@@ -154,37 +153,37 @@
                                         </div>
 
                                         {{-- Serial number start --}}
-<div class="mb-4">
-    <label for="serial_number_start"
-        class="block text-sm font-medium text-gray-700">
-        Serial Number Start
-        @if(isset($log))
-            <span class="text-red-500">*</span>
-        @endif
-    </label>
-    <input type="text" id="serial_number_start" name="serial_number_start"
-        value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
-        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-        placeholder="Masukkan serial number awal..."
-        @if(isset($log)) required @endif>
-</div>
+                                        <div class="mb-4">
+                                            <label for="serial_number_start"
+                                                class="block text-sm font-medium text-gray-700">
+                                                Serial Number Start
+                                                @if(isset($log))
+                                                    <span class="text-red-500">*</span>
+                                                @endif
+                                            </label>
+                                            <input type="text" id="serial_number_start" name="serial_number_start"
+                                                value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
+                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="Masukkan serial number awal..."
+                                                @if(isset($log)) required @endif>
+                                        </div>
 
-{{-- Serial number end --}}
-<div class="mb-4">
-    <label for="serial_number_end"
-        class="block text-sm font-medium text-gray-700">
-        Serial Number End
-        @if(isset($log))
-            <span class="text-red-500">*</span>
-        @endif
-    </label>
-    <input type="text" id="serial_number_end" name="serial_number_end"
-        value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
-        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-        placeholder="Masukkan serial number akhir..."
-        @if(isset($log)) required @endif>
-</div>
-</div>
+                                        {{-- Serial number end --}}
+                                        <div class="mb-4">
+                                            <label for="serial_number_end"
+                                                class="block text-sm font-medium text-gray-700">
+                                                Serial Number End
+                                                @if(isset($log))
+                                                    <span class="text-red-500">*</span>
+                                                @endif
+                                            </label>
+                                            <input type="text" id="serial_number_end" name="serial_number_end"
+                                                value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
+                                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="Masukkan serial number akhir..."
+                                                @if(isset($log)) required @endif>
+                                        </div>
+                                    </div>
 
                                     {{-- KANAN: tanggal & waktu --}}
                                     <div>
@@ -239,27 +238,82 @@
                                             (otomatis berdasarkan grup, line, & station)</p>
                                     </div>
 
-                                    <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md relative">
-                                        <label for="nama_after" class="text-gray-700 text-sm font-bold">Nama Karyawan
-                                            Sesudah <span class="text-red-500">*</span></label>
-                                        <input type="text" id="nama_after" name="nama_after"
-                                            x-model="autocompleteQuery" @input.debounce.300="searchAfter()"
-                                            @click.away="autocompleteResults = []" autocomplete="off"
-                                            class="w-full py-3 px-4 border rounded"
-                                            placeholder="Masukkan Nama Man Power Pengganti..." required>
-                                        <input type="hidden" name="man_power_id_after"
-                                            x-model="selectedManpowerAfter">
-                                        <ul x-show="autocompleteResults.length > 0"
-                                            class="absolute z-10 bg-white border w-full mt-1 rounded-md shadow-md max-h-60 overflow-auto">
-                                            <template x-for="item in autocompleteResults" :key="item.id">
-                                                <li @click="selectAfter(item)"
-                                                    class="px-4 py-2 cursor-pointer hover:bg-green-100"
-                                                    x-text="item.nama"></li>
-                                            </template>
-                                        </ul>
-                                        <p class="text-xs text-green-600 mt-2 italic">Data man power pengganti</p>
+                                     {{-- UPDATED: Dropdown Autocomplete dengan Auto Load --}}
+                                    <div class="bg-white rounded-lg p-4 border-2 border-green-300 shadow-md">
+                                        <label for="nama_after" class="text-gray-700 text-sm font-bold mb-2 block">
+                                            Nama Karyawan Sesudah <span class="text-red-500">*</span>
+                                        </label>
+                                        
+                                        <div class="relative">
+                                            <input 
+                                                type="text" 
+                                                id="nama_after" 
+                                                name="nama_after"
+                                                x-model="autocompleteQuery"
+                                                @input.debounce.300ms="searchAfter()"
+                                                @focus="openDropdown()"
+                                                @blur="closeDropdown()"
+                                                autocomplete="off"
+                                                class="w-full py-3 px-4 border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+                                                :class="{'border-red-500': !afterValid}"
+                                                placeholder="Klik untuk memilih...."
+                                                required
+                                            />
+                                            
+                                            <input type="hidden" name="man_power_id_after" x-model="selectedManpowerAfter">
+                                            
+                                            {{-- Dropdown Results --}}
+                                            <div 
+                                                x-show="isDropdownOpen && autocompleteResults.length > 0"
+                                                class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+                                            >
+                                                <template x-for="item in autocompleteResults" :key="item.id">
+                                                    <div 
+                                                        @click="selectAfter(item)"
+                                                        class="px-4 py-3 cursor-pointer hover:bg-green-50 border-b border-gray-100 last:border-0 transition duration-150"
+                                                    >
+                                                        <div class="font-medium text-gray-900" x-text="item.nama"></div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                            
+                                            {{-- Loading State --}}
+                                            <div 
+                                                x-show="isDropdownOpen && !autocompleteResults.length && selectedGrup"
+                                                class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-3"
+                                            >
+                                                <p class="text-sm text-gray-500 text-center">Memuat data...</p>
+                                            </div>
+                                            
+                                            {{-- No Results --}}
+                                            <div 
+                                                x-show="!isDropdownOpen && autocompleteQuery.length >= 2 && !selectedManpowerAfter"
+                                                class="mt-1 text-xs text-gray-500"
+                                            >
+                                                Tidak ada hasil ditemukan
+                                            </div>
+                                        </div>
+                                        
+                                        {{-- Validation Warning --}}
+                                        <p x-show="!afterValid" class="text-red-500 text-xs mt-2">
+                                            ⚠️ Man Power ini sudah bertugas pada waktu yang dipilih
+                                        </p>
+                                        
+                                        <p class="text-xs text-green-600 mt-2 italic">
+                                            Data man power pengganti (klik field untuk melihat daftar)
+                                        </p>
                                     </div>
                                 </div>
+
+                                <button 
+    type="button"
+    @click="refreshAfterList()"
+    class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 text-sm font-semibold"
+>
+    🔄Re-Check
+</button>
+
+
 
                                 {{-- Keterangan & Syarat --}}
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -289,69 +343,69 @@
                                 </div>
 
                                {{-- Lampiran (3 Field) --}}
-<div class="mb-6 mt-6">
-    <h3 class="block text-gray-700 text-sm font-bold mb-4">Lampiran</h3>
-    
-    {{-- Lampiran 1  --}}
-    <div class="mb-4">
-        <label for="lampiran" class="block text-gray-700 text-sm font-medium mb-2">
-            Lampiran 1 (Opsional)
-        </label>
-        <input type="file" id="lampiran" name="lampiran"
-            accept=".png,.jpg,.jpeg,.pdf,.zip,.rar,application/zip,application/x-rar-compressed"
-            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-        @if (isset($log) && $log->lampiran)
-            <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-                <p class="text-sm text-gray-700 font-medium mb-1">Lampiran 1 saat ini:</p>
-                <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
-                    class="text-blue-600 hover:text-blue-800 hover:underline text-sm">
-                    📄 Lihat Lampiran ({{ basename($log->lampiran) }})
-                </a>
-                <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda ingin mengganti lampiran ini.</p>
-            </div>
-        @endif
-    </div>
+                                <div class="mb-6 mt-6">
+                                    <h3 class="block text-gray-700 text-sm font-bold mb-4">Lampiran</h3>
+                                    
+                                    {{-- Lampiran 1  --}}
+                                    <div class="mb-4">
+                                        <label for="lampiran" class="block text-gray-700 text-sm font-medium mb-2">
+                                            Lampiran 1 (Opsional)
+                                        </label>
+                                        <input type="file" id="lampiran" name="lampiran"
+                                            accept=".png,.jpg,.jpeg,.pdf,.zip,.rar,application/zip,application/x-rar-compressed"
+                                            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                        @if (isset($log) && $log->lampiran)
+                                            <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                                <p class="text-sm text-gray-700 font-medium mb-1">Lampiran 1 saat ini:</p>
+                                                <a href="{{ asset('storage/' . $log->lampiran) }}" target="_blank"
+                                                    class="text-blue-600 hover:text-blue-800 hover:underline text-sm">
+                                                    📄 Lihat Lampiran ({{ basename($log->lampiran) }})
+                                                </a>
+                                                <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda ingin mengganti lampiran ini.</p>
+                                            </div>
+                                        @endif
+                                    </div>
 
-    {{-- Lampiran 2 (Optional) --}}
-    <div class="mb-4">
-        <label for="lampiran_2" class="block text-gray-700 text-sm font-medium mb-2">
-            Lampiran 2 (Opsional)
-        </label>
-        <input type="file" id="lampiran_2" name="lampiran_2"
-            accept=".png,.jpg,.jpeg,.pdf,.zip,.rar,application/zip,application/x-rar-compressed"
-            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
-        @if (isset($log) && $log->lampiran_2)
-            <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-                <p class="text-sm text-gray-700 font-medium mb-1">Lampiran 2 saat ini:</p>
-                <a href="{{ asset('storage/' . $log->lampiran_2) }}" target="_blank"
-                    class="text-blue-600 hover:text-blue-800 hover:underline text-sm">
-                    📄 Lihat Lampiran ({{ basename($log->lampiran_2) }})
-                </a>
-                <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda ingin mengganti lampiran ini.</p>
-            </div>
-        @endif
-    </div>
+                                    {{-- Lampiran 2 (Optional) --}}
+                                    <div class="mb-4">
+                                        <label for="lampiran_2" class="block text-gray-700 text-sm font-medium mb-2">
+                                            Lampiran 2 (Opsional)
+                                        </label>
+                                        <input type="file" id="lampiran_2" name="lampiran_2"
+                                            accept=".png,.jpg,.jpeg,.pdf,.zip,.rar,application/zip,application/x-rar-compressed"
+                                            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                        @if (isset($log) && $log->lampiran_2)
+                                            <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                                <p class="text-sm text-gray-700 font-medium mb-1">Lampiran 2 saat ini:</p>
+                                                <a href="{{ asset('storage/' . $log->lampiran_2) }}" target="_blank"
+                                                    class="text-blue-600 hover:text-blue-800 hover:underline text-sm">
+                                                    📄 Lihat Lampiran ({{ basename($log->lampiran_2) }})
+                                                </a>
+                                                <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda ingin mengganti lampiran ini.</p>
+                                            </div>
+                                        @endif
+                                    </div>
 
-    {{-- Lampiran 3 (Optional) --}}
-    <div class="mb-4">
-        <label for="lampiran_3" class="block text-gray-700 text-sm font-medium mb-2">
-            Lampiran 3 (Opsional)
-        </label>
-        <input type="file" id="lampiran_3" name="lampiran_3"
-            accept=".png,.jpg,.jpeg,.pdf,.zip,.rar,application/zip,application/x-rar-compressed"
-            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
-        @if (isset($log) && $log->lampiran_3)
-            <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-                <p class="text-sm text-gray-700 font-medium mb-1">Lampiran 3 saat ini:</p>
-                <a href="{{ asset('storage/' . $log->lampiran_3) }}" target="_blank"
-                    class="text-blue-600 hover:text-blue-800 hover:underline text-sm">
-                    📄 Lihat Lampiran ({{ basename($log->lampiran_3) }})
-                </a>
-                <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda ingin mengganti lampiran ini.</p>
-            </div>
-        @endif
-    </div>
-</div>
+                                    {{-- Lampiran 3 (Optional) --}}
+                                    <div class="mb-4">
+                                        <label for="lampiran_3" class="block text-gray-700 text-sm font-medium mb-2">
+                                            Lampiran 3 (Opsional)
+                                        </label>
+                                        <input type="file" id="lampiran_3" name="lampiran_3"
+                                            accept=".png,.jpg,.jpeg,.pdf,.zip,.rar,application/zip,application/x-rar-compressed"
+                                            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                                        @if (isset($log) && $log->lampiran_3)
+                                            <div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                                <p class="text-sm text-gray-700 font-medium mb-1">Lampiran 3 saat ini:</p>
+                                                <a href="{{ asset('storage/' . $log->lampiran_3) }}" target="_blank"
+                                                    class="text-blue-600 hover:text-blue-800 hover:underline text-sm">
+                                                    📄 Lihat Lampiran ({{ basename($log->lampiran_3) }})
+                                                </a>
+                                                <p class="text-xs italic text-gray-500 mt-1">Unggah file baru jika Anda ingin mengganti lampiran ini.</p>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
 
                             </fieldset>
 
@@ -368,8 +422,6 @@
     Karyawan ini sudah dijadwalkan sebagai Man Power After untuk shift ini.
 </p>
 
-                            </div>
-
                         </div>
                     </form>
 
@@ -377,11 +429,12 @@
             </div>
         </div>
     </div>
+</div>
+
 
    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script>
 document.addEventListener('alpine:init', () => {
-    // Pastikan $stations tersedia dan didefinisikan di Blade
     const initialStationsData = @json($stations ?? []);
 
     Alpine.data('henkatenForm', (config) => ({
@@ -402,7 +455,6 @@ document.addEventListener('alpine:init', () => {
             nama: config.oldManPowerBeforeName || ''
         },
 
-        // Bersihkan prefix 't-' dan konversi ke integer untuk man_power_id_after
         selectedManpowerAfter: config.oldManPowerAfterId ? (() => {
             let id = config.oldManPowerAfterId;
             if (typeof id === 'string' && id.startsWith('t-')) {
@@ -413,7 +465,8 @@ document.addEventListener('alpine:init', () => {
         
         autocompleteQuery: config.oldManPowerAfterName || '',
         autocompleteResults: [],
-        afterValid: true, 
+        afterValid: true,
+        isDropdownOpen: false,
 
         // URL Helpers
         findManpowerUrl: config.findManpowerUrl,
@@ -430,26 +483,23 @@ document.addEventListener('alpine:init', () => {
             return ['QC', 'PPIC', 'Leader QC', 'Leader PPIC'].includes(this.userRole);
         },
 
-       get filteredStationList() {
-    let list = this.allStations;
-    let lineArea = this.selectedLineArea;
+        get filteredStationList() {
+            let list = this.allStations;
+            let lineArea = this.selectedLineArea;
 
-    if (lineArea) {
-        list = list.filter(st => st.line_area === lineArea);
-    }
-    
-    if (this.isQCOrPPIC) {
-        // PENTING: Convert ke integer karena dari database bisa jadi string
-        list = list.filter(st => {
-            const isMainOp = parseInt(st.is_main_operator);
-            return isMainOp === 1;
-        });
-    }
-    
-    console.log('Filtered Station List:', list); // Debug
-    
-    return list;
-},
+            if (lineArea) {
+                list = list.filter(st => st.line_area === lineArea);
+            }
+            
+            if (this.isQCOrPPIC) {
+                list = list.filter(st => {
+                    const isMainOp = parseInt(st.is_main_operator);
+                    return isMainOp === 1;
+                });
+            }
+            
+            return list;
+        },
 
         get currentStationName() {
             if (this.selectedStation) {
@@ -461,40 +511,36 @@ document.addEventListener('alpine:init', () => {
 
         // --- Methods ---
         async init() {
-            // Set Line Area otomatis untuk non-Leader/QC
             if (!this.isLeaderFAOrSMT && !this.isQCOrPPIC && this.roleLineArea) {
                 this.selectedLineArea = this.roleLineArea;
             }
 
-            // Panggil fetchStations (untuk filtering dropdown)
             if (this.isLeaderFAOrSMT || this.isQCOrPPIC) {
                 this.fetchStations(false); 
             }
 
-            // Load Man Power Before jika semua data sudah ada
             if (this.selectedStation && this.selectedGrup && this.selectedLineArea) {
                 await this.fetchManpowerBefore();
             }
 
-            // Validasi Man Power After saat inisialisasi (jika edit)
             if (this.isEditing && this.selectedManpowerAfter) {
                 this.validateAfter();
             }
             
-            // Tambahkan event listener untuk validasi tanggal
-            document.getElementById('effective_date')?.addEventListener('change', () => {
-                this.validateDateInputs();
-                this.validateAfter();
-            });
-            document.getElementById('end_date')?.addEventListener('change', () => {
-                this.validateDateInputs();
-                this.validateAfter();
+            // FIXED: Tambahkan event listener untuk semua field yang mempengaruhi validasi
+            const validateFields = ['effective_date', 'end_date', 'time_start', 'time_end'];
+            validateFields.forEach(fieldId => {
+                document.getElementById(fieldId)?.addEventListener('change', () => {
+                    this.validateDateInputs();
+                    // FIXED: Hanya validasi jika man_power_after sudah dipilih
+                    if (this.selectedManpowerAfter) {
+                        this.validateAfter();
+                    }
+                });
             });
         },
 
         fetchStations(resetStation = true) {
-            // Logika filtering station dilakukan di computed property
-            // Cukup handle reset state dropdown jika line area berubah
             if (resetStation) {
                 const currentStationExists = this.filteredStationList.some(st => st.id == this.selectedStation);
                 
@@ -533,9 +579,15 @@ document.addEventListener('alpine:init', () => {
 
         async searchAfter() {
             this.autocompleteResults = [];
-            if (!this.autocompleteQuery || this.autocompleteQuery.trim().length < 2) return;
             
-            // Bersihkan station ID sebelum dikirim (kirim string kosong jika tidak ada)
+            if (!this.selectedGrup || !this.selectedLineArea) {
+                return;
+            }
+            
+            if (!this.isLeaderFAOrSMT && !this.isQCOrPPIC && !this.selectedStation) {
+                return;
+            }
+            
             const stationIdToSend = this.selectedStation || ''; 
 
             try {
@@ -557,7 +609,6 @@ document.addEventListener('alpine:init', () => {
                 });
 
                 if (!response.ok) {
-                    // Mencegah parsing JSON jika status bukan OK (misal 500)
                     const errorText = await response.text();
                     console.error('API Response Text:', errorText); 
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -571,10 +622,26 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        async openDropdown() {
+            this.isDropdownOpen = true;
+            
+            const canLoad = this.selectedGrup && this.selectedLineArea && 
+                           (this.isLeaderFAOrSMT || this.isQCOrPPIC || this.selectedStation);
+            
+            if (canLoad && this.autocompleteResults.length === 0) {
+                await this.searchAfter();
+            }
+        },
+
+        closeDropdown() {
+            setTimeout(() => {
+                this.isDropdownOpen = false;
+            }, 200);
+        },
+
         selectAfter(item) {
             this.autocompleteQuery = item.nama;
             
-            // Bersihkan prefix 't-' jika ada, simpan sebagai integer
             let cleanId = item.id;
             if (typeof cleanId === 'string' && cleanId.startsWith('t-')) {
                 cleanId = parseInt(cleanId.slice(2));
@@ -582,13 +649,12 @@ document.addEventListener('alpine:init', () => {
                 cleanId = parseInt(cleanId);
             }
             
-            // Pastikan hasil parsing valid
             this.selectedManpowerAfter = isNaN(cleanId) ? null : cleanId;
             this.autocompleteResults = [];
+            this.isDropdownOpen = false;
             this.validateAfter();
         },
 
-        // Validasi format tanggal dan berikan visual feedback
         validateDateInputs() {
             const effectiveDate = document.getElementById('effective_date')?.value;
             const endDate = document.getElementById('end_date')?.value;
@@ -597,7 +663,6 @@ document.addEventListener('alpine:init', () => {
             const effectiveInput = document.getElementById('effective_date');
             const endInput = document.getElementById('end_date');
             
-            // Add red border if invalid
             if (effectiveDate && !dateRegex.test(effectiveDate)) {
                 effectiveInput?.classList.add('border-red-500');
                 effectiveInput?.classList.remove('border-gray-300');
@@ -615,7 +680,8 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        async validateAfter() {
+        // FIXED: Validasi input sebelum fetch
+         async validateAfter() {
             const shift = document.querySelector('input[name="shift"]')?.value;
             const effectiveDate = document.getElementById('effective_date')?.value;
             const endDate = document.getElementById('end_date')?.value;
@@ -665,8 +731,15 @@ document.addEventListener('alpine:init', () => {
                 // Backend validation will catch any real issues
                 this.afterValid = true; 
             }
-        }
+        },
 
+        refreshAfterList() {
+            this.autocompleteQuery = "";
+            this.selectedManpowerAfter = null;
+            this.autocompleteResults = [];
+            this.isDropdownOpen = true;
+            this.searchAfter();
+        }
     }));
 });
 </script>

@@ -1332,8 +1332,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
                     // Cek jika $materialHenkatens ada, baru lakukan filter
                     if (isset($materialHenkatens)) {
                         $filteredMaterialHenkatens = $materialHenkatens->filter(function ($henkaten) {
-                            // Filter hanya tampilkan yang statusnya 'approved'
-                            // Asumsi nama field adalah 'status'
+                            
                             return strtolower($henkaten->status) === 'pending';
                         });
                     }

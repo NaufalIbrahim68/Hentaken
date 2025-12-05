@@ -415,25 +415,25 @@ class ManPowerController extends Controller
     // ==============================================================
     // ✅ SEARCH - FIXED: Proper station filtering
     // ==============================================================
-   public function search(Request $request)
+ public function search(Request $request)
 {
     try {
         $q = $request->input('query', '');
         $grupInput = $request->input('grup', '');
         $lineArea = $request->input('line_area', '');
         
-        // Mengubah input station_id menjadi integer (akan jadi 0 jika inputnya '', null, atau 'null')
         $stationIdInput = $request->input('station_id');
         $stationIdInt = filter_var($stationIdInput, FILTER_VALIDATE_INT) ? (int)$stationIdInput : 0;
         
-        if (strlen($q) < 2 || empty($grupInput)) {
+        // Grup dan Line Area WAJIB
+        if (empty($grupInput) || empty($lineArea)) {
             return response()->json([]);
         }
 
         $nowFull = Carbon::now();
         $userRole = Auth::check() ? Auth::user()->role : null;
         
-        // --- 1. Ambil ID Man Power yang SEDANG BERTUGAS (Busy IDs) ---
+        // Ambil ID Man Power yang sedang bertugas
         $activeManpowerIds = ManPowerHenkaten::whereIn('status', ['Approved', 'PENDING'])
             ->where(function ($query) use ($nowFull) {
                 $query->whereNull('end_date')
@@ -456,64 +456,73 @@ class ManPowerController extends Controller
             }
         }
         
-        // --- 2. Query Man Power REGULER ---
-        $manPowerQuery = ManPower::query()
-            ->select('id', 'nama', 'grup', 'line_area')
-            ->where('grup', $grupInput)
-            ->where('nama', 'like', "%{$q}%")
-            ->whereNotIn('id', $busyRegularIds);
-
-        // Filter role/line area
-        if ($userRole === 'Leader QC') {
-            $manPowerQuery->where('line_area', 'Incoming');
-        } elseif ($userRole === 'Leader PPIC') {
-            $manPowerQuery->where('line_area', 'Delivery');
-        } elseif (!empty($lineArea)) {
-            $manPowerQuery->where('line_area', $lineArea);
-        }
-
-        // Filter Station: Hanya jalankan jika stationId terdeteksi (yaitu > 0)
+        // ============================================================
+        // Query Man Power REGULER - dari man_power_many_stations
+        // ============================================================
+        
+        $manPowerQuery = DB::table('man_power_many_stations')
+            ->join('man_power', 'man_power.id', '=', 'man_power_many_stations.man_power_id')
+            ->join('stations', 'stations.id', '=', 'man_power_many_stations.station_id')
+            ->select(
+                'man_power.id',
+                'man_power.nama',
+                'man_power.grup',
+                'man_power.line_area',
+                'man_power_many_stations.station_id'
+            )
+            ->where('man_power_many_stations.status', 'Approved')
+            ->where('man_power.grup', $grupInput)
+            ->where('man_power.line_area', $lineArea)
+            ->where('stations.line_area', $lineArea)
+            ->whereNotIn('man_power.id', $busyRegularIds);
+        
+        // Filter berdasarkan station jika dipilih
         if ($stationIdInt > 0) {
-            $manPowerQuery->where(function($query) use ($stationIdInt) {
-                // Asumsi: ManPower memiliki relasi belongsToMany 'stations'
-                $query->whereHas('stations', function ($q) use ($stationIdInt) {
-                    $q->where('station_id', $stationIdInt);
-                })
-                // Opsi 2: Hapus atau perbaiki jika kolom 'station_id' tidak ada di tabel man_power
-                ->orWhere('station_id', $stationIdInt); 
-            });
+            $manPowerQuery->where('man_power_many_stations.station_id', $stationIdInt);
         }
         
-        $manPower = $manPowerQuery->get();
+        // Filter nama jika user mengetik
+        if (!empty($q)) {
+            $manPowerQuery->where('man_power.nama', 'like', "%{$q}%");
+        }
         
-        // --- 3. Query Man Power TROUBLESHOOTING (Grup spesifik) ---
+        $manPower = $manPowerQuery->distinct()->limit(50)->get();
+        
+        // ============================================================
+        // Query Man Power TROUBLESHOOTING
+        // ============================================================
         $troubleshootingQuery = ManPower::query()
             ->select('id', 'nama', 'grup', 'line_area')
             ->where('grup', 'like', "{$grupInput}(Troubleshooting)%")
-            ->where('nama', 'like', "%{$q}%")
             ->whereNotIn('id', $busyTsIds);
-
-        // Filter role/line area untuk TS
-        if ($userRole === 'Leader QC') {
-            $troubleshootingQuery->where(fn($q) => $q->where('line_area', 'Incoming')->orWhereNull('line_area'));
-        } elseif ($userRole === 'Leader PPIC') {
-            $troubleshootingQuery->where(fn($q) => $q->where('line_area', 'Delivery')->orWhereNull('line_area'));
-        } elseif (!empty($lineArea)) {
-            $troubleshootingQuery->where(fn($q) => $q->where('line_area', $lineArea)->orWhereNull('line_area'));
+        
+        // Filter line_area untuk troubleshooting
+        $troubleshootingQuery->where(function($q) use ($lineArea) {
+            $q->where('line_area', $lineArea)
+              ->orWhereNull('line_area');
+        });
+        
+        if (!empty($q)) {
+            $troubleshootingQuery->where('nama', 'like', "%{$q}%");
         }
 
-        $troubleshooting = $troubleshootingQuery->get();
+        $troubleshooting = $troubleshootingQuery->limit(50)->get();
         
-        // --- 4. Query Man Power UNIVERSAL TROUBLESHOOTING ---
+        // ============================================================
+        // Query Man Power UNIVERSAL TROUBLESHOOTING
+        // ============================================================
         $universalQuery = ManPower::query()
             ->select('id', 'nama', 'grup', 'line_area')
             ->where('grup', 'Universal(Troubleshooting)')
-            ->where('nama', 'like', "%{$q}%")
-            ->whereNotIn('id', $busyTsIds); 
+            ->whereNotIn('id', $busyTsIds);
         
-        $universal = $universalQuery->get();
+        if (!empty($q)) {
+            $universalQuery->where('nama', 'like', "%{$q}%");
+        }
+        
+        $universal = $universalQuery->limit(50)->get();
 
-        // --- 5. Gabungkan dan Format Hasil ---
+        // Gabungkan dan Format Hasil
         $result = collect($manPower)
             ->map(fn($item) => [
                 'id' => (string) $item->id,
@@ -524,16 +533,16 @@ class ManPowerController extends Controller
             ])
             ->merge(
                 $troubleshooting->map(fn($item) => [
-                    'id' => 't-' . $item->id, // Format ID dengan prefix 't-'
+                    'id' => 't-' . $item->id,
                     'nama' => $item->nama,
                     'grup' => $item->grup,
-                    'line_area' => $item->line_area,
+                    'line_area' => $item->line_area ?? 'Flexible',
                     'type' => 'troubleshooting'
                 ])
             )
             ->merge(
                 $universal->map(fn($item) => [
-                    'id' => 't-' . $item->id, // Format ID dengan prefix 't-'
+                    'id' => 't-' . $item->id,
                     'nama' => $item->nama,
                     'grup' => 'Universal',
                     'line_area' => 'ALL',
