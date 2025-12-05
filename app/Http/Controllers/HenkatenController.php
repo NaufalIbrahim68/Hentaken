@@ -150,7 +150,7 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
     // ==============================================================
     // BAGIAN 3: FORM PEMBUATAN HENKATEN METHOD
     // ==============================================================
-    public function store(Request $request)
+   public function store(Request $request)
 {
     $validated = $request->validate([
         'shift'               => 'required|string',
@@ -162,9 +162,9 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
         'line_area'           => 'required|string',
         'effective_date'      => 'required|date',
         'end_date'            => 'required|date|after_or_equal:effective_date',
-'lampiran' => 'nullable|file|mimes:jpeg,png,pdf,zip,rar|max:2048',
-'lampiran_2' => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
-'lampiran_3' => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240',
+        'lampiran'            => 'nullable|file|mimes:jpeg,png,pdf,zip,rar|max:2048',
+        'lampiran_2'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
+        'lampiran_3'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240',
         'time_start'          => 'required|date_format:H:i',
         'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
         'serial_number_start' => 'nullable|string|max:255',
@@ -183,28 +183,46 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
         $manPowerAsli  = ManPower::findOrFail($validated['man_power_id']);
         $manPowerAfter = ManPower::findOrFail($validated['man_power_id_after']);
 
+        // Upload files
         if ($request->hasFile('lampiran')) {
             $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
         }
 
-         if ($request->hasFile('lampiran_2')) {
-        $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_man_power_lampiran', 'public');
-    }
+        if ($request->hasFile('lampiran_2')) {
+            $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_man_power_lampiran', 'public');
+        }
 
-    if ($request->hasFile('lampiran_3')) {
-        $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_man_power_lampiran', 'public');
-    }
+        if ($request->hasFile('lampiran_3')) {
+            $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_man_power_lampiran', 'public');
+        }
 
+        // Simpan station_id asli dari man_power_after
+        $manPowerAfterManyStations = DB::table('man_power_many_stations')
+            ->where('man_power_id', $validated['man_power_id_after'])
+            ->first();
+
+        $originalStationId = $manPowerAfterManyStations ? $manPowerAfterManyStations->station_id : null;
+
+        // Update station_id man_power_after ke station yang baru (temporary)
+        DB::table('man_power_many_stations')
+            ->where('man_power_id', $validated['man_power_id_after'])
+            ->update([
+                'station_id' => $validated['station_id'],
+                'updated_at' => now()
+            ]);
+
+        // Buat data henkaten
         $dataToCreate = $validated;
-        $dataToCreate['lampiran']   = $lampiranPath;
-        $dataToCreate['nama']       = $manPowerAsli->nama;
-        $dataToCreate['nama_after'] = $manPowerAfter->nama;
-        $dataToCreate['status']     = 'Approved';
-        $dataToCreate['created_at'] = now();
-        $dataToCreate['updated_at'] = now();
-        $dataToCreate['user_id']    = Auth::id();
+        $dataToCreate['lampiran']              = $lampiranPath;
+        $dataToCreate['nama']                  = $manPowerAsli->nama;
+        $dataToCreate['nama_after']            = $manPowerAfter->nama;
+        $dataToCreate['status']                = 'Approved';
+        $dataToCreate['original_station_id']   = $originalStationId; // Simpan station_id asli
+        $dataToCreate['created_at']            = now();
+        $dataToCreate['updated_at']            = now();
+        $dataToCreate['user_id']               = Auth::id();
 
-        ManPowerHenkaten::create($dataToCreate);
+        $henkaten = ManPowerHenkaten::create($dataToCreate);
 
         DB::commit();
 

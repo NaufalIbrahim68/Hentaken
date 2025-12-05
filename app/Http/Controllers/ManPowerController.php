@@ -489,40 +489,48 @@ class ManPowerController extends Controller
         $manPower = $manPowerQuery->distinct()->limit(50)->get();
         
         // ============================================================
-        // Query Man Power TROUBLESHOOTING
+        // Query Man Power TROUBLESHOOTING (hanya jika line_area bukan Delivery/Incoming)
         // ============================================================
-        $troubleshootingQuery = ManPower::query()
-            ->select('id', 'nama', 'grup', 'line_area')
-            ->where('grup', 'like', "{$grupInput}(Troubleshooting)%")
-            ->whereNotIn('id', $busyTsIds);
-        
-        // Filter line_area untuk troubleshooting
-        $troubleshootingQuery->where(function($q) use ($lineArea) {
-            $q->where('line_area', $lineArea)
-              ->orWhereNull('line_area');
-        });
-        
-        if (!empty($q)) {
-            $troubleshootingQuery->where('nama', 'like', "%{$q}%");
+        $troubleshooting = collect(); // default kosong
+        if (!in_array($lineArea, ['Delivery', 'Incoming'])) {
+            $troubleshootingQuery = ManPower::query()
+                ->select('id', 'nama', 'grup', 'line_area')
+                ->where('grup', 'like', "{$grupInput}(Troubleshooting)%")
+                ->whereNotIn('id', $busyTsIds);
+
+            // Filter line_area untuk troubleshooting
+            $troubleshootingQuery->where(function($q) use ($lineArea) {
+                $q->where('line_area', $lineArea)
+                  ->orWhereNull('line_area');
+            });
+
+            if (!empty($q)) {
+                $troubleshootingQuery->where('nama', 'like', "%{$q}%");
+            }
+
+            $troubleshooting = $troubleshootingQuery->limit(50)->get();
         }
 
-        $troubleshooting = $troubleshootingQuery->limit(50)->get();
-        
         // ============================================================
-        // Query Man Power UNIVERSAL TROUBLESHOOTING
+        // Query Man Power UNIVERSAL TROUBLESHOOTING (hanya jika line_area bukan Delivery/Incoming)
         // ============================================================
-        $universalQuery = ManPower::query()
-            ->select('id', 'nama', 'grup', 'line_area')
-            ->where('grup', 'Universal(Troubleshooting)')
-            ->whereNotIn('id', $busyTsIds);
-        
-        if (!empty($q)) {
-            $universalQuery->where('nama', 'like', "%{$q}%");
-        }
-        
-        $universal = $universalQuery->limit(50)->get();
+        $universal = collect(); // default kosong
+        if (!in_array($lineArea, ['Delivery', 'Incoming'])) {
+            $universalQuery = ManPower::query()
+                ->select('id', 'nama', 'grup', 'line_area')
+                ->where('grup', 'Universal(Troubleshooting)')
+                ->whereNotIn('id', $busyTsIds);
 
+            if (!empty($q)) {
+                $universalQuery->where('nama', 'like', "%{$q}%");
+            }
+
+            $universal = $universalQuery->limit(50)->get();
+        }
+
+        // ============================================================
         // Gabungkan dan Format Hasil
+        // ============================================================
         $result = collect($manPower)
             ->map(fn($item) => [
                 'id' => (string) $item->id,
@@ -563,7 +571,10 @@ class ManPowerController extends Controller
             'trace' => $e->getTraceAsString()
         ]);
         
-        return response()->json(['error' => 'Search failed', 'message' => config('app.debug') ? $e->getMessage() : 'An error occurred'], 500);
+        return response()->json([
+            'error' => 'Search failed', 
+            'message' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+        ], 500);
     }
 }
 
