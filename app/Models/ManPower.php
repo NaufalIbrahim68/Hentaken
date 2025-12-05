@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany; // <-- TAMBAHKAN INI
+use Illuminate\Database\Eloquent\Relations\BelongsToMany; 
 
 
 class ManPower extends Model
@@ -23,11 +23,11 @@ class ManPower extends Model
      */
     protected $fillable = [
         'station_id',
-        'grup', // <-- WAJIB DITAMBAHKAN
+        'grup', 
         'shift',
         'nama',
         'line_area',
-        'status', // Kolom status yang penting
+        'status',
           'waktu_mulai',
           'tanggal_mulai',
 

@@ -10,23 +10,25 @@ class MethodHenkaten extends Model
     use HasFactory;
 protected $table = 'methods_henkaten';
     protected $fillable = [
-        'shift',
-        'keterangan',
-        'keterangan_after',
-        'station_id',
-        'method_id',
-        'methods_name',
-        'line_area',
-        'effective_date',
-        'end_date',
-        'lampiran',
-        'time_start',
-        'time_end',
-        'serial_number_start',
-        'serial_number_end',
-        'status',
-        'note',
-    ];
+    'shift',
+    'keterangan',
+    'keterangan_after',
+    'station_id',
+    'method_id',
+    'methods_name',
+    'line_area',
+    'effective_date',
+    'end_date',
+    'lampiran',
+    'lampiran_2',
+    'lampiran_3',
+    'time_start',
+    'time_end',
+    'serial_number_start',
+    'serial_number_end',
+    'status',
+    'note',
+];
 
     protected $casts = [
         'effective_date' => 'datetime',

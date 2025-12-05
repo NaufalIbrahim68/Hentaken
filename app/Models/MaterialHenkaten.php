@@ -24,6 +24,8 @@ class MaterialHenkaten extends Model
         'time_start',
         'time_end',
         'lampiran',
+         'lampiran_2',
+    'lampiran_3',
         'serial_number_start',
         'serial_number_end',
         'description_before', 

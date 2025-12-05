@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Method;
 use App\Models\Station;
 use Illuminate\Http\Request;
 use App\Models\MethodHenkaten;
@@ -57,78 +58,109 @@ public function index(Request $request)
      * Menampilkan form untuk mengedit log.
      */
  public function edit(MethodHenkaten $log)
-    {
-        // 1. Ambil DAFTAR NAMA line_area (sebagai string) dari tabel stations
-        //    Query ini mengambil nilai unik (distinct) dari kolom 'line_area'
-        $lineAreas = Station::select('line_area')
-                            ->distinct()
-                            ->orderBy('line_area', 'asc')
-                            ->pluck('line_area');
+{
+    // 1. Ambil semua line_area
+    $lineAreas = Station::select('line_area')
+                        ->distinct()
+                        ->orderBy('line_area', 'asc')
+                        ->pluck('line_area');
 
-        // 2. Ambil DAFTAR STATIONS (sebagai objek) yang sesuai dengan
-        //    line_area yang sedang diedit ($log)
-        //    Ini dibutuhkan agar dropdown "Station" terisi saat halaman dimuat
-        $stations = Station::where('line_area', $log->station->line_area)
-                           ->orderBy('station_name', 'asc') // Asumsi nama kolomnya 'station_name'
-                           ->get();
+    // 2. Ambil semua station berdasarkan line_area milik log
+    $stations = Station::where('line_area', $log->station->line_area)
+                       ->orderBy('station_name', 'asc')
+                       ->get();
 
-        // 3. Kirim semua data yang dibutuhkan ke view
-        return view('methods.create_henkaten', compact(
-            'log',        // Data log yang akan diedit
-            'lineAreas',  // Daftar untuk dropdown "Line Area"
-            'stations'    // Daftar untuk dropdown "Station" (yang di-handle Alpine)
-        ));
-    }
+    // 3. Preload METHOD berdasarkan station yg sedang diedit
+    //    Ini penting untuk halaman EDIT agar dropdown method terisi
+    $methodList = Method::where('station_id', $log->station_id) 
+                            ->orderBy('methods_name', 'asc')
+                            ->get();
+
+    // 4. Tentukan apakah role ini predefined (static)
+    $userRole = auth()->user()->role;
+    $isPredefinedRole = in_array($userRole, ['Leader FA', 'Leader QC', 'Leader PPIC']);
+
+    // 5. Kirim semua data ke Blade
+    return view('methods.create_henkaten', [
+        'log'               => $log,
+        'lineAreas'         => $lineAreas,
+        'stations'          => $stations,
+        'methodList'        => $methodList,
+        'isPredefinedRole'  => $isPredefinedRole,
+    ]);
+}
+
     /**
      * Memperbarui log di database.
      */
-   public function update(Request $request, MethodHenkaten $log) // <-- Menggunakan route-model binding Anda
-    {
-        // Validasi data
-        $request->validate([
-            'keterangan_after' => 'nullable|string|max:255',
-            'line_area' => 'nullable|string|max:100',
-            'effective_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:effective_date',
-            'lampiran' => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
-             'serial_number_start' => 'required|string|max:255',
-             'serial_number_end'   => 'required|string|max:255', 
-
-            
-        ]);
-
-        // Ambil semua data kecuali lampiran
-        $data = $request->except('lampiran');
-
-        // -----------------------------------------------------------
-        // PERUBAHAN UTAMA DI SINI
-        // -----------------------------------------------------------
-        // 1. Set status kembali ke 'Pending' untuk diajukan ulang ke Section Head.
-        $data['status'] = 'Pending';
+   public function update(Request $request, MethodHenkaten $log)
+{
+    // Validasi data
+    $request->validate([
+        'keterangan_after' => 'nullable|string|max:255',
+        'line_area' => 'nullable|string|max:100',
+        'effective_date' => 'nullable|date',
+        'end_date' => 'nullable|date|after_or_equal:effective_date',
         
-        // 2. [Opsional] Hapus 'note' revisi sebelumnya (best practice).
-        $data['note'] = null;
-        // -----------------------------------------------------------
+        'lampiran'   => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
+        'lampiran_2' => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
+        'lampiran_3' => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
 
-        // Handle file upload (lampiran)
-        if ($request->hasFile('lampiran')) {
-            // Hapus lampiran lama jika ada
-            if ($log->lampiran) {
-                Storage::delete('public/' . $log->lampiran);
-            }
+        'serial_number_start' => 'required|string|max:255',
+        'serial_number_end'   => 'required|string|max:255',
+    ]);
 
-            // Simpan lampiran baru (path dari kode Anda)
-            $path = $request->file('lampiran')->store('lampiran/method', 'public');
-            $data['lampiran'] = $path;
+    // Ambil semua data kecuali file upload
+    $data = $request->except(['lampiran', 'lampiran_2', 'lampiran_3']);
+
+    // Set status kembali menjadi Pending
+    $data['status'] = 'Pending';
+    $data['note'] = null;
+
+
+    // ==========================================================
+    // 🔥 UPLOAD FILE: lampiran
+    // ==========================================================
+    if ($request->hasFile('lampiran')) {
+        if ($log->lampiran) {
+            Storage::delete('public/' . $log->lampiran);
         }
 
-        // Update data log dengan $data yang sudah berisi status 'Pending'
-        $log->update($data);
-
-        // Ubah pesan sukses agar lebih jelas
-        return redirect()->route('activity.log.method')
-                         ->with('success', 'Data berhasil diupdate dan diajukan kembali untuk approval.');
+        $path = $request->file('lampiran')->store('lampiran/method', 'public');
+        $data['lampiran'] = $path;
     }
+
+    // ==========================================================
+    // 🔥 UPLOAD FILE: lampiran_2
+    // ==========================================================
+    if ($request->hasFile('lampiran_2')) {
+        if ($log->lampiran_2) {
+            Storage::delete('public/' . $log->lampiran_2);
+        }
+
+        $path2 = $request->file('lampiran_2')->store('lampiran/method', 'public');
+        $data['lampiran_2'] = $path2;
+    }
+
+    // ==========================================================
+    // 🔥 UPLOAD FILE: lampiran_3
+    // ==========================================================
+    if ($request->hasFile('lampiran_3')) {
+        if ($log->lampiran_3) {
+            Storage::delete('public/' . $log->lampiran_3);
+        }
+
+        $path3 = $request->file('lampiran_3')->store('lampiran/method', 'public');
+        $data['lampiran_3'] = $path3;
+    }
+
+
+    // Update data utama
+    $log->update($data);
+
+    return redirect()->route('activity.log.method')
+                     ->with('success', 'Data berhasil diupdate dan diajukan kembali untuk approval.');
+}
 
     /**
      * Menghapus log dari database.

@@ -271,7 +271,6 @@ public function downloadPDF(Request $request)
     // Data untuk dikirim ke view PDF
     $data = [
         'logs' => $logs,
-        // Nama variabel filter di PDF view disamakan dengan template sebelumnya
         'filterDate' => $created_date,
         'filterLine' => $line_area,
     ];
@@ -280,6 +279,12 @@ public function downloadPDF(Request $request)
               ->setPaper('a4', 'landscape');
     
     return $pdf->download('Laporan_Henkaten_ManPower.pdf');
+}
+
+
+private function determineHenkatenStatus($request)
+{
+    return $request->status ?? 'Approved';
 }
 
 }

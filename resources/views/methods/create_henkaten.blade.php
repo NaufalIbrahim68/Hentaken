@@ -155,22 +155,38 @@
                                     </div>
                                 </template>
 
-                                {{-- SERIAL NUMBER START (Optional) --}}
-                                <div class="mb-4">
-                                    <label for="serial_number_start" class="block text-sm font-medium text-gray-700">Serial Number Start</label>
-                                    <input type="text" id="serial_number_start" name="serial_number_start"
-                                        value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
-                                        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
-                                </div>
+                               {{-- Serial number start --}}
+<div class="mb-4">
+    <label for="serial_number_start"
+        class="block text-sm font-medium text-gray-700">
+        Serial Number Start
+        @if(isset($log))
+            <span class="text-red-500">*</span>
+        @endif
+    </label>
+    <input type="text" id="serial_number_start" name="serial_number_start"
+        value="{{ old('serial_number_start', $log->serial_number_start ?? '') }}"
+        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        placeholder="Masukkan serial number awal..."
+        @if(isset($log)) required @endif>
+</div>
 
-                                {{-- SERIAL NUMBER END (Optional) --}}
-                                <div class="mb-4">
-                                    <label for="serial_number_end" class="block text-sm font-medium text-gray-700">Serial Number End</label>
-                                    <input type="text" id="serial_number_end" name="serial_number_end"
-                                        value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
-                                        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
-                                </div>
-                            </div> {{-- end left column --}}
+{{-- Serial number end --}}
+<div class="mb-4">
+    <label for="serial_number_end"
+        class="block text-sm font-medium text-gray-700">
+        Serial Number End
+        @if(isset($log))
+            <span class="text-red-500">*</span>
+        @endif
+    </label>
+    <input type="text" id="serial_number_end" name="serial_number_end"
+        value="{{ old('serial_number_end', $log->serial_number_end ?? '') }}"
+        class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        placeholder="Masukkan serial number akhir..."
+        @if(isset($log)) required @endif>
+</div>
+</div>
 
                             {{-- RIGHT COLUMN: Dates & Times --}}
                             <div>
@@ -321,94 +337,120 @@
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
     <script>
-    document.addEventListener("alpine:init", () => {
-        Alpine.data("henkatenForm", () => ({
+document.addEventListener("alpine:init", () => {
+    Alpine.data("henkatenForm", () => ({
 
-            // initial state populated from server-side variables
-            lineAreas: @json($lineAreas ?? []),
-            stations: @json($stations ?? []),
-            methodList: @json($methodList ?? []),
+        // initial state populated from server-side variables
+        lineAreas: @json($lineAreas ?? []),
+        stations: @json($stations ?? []),
+        methodList: @json($methodList ?? []),
 
-            isPredefinedRole: @json($isPredefinedRole),
-            predefinedLineArea: @json($predefinedLineArea),
-            predefinedStationId: @json($predefinedStationId),
-            predefinedStationName: @json(optional($predefinedStation)->station_name ?? ''),
+        isPredefinedRole: @json($isPredefinedRole),
+        predefinedLineArea: @json($predefinedLineArea),
+        predefinedStationId: @json($predefinedStationId),
+        predefinedStationName: @json(optional($predefinedStation)->station_name ?? ''),
 
-            selectedLineArea: @json($selectedLineArea ?? old('line_area') ?? '') || '',
-            selectedStation: @json(old('station_id') ?? ($predefinedStationId ?? '')) || '',
-            selectedMethodId: @json(old('method_id') ?? ($log->method_id ?? '')) || '',
+        selectedLineArea: @json($selectedLineArea ?? old('line_area') ?? '') || '',
+        selectedStation: @json(old('station_id') ?? ($predefinedStationId ?? '')) || '',
+        selectedMethodId: @json(old('method_id') ?? ($log->method_id ?? '')) || '',
 
-            // routes
-            stationsByLineUrl: '{{ route('henkaten.stations.by_line') }}',
-            methodsByStationUrl: '{{ route('henkaten.methods.by_station') }}',
+        // detect edit/create
+        isEdit: @json(isset($log)),
 
-            init() {
-                // if dynamic mode and we have preloaded values, load dependent data
-                if (!this.isPredefinedRole) {
-                    if (this.selectedLineArea && (!this.stations || this.stations.length === 0)) {
-                        this.fetchStations();
-                    }
-                    if (this.selectedStation && (!this.methodList || this.methodList.length === 0)) {
-                        this.fetchMethods();
-                    }
+        // auto status
+        status: @json(isset($log) ? 'Pending' : 'Approved'),  // SET DEFAULT
+
+        // routes
+        stationsByLineUrl: '{{ route('henkaten.stations.by_line') }}',
+        methodsByStationUrl: '{{ route('henkaten.methods.by_station') }}',
+
+        init() {
+
+            // 1. auto-set status saat halaman edit
+            this.setStatusOnEdit();
+
+            // 2. dynamic data preload jika edit
+            if (!this.isPredefinedRole) {
+                if (this.selectedLineArea && (!this.stations || this.stations.length === 0)) {
+                    this.fetchStations();
                 }
-            },
-
-            async fetchStations() {
-                if (!this.selectedLineArea) {
-                    this.stations = [];
-                    this.selectedStation = '';
-                    this.methodList = [];
-                    return;
-                }
-
-                try {
-                    const q = encodeURIComponent(this.selectedLineArea);
-                    const res = await fetch(`${this.stationsByLineUrl}?line_area=${q}`);
-                    if (!res.ok) throw new Error('Network response not ok');
-                    const data = await res.json();
-                    this.stations = Array.isArray(data) ? data : (data.data ?? []);
-                    this.selectedStation = '';
-                    this.methodList = [];
-                } catch (err) {
-                    console.error('Gagal fetch stations:', err);
-                    this.stations = [];
-                    this.selectedStation = '';
-                    this.methodList = [];
-                }
-            },
-
-            async fetchMethods() {
-                if (!this.selectedStation) {
-                    this.methodList = [];
-                    // Jangan reset selectedMethodId ketika edit
-                    return;
-                }
-
-                try {
-                    const id = encodeURIComponent(this.selectedStation);
-                    const res = await fetch(`${this.methodsByStationUrl}?station_id=${id}`);
-                    if (!res.ok) throw new Error('Network response not ok');
-
-                    const data = await res.json();
-                    this.methodList = Array.isArray(data) ? data : (data.data ?? []);
-
-                    // Kalau ini BUKAN edit (selectedMethodId kosong), reset.
-                    // Kalau edit (selectedMethodId sudah ada), JANGAN reset.
-                    if (!@json(isset($log))) {   // jika halaman CREATE
-                        this.selectedMethodId = '';
-                    }
-
-                } catch (err) {
-                    console.error('Gagal fetch methods:', err);
-                    this.methodList = [];
-                    // Jangan reset selectedMethodId (penting untuk EDIT)
+                if (this.selectedStation && (!this.methodList || this.methodList.length === 0)) {
+                    this.fetchMethods();
                 }
             }
+        },
 
+        // --------------------------
+        //  FUNGSI UNTUK STATUS
+        // --------------------------
+        setStatusOnEdit() {
+            if (this.isEdit) {
+                this.status = 'Pending';  // otomatis pending saat edit
+            } else {
+                this.status = 'Approved'; // create = langsung approved
+            }
+        },
 
-        }));
-    });
-    </script>
+        // --------------------------
+        //  FETCH STATIONS
+        // --------------------------
+        async fetchStations() {
+            if (!this.selectedLineArea) {
+                this.stations = [];
+                this.selectedStation = '';
+                this.methodList = [];
+                return;
+            }
+
+            try {
+                const q = encodeURIComponent(this.selectedLineArea);
+                const res = await fetch(`${this.stationsByLineUrl}?line_area=${q}`);
+                if (!res.ok) throw new Error('Network response not ok');
+
+                const data = await res.json();
+                this.stations = Array.isArray(data) ? data : (data.data ?? []);
+
+                this.selectedStation = '';
+                this.methodList = [];
+
+            } catch (err) {
+                console.error('Gagal fetch stations:', err);
+                this.stations = [];
+                this.selectedStation = '';
+                this.methodList = [];
+            }
+        },
+
+        // --------------------------
+        //  FETCH METHODS
+        // --------------------------
+        async fetchMethods() {
+            if (!this.selectedStation) {
+                this.methodList = [];
+                return;
+            }
+
+            try {
+                const id = encodeURIComponent(this.selectedStation);
+                const res = await fetch(`${this.methodsByStationUrl}?station_id=${id}`);
+                if (!res.ok) throw new Error('Network response not ok');
+
+                const data = await res.json();
+                this.methodList = Array.isArray(data) ? data : (data.data ?? []);
+
+                // Reset method hanya saat CREATE
+                if (!this.isEdit) {
+                    this.selectedMethodId = '';
+                }
+
+            } catch (err) {
+                console.error('Gagal fetch methods:', err);
+                this.methodList = [];
+            }
+        }
+
+    }));
+});
+</script>
 
 </x-app-layout>

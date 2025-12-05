@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\MachineHenkaten; // Ganti jika nama model Anda berbeda
 use App\Models\Line;
+use App\Models\Machine;
 use App\Models\Station;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -13,10 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class ActivityLogMachineController extends Controller
 {
-    /**
-     * Menampilkan daftar activity log machine.
-     * Ini menggantikan showMachineActivityLog() dari HenkatenController.
-     */
+   
   public function index(Request $request): View
     {
         // 2. Ambil semua filter dari request
@@ -56,73 +54,115 @@ class ActivityLogMachineController extends Controller
      * Menampilkan form untuk mengedit log machine.
      */
 public function edit(MachineHenkaten $log): View
-    {
-        // 1. Eager load relasi 'station' (Ini sudah bagus)
-        $log->load('station');
+{
+    // Load relasi
+    $log->load('station');
 
-        // 2. Ambil data untuk dropdown Line Area
-        //    (Versi ini lebih efisien: 'distinct' & 'order' di DB)
-        $lineAreas = Station::select('line_area')
-                            ->distinct()
-                            ->orderBy('line_area', 'asc')
-                            ->pluck('line_area');
+    // Dropdown Line Area
+    $lineAreas = Station::select('line_area')
+                        ->distinct()
+                        ->orderBy('line_area', 'asc')
+                        ->pluck('line_area');
 
-        // 3. Query $stations SUDAH TIDAK DIPERLUKAN LAGI!
-        //    Alpine.js di Blade akan mengambilnya sendiri.
+    // Cek apakah user adalah Leader FA
+    $isLeaderFA = auth()->user()->role === 'Leader FA';
 
-        // 4. Kirim HANYA data $log dan $lineAreas
-        return view('machines.create_henkaten', [ // Sesuaikan path view jika perlu
-            'log'       => $log,
-            'lineAreas' => $lineAreas,
-        ]);
+    // Jika Leader FA → pakai kategori hardcode
+    if ($isLeaderFA) {
+
+    $machinesToDisplay = collect([
+        (object)['id' => 1, 'machines_category' => 'PROGRAM'],
+        (object)['id' => 2, 'machines_category' => 'Machine & JIG'],
+        (object)['id' => 3, 'machines_category' => 'Equipement'],
+        (object)['id' => 4, 'machines_category' => 'Kamera'],
+    ]);
+
+} else {
+
+        // Untuk role lain: ambil dari DB (yang punya id_machines)
+        $machinesToDisplay = Machine::orderBy('machines_category')->get();
     }
 
-  public function update(Request $request, MachineHenkaten $log)
-    {
-        // 1. Validasi data (disesuaikan agar cocok dengan form Anda)
-        $validatedData = $request->validate([
-            // Field dari form
-            'station_id'     => 'required|exists:stations,id',
-            'category'       => 'required|string|in:Program,Machine & Jig,Equipment,Camera',
-            'effective_date' => 'required|date',
-            'end_date'       => 'nullable|date|after_or_equal:effective_date', // Dibuat nullable
-            'time_start'     => 'required',
-            'time_end'       => 'required',
-            'before_value'   => 'required|string|max:255',
-            'after_value'    => 'required|string|max:255', // Nama disesuaikan
-            'keterangan'     => 'required|string',         // Dibuat required
-            'lampiran'       => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
-            'shift'          => 'required|string',
-            'serial_number_start' => 'required|string|max:255', // <-- Set ke required
-            'serial_number_end'   => 'required|string|max:255', // <-- Set ke required
-        ]);
+    return view('machines.create_henkaten', [
+        'log'               => $log,
+        'lineAreas'         => $lineAreas,
+        'machinesToDisplay' => $machinesToDisplay,
+        'isLeaderFA'        => $isLeaderFA
+    ]);
+}
 
-        // 2. Handle file upload (lampiran) secara terpisah
-        if ($request->hasFile('lampiran')) {
-            // Hapus lampiran lama jika ada
-            if ($log->lampiran) {
-                Storage::delete('public/' . $log->lampiran);
-            }
-            // Simpan lampiran baru dan tambahkan path-nya ke data yang divalidasi
-            $path = $request->file('lampiran')->store('lampiran/machine', 'public');
-            $validatedData['lampiran'] = $path;
+
+ public function update(Request $request, MachineHenkaten $log)
+{
+    $isLeaderFA = auth()->user()->role === 'Leader FA';
+
+    // VALIDASI DINAMIS
+    $validatedData = $request->validate([
+        'station_id'     => 'required|exists:stations,id',
+
+        // Jika Leader FA → category wajib salah satu dari hardcode
+       'category' => $isLeaderFA
+    ? 'required|string|in:PROGRAM,Machine & JIG,Equipement,Kamera'
+    : 'required|string|max:255',
+
+        'effective_date' => 'required|date',
+        'end_date'       => 'nullable|date|after_or_equal:effective_date',
+        'time_start'     => 'required',
+        'time_end'       => 'required',
+        'before_value'   => 'required|string|max:255',
+        'after_value'    => 'required|string|max:255',
+        'keterangan'     => 'required|string',
+        'shift'          => 'required|string',
+
+        'serial_number_start' => 'required|string|max:255',
+        'serial_number_end'   => 'required|string|max:255',
+
+        'lampiran'       => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
+        'lampiran_2'     => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
+        'lampiran_3'     => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
+    ]);
+
+    // === HANDLE LAMPIRAN 1 ===
+    if ($request->hasFile('lampiran')) {
+        if ($log->lampiran) {
+            Storage::disk('public')->delete($log->lampiran);
         }
 
-        // 3. -----------------------------------------------------------
-        //    PERUBAHAN UTAMA DI SINI
-        //    Set status kembali ke 'Pending' dan hapus note revisi lama.
-        // -----------------------------------------------------------
-        $validatedData['status'] = 'Pending';
-        $validatedData['note']   = null;
-
-        // 4. Update data log menggunakan data yang sudah divalidasi
-        //    ($validatedData sekarang sudah berisi 'status' dan 'note' baru)
-        $log->update($validatedData);
-
-        // 5. Ubah pesan sukses
-        return redirect()->route('activity.log.machine')
-                         ->with('success', 'Data berhasil diupdate dan diajukan kembali untuk approval.');
+        $validatedData['lampiran'] =
+            $request->file('lampiran')->store('lampiran/machine', 'public');
     }
+
+    // === HANDLE LAMPIRAN 2 ===
+    if ($request->hasFile('lampiran_2')) {
+        if ($log->lampiran_2) {
+            Storage::disk('public')->delete($log->lampiran_2);
+        }
+
+        $validatedData['lampiran_2'] =
+            $request->file('lampiran_2')->store('lampiran/machine', 'public');
+    }
+
+    // === HANDLE LAMPIRAN 3 ===
+    if ($request->hasFile('lampiran_3')) {
+        if ($log->lampiran_3) {
+            Storage::disk('public')->delete($log->lampiran_3);
+        }
+
+        $validatedData['lampiran_3'] =
+            $request->file('lampiran_3')->store('lampiran/machine', 'public');
+    }
+
+    // setiap edit → kembali Pending
+    $validatedData['status'] = 'Pending';
+    $validatedData['note']   = null;
+
+    // UPDATE
+    $log->update($validatedData);
+
+    return redirect()
+            ->route('activity.log.machine')
+            ->with('success', 'Data berhasil diupdate dan diajukan kembali untuk approval.');
+}
 
     /**
      * Menghapus log machine dari database.
@@ -216,6 +256,11 @@ public function downloadPDF(Request $request)
               ->setPaper('a4', 'landscape');
     
     return $pdf->download('Laporan_Henkaten_Machine.pdf');
+}
+
+private function determineHenkatenStatus($request)
+{
+    return $request->status ?? 'Pending';
 }
 
 }

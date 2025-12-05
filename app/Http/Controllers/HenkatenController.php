@@ -162,7 +162,7 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
         'line_area'           => 'required|string',
         'effective_date'      => 'required|date',
         'end_date'            => 'required|date|after_or_equal:effective_date',
-'lampiran'   => (isset($log) ? 'nullable' : 'required') . '|file|mimes:jpeg,png,pdf,zip,rar|max:2048',
+'lampiran' => 'nullable|file|mimes:jpeg,png,pdf,zip,rar|max:2048',
 'lampiran_2' => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
 'lampiran_3' => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240',
         'time_start'          => 'required|date_format:H:i',
@@ -256,7 +256,6 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
             ->pluck('line_area');
     }
 
-    // --- B. PENGAMBILAN DATA AWAL & METHOD LIST ---
     if ($isPredefinedRole) {
         $selectedLineArea = $predefinedLineArea;
 

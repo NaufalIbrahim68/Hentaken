@@ -44,6 +44,8 @@ class MachineHenkaten extends Model
         'effective_date',
         'end_date',
         'lampiran',
+         'lampiran_2',
+    'lampiran_3',
         'serial_number_start',
         'serial_number_end',
         'time_start',

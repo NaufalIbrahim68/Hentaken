@@ -676,7 +676,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
                 // LOGIKA BARU: Filter koleksi untuk hanya menyertakan status 'approved'
                 $filteredMethodHenkatens = $activeMethodHenkatens->filter(function ($henkaten) {
                     // Asumsi field status adalah 'status'
-                    return strtolower($henkaten->status) === 'approved';
+                    return strtolower($henkaten->status) === 'pending';
                 });
             @endphp
 
@@ -961,7 +961,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
     <div class="flex justify-center gap-3 p-2">
         @php
             $filteredMachineHenkatens = $machineHenkatens->filter(function ($henkaten) {
-                return strtolower($henkaten->status) === 'approved';
+               return strtolower($henkaten->status) === 'pending';
             });
         @endphp
         
@@ -1282,7 +1282,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
                         $filteredMaterialHenkatens = $materialHenkatens->filter(function ($henkaten) {
                             // Filter hanya tampilkan yang statusnya 'approved'
                             // Asumsi nama field adalah 'status'
-                            return strtolower($henkaten->status) === 'approved';
+                            return strtolower($henkaten->status) === 'pending';
                         });
                     }
                 @endphp

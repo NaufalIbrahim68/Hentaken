@@ -87,50 +87,70 @@ class ActivityLogMaterialController extends Controller
         ]);
     }
 
-  public function update(Request $request, MaterialHenkaten $log): RedirectResponse
-    {
-        // 1. Validasi data (disesuaikan dengan form BARU Anda)
-        $validatedData = $request->validate([
-            'station_id'       => 'required|exists:stations,id',
-            'material_id'      => 'required|exists:materials,id', // DIUBAH
-            'effective_date'   => 'required|date',
-            'end_date'         => 'required|date|after_or_equal:effective_date', // Dulu nullable, form Anda 'required'
-            'time_start'       => 'required',
-            'time_end'         => 'required',
-            'description_before' => 'required|string|max:255', // DIUBAH
-            'description_after'  => 'required|string|max:255', // DIUBAH
-            'keterangan'       => 'required|string',
-            'lampiran'         => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
-            'shift'            => 'required|string',
-            'serial_number_start' => 'required|string|max:255',
-             'serial_number_end'   => 'required|string|max:255', 
-        ]);
+ public function update(Request $request, MaterialHenkaten $log): RedirectResponse
+{
+    // 1. Validasi Data
+    $validatedData = $request->validate([
+        'station_id'          => 'required|exists:stations,id',
+        'material_id'         => 'required|exists:materials,id',
+        'effective_date'      => 'required|date',
+        'end_date'            => 'required|date|after_or_equal:effective_date',
+        'time_start'          => 'required',
+        'time_end'            => 'required',
+        'description_before'  => 'required|string|max:255',
+        'description_after'   => 'required|string|max:255',
+        'keterangan'          => 'required|string',
+        'shift'               => 'required|string',
+        'serial_number_start' => 'required|string|max:255',
+        'serial_number_end'   => 'required|string|max:255',
 
-        // 2. Handle file upload
-        if ($request->hasFile('lampiran')) {
-            if ($log->lampiran) {
-                Storage::delete('public/' . $log->lampiran);
-            }
-            $path = $request->file('lampiran')->store('lampiran/material', 'public');
-            $validatedData['lampiran'] = $path;
+        // TAMBAHAN
+        'lampiran'    => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
+        'lampiran_2'  => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
+        'lampiran_3'  => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx|max:2048',
+    ]);
+
+    // 2. Handle Lampiran 1
+    if ($request->hasFile('lampiran')) {
+        if ($log->lampiran) {
+            Storage::disk('public')->delete($log->lampiran);
         }
 
-        // 3. -----------------------------------------------------------
-        //    PERUBAHAN UTAMA DI SINI
-        //    Set status kembali ke 'Pending' dan hapus note revisi lama.
-        // -----------------------------------------------------------
-        $validatedData['status'] = 'Pending';
-        $validatedData['note']   = null;
-
-
-        // 4. Update data log
-        //    ($validatedData sekarang sudah berisi 'status' dan 'note' baru)
-        $log->update($validatedData);
-
-        // 5. Ubah pesan sukses
-        return redirect()->route('activity.log.material')
-                         ->with('success', 'Data berhasil diupdate dan diajukan kembali untuk approval.');
+        $validatedData['lampiran'] =
+            $request->file('lampiran')->store('lampiran/material', 'public');
     }
+
+    // 3. Handle Lampiran 2
+    if ($request->hasFile('lampiran_2')) {
+        if ($log->lampiran_2) {
+            Storage::disk('public')->delete($log->lampiran_2);
+        }
+
+        $validatedData['lampiran_2'] =
+            $request->file('lampiran_2')->store('lampiran/material', 'public');
+    }
+
+    // 4. Handle Lampiran 3
+    if ($request->hasFile('lampiran_3')) {
+        if ($log->lampiran_3) {
+            Storage::disk('public')->delete($log->lampiran_3);
+        }
+
+        $validatedData['lampiran_3'] =
+            $request->file('lampiran_3')->store('lampiran/material', 'public');
+    }
+
+    // 5. Set Status & Clear Note
+    $validatedData['status'] = 'Pending';
+    $validatedData['note']   = null;
+
+    // 6. Update Database
+    $log->update($validatedData);
+
+    // 7. Redirect
+    return redirect()->route('activity.log.material')
+                     ->with('success', 'Data berhasil diupdate dan diajukan kembali untuk approval.');
+}
 
     /**
      * Menghapus log material dari database.
