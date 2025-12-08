@@ -153,28 +153,30 @@ class DashboardController extends Controller
             ->values()
             ->toArray();
 
-        // METHOD HENKATEN
-       $activeMethodHenkatens = MethodHenkaten::with('station')
+      // METHOD HENKATEN
+$activeMethodHenkatens = MethodHenkaten::with('station')
     ->where('status', 'PENDING')
     ->where('shift', $shiftNumForQuery)
     ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
+    ->where($baseHenkatenQuery)  // ✅ TAMBAHKAN
     ->latest('effective_date')
     ->get();
 
-        // MACHINE HENKATEN
-       $machineHenkatens = MachineHenkaten::with('station')
+// MACHINE HENKATEN
+$machineHenkatens = MachineHenkaten::with('station')
     ->where('status', 'PENDING')
     ->where('shift', $shiftNumForQuery)
     ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
+    ->where($baseHenkatenQuery)  // ✅ TAMBAHKAN
     ->latest('effective_date')
     ->get();
 
-
-        // MATERIAL HENKATEN
-       $materialHenkatens = MaterialHenkaten::with(['station','material'])
+// MATERIAL HENKATEN
+$materialHenkatens = MaterialHenkaten::with(['station','material'])
     ->where('status', 'PENDING')
     ->where('shift', $shiftNumForQuery)
     ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
+    ->where($baseHenkatenQuery)  // ✅ TAMBAHKAN
     ->latest('effective_date')
     ->get();
 

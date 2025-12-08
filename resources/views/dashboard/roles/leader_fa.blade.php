@@ -959,15 +959,17 @@ $isApproved = strtolower($henkaten->status) === 'approved';
 
 <div class="border-t mt-4 pt-4 overflow-x-auto scrollbar-hide">
     <div class="flex justify-center gap-3 p-2">
-        @php
-            $filteredMachineHenkatens = $machineHenkatens->filter(function ($henkaten) {
-               return strtolower($henkaten->status) === 'pending';
-            });
-        @endphp
+       @php
+    $today = \Carbon\Carbon::today();
+    
+    $filteredMachineHenkatens = $machineHenkatens->filter(function ($henkaten) use ($today) {
+        return strtolower($henkaten->status) === 'pending' 
+            && $henkaten->effective_date <= $today 
+            && ($henkaten->end_date === null || $henkaten->end_date >= $today);
+    });
+@endphp
         
-        {{-- ========================================================== --}}
-        {{-- 🔔 PERUBAHAN DI SINI: Gunakan $filteredMachineHenkatens --}}
-        {{-- ========================================================== --}}
+       
         @forelse($filteredMachineHenkatens as $henkaten)
             <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 shadow-md cursor-pointer hover:bg-gray-100 transition"
                 style="width: 220px;"
