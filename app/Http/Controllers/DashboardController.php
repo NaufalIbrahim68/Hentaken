@@ -37,26 +37,32 @@ class DashboardController extends Controller
         // Default: ambil semua line_area
         $lineAreas = Station::select('line_area')->distinct()->orderBy('line_area')->pluck('line_area');
 
-        switch ($role) {
-            case 'Leader QC':
-                $lineAreas = collect(['Incoming', 'Delivery']);
-                break;
-            case 'Leader PPIC':
-                $lineAreas = collect(['Delivery']);
-                break;
-            case 'Leader FA':
-            case 'Leader SMT':
-                break;
+        // Admin bisa akses semua line_area
+        if ($role === 'Admin') {
+            // Tidak perlu override $lineAreas, sudah berisi semua line_area
+        } else {
+            // Role lain dengan pembatasan line_area
+            switch ($role) {
+                case 'Leader QC':
+                    $lineAreas = collect(['Incoming', 'Delivery']);
+                    break;
+                case 'Leader PPIC':
+                    $lineAreas = collect(['Delivery']);
+                    break;
+                case 'Leader FA':
+                case 'Leader SMT':
+                    break;
 
-            case 'Sect Head Produksi':
-                $lineAreas = collect(['FA L1','FA L2','FA L3','FA L5','FA L6','SMT L1','SMT L2']);
-                break;
-            case 'Sect Head QC':
-                $lineAreas = collect(['Incoming']);
-                break;
-            case 'Sect Head PPIC':
-                $lineAreas = collect(['Delivery']);
-                break;
+                case 'Sect Head Produksi':
+                    $lineAreas = collect(['FA L1','FA L2','FA L3','FA L5','FA L6','SMT L1','SMT L2']);
+                    break;
+                case 'Sect Head QC':
+                    $lineAreas = collect(['Incoming']);
+                    break;
+                case 'Sect Head PPIC':
+                    $lineAreas = collect(['Delivery']);
+                    break;
+            }
         }
 
         $selectedLineArea = request('line_area', $lineAreas->first());
@@ -301,6 +307,7 @@ class DashboardController extends Controller
         // ============================================================
 
         $view = match ($role) {
+            'Admin' => 'dashboard.index',
             'Leader FA' => 'dashboard.roles.leader_fa',
             'Leader SMT' => 'dashboard.roles.leader_smt',
             'Leader PPIC' => 'dashboard.roles.leader_ppic',

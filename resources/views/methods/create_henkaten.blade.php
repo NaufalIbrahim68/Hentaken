@@ -248,6 +248,23 @@
                             </div>
                         </div>
 
+
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-2">Syarat & Ketentuan
+                                            Lampiran</label>
+                                        <div
+                                            class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+                                            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
+                                            <ul class="list-disc list-inside space-y-1">
+                                                <li><strong>Perubahan WI :</strong> Wajib melampirkan WI Preparation Delivery, dan Mom Form</li>
+                                            </ul>
+                                            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
+                                        </div>
+                                    
+                                
+                                
+
+
                        
                                {{-- Lampiran (3 Field) --}}
 <div class="mb-6 mt-6">
@@ -256,7 +273,7 @@
     {{-- Lampiran 1 (Required) --}}
     <div class="mb-4">
         <label for="lampiran" class="block text-gray-700 text-sm font-medium mb-2">
-            Lampiran 1 (Wajib untuk Izin/Sakit)
+            Lampiran 1
             @if (!isset($log) || (isset($log) && !$log->lampiran))
                 <span class="text-red-500">*</span>
             @endif

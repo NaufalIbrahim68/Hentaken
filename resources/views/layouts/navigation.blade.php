@@ -32,8 +32,64 @@
         
        {{-- MENU --}}
         <nav class="flex-1 overflow-y-auto p-4 pt-6">
+            {{-- === ROLE: ADMIN === --}}
+            @if(Auth::user()->role === 'Admin')
+                
+                {{-- DASHBOARD --}}
+                <a href="{{ route('dashboard') }}"
+                   class="flex items-center px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+
+                {{-- MASTER DATA --}}
+                <div x-data="{ masterOpen: false }" class="mb-2">
+                    <button @click="masterOpen = !masterOpen"
+                            class="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                            </svg>
+                            <span>Master Data</span>
+                        </div>
+                        <svg class="w-4 h-4 transition-transform flex-shrink-0" :class="{ 'rotate-180': masterOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="masterOpen" x-transition class="ml-4 mt-2 space-y-1">
+                        <a href="{{ route('manpower.index') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Man Power</a>
+                        <a href="{{ route('machines.index') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Machine</a>
+                        <a href="{{ route('materials.index') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Material</a>
+                        <a href="{{ route('methods.index') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Method</a>
+                    </div>
+                </div>
+
+                {{-- ACTIVITY LOG --}}
+                <div x-data="{ activityOpen: false }" class="mb-2">
+                    <button @click="activityOpen = !activityOpen"
+                            class="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Activity Log</span>
+                        </div>
+                        <svg class="w-4 h-4 transition-transform flex-shrink-0" :class="{ 'rotate-180': activityOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="activityOpen" x-transition class="ml-4 mt-2 space-y-1">
+                        <a href="{{ route('activity.log.manpower') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Man Power</a>
+                        <a href="{{ route('activity.log.machine') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Machine</a>
+                        <a href="{{ route('activity.log.material') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Material</a>
+                        <a href="{{ route('activity.log.method') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Method</a>
+                    </div>
+                </div>
+
             {{-- === ROLE: SECT HEAD === --}}
-            @if(in_array(Auth::user()->role, ['Sect Head Produksi', 'Sect Head PPIC', 'Sect Head QC']))
+            @elseif(in_array(Auth::user()->role, ['Sect Head Produksi', 'Sect Head PPIC', 'Sect Head QC']))
                 
                 {{-- DASHBOARD --}}
                 <a href="{{ route('dashboard') }}"
@@ -75,25 +131,24 @@
                         </span>
                     @endif
                 </a>
-{{-- ✅ KONFIRMASI MATRIX MAN POWER --}}
-<a href="{{ route('approval.omm.index') }}"
-   class="flex items-center justify-between px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
 
-    <span class="flex items-center">
-        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>Konfirmasi Matrix Man Power</span>
-    </span>
+                {{-- KONFIRMASI MATRIX MAN POWER --}}
+                <a href="{{ route('approval.omm.index') }}"
+                   class="flex items-center justify-between px-4 py-3 mb-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <span class="flex items-center">
+                        <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Konfirmasi Matrix Man Power</span>
+                    </span>
+                    @if(isset($pendingMatrixManPowerCount) && $pendingMatrixManPowerCount > 0)
+                        <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                            {{ $pendingMatrixManPowerCount }}
+                        </span>
+                    @endif
+                </a>
 
-    @if(isset($pendingMatrixManPowerCount) && $pendingMatrixManPowerCount > 0)
-        <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-            {{ $pendingMatrixManPowerCount }}
-        </span>
-    @endif
-</a>
-
-            {{-- === ROLE: ADMIN & LEADER === --}}
+            {{-- === ROLE: LEADER === --}}
             @else
 
                 {{-- DASHBOARD --}}

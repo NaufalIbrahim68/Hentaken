@@ -330,12 +330,11 @@
                                             Lampiran</label>
                                         <div
                                             class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
-                                            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan untuk
-                                                Izin/Sakit:</p>
+                                            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
                                             <ul class="list-disc list-inside space-y-1">
-                                                <li><strong>Sakit:</strong> Wajib melampirkan SKS.</li>
-                                                <li><strong>Izin Resmi:</strong> Wajib melampirkan surat izin.</li>
-                                                <li><strong>Darurat/Lainnya:</strong> Dokumen pendukung lain.</li>
+                                                <li><strong>Sakit :</strong> Wajib melampirkan SKS.</li>
+                                                <li><strong>Cuti/Tugas Resmi :</strong> Wajib melampirkan surat tugas.</li>
+                                                <li><strong>izin/Darurat :</strong> Dokumen penting lainnya</li>
                                             </ul>
                                             <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
                                         </div>

@@ -224,12 +224,29 @@
                                     </div>
                                 </div>
 
-                                {{-- Keterangan --}}
-                                <div class="mb-6 mt-6">
-                                    <label for="keterangan" class="block text-gray-700 text-sm font-bold mb-2">Keterangan <span class="text-red-500">*</span></label>
-                                    <textarea id="keterangan" name="keterangan" rows="4"
-                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-                                            placeholder="Jelaskan alasan perubahan machine/program..." required>{{ old('keterangan', $log?->keterangan ?? '') }}</textarea>
+                                   {{-- Keterangan & Syarat --}}
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                                    <div>
+                                        <label for="keterangan"
+                                            class="block text-gray-700 text-sm font-bold mb-2">Keterangan <span class="text-red-500">*</span></label>
+                                        <textarea id="keterangan" name="keterangan" rows="6"
+                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            required>{{ old('keterangan', $log->keterangan ?? '') }}</textarea>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-2">Syarat & Ketentuan
+                                            Lampiran</label>
+                                        <div
+                                            class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+                                            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
+                                            <ul class="list-disc list-inside space-y-1">
+                                                <li><strong>Paco Delivery Problem :</strong> Hasil Verifikasi PACO</li>
+                                                <li><strong>Komputer Problem :</strong> Form Manual Delivery Quantity.</li>
+                                            </ul>
+                                            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
+                                        </div>
+                                    </div>
                                 </div>
 
                                

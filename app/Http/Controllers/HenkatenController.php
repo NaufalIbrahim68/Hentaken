@@ -150,7 +150,7 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
     // ==============================================================
     // BAGIAN 3: FORM PEMBUATAN HENKATEN METHOD
     // ==============================================================
-   public function store(Request $request)
+  public function store(Request $request)
 {
     $validated = $request->validate([
         'shift'               => 'required|string',
@@ -196,31 +196,15 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
             $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_man_power_lampiran', 'public');
         }
 
-        // Simpan station_id asli dari man_power_after
-        $manPowerAfterManyStations = DB::table('man_power_many_stations')
-            ->where('man_power_id', $validated['man_power_id_after'])
-            ->first();
-
-        $originalStationId = $manPowerAfterManyStations ? $manPowerAfterManyStations->station_id : null;
-
-        // Update station_id man_power_after ke station yang baru (temporary)
-        DB::table('man_power_many_stations')
-            ->where('man_power_id', $validated['man_power_id_after'])
-            ->update([
-                'station_id' => $validated['station_id'],
-                'updated_at' => now()
-            ]);
-
         // Buat data henkaten
         $dataToCreate = $validated;
-        $dataToCreate['lampiran']              = $lampiranPath;
-        $dataToCreate['nama']                  = $manPowerAsli->nama;
-        $dataToCreate['nama_after']            = $manPowerAfter->nama;
-        $dataToCreate['status']                = 'Approved';
-        $dataToCreate['original_station_id']   = $originalStationId; // Simpan station_id asli
-        $dataToCreate['created_at']            = now();
-        $dataToCreate['updated_at']            = now();
-        $dataToCreate['user_id']               = Auth::id();
+        $dataToCreate['lampiran']    = $lampiranPath;
+        $dataToCreate['nama']        = $manPowerAsli->nama;
+        $dataToCreate['nama_after']  = $manPowerAfter->nama;
+        $dataToCreate['status']      = 'Approved';
+        $dataToCreate['created_at']  = now();
+        $dataToCreate['updated_at']  = now();
+        $dataToCreate['user_id']     = Auth::id();
 
         $henkaten = ManPowerHenkaten::create($dataToCreate);
 
