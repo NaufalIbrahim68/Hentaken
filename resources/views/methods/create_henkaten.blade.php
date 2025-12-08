@@ -249,19 +249,35 @@
                         </div>
 
 
-                                    <div>
-                                        <label class="block text-gray-700 text-sm font-bold mb-2">Syarat & Ketentuan
-                                            Lampiran</label>
-                                        <div
-                                            class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
-                                            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
-                                            <ul class="list-disc list-inside space-y-1">
-                                                <li><strong>Perubahan WI :</strong> Wajib melampirkan WI Preparation Delivery, dan Mom Form</li>
-                                            </ul>
-                                            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
-                                        </div>
-                                    
-                                
+                                 @php
+    $userRole = auth()->user()->role; // atau sesuaikan dengan cara Anda mengambil role
+@endphp
+
+@if($userRole !== 'Leader QC')
+    <div>
+        <label class="block text-gray-700 text-sm font-bold mb-2">Syarat & Ketentuan Lampiran</label>
+        
+        @if($userRole === 'Leader PPIC')
+            <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+                <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
+                <ul class="list-disc list-inside space-y-1">
+                    <li><strong>Perubahan WI :</strong> Wajib melampirkan WI Preparation Delivery, dan Mom Form</li>
+                </ul>
+                <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
+            </div>
+        
+        @elseif($userRole === 'Leader FA')
+            <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+                <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
+                <ul class="list-disc list-inside space-y-1">
+                    <li>Form 4M Change</li>
+                    <li>Work Instruction</li>
+                </ul>
+                <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
+            </div>
+        @endif
+    </div>
+@endif
                                 
 
 

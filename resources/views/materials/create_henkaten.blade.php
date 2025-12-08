@@ -306,21 +306,50 @@
                                             required>{{ old('keterangan', $log->keterangan ?? '') }}</textarea>
                                     </div>
 
-                                    <div>
-                                        <label class="block text-gray-700 text-sm font-bold mb-2">Syarat & Ketentuan
-                                            Lampiran</label>
-                                        <div
-                                            class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
-                                            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
-                                            <ul class="list-disc list-inside space-y-1">
-                                                <li><strong>Perubahan Part :</strong> Wajib melampirkan Surat Jalan Customer, dan Form IPP</li>
-                                                <li><strong>Perubahan Tag Produksi :</strong> Wajib melampirkan Standard Packaging</li>
-                                            </ul>
-                                            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                   @php
+    $userRole = auth()->user()->role; // atau sesuaikan dengan cara Anda mengambil role
+@endphp
 
+<div>
+    <label class="block text-gray-700 text-sm font-bold mb-2">Syarat & Ketentuan Lampiran</label>
+    
+    @if($userRole === 'Leader PPIC')
+        <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
+            <ul class="list-disc list-inside space-y-1">
+                <li><strong>Perubahan Part :</strong> Wajib melampirkan Surat Jalan Customer, dan Form IPP</li>
+                <li><strong>Perubahan Tag Produksi :</strong> Wajib melampirkan Standard Packaging</li>
+            </ul>
+            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
+        </div>
+    
+    @elseif($userRole === 'Leader FA')
+        <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
+            <ul class="list-disc list-inside space-y-1">
+                <li>Form 4M Change</li>
+                <li>Report Engineering Trial</li>
+                <li>Report Testing</li>
+                <li>Report Verifikasi</li>
+            </ul>
+            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
+        </div>
+    
+    @elseif($userRole === 'Leader QC')
+        <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
+            <ul class="list-disc list-inside space-y-1">
+                <li>Tag IPP supplier</li>
+                <li>WI Incoming Inspection</li>
+                <li>IRD part dari Supplier</li>
+                <li>Incoming Inspection Sheet</li>
+                <li>Form 4M Report</li>
+            </ul>
+            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
+        </div>
+    
+    @endif
+</div>
                      
                                {{-- Lampiran (3 Field) --}}
 <div class="mb-6 mt-6">

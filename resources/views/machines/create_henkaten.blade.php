@@ -234,20 +234,61 @@
                                             required>{{ old('keterangan', $log->keterangan ?? '') }}</textarea>
                                     </div>
 
-                                    <div>
-                                        <label class="block text-gray-700 text-sm font-bold mb-2">Syarat & Ketentuan
-                                            Lampiran</label>
-                                        <div
-                                            class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
-                                            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
-                                            <ul class="list-disc list-inside space-y-1">
-                                                <li><strong>Paco Delivery Problem :</strong> Hasil Verifikasi PACO</li>
-                                                <li><strong>Komputer Problem :</strong> Form Manual Delivery Quantity.</li>
-                                            </ul>
-                                            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                    @php
+    $userRole = auth()->user()->role; // atau sesuaikan dengan cara Anda mengambil role
+@endphp
+
+<div>
+    <label class="block text-gray-700 text-sm font-bold mb-2">Syarat & Ketentuan Lampiran</label>
+    
+    @if($userRole === 'Leader PPIC')
+        <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
+            <ul class="list-disc list-inside space-y-1">
+                <li><strong>Paco Delivery Problem :</strong> Hasil Verifikasi PACO</li>
+                <li><strong>Komputer Problem :</strong> Form Manual Delivery Quantity</li>
+            </ul>
+            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
+        </div>
+    
+    @elseif($userRole === 'Leader FA')
+        <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
+            <ul class="list-disc list-inside space-y-1">
+                <li class="font-semibold">Planned Change :</li>
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li>Form 4M Change</li>
+                    <li>Report Eng Trial</li>
+                </ul>
+                <li class="font-semibold mt-2">Sudden Change :</li>
+                <ul class="list-inside ml-4">
+                    <li>Tidak Ada</li>
+                </ul>
+            </ul>
+            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
+        </div>
+    
+    @elseif($userRole === 'Leader QC')
+        <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
+            <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
+            <p class="font-semibold mb-1">Checking Fixture</p>
+            <ul class="list-disc list-inside space-y-1">
+                <li class="font-semibold">Planned Change :</li>
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li>Hasil Verifikasi Checking Fixture</li>
+                    <li>Form 4M Report</li>
+                </ul>
+                <li class="font-semibold mt-2">Sudden Change :</li>
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li>IRD Supplier</li>
+                    <li>Incoming Inspection Sheet</li>
+                </ul>
+            </ul>
+            <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
+        </div>
+    
+    @endif
+</div>
 
                                
                                {{-- Lampiran (3 Field) --}}
