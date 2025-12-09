@@ -71,55 +71,84 @@ class DashboardController extends Controller
         // ============================================================
         // BASE QUERY FUNCTION UNTUK FILTER HENKATEN
         // ============================================================
-        $baseHenkatenQuery = function ($query) use ($now) {
-            $today = $now->toDateString();
-            $currentTime = $now->toTimeString();
+    $baseHenkatenQuery = function ($query) use ($now) {
+    $today = $now->toDateString();
+    $currentTime = $now->toTimeString();
+    $currentDateTime = $now;
 
-            $query->where(function ($q) use ($today, $currentTime) {
+    $query->where(function ($q) use ($today, $currentTime, $currentDateTime) {
 
-                // CASE 1: TANPA JAM
-                $q->where(function ($sub) use ($today) {
-                    $sub->whereNull('time_start')
-                        ->whereNull('time_end')
-                        ->whereDate('effective_date', '<=', $today)
-                        ->where(function ($w) use ($today) {
-                            $w->whereDate('end_date', '>=', $today)
-                              ->orWhereNull('end_date');
-                        });
+        // ===================================================
+        // CASE 1: TANPA JAM (time_start & time_end NULL)
+        // ===================================================
+        $q->where(function ($sub) use ($today) {
+            $sub->whereNull('time_start')
+                ->whereNull('time_end')
+                ->whereDate('effective_date', '<=', $today)
+                ->where(function ($w) use ($today) {
+                    $w->whereDate('end_date', '>=', $today)
+                      ->orWhereNull('end_date');
                 });
+        });
 
-                // CASE 2: DENGAN JAM
-                $q->orWhere(function ($sub) use ($today, $currentTime) {
-                    $sub->whereNotNull('time_start')
-                        ->whereNotNull('time_end')
-                        ->whereDate('effective_date', '<=', $today)
-                        ->where(function ($w) use ($today) {
-                            $w->whereDate('end_date', '>=', $today)
-                              ->orWhereNull('end_date');
-                        })
-                        ->where(function ($time) use ($currentTime) {
-
-                            // SHIFT NORMAL (07:00–19:00)
-                            $time->where(function ($normal) use ($currentTime) {
-                                $normal->whereColumn('time_start', '<', 'time_end')
-                                       ->whereTime('time_start', '<=', $currentTime)
-                                       ->whereTime('time_end', '>=', $currentTime);
-                            });
-
-                            // SHIFT MALAM (19:00–07:00)
-                            $time->orWhere(function ($night) use ($currentTime) {
-                                $night->whereColumn('time_start', '>', 'time_end')
-                                      ->where(function ($n) use ($currentTime) {
-                                          $n->whereTime('time_start', '<=', $currentTime)
-                                            ->orWhereTime('time_end', '>=', $currentTime);
-                                      });
-                            });
-                        });
+        // ===================================================
+        // CASE 2: DENGAN JAM (time_start & time_end NOT NULL)
+        // ===================================================
+        $q->orWhere(function ($sub) use ($today, $currentTime, $currentDateTime) {
+            $sub->whereNotNull('time_start')
+                ->whereNotNull('time_end')
+                ->where(function ($dateRange) use ($currentDateTime) {
+                    $dateRange->where(function ($singleDay) use ($currentDateTime) {
+                        // Sub-case A: Effective date = End date (rentang dalam 1 hari)
+                        $singleDay->whereColumn('effective_date', '=', 'end_date')
+                                  ->whereDate('effective_date', '=', $currentDateTime->toDateString())
+                                  ->whereTime('time_start', '<=', $currentDateTime->toTimeString())
+                                  ->whereTime('time_end', '>=', $currentDateTime->toTimeString());
+                    })
+                    ->orWhere(function ($multiDay) use ($currentDateTime) {
+                        // Sub-case B: Effective date ≠ End date (rentang multi-hari)
+                        $multiDay->whereColumn('effective_date', '!=', 'end_date')
+                                 ->where(function ($range) use ($currentDateTime) {
+                                     $range->where(function ($startCheck) use ($currentDateTime) {
+                                         // Hari pertama: cek jika waktu >= time_start
+                                         $startCheck->whereDate('effective_date', '=', $currentDateTime->toDateString())
+                                                   ->whereTime('time_start', '<=', $currentDateTime->toTimeString());
+                                     })
+                                     ->orWhere(function ($middleCheck) use ($currentDateTime) {
+                                         // Hari tengah: selalu aktif
+                                         $middleCheck->whereDate('effective_date', '<', $currentDateTime->toDateString())
+                                                    ->whereDate('end_date', '>', $currentDateTime->toDateString());
+                                     })
+                                     ->orWhere(function ($endCheck) use ($currentDateTime) {
+                                         // Hari terakhir: cek jika waktu <= time_end
+                                         $endCheck->whereDate('end_date', '=', $currentDateTime->toDateString())
+                                                 ->whereTime('time_end', '>=', $currentDateTime->toTimeString());
+                                     });
+                                 });
+                    });
                 });
+        });
 
-            });
-        };
+        // ===================================================
+        // CASE 3: SHIFT MALAM (time_start > time_end, misal 19:00 > 07:00)
+        // ===================================================
+        $q->orWhere(function ($sub) use ($today, $currentTime) {
+            $sub->whereNotNull('time_start')
+                ->whereNotNull('time_end')
+                ->whereColumn('time_start', '>', 'time_end')
+                ->whereDate('effective_date', '<=', $today)
+                ->where(function ($w) use ($today) {
+                    $w->whereDate('end_date', '>=', $today)
+                      ->orWhereNull('end_date');
+                })
+                ->where(function ($time) use ($currentTime) {
+                    $time->whereTime('time_start', '<=', $currentTime)
+                          ->orWhereTime('time_end', '>=', $currentTime);
+                });
+        });
 
+    });
+};
         // ============================================================
         // HENKATEN QUERY
         // ============================================================
