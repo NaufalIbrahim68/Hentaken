@@ -1256,13 +1256,10 @@ public function storeMachineHenkaten(Request $request)
     try {
         DB::beginTransaction();
 
-        // Tentukan apakah perubahan langsung aktif atau pending
         $today = now()->toDateString();
         $effectiveDate = $validatedData['tanggal_mulai'];
 
-        $status = ($today >= $effectiveDate)
-                    ? 'Approved'     // Sudah waktunya → langsung aktif
-                    : 'Pending';     // Belum waktunya → pending dulu
+        $status = ($today >= $effectiveDate) ? 'Approved' : 'Pending';
 
         // Simpan log Henkaten
         $logHenkaten = new ManPowerHenkaten();
@@ -1276,6 +1273,16 @@ public function storeMachineHenkaten(Request $request)
         $logHenkaten->effective_date = $effectiveDate;
         $logHenkaten->status = $status; 
         $logHenkaten->save();
+
+        // ✅ TAMBAHKAN INI: Update tabel man_power jika sudah effective
+        if ($status === 'Approved') {
+            $manPower = ManPower::findOrFail($validatedData['master_man_power_id']);
+            $manPower->nama = $validatedData['nama_sesudah'];
+            $manPower->station_id = $validatedData['station_id'];
+            $manPower->line_area = $validatedData['line_area'];
+            $manPower->grup = $validatedData['grup'];
+            $manPower->save();
+        }
 
         DB::commit();
 

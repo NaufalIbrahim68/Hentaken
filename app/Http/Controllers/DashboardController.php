@@ -158,7 +158,7 @@ $activeMethodHenkatens = MethodHenkaten::with('station')
     ->where('status', 'PENDING')
     ->where('shift', $shiftNumForQuery)
     ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
-    ->where($baseHenkatenQuery)  // ✅ TAMBAHKAN
+    ->where($baseHenkatenQuery)  
     ->latest('effective_date')
     ->get();
 
@@ -167,7 +167,7 @@ $machineHenkatens = MachineHenkaten::with('station')
     ->where('status', 'PENDING')
     ->where('shift', $shiftNumForQuery)
     ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
-    ->where($baseHenkatenQuery)  // ✅ TAMBAHKAN
+    ->where($baseHenkatenQuery)  
     ->latest('effective_date')
     ->get();
 
@@ -176,7 +176,7 @@ $materialHenkatens = MaterialHenkaten::with(['station','material'])
     ->where('status', 'PENDING')
     ->where('shift', $shiftNumForQuery)
     ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
-    ->where($baseHenkatenQuery)  // ✅ TAMBAHKAN
+    ->where($baseHenkatenQuery)  
     ->latest('effective_date')
     ->get();
 
