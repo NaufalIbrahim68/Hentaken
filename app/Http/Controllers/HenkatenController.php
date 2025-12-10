@@ -166,61 +166,76 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
         'lampiran_2'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
         'lampiran_3'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240',
         'time_start'          => 'required|date_format:H:i',
-        'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
+        'time_end'            => 'required|date_format:H:i|after:time_start', // Ubah after_or_equal jadi after
         'serial_number_start' => 'nullable|string|max:255',
         'serial_number_end'   => 'nullable|string|max:255',
     ], [
         'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.',
-        'lampiran.mimes'               => 'harus berupa jpeg, png, zip, atau rar.',
+        'lampiran.mimes'               => 'Lampiran harus berupa jpeg, png, pdf, zip, atau rar.',
         'end_date.after_or_equal'      => 'Tanggal berakhir harus sama dengan atau setelah tanggal efektif.',
+        'time_end.after'               => 'Waktu selesai harus setelah waktu mulai.',
     ]);
 
-    $lampiranPath = null;
+    // Array untuk track uploaded files (untuk rollback jika error)
+    $uploadedFiles = [];
 
     try {
         DB::beginTransaction();
 
+        // Get ManPower data
         $manPowerAsli  = ManPower::findOrFail($validated['man_power_id']);
         $manPowerAfter = ManPower::findOrFail($validated['man_power_id_after']);
 
-        // Upload files
+        // Upload lampiran 1
         if ($request->hasFile('lampiran')) {
-            $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
+            $validated['lampiran'] = $request->file('lampiran')
+                ->store('henkaten_man_power_lampiran', 'public');
+            $uploadedFiles[] = $validated['lampiran'];
         }
 
+        // Upload lampiran 2
         if ($request->hasFile('lampiran_2')) {
-            $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_man_power_lampiran', 'public');
+            $validated['lampiran_2'] = $request->file('lampiran_2')
+                ->store('henkaten_man_power_lampiran', 'public');
+            $uploadedFiles[] = $validated['lampiran_2'];
         }
 
+        // Upload lampiran 3
         if ($request->hasFile('lampiran_3')) {
-            $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_man_power_lampiran', 'public');
+            $validated['lampiran_3'] = $request->file('lampiran_3')
+                ->store('henkaten_man_power_lampiran', 'public');
+            $uploadedFiles[] = $validated['lampiran_3'];
         }
 
-        // Buat data henkaten
-        $dataToCreate = $validated;
-        $dataToCreate['lampiran']    = $lampiranPath;
-        $dataToCreate['nama']        = $manPowerAsli->nama;
-        $dataToCreate['nama_after']  = $manPowerAfter->nama;
-        $dataToCreate['status']      = 'Approved';
-        $dataToCreate['created_at']  = now();
-        $dataToCreate['updated_at']  = now();
-        $dataToCreate['user_id']     = Auth::id();
+        // Prepare data untuk create
+        $validated['nama']       = $manPowerAsli->nama;
+        $validated['nama_after'] = $manPowerAfter->nama;
+        $validated['status']     = 'PENDING';
+        $validated['user_id']    = Auth::id(); // Pastikan field ini ada di fillable model
 
-        $henkaten = ManPowerHenkaten::create($dataToCreate);
+        // Create henkaten record
+        $henkaten = ManPowerHenkaten::create($validated);
 
         DB::commit();
 
         return redirect()->route('henkaten.create')
-            ->with('success', 'Henkaten Man Power Berhasil Di Buat');
+            ->with('success', 'Henkaten Man Power berhasil dibuat.');
 
     } catch (\Exception $e) {
         DB::rollBack();
 
-        if ($lampiranPath && Storage::disk('public')->exists($lampiranPath)) {
-            Storage::disk('public')->delete($lampiranPath);
+        // Delete all uploaded files jika terjadi error
+        foreach ($uploadedFiles as $filePath) {
+            if (Storage::disk('public')->exists($filePath)) {
+                Storage::disk('public')->delete($filePath);
+            }
         }
 
-        return back()->withErrors(['error' => 'Kesalahan: ' . $e->getMessage()])->withInput();
+        Log::error('Error creating ManPower Henkaten: ' . $e->getMessage());
+
+        return back()
+            ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
+            ->withInput();
     }
 }
 
@@ -332,7 +347,6 @@ public function storeMethodHenkaten(Request $request)
     $rules = [
         'shift'               => 'required|string',
         'line_area'           => 'required|string',
-        // hanya required untuk role non-predefined
         'station_id'          => $isPredefinedRole 
                                  ? 'nullable|integer|exists:stations,id'
                                  : 'required|integer|exists:stations,id',
@@ -342,47 +356,66 @@ public function storeMethodHenkaten(Request $request)
         'effective_date'      => 'required|date',
         'end_date'            => 'required|date|after_or_equal:effective_date',
         'time_start'          => 'required|date_format:H:i',
-        'time_end'            => 'required|date_format:H:i|after_or_equal:time_start',
+        'time_end'            => 'required|date_format:H:i|after:time_start', // ✅ Ubah ke 'after'
         'keterangan'          => 'required|string',
         'keterangan_after'    => 'required|string',
         'serial_number_start' => 'nullable|string|max:100',
         'serial_number_end'   => 'nullable|string|max:100',
         'note'                => 'nullable|string',
-        'lampiran'            => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
-        'lampiran_2' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
-        'lampiran_3' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
+        'lampiran'            => 'required|file|mimes:jpeg,png,jpg,zip,rar|max:2048',
+        'lampiran_2'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
+        'lampiran_3'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
     ];
 
     $validated = $request->validate($rules);
 
-    // =========================================================
-    // Ambil methods_name dari DB jika ada method_id
-    // =========================================================
-    $methodName = $validated['method_id'] 
-                    ? Method::find($validated['method_id'])->methods_name 
-                    : null;
+    // ✅ Array untuk track uploaded files (untuk rollback)
+    $uploadedFiles = [];
 
-    // =========================================================
-    // Simpan data
-    // =========================================================
     try {
         DB::beginTransaction();
 
-        $lampiranPath = null;
+        // =========================================================
+        // Upload File - KONSISTEN
+        // =========================================================
+        
+        // Upload lampiran 1
         if ($request->hasFile('lampiran')) {
-            $lampiranPath = $request->file('lampiran')->store('henkaten_methods_lampiran', 'public');
+            $validated['lampiran'] = $request->file('lampiran')
+                ->store('henkaten_methods_lampiran', 'public');
+            $uploadedFiles[] = $validated['lampiran'];
         }
 
-         if ($request->hasFile('lampiran_2')) {
-        $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_methods_lampiran', 'public');
-    }
+        // Upload lampiran 2
+        if ($request->hasFile('lampiran_2')) {
+            $validated['lampiran_2'] = $request->file('lampiran_2')
+                ->store('henkaten_methods_lampiran', 'public');
+            $uploadedFiles[] = $validated['lampiran_2'];
+        }
 
-    if ($request->hasFile('lampiran_3')) {
-        $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_methods_lampiran', 'public');
-    }
+        // Upload lampiran 3
+        if ($request->hasFile('lampiran_3')) {
+            $validated['lampiran_3'] = $request->file('lampiran_3')
+                ->store('henkaten_methods_lampiran', 'public');
+            $uploadedFiles[] = $validated['lampiran_3'];
+        }
+
+        // =========================================================
+        // Ambil methods_name dari DB jika ada method_id
+        // =========================================================
+        $methodName = $validated['method_id'] 
+                        ? Method::find($validated['method_id'])->methods_name 
+                        : null;
+
+        // =========================================================
+        // Format Time
+        // =========================================================
         $timeStart = Carbon::createFromFormat('H:i', $validated['time_start']);
         $timeEnd   = Carbon::createFromFormat('H:i', $validated['time_end']);
 
+        // =========================================================
+        // Prepare Data
+        // =========================================================
         $dataToCreate = [
             'station_id'          => $isPredefinedRole ? $stationIdTarget : $validated['station_id'],
             'method_id'           => $validated['method_id'] ?? null,
@@ -395,11 +428,14 @@ public function storeMethodHenkaten(Request $request)
             'end_date'            => $validated['end_date'],
             'time_start'          => $timeStart,
             'time_end'            => $timeEnd,
-            'lampiran'            => $lampiranPath,
+            'lampiran'            => $validated['lampiran'] ?? null,      // ✅ DIPERBAIKI
+            'lampiran_2'          => $validated['lampiran_2'] ?? null,    // ✅ DITAMBAHKAN
+            'lampiran_3'          => $validated['lampiran_3'] ?? null,    // ✅ DITAMBAHKAN
             'serial_number_start' => $validated['serial_number_start'] ?? null,
             'serial_number_end'   => $validated['serial_number_end'] ?? null,
             'note'                => $validated['note'] ?? null,
             'status'              => 'PENDING',
+            'user_id'             => Auth::id(), // ✅ TAMBAHKAN jika ada di fillable
         ];
 
         MethodHenkaten::create($dataToCreate);
@@ -412,22 +448,16 @@ public function storeMethodHenkaten(Request $request)
     } catch (\Exception $e) {
         DB::rollBack();
 
-         if ($request->hasFile('lampiran')) {
-            $lampiranPath = $request->file('lampiran')->store('henkaten_man_power_lampiran', 'public');
+        // ✅ DELETE semua uploaded files jika error
+        foreach ($uploadedFiles as $filePath) {
+            if (Storage::disk('public')->exists($filePath)) {
+                Storage::disk('public')->delete($filePath);
+            }
         }
-
-         if ($request->hasFile('lampiran_2')) {
-        $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_man_power_lampiran', 'public');
-    }
-
-    if ($request->hasFile('lampiran_3')) {
-        $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_man_power_lampiran', 'public');
-    }
-
 
         Log::error('Method Henkaten store failed: ' . $e->getMessage(), [
             'exception' => $e,
-            'input' => $request->all()
+            'input' => $request->except(['lampiran', 'lampiran_2', 'lampiran_3']) // Jangan log file
         ]);
 
         return back()
@@ -435,8 +465,6 @@ public function storeMethodHenkaten(Request $request)
             ->withInput();
     }
 }
-
-
 
     public function getMethodsByStation(Request $request)
     {
@@ -523,151 +551,161 @@ public function storeMethodHenkaten(Request $request)
 }
 
  public function storeMaterialHenkaten(Request $request)
-    {
-        // 1. Tentukan Role Pengguna
-        $userRole = Auth::user()->role ?? 'operator';
-        $isPredefinedRole = ($userRole === 'Leader PPIC' || $userRole === 'Leader QC');
+{
+    // 1. Tentukan Role Pengguna
+    $userRole = Auth::user()->role ?? 'operator';
+    $isPredefinedRole = ($userRole === 'Leader PPIC' || $userRole === 'Leader QC');
 
-        // ✅ PERBAIKAN: Inisialisasi variabel di luar scope IF agar selalu terdefinisi untuk pesan error
-        $stationIdValue = null;
+    $stationIdValue = null;
 
-        // =========================================================
-        // MODIFIKASI: Pencarian ID (Station & Material) untuk Role Predefined
-        // =========================================================
-        if ($isPredefinedRole) {
+    // =========================================================
+    // MODIFIKASI: Pencarian ID (Station & Material) untuk Role Predefined
+    // =========================================================
+    if ($isPredefinedRole) {
+        $lineArea = $request->input('line_area');
+        $materialName = $request->input('material_name');
 
-            $lineArea = $request->input('line_area');
-            $materialName = $request->input('material_name');
+        $material = Material::where('material_name', $materialName)
+            ->whereHas('station', function ($query) use ($lineArea) {
+                $query->where('line_area', $lineArea);
+            })
+            ->first();
 
-            // 1. Cari Material ID (Logika ini sudah benar dan spesifik per Line Area)
-            $material = Material::where('material_name', $materialName)
-                ->whereHas('station', function ($query) use ($lineArea) {
-                    $query->where('line_area', $lineArea);
-                })
-                ->first();
+        if ($material) {
+            $stationIdValue = $material->station_id;
+            $station = Station::find($stationIdValue);
 
-            if ($material) {
-                // ✅ Benar: Ambil Station ID dari objek Material yang ditemukan
-                $stationIdValue = $material->station_id; // Diperlukan untuk merge & pesan error
-                $station = Station::find($stationIdValue);
-
-                if ($station) {
-                    $request->merge([
-                        'material_id' => $material->id,
-                        'station_id' => $station->id
-                    ]);
-                } else {
-                    // Fallback jika stasiun tidak ditemukan (set NULL)
-                    $request->merge(['material_id' => null, 'station_id' => null]);
-                }
+            if ($station) {
+                $request->merge([
+                    'material_id' => $material->id,
+                    'station_id' => $station->id
+                ]);
             } else {
-                // Jika material tidak ditemukan, keduanya NULL
                 $request->merge(['material_id' => null, 'station_id' => null]);
             }
+        } else {
+            $request->merge(['material_id' => null, 'station_id' => null]);
         }
+    }
+
+    // 3. Validasi Data
+    try {
+        $validationRules = [
+            'shift'               => 'required|string',
+            'line_area'           => 'required|string',
+            'station_id'          => 'required|integer|exists:stations,id',
+            'material_id'         => 'required|integer|exists:materials,id',
+            'material_name'       => 'nullable|string|max:255',
+            'effective_date'      => 'required|date',
+            'end_date'            => 'required|date|after_or_equal:effective_date',
+            'time_start'          => 'required|date_format:H:i',
+            'time_end'            => 'required|date_format:H:i|after:time_start', // ✅ Ubah ke 'after'
+            'description_before'  => 'required|string|max:255',
+            'description_after'   => 'required|string|max:255',
+            'keterangan'          => 'required|string',
+            'lampiran'            => 'required|file|mimes:jpeg,png,jpg,zip,rar|max:2048',
+            'lampiran_2'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
+            'lampiran_3'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
+            'serial_number_start' => 'nullable|string|max:255',
+            'serial_number_end'   => 'nullable|string|max:255',
+            'redirect_to'         => 'nullable|string'
+        ];
+
+        $customMessages = [];
+
+        if ($isPredefinedRole) {
+            $resolvedStationId = $request->input('station_id');
+            $resolvedMaterialId = $request->input('material_id');
+            $inputLineArea = $request->input('line_area');
+            $inputMaterialName = $request->input('material_name');
+
+            if ($resolvedStationId === null) {
+                $customMessages['station_id.required'] = "Data master Stasiun default untuk '{$inputLineArea}' tidak ditemukan (ID Material: {$resolvedMaterialId}). Mohon periksa tabel stations Anda.";
+            }
+            if ($resolvedMaterialId === null) {
+                $customMessages['material_id.required'] = "Data master Material '{$inputMaterialName}' tidak ditemukan di Line Area '{$inputLineArea}'. Mohon periksa tabel materials Anda.";
+            }
+        }
+
+        $validatedData = $request->validate($validationRules, $customMessages);
+
+    } catch (ValidationException $e) {
+        return back()->withErrors($e->errors())->withInput();
+    }
+
+    // ✅ Array untuk track uploaded files (untuk rollback)
+    $uploadedFiles = [];
+
+    // 4. Proses Penyimpanan Data ke Database
+    try {
+        DB::beginTransaction();
+
         // =========================================================
+        // Upload File - KONSISTEN
+        // =========================================================
+        
+        // Upload lampiran 1
+        if ($request->hasFile('lampiran')) {
+            $validatedData['lampiran'] = $request->file('lampiran')
+                ->store('henkaten_materials_lampiran', 'public');
+            $uploadedFiles[] = $validatedData['lampiran'];
+        }
 
-        // 3. Validasi Data
-        try {
-            // Kita sudah merge material_id dan station_id di Request di blok IF di atas.
+        // Upload lampiran 2
+        if ($request->hasFile('lampiran_2')) {
+            $validatedData['lampiran_2'] = $request->file('lampiran_2')
+                ->store('henkaten_materials_lampiran', 'public');
+            $uploadedFiles[] = $validatedData['lampiran_2'];
+        }
 
-            $validationRules = [
-                'shift'                  => 'required|string',
-                'line_area'              => 'required|string',
+        // Upload lampiran 3
+        if ($request->hasFile('lampiran_3')) {
+            $validatedData['lampiran_3'] = $request->file('lampiran_3')
+                ->store('henkaten_materials_lampiran', 'public');
+            $uploadedFiles[] = $validatedData['lampiran_3'];
+        }
 
-                // material_id dan station_id sekarang wajib
-                'station_id'             => 'required|integer|exists:stations,id',
-                'material_id'            => 'required|integer|exists:materials,id',
+        // =========================================================
+        // Prepare Data
+        // =========================================================
+        $dataToCreate = $validatedData;
 
-                // material_name hanya untuk resolusi ID, tidak perlu required
-                'material_name'          => 'nullable|string|max:255',
+        // Hapus field yang tidak ada di Model/Tabel
+        unset($dataToCreate['material_name']);
+        unset($dataToCreate['redirect_to']);
 
-                'effective_date'         => 'required|date',
-                'end_date'               => 'required|date|after_or_equal:effective_date',
-                'time_start'             => 'required|date_format:H:i',
-                'time_end'               => 'required|date_format:H:i|after_or_equal:time_start',
-                'description_before'     => 'required|string|max:255',
-                'description_after'      => 'required|string|max:255',
-                'keterangan'             => 'required|string',
-                'lampiran'               => (isset($log) ? 'nullable' : 'required') . '|file|mimes:jpeg,png,zip,rar|max:2048',
-            'lampiran_2' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
-            'lampiran_3' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
-                'serial_number_start'    => 'nullable|string|max:255',
-                'serial_number_end'      => 'nullable|string|max:255',
-                'redirect_to'            => 'nullable|string'
-            ];
+        // Tambahkan field tambahan
+        $dataToCreate['status'] = 'PENDING';
+        $dataToCreate['user_id'] = Auth::id();
 
-            $customMessages = [];
+        MaterialHenkaten::create($dataToCreate);
 
-            // Penanganan error kustom untuk kasus di mana ID tidak ditemukan
-            if ($isPredefinedRole) {
-                $resolvedStationId = $request->input('station_id');
-                $resolvedMaterialId = $request->input('material_id');
-                $inputLineArea = $request->input('line_area');
-                $inputMaterialName = $request->input('material_name');
+        DB::commit();
 
-                if ($resolvedStationId === null) {
-                    $customMessages['station_id.required'] = "Data master Stasiun default untuk '{$inputLineArea}' tidak ditemukan (ID Material: {$resolvedMaterialId}). Mohon periksa tabel stations Anda.";
-                }
-                if ($resolvedMaterialId === null) {
-                    $customMessages['material_id.required'] = "Data master Material '{$inputMaterialName}' tidak ditemukan di Line Area '{$inputLineArea}'. Mohon periksa tabel materials Anda.";
-                }
+        $redirectTo = $request->input('redirect_to', route('henkaten.material.create'));
+        return redirect($redirectTo)
+            ->with('success', 'Data Material Henkaten berhasil disimpan!');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        // ✅ DELETE semua uploaded files jika error
+        foreach ($uploadedFiles as $filePath) {
+            if (Storage::disk('public')->exists($filePath)) {
+                Storage::disk('public')->delete($filePath);
             }
-
-            $validatedData = $request->validate($validationRules, $customMessages);
-
-        } catch (ValidationException $e) {
-            return back()->withErrors($e->errors())->withInput();
         }
 
-        // 4. Proses Penyimpanan Data ke Database
-        try {
-            DB::beginTransaction();
+        Log::error('Material Henkaten store failed: ' . $e->getMessage(), [
+            'exception' => $e,
+            'input' => $request->except(['lampiran', 'lampiran_2', 'lampiran_3']) // Jangan log file
+        ]);
 
-            $lampiranPath = null;
-           if ($request->hasFile('lampiran')) {
-            $lampiranPath = $request->file('lampiran')->store('henkaten_materials_lampiran', 'public');
-        }
-
-         if ($request->hasFile('lampiran_2')) {
-        $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_materials_lampiran', 'public');
+        return back()
+            ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Hubungi administrator.'])
+            ->withInput();
     }
-
-    if ($request->hasFile('lampiran_3')) {
-        $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_materials_lampiran', 'public');
-    }
-
-            $dataToCreate = $validatedData;
-
-            // Wajib: Hapus field yang tidak ada di Model/Tabel sebelum create
-            unset($dataToCreate['material_name']);
-            unset($dataToCreate['redirect_to']);
-
-            $dataToCreate['lampiran'] = $lampiranPath;
-            $dataToCreate['status'] = 'PENDING';
-            $dataToCreate['user_id'] = Auth::id();
-
-            MaterialHenkaten::create($dataToCreate);
-
-            DB::commit();
-
-            $redirectTo = $request->input('redirect_to', route('henkaten.material.create'));
-            return redirect($redirectTo)
-                ->with('success', 'Data Material Henkaten berhasil disimpan!');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
-                Storage::disk('public')->delete($lampiranPath);
-            }
-
-            Log::error('Material Henkaten store failed: ' . $e->getMessage(), ['exception' => $e, 'input' => $request->all()]);
-
-            return back()
-                ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Hubungi administrator.'])
-                ->withInput();
-        }
-    }
+}
 
     // ==============================================================
     // BAGIAN 5: FORM PEMBUATAN HENKATEN MACHINE
@@ -808,11 +846,10 @@ public function storeMachineHenkaten(Request $request)
     $machineIdTarget = null;
     $targetMachineId = null;
     $selectedMachine = null;
-    $lampiranPath = null;
+    $uploadedFiles = []; // ✅ Track uploaded files untuk rollback
 
     // --- A. Mencari/Menentukan STATION_ID dan MACHINE_ID ---
     
-    // 🟢 BARU: Untuk Leader FA, gunakan category (string) bukan id_machines
     if ($isLeaderFA) {
         $categoryInput = $request->input('category');
         
@@ -822,7 +859,6 @@ public function storeMachineHenkaten(Request $request)
             ]);
         }
 
-        // Validasi kategori yang diizinkan untuk Leader FA
         $allowedFACategories = ['PROGRAM', 'Machine & JIG', 'Equipement', 'Kamera'];
         if (!in_array($categoryInput, $allowedFACategories)) {
             throw ValidationException::withMessages([
@@ -830,7 +866,6 @@ public function storeMachineHenkaten(Request $request)
             ]);
         }
 
-        // Validasi Line Area untuk Leader FA
         $allowedFALineAreas = ['FA L1', 'FA L2', 'FA L3', 'FA L5', 'FA L6'];
         if (!in_array($lineArea, $allowedFALineAreas)) {
             throw ValidationException::withMessages([
@@ -838,7 +873,6 @@ public function storeMachineHenkaten(Request $request)
             ]);
         }
         
-        // Validasi Station ID yang dipilih harus ada di Line Area FA yang dipilih
         $stationExists = Station::where('id', $request->input('station_id'))
             ->where('line_area', $lineArea)
             ->exists();
@@ -849,18 +883,14 @@ public function storeMachineHenkaten(Request $request)
             ]);
         }
         
-        // Untuk Leader FA: set station_id dari input, id_machines = null
         $dataToValidate['station_id'] = $request->input('station_id');
-        $dataToValidate['id_machines'] = null; // Leader FA tidak pakai id_machines
+        $dataToValidate['id_machines'] = null;
         
-        // Set variable untuk digunakan di validasi overlap (gunakan category sebagai identifier)
         $machineCategory = $categoryInput;
         
     } else {
-        // Untuk role lain (non-Leader FA), gunakan id_machines seperti biasa
         $machineIdTarget = $request->input('id_machines');
         
-        // Cek awal: apakah Machine ID valid?
         $selectedMachine = Machine::find($machineIdTarget);
         if (!$selectedMachine) {
             throw ValidationException::withMessages([
@@ -872,29 +902,24 @@ public function storeMachineHenkaten(Request $request)
         $machineCategory = $selectedMachine->machines_category;
 
         if ($isPredefinedRole) {
-            // Untuk Leader QC dan Leader PPIC
             $targetLineArea = match($userRole) {
                 'Leader QC' => 'Incoming',
                 'Leader PPIC' => 'Delivery',
                 default => null
             };
             
-            // 1. Ambil Line Area dari Station ID Mesin yang dipilih di DB
             $machineStation = Station::find($selectedMachine->station_id);
             $machineLineArea = $machineStation ? $machineStation->line_area : null;
             
-            // 2. Verifikasi apakah Line Area Mesin COCOK dengan Line Area Role
             if ($machineLineArea !== $targetLineArea) {
                 throw ValidationException::withMessages([
                     'id_machines' => "Mesin '{$selectedMachine->machines_category}' tidak valid untuk Line Area '{$targetLineArea}'. Mesin ini berada di Line Area '{$machineLineArea}'."
                 ]);
             }
             
-            // 3. Update data to validate dengan Station ID yang BENAR dari mesin yang dipilih
             $dataToValidate['station_id'] = $selectedMachine->station_id;
         }
         
-        // Finalisasi Machine ID untuk validasi
         $dataToValidate['id_machines'] = $targetMachineId;
     }
 
@@ -903,26 +928,24 @@ public function storeMachineHenkaten(Request $request)
     try {
         $request->merge($dataToValidate); 
 
-        // 🟢 Validasi rules berbeda untuk Leader FA
         $validationRules = [
-            'shift'              => 'required|string',
-            'line_area'          => 'required|string',
-            'station_id'         => 'required|integer|exists:stations,id',
-            'effective_date'     => 'required|date',
-            'end_date'           => 'nullable|date|after_or_equal:effective_date',
-            'time_start'         => 'required|date_format:H:i',
-            'time_end'           => 'required|date_format:H:i|after_or_equal:time_start',
-            'before_value'       => 'required|string|max:255',
-            'after_value'        => 'required|string|max:255',
-            'keterangan'         => 'required|string',
-            'lampiran'           => 'required|file|mimetypes:image/jpeg,image/png,application/zip,application/x-rar-compressed|max:2048',
-        'lampiran_2' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
-        'lampiran_3' => 'nullable|file|mimes:png,jpg,jpeg,zip,rar|max:10240', 
-            'serial_number_start'=> 'nullable|string|max:255',
-            'serial_number_end'  => 'nullable|string|max:255',
+            'shift'               => 'required|string',
+            'line_area'           => 'required|string',
+            'station_id'          => 'required|integer|exists:stations,id',
+            'effective_date'      => 'required|date',
+            'end_date'            => 'nullable|date|after_or_equal:effective_date',
+            'time_start'          => 'required|date_format:H:i',
+            'time_end'            => 'required|date_format:H:i|after:time_start', // ✅ Ubah ke 'after'
+            'before_value'        => 'required|string|max:255',
+            'after_value'         => 'required|string|max:255',
+            'keterangan'          => 'required|string',
+            'lampiran'            => 'required|file|mimes:jpeg,png,jpg,zip,rar|max:2048', // ✅ Ubah mimetypes ke mimes
+            'lampiran_2'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
+            'lampiran_3'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
+            'serial_number_start' => 'nullable|string|max:255',
+            'serial_number_end'   => 'nullable|string|max:255',
         ];
 
-        // Tambahkan validasi sesuai role
         if ($isLeaderFA) {
             $validationRules['category'] = 'required|string';
         } else {
@@ -938,9 +961,7 @@ public function storeMachineHenkaten(Request $request)
         $newTimeStart = $validated['time_start'];
         $newTimeEnd = $validated['time_end'];
 
-        // 🟢 Query overlap berbeda untuk Leader FA (by station_id + machine) vs role lain (by id_machines)
         if ($isLeaderFA) {
-            // Untuk Leader FA: cek overlap berdasarkan station_id dan machine (nama kategori)
             $overlappingHenkaten = MachineHenkaten::where('station_id', $validated['station_id'])
                 ->where('machine', $machineCategory)
                 ->whereIn('status', ['Approved', 'PENDING'])
@@ -951,7 +972,6 @@ public function storeMachineHenkaten(Request $request)
                 })
                 ->exists();
         } else {
-            // Untuk role lain: cek overlap berdasarkan id_machines
             $overlappingHenkaten = MachineHenkaten::where('id_machines', $targetMachineId)
                 ->whereIn('status', ['Approved', 'PENDING'])
                 ->where(function ($query) use ($newEffectiveDate, $newEndDate, $newTimeStart, $newTimeEnd) {
@@ -972,27 +992,40 @@ public function storeMachineHenkaten(Request $request)
 
         DB::beginTransaction();
 
-      if ($request->hasFile('lampiran')) {
-            $lampiranPath = $request->file('lampiran')->store('henkaten_machines_lampiran', 'public');
+        // =========================================================
+        // Upload File - KONSISTEN
+        // =========================================================
+        
+        // Upload lampiran 1
+        if ($request->hasFile('lampiran')) {
+            $validated['lampiran'] = $request->file('lampiran')
+                ->store('henkaten_machines_lampiran', 'public');
+            $uploadedFiles[] = $validated['lampiran'];
         }
 
-         if ($request->hasFile('lampiran_2')) {
-        $validated['lampiran_2'] = $request->file('lampiran_2')->store('henkaten_machines_lampiran', 'public');
-    }
+        // Upload lampiran 2
+        if ($request->hasFile('lampiran_2')) {
+            $validated['lampiran_2'] = $request->file('lampiran_2')
+                ->store('henkaten_machines_lampiran', 'public');
+            $uploadedFiles[] = $validated['lampiran_2'];
+        }
 
-    if ($request->hasFile('lampiran_3')) {
-        $validated['lampiran_3'] = $request->file('lampiran_3')->store('henkaten_machines_lampiran', 'public');
-    }
+        // Upload lampiran 3
+        if ($request->hasFile('lampiran_3')) {
+            $validated['lampiran_3'] = $request->file('lampiran_3')
+                ->store('henkaten_machines_lampiran', 'public');
+            $uploadedFiles[] = $validated['lampiran_3'];
+        }
 
+        // =========================================================
+        // Prepare Data
+        // =========================================================
         $dataToCreate = $validated;
 
         // Mapping kolom ke nama database yang benar
-        $dataToCreate['lampiran'] = $lampiranPath;
-        
-        // 🟢 Set machine name dan id_machines sesuai role
         if ($isLeaderFA) {
-            $dataToCreate['machine'] = $machineCategory; // Dari category input
-            $dataToCreate['id_machines'] = null; // Leader FA tidak pakai id_machines
+            $dataToCreate['machine'] = $machineCategory;
+            $dataToCreate['id_machines'] = null;
         } else {
             $dataToCreate['machine'] = $selectedMachine->machines_category;
             $dataToCreate['id_machines'] = $targetMachineId;
@@ -1001,10 +1034,13 @@ public function storeMachineHenkaten(Request $request)
         $dataToCreate['description_before'] = $validated['before_value'];
         $dataToCreate['description_after'] = $validated['after_value'];
         $dataToCreate['status'] = 'PENDING';
+        $dataToCreate['user_id'] = Auth::id(); // ✅ Tambahkan jika ada di fillable
 
         // Hapus key-key asli dari form yang tidak ada di tabel database
         unset($dataToCreate['before_value']);
         unset($dataToCreate['after_value']);
+        
+        // ✅ lampiran, lampiran_2, lampiran_3 sudah otomatis ada di $dataToCreate
 
         MachineHenkaten::create($dataToCreate);
 
@@ -1018,19 +1054,24 @@ public function storeMachineHenkaten(Request $request)
     } 
     catch (\Exception $e) {
         DB::rollBack();
-        if (isset($lampiranPath) && Storage::disk('public')->exists($lampiranPath)) {
-            Storage::disk('public')->delete($lampiranPath);
+        
+        // ✅ DELETE semua uploaded files jika error
+        foreach ($uploadedFiles as $filePath) {
+            if (Storage::disk('public')->exists($filePath)) {
+                Storage::disk('public')->delete($filePath);
+            }
         }
+        
         Log::error('Machine Henkaten store failed: ' . $e->getMessage(), [
             'exception' => $e, 
-            'input' => $request->all()
+            'input' => $request->except(['lampiran', 'lampiran_2', 'lampiran_3']) // Jangan log file
         ]);
 
         return back()
             ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Error: ' . $e->getMessage()])
             ->withInput();
     }
-}
+}   
 
     // ==============================================================
     // BAGIAN 6: API BANTUAN

@@ -12,8 +12,6 @@ class ManPowerStationController extends Controller
 
     public function matrixApprovalIndex()
     {
-        // Mengambil semua record dari tabel man_power_many_stations
-        // yang statusnya 'PENDING', sekaligus memuat data Operator (manpower) dan Station.
         $manpowerStations = ManPowerManyStation::where('status', 'PENDING')
             ->with(['manpower', 'station'])
             ->get();
@@ -102,7 +100,6 @@ class ManPowerStationController extends Controller
         return Station::where('line_area', $request->line_area)->get();
     }
 
-    // POST: Tambahkan relasi
    public function store(Request $request)
 {
     $request->validate([

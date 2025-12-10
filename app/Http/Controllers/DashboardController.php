@@ -39,9 +39,7 @@ class DashboardController extends Controller
 
         // Admin bisa akses semua line_area
         if ($role === 'Admin') {
-            // Tidak perlu override $lineAreas, sudah berisi semua line_area
         } else {
-            // Role lain dengan pembatasan line_area
             switch ($role) {
                 case 'Leader QC':
                     $lineAreas = collect(['Incoming', 'Delivery']);
@@ -91,7 +89,7 @@ class DashboardController extends Controller
                 });
         });
 
-        // ===================================================
+        // ==========   =========================================
         // CASE 2: DENGAN JAM (time_start & time_end NOT NULL)
         // ===================================================
         $q->orWhere(function ($sub) use ($today, $currentTime, $currentDateTime) {
@@ -154,7 +152,7 @@ class DashboardController extends Controller
         // ============================================================
 
         $activeManPowerHenkatens = ManPowerHenkaten::query()
-            ->where('status', 'Approved')
+            ->where('status', 'PENDING')
             ->where('shift', $shiftNumForQuery)
             ->whereHas('station', function ($q) use ($selectedLineArea) {
                 $q->where('line_area', $selectedLineArea);

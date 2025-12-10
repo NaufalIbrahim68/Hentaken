@@ -7,7 +7,7 @@
 
     <div class="py-8 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8" x-data="henkatenApproval()">
 
-    @foreach (['method', 'machine', 'material'] as $type)
+        @foreach (['manpower', 'method', 'machine', 'material'] as $type)
             @php
                 $items = ${$type.'s'} ?? collect(); 
             @endphp
@@ -55,7 +55,6 @@
                                         <td class="px-4 py-2">{{ $item->keterangan ?? '-' }}</td>
                                         <td class="px-4 py-2">{{ $item->keterangan_after ?? '-' }}</td>
                                     @elseif ($type === 'material')
-                                        {{-- Menggunakan "?->" untuk "optional chaining" jika $item->material mungkin null --}}
                                         <td class="px-4 py-2">{{ $item->material?->material_name ?? '-' }}</td>
                                         <td class="px-4 py-2">{{ $item->description_before ?? '-' }}</td>
                                         <td class="px-4 py-2">{{ $item->description_after ?? '-' }}</td>
@@ -86,6 +85,7 @@
                 @endif
             </div>
         @endforeach
+
         {{-- Modal Detail dengan Layout Kanan-Kiri --}}
         <div x-show="showModal" 
              class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4"
@@ -187,7 +187,11 @@
                                         </div>
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Grup:</dt>
-                                            <dd class="text-gray-900" x-text="detail.man_power?.grup || '-'"></dd>
+                                            <dd class="text-gray-900" x-text="detail.grup || '-'"></dd>
+                                        </div>
+                                        <div>
+                                            <dt class="font-medium text-gray-500 mb-1">Serial Number Start:</dt>
+                                            <dd class="text-gray-900" x-text="detail.serial_number_start || '-'"></dd>
                                         </div>
                                     </div>
                                     
@@ -197,6 +201,10 @@
                                             <dt class="font-medium text-gray-500 mb-1">Operator Pengganti:</dt>
                                             <dd class="text-gray-900 font-semibold" x-text="detail.nama_after || 'N/A'"></dd>
                                         </div>
+                                        <div>
+                                            <dt class="font-medium text-gray-500 mb-1">Serial Number End:</dt>
+                                            <dd class="text-gray-900" x-text="detail.serial_number_end || '-'"></dd>
+                                        </div>
                                     </div>
                                     
                                     {{-- Keterangan Full Width --}}
@@ -204,6 +212,43 @@
                                         <dt class="font-medium text-gray-500 mb-1">Keterangan:</dt>
                                         <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded" x-text="detail.keterangan || '-'"></dd>
                                     </div>
+
+                                    {{-- Note Full Width (jika ada) --}}
+                                    <template x-if="detail.note && detail.note !== '-'">
+                                        <div class="md:col-span-2">
+                                            <dt class="font-medium text-gray-500 mb-1">Catatan:</dt>
+                                            <dd class="text-gray-900 whitespace-pre-wrap bg-blue-50 p-3 rounded" x-text="detail.note"></dd>
+                                        </div>
+                                    </template>
+
+                                    {{-- Lampiran Tambahan --}}
+                                    <template x-if="detail.lampiran_2 || detail.lampiran_3">
+                                        <div class="md:col-span-2">
+                                            <dt class="font-medium text-gray-500 mb-2">Lampiran Tambahan:</dt>
+                                            <dd class="space-y-2">
+                                                <template x-if="detail.lampiran_2 && detail.lampiran_2 !== '-'">
+                                                    <a :href="`/storage/${detail.lampiran_2}`" 
+                                                       target="_blank" 
+                                                       class="text-blue-600 hover:underline inline-flex items-center block">
+                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                       </svg>
+                                                       Lampiran 2
+                                                    </a>
+                                                </template>
+                                                <template x-if="detail.lampiran_3 && detail.lampiran_3 !== '-'">
+                                                    <a :href="`/storage/${detail.lampiran_3}`" 
+                                                       target="_blank" 
+                                                       class="text-blue-600 hover:underline inline-flex items-center block">
+                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                       </svg>
+                                                       Lampiran 3
+                                                    </a>
+                                                </template>
+                                            </dd>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </template>
@@ -238,6 +283,35 @@
                                         <dt class="font-medium text-gray-500 mb-1">Keterangan:</dt>
                                         <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded" x-text="detail.keterangan || '-'"></dd>
                                     </div>
+
+                                    {{-- Lampiran Tambahan --}}
+                                    <template x-if="detail.lampiran_2 || detail.lampiran_3">
+                                        <div class="md:col-span-2">
+                                            <dt class="font-medium text-gray-500 mb-2">Lampiran Tambahan:</dt>
+                                            <dd class="space-y-2">
+                                                <template x-if="detail.lampiran_2 && detail.lampiran_2 !== '-'">
+                                                    <a :href="`/storage/${detail.lampiran_2}`" 
+                                                       target="_blank" 
+                                                       class="text-blue-600 hover:underline inline-flex items-center block">
+                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                       </svg>
+                                                       Lampiran 2
+                                                    </a>
+                                                </template>
+                                                <template x-if="detail.lampiran_3 && detail.lampiran_3 !== '-'">
+                                                    <a :href="`/storage/${detail.lampiran_3}`" 
+                                                       target="_blank" 
+                                                       class="text-blue-600 hover:underline inline-flex items-center block">
+                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                       </svg>
+                                                       Lampiran 3
+                                                    </a>
+                                                </template>
+                                            </dd>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </template>
@@ -276,6 +350,35 @@
                                         <dt class="font-medium text-gray-500 mb-1">Keterangan:</dt>
                                         <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded" x-text="detail.keterangan || '-'"></dd>
                                     </div>
+
+                                    {{-- Lampiran Tambahan --}}
+                                    <template x-if="detail.lampiran_2 || detail.lampiran_3">
+                                        <div class="md:col-span-2">
+                                            <dt class="font-medium text-gray-500 mb-2">Lampiran Tambahan:</dt>
+                                            <dd class="space-y-2">
+                                                <template x-if="detail.lampiran_2 && detail.lampiran_2 !== '-'">
+                                                    <a :href="`/storage/${detail.lampiran_2}`" 
+                                                       target="_blank" 
+                                                       class="text-blue-600 hover:underline inline-flex items-center block">
+                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                       </svg>
+                                                       Lampiran 2
+                                                    </a>
+                                                </template>
+                                                <template x-if="detail.lampiran_3 && detail.lampiran_3 !== '-'">
+                                                    <a :href="`/storage/${detail.lampiran_3}`" 
+                                                       target="_blank" 
+                                                       class="text-blue-600 hover:underline inline-flex items-center block">
+                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                       </svg>
+                                                       Lampiran 3
+                                                    </a>
+                                                </template>
+                                            </dd>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </template>
@@ -304,6 +407,35 @@
                                             <dd class="text-gray-900 whitespace-pre-wrap bg-green-50 p-3 rounded" x-text="detail.keterangan_after || '-'"></dd>
                                         </div>
                                     </div>
+
+                                    {{-- Lampiran Tambahan --}}
+                                    <template x-if="detail.lampiran_2 || detail.lampiran_3">
+                                        <div class="md:col-span-2">
+                                            <dt class="font-medium text-gray-500 mb-2">Lampiran Tambahan:</dt>
+                                            <dd class="space-y-2">
+                                                <template x-if="detail.lampiran_2 && detail.lampiran_2 !== '-'">
+                                                    <a :href="`/storage/${detail.lampiran_2}`" 
+                                                       target="_blank" 
+                                                       class="text-blue-600 hover:underline inline-flex items-center block">
+                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                       </svg>
+                                                       Lampiran 2
+                                                    </a>
+                                                </template>
+                                                <template x-if="detail.lampiran_3 && detail.lampiran_3 !== '-'">
+                                                    <a :href="`/storage/${detail.lampiran_3}`" 
+                                                       target="_blank" 
+                                                       class="text-blue-600 hover:underline inline-flex items-center block">
+                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                       </svg>
+                                                       Lampiran 3
+                                                    </a>
+                                                </template>
+                                            </dd>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </template>
@@ -316,53 +448,52 @@
                 </div>
 
                 {{-- Tombol Aksi --}}
-                        <div class="mt-6 border-t pt-4">
+                <div class="mt-6 border-t pt-4">
+                    {{-- Form untuk Revisi (hanya berisi textarea) --}}
+                    <form :action="`/henkaten/approval/${type}/${id}/revisi`" method="POST" id="revision-form">
+                        @csrf
+                        <div class="mb-4">
+                            <label for="revision_notes" class="block text-sm font-medium text-gray-700 mb-1">
+                                Catatan Revisi 
+                                <span class="text-gray-500">(Wajib diisi jika ada Revisi)</span>
+                            </label>
+                            <textarea 
+                                id="revision_notes" 
+                                name="revision_notes"
+                                rows="3" 
+                                class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+                                placeholder="Contoh: Lampiran tidak sesuai, mohon diperbaiki..."
+                                required
+                            ></textarea>
+                        </div>
+                    </form>
 
-                            {{-- Form untuk Revisi (hanya berisi textarea) --}}
-                            <form :action="`/henkaten/approval/${type}/${id}/revisi`" method="POST" id="revision-form">
-                                @csrf
-                                <div class="mb-4">
-                                    <label for="revision_notes" class="block text-sm font-medium text-gray-700 mb-1">
-                                        Catatan Revisi 
-                                        <span class="text-gray-500">(Wajib diisi jika ada Revisi)</span>
-                                    </label>
-                                    <textarea 
-                                        id="revision_notes" 
-                                        name="revision_notes" {{-- 'name' ini penting untuk dikirim ke backend --}}
-                                        rows="3" 
-                                        class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
-                                        placeholder="Contoh: Lampiran tidak sesuai, mohon diperbaiki..."
-                                        required {{-- Tambahkan 'required' agar wajib diisi saat form disubmit --}}
-                                    ></textarea>
-                                </div>
-                            </form>
-
-                            {{-- Baris Tombol Aksi --}}
-                            <div class="flex justify-end space-x-3">
-                                
-                                {{-- Tombol Revisi: Mensubmit form 'revision-form' di atas --}}
-                                <button 
-                                    type="submit" 
-                                    form="revision-form" {{-- Atribut 'form' ini akan menyambungkan tombol ke form --}}
-                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow-sm">
-                                    Revisi
-                                </button>
-                                
-                                {{-- Form Approve (terpisah) --}}
-                                <form :action="`/henkaten/approval/${type}/${id}/approve`" method="POST">
-                                    @csrf
-                                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow-sm">
-                                        Approve
-                                    </button>
-                                </form>
-                                
-                                {{-- Tombol Tutup --}}
-                                <button @click="showModal = false" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded shadow-sm">
-                                    Tutup
-                                </button>
-                            </div>
-                        </div>       
-                     </div>
+                    {{-- Baris Tombol Aksi --}}
+                    <div class="flex justify-end space-x-3">
+                        {{-- Tombol Revisi --}}
+                        <button 
+                            type="submit" 
+                            form="revision-form"
+                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow-sm">
+                            Revisi
+                        </button>
+                        
+                        {{-- Form Approve --}}
+                        <form :action="`/henkaten/approval/${type}/${id}/approve`" method="POST">
+                            @csrf
+                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow-sm">
+                                Approve
+                            </button>
+                        </form>
+                        
+                        {{-- Tombol Tutup --}}
+                        <button @click="showModal = false" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded shadow-sm">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -413,23 +544,12 @@
                     }
                 },
 
-formatTime(timeString) {
+                formatTime(timeString) {
                     if (!timeString || timeString === 'N/A') return '-';
-
-                    // 1. Gunakan Regex untuk mencari pola "HH:MM" (dua digit:dua digit)
-                    //    Ini akan cocok dengan "07:00" dari string apapun, termasuk:
-                    //    - "07:00:00.0000000" (SQL Server time)
-                    //    - "1900-01-01 07:00:00" (SQL Server datetime)
-                    //    - "07:00:00"
-                    //    - "07:00"
                     const match = String(timeString).match(/(\d{2}:\d{2})/);
-
-                    // 2. Jika pola "HH:MM" ditemukan, kembalikan itu
                     if (match) {
-                        return match[0]; // Hasilnya akan "07:00"
+                        return match[0];
                     }
-
-                    // 3. Jika tidak ada pola yang cocok, kembalikan string aslinya
                     return timeString;
                 },
 
@@ -440,4 +560,4 @@ formatTime(timeString) {
             }
         }
     </script>
-</x-app-layout>
+</x-app-layout> 

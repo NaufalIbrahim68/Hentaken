@@ -347,7 +347,7 @@
                         @foreach($groupedManPower as $stationId => $stationWorkers)
                             @foreach($stationWorkers as $currentWorker)
                                 @php
-$isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status == 'Approved'); 
+$isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status == 'PENDING'); 
                                     $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
                                 @endphp
                                 <td class="border border-gray-300 p-2 {{ $bgColor }}">
@@ -394,9 +394,9 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
         $filteredHenkatens = $activeManPowerHenkatens->filter(function ($henkaten) use ($currentGroup) {
             $isCorrectGroup = optional($henkaten->manPower)->grup === $currentGroup; 
 
-$isApproved = strtolower($henkaten->status) === 'approved';
+            $isPending = strtolower($henkaten->status) === 'pending';
 
-             return $isCorrectGroup && $isApproved;
+            return $isCorrectGroup && $isPending;
         });
     } else {
         $filteredHenkatens = collect();
