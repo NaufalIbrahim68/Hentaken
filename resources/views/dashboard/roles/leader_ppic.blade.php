@@ -1049,10 +1049,10 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                 </div>
                 <div class="grid grid-cols-2 gap-1">
                     <div class="bg-blue-400 text-center py-0.5 rounded">
-                        <span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? 'N/A' }}</span>
+                        <span class="text-[7px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? '-' }}</span>
                     </div>
                     <div class="bg-blue-400 text-center py-0.5 rounded">
-                        <span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? 'N/A' }}</span>
+                        <span class="text-[7px] text-white font-medium">End: {{ $henkaten->serial_number_end ?? '-' }}</span>
                     </div>
                 </div>
                 <div class="flex justify-center">
@@ -1387,12 +1387,12 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                             <div class="grid grid-cols-2 gap-1">
                                 <div class="bg-blue-400 text-center py-0.5 rounded">
                                     <span class="text-[7px] text-white font-medium">
-                                        Start: {{ $henkaten->serial_number_start ?? 'N/A' }}
+                                        Start: {{ $henkaten->serial_number_start ?? '-' }}
                                     </span>
                                 </div>
                                 <div class="bg-blue-400 text-center py-0.5 rounded">
                                     <span class="text-[7px] text-white font-medium">
-                                        End: {{ $henkaten->serial_number_end ?? 'N/A' }}
+                                        End: {{ $henkaten->serial_number_end ?? '-' }}
                                     </span>
                                 </div>
                             </div>

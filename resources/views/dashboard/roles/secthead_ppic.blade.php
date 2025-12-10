@@ -647,10 +647,9 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
 
         <div id="methodChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
             @php
-                // LOGIKA BARU: Filter koleksi untuk hanya menyertakan status 'approved'
                 $filteredMethodHenkatens = $activeMethodHenkatens->filter(function ($henkaten) {
                     // Asumsi field status adalah 'status'
-                    return strtolower($henkaten->status) === 'approved';
+                    return strtolower($henkaten->status) === 'pending';
                 });
             @endphp
 
@@ -935,7 +934,7 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
     <div class="flex justify-center gap-3 p-2">
         @php
             $filteredMachineHenkatens = $machineHenkatens->filter(function ($henkaten) {
-                return strtolower($henkaten->status) === 'approved';
+                return strtolower($henkaten->status) === 'pending';
             });
         @endphp
         
@@ -1088,12 +1087,12 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                     <p class="text-xs text-gray-500">Keterangan</p>
                     <p id="modalKeterangan" class="font-semibold text-sm">-</p>
                 </div>
-                <div class="bg-orange-50 p-3 rounded-lg">
-                    <p class="text-xs text-gray-500">Machine</p>
-                    <p id="modalMachine" class="font-semibold text-sm truncate">-</p>
-                </div>
-            </div>
-        </div>
+               <div class="bg-orange-50 p-3 rounded-lg">
+    <p class="text-xs text-gray-500">Machine</p>
+    <p id="modalMachine" class="font-semibold text-sm break-words">-</p>
+               </div>
+               </div>
+               </div>
 
         {{-- DETAIL INFORMASI (Grid 2) --}}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -1254,9 +1253,8 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                     // Cek jika $materialHenkatens ada, baru lakukan filter
                     if (isset($materialHenkatens)) {
                         $filteredMaterialHenkatens = $materialHenkatens->filter(function ($henkaten) {
-                            // Filter hanya tampilkan yang statusnya 'approved'
-                            // Asumsi nama field adalah 'status'
-                            return strtolower($henkaten->status) === 'approved';
+                            
+                            return strtolower($henkaten->status) === 'pending';
                         });
                     }
                 @endphp

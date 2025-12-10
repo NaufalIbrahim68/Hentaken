@@ -365,7 +365,7 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
         $filteredHenkatens = $activeManPowerHenkatens->filter(function ($henkaten) use ($currentGroup) {
             $isCorrectGroup = optional($henkaten->manPower)->grup === $currentGroup; 
 
-$isApproved = strtolower($henkaten->status) === 'approved';
+$isApproved = strtolower($henkaten->status) === 'pending';
 
              return $isCorrectGroup && $isApproved;
         });
@@ -669,7 +669,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
         <div id="methodChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
             @php
                 $filteredMethodHenkatens = $activeMethodHenkatens->filter(function ($henkaten) {
-                    return strtolower($henkaten->status) === 'approved';
+                    return strtolower($henkaten->status) === 'pending';
                 });
             @endphp
 
@@ -982,7 +982,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
     <div class="flex justify-center gap-3 p-2">
         @php
             $filteredMachineHenkatens = $machineHenkatens->filter(function ($henkaten) {
-                return strtolower($henkaten->status) === 'approved';
+                return strtolower($henkaten->status) === 'pending';
             });
         @endphp
         
@@ -1329,7 +1329,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
                         $filteredMaterialHenkatens = $materialHenkatens->filter(function ($henkaten) {
                             // Filter hanya tampilkan yang statusnya 'approved'
                             // Asumsi nama field adalah 'status'
-                            return strtolower($henkaten->status) === 'approved';
+                            return strtolower($henkaten->status) === 'pending';
                         });
                     }
                 @endphp
