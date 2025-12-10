@@ -365,9 +365,10 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
         $filteredHenkatens = $activeManPowerHenkatens->filter(function ($henkaten) use ($currentGroup) {
             $isCorrectGroup = optional($henkaten->manPower)->grup === $currentGroup; 
 
-$isApproved = strtolower($henkaten->status) === 'approved';
+            // Lebih robust - case insensitive
+            $isPending = in_array(strtolower($henkaten->status), ['pending', 'menunggu']);
 
-             return $isCorrectGroup && $isApproved;
+            return $isCorrectGroup && $isPending;
         });
     } else {
         $filteredHenkatens = collect();
@@ -564,19 +565,19 @@ $isApproved = strtolower($henkaten->status) === 'approved';
 {{-- Method Table --}}
 <div class="w-full">
     <table class="w-full border-collapse">
-        <thead>
-            <tr class="bg-gray-50">
-                @foreach ($methods as $m)
-                    @php
-                        // Logika Header (Nama Stasiun)
-                        $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
-                        $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
-                        $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
-                    @endphp
-                    
-                @endforeach
-            </tr>
-        </thead>
+       <thead>
+    <tr class="bg-gray-50">
+        @foreach ($methods as $m)
+            @php
+                // Logika Header (Nama Stasiun)
+                $isHenkaten = strtoupper($m->status ?? '') === 'HENKATEN';
+                $bgColorHeader = $isHenkaten ? 'bg-red-600' : 'bg-gray-50';
+                $textColorHeader = $isHenkaten ? 'text-white' : 'text-gray-700';
+            @endphp
+            
+        @endforeach
+    </tr>
+</thead>
         <tbody>
             
             {{-- Row 1: Icon --}}
@@ -601,7 +602,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
             
             @php
                 $currentUserRole = auth()->user()->role ?? 'guest'; 
-                $showMethodDetails = in_array($currentUserRole, ['Sect Head QC']);
+                $showMethodDetails = in_array($currentUserRole, ['Leader QC']);
             @endphp
             
             @if ($showMethodDetails)
@@ -669,7 +670,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
         <div id="methodChangeContainer" class="flex-grow overflow-x-auto scrollbar-hide scroll-smooth">
             @php
                 $filteredMethodHenkatens = $activeMethodHenkatens->filter(function ($henkaten) {
-                    return strtolower($henkaten->status) === 'approved';
+                    return strtolower($henkaten->status) === 'pending';
                 });
             @endphp
 
@@ -922,7 +923,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
             @php
                 // Mengambil role pengguna yang sedang login
                 $currentUserRole = auth()->user()->role ?? 'guest'; 
-                $showMachineDetails = in_array($currentUserRole, ['Sect Head QC']);
+                $showMachineDetails = in_array($currentUserRole, ['Leader QC']);
             @endphp
             
             @if ($showMachineDetails)
@@ -982,7 +983,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
     <div class="flex justify-center gap-3 p-2">
         @php
             $filteredMachineHenkatens = $machineHenkatens->filter(function ($henkaten) {
-                return strtolower($henkaten->status) === 'approved';
+                return strtolower($henkaten->status) === 'pending';
             });
         @endphp
         
@@ -1239,7 +1240,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
             @php
                 // Tentukan logic role di sini untuk mengontrol tampilan nama material
                 $currentUserRole = auth()->user()->role ?? 'guest'; 
-                $showMaterialDetails = in_array($currentUserRole, ['Sect Head QC']);
+                $showMaterialDetails = in_array($currentUserRole, ['Leader QC']);
             @endphp
             
             @if ($showMaterialDetails)
@@ -1329,7 +1330,7 @@ $isApproved = strtolower($henkaten->status) === 'approved';
                         $filteredMaterialHenkatens = $materialHenkatens->filter(function ($henkaten) {
                             // Filter hanya tampilkan yang statusnya 'approved'
                             // Asumsi nama field adalah 'status'
-                            return strtolower($henkaten->status) === 'approved';
+                            return strtolower($henkaten->status) === 'pending';
                         });
                     }
                 @endphp
@@ -1377,12 +1378,12 @@ $isApproved = strtolower($henkaten->status) === 'approved';
                             <div class="grid grid-cols-2 gap-1">
                                 <div class="bg-blue-400 text-center py-0.5 rounded">
                                     <span class="text-[7px] text-white font-medium">
-                                        Start: {{ $henkaten->serial_number_start ?? 'N/A' }}
+                                        Start: {{ $henkaten->serial_number_start ?? '-' }}
                                     </span>
                                 </div>
                                 <div class="bg-blue-400 text-center py-0.5 rounded">
                                     <span class="text-[7px] text-white font-medium">
-                                        End: {{ $henkaten->serial_number_end ?? 'N/A' }}
+                                        End: {{ $henkaten->serial_number_end ?? '-' }}
                                     </span>
                                 </div>
                             </div>

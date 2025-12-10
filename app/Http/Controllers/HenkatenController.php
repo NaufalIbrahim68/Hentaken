@@ -166,7 +166,29 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
         'lampiran_2'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
         'lampiran_3'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240',
         'time_start'          => 'required|date_format:H:i',
-        'time_end'            => 'required|date_format:H:i|after:time_start', // Ubah after_or_equal jadi after
+        'time_end'            => [
+        'required',
+        'date_format:H:i',
+        function ($attribute, $value, $fail) use ($request) {
+            // Gabungkan tanggal + waktu untuk perbandingan
+            $effectiveDate = $request->input('effective_date');
+            $endDate = $request->input('end_date');
+            $timeStart = $request->input('time_start');
+            
+            if ($effectiveDate && $endDate && $timeStart && $value) {
+                try {
+                    $dateTimeStart = Carbon::parse($effectiveDate . ' ' . $timeStart);
+                    $dateTimeEnd = Carbon::parse($endDate . ' ' . $value);
+                    
+                    if ($dateTimeEnd->lte($dateTimeStart)) {
+                        $fail('Tanggal & waktu berakhir harus setelah tanggal & waktu mulai.');
+                    }
+                } catch (\Exception $e) {
+                    $fail('Format tanggal atau waktu tidak valid.');
+                }
+            }
+        }
+    ],
         'serial_number_start' => 'nullable|string|max:255',
         'serial_number_end'   => 'nullable|string|max:255',
     ], [
@@ -344,29 +366,50 @@ public function storeMethodHenkaten(Request $request)
     // =========================================================
     // Validasi kondisional
     // =========================================================
-    $rules = [
-        'shift'               => 'required|string',
-        'line_area'           => 'required|string',
-        'station_id'          => $isPredefinedRole 
-                                 ? 'nullable|integer|exists:stations,id'
-                                 : 'required|integer|exists:stations,id',
-        'method_id'           => $isPredefinedRole 
-                                 ? 'required|integer|exists:methods,id' 
-                                 : 'nullable|integer|exists:methods,id',
-        'effective_date'      => 'required|date',
-        'end_date'            => 'required|date|after_or_equal:effective_date',
-        'time_start'          => 'required|date_format:H:i',
-        'time_end'            => 'required|date_format:H:i|after:time_start', // ✅ Ubah ke 'after'
-        'keterangan'          => 'required|string',
-        'keterangan_after'    => 'required|string',
-        'serial_number_start' => 'nullable|string|max:100',
-        'serial_number_end'   => 'nullable|string|max:100',
-        'note'                => 'nullable|string',
-        'lampiran'            => 'required|file|mimes:jpeg,png,jpg,zip,rar|max:2048',
-        'lampiran_2'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
-        'lampiran_3'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
-    ];
-
+   $rules = [
+    'shift'               => 'required|string',
+    'line_area'           => 'required|string',
+    'station_id'          => $isPredefinedRole 
+                             ? 'nullable|integer|exists:stations,id'
+                             : 'required|integer|exists:stations,id',
+    'method_id'           => $isPredefinedRole 
+                             ? 'required|integer|exists:methods,id' 
+                             : 'nullable|integer|exists:methods,id',
+    'effective_date'      => 'required|date',
+    'end_date'            => 'required|date|after_or_equal:effective_date',
+    'time_start'          => 'required|date_format:H:i',
+    'time_end'            => [
+        'required',
+        'date_format:H:i',
+        function ($attribute, $value, $fail) use ($request) {
+            // Gabungkan tanggal + waktu untuk perbandingan
+            $effectiveDate = $request->input('effective_date');
+            $endDate = $request->input('end_date');
+            $timeStart = $request->input('time_start');
+            
+            if ($effectiveDate && $endDate && $timeStart && $value) {
+                try {
+                    $dateTimeStart = Carbon::parse($effectiveDate . ' ' . $timeStart);
+                    $dateTimeEnd = Carbon::parse($endDate . ' ' . $value);
+                    
+                    if ($dateTimeEnd->lte($dateTimeStart)) {
+                        $fail('Tanggal & waktu berakhir harus setelah tanggal & waktu mulai.');
+                    }
+                } catch (\Exception $e) {
+                    $fail('Format tanggal atau waktu tidak valid.');
+                }
+            }
+        }
+    ],
+    'keterangan'          => 'required|string',
+    'keterangan_after'    => 'required|string',
+    'serial_number_start' => 'nullable|string|max:100',
+    'serial_number_end'   => 'nullable|string|max:100',
+    'note'                => 'nullable|string',
+    'lampiran'            => 'required|file|mimes:jpeg,png,jpg,zip,rar|max:2048',
+    'lampiran_2'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
+    'lampiran_3'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
+];
     $validated = $request->validate($rules);
 
     // ✅ Array untuk track uploaded files (untuk rollback)
@@ -599,7 +642,29 @@ public function storeMethodHenkaten(Request $request)
             'effective_date'      => 'required|date',
             'end_date'            => 'required|date|after_or_equal:effective_date',
             'time_start'          => 'required|date_format:H:i',
-            'time_end'            => 'required|date_format:H:i|after:time_start', // ✅ Ubah ke 'after'
+            'time_end'            => [
+        'required',
+        'date_format:H:i',
+        function ($attribute, $value, $fail) use ($request) {
+            // Gabungkan tanggal + waktu untuk perbandingan
+            $effectiveDate = $request->input('effective_date');
+            $endDate = $request->input('end_date');
+            $timeStart = $request->input('time_start');
+            
+            if ($effectiveDate && $endDate && $timeStart && $value) {
+                try {
+                    $dateTimeStart = Carbon::parse($effectiveDate . ' ' . $timeStart);
+                    $dateTimeEnd = Carbon::parse($endDate . ' ' . $value);
+                    
+                    if ($dateTimeEnd->lte($dateTimeStart)) {
+                        $fail('Tanggal & waktu berakhir harus setelah tanggal & waktu mulai.');
+                    }
+                } catch (\Exception $e) {
+                    $fail('Format tanggal atau waktu tidak valid.');
+                }
+            }
+        }
+    ],
             'description_before'  => 'required|string|max:255',
             'description_after'   => 'required|string|max:255',
             'keterangan'          => 'required|string',
@@ -935,7 +1000,29 @@ public function storeMachineHenkaten(Request $request)
             'effective_date'      => 'required|date',
             'end_date'            => 'nullable|date|after_or_equal:effective_date',
             'time_start'          => 'required|date_format:H:i',
-            'time_end'            => 'required|date_format:H:i|after:time_start', // ✅ Ubah ke 'after'
+            'time_end'            => [
+        'required',
+        'date_format:H:i',
+        function ($attribute, $value, $fail) use ($request) {
+            // Gabungkan tanggal + waktu untuk perbandingan
+            $effectiveDate = $request->input('effective_date');
+            $endDate = $request->input('end_date');
+            $timeStart = $request->input('time_start');
+            
+            if ($effectiveDate && $endDate && $timeStart && $value) {
+                try {
+                    $dateTimeStart = Carbon::parse($effectiveDate . ' ' . $timeStart);
+                    $dateTimeEnd = Carbon::parse($endDate . ' ' . $value);
+                    
+                    if ($dateTimeEnd->lte($dateTimeStart)) {
+                        $fail('Tanggal & waktu berakhir harus setelah tanggal & waktu mulai.');
+                    }
+                } catch (\Exception $e) {
+                    $fail('Format tanggal atau waktu tidak valid.');
+                }
+            }
+        }
+    ],
             'before_value'        => 'required|string|max:255',
             'after_value'         => 'required|string|max:255',
             'keterangan'          => 'required|string',

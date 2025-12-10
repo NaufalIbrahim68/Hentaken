@@ -367,9 +367,10 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
         $filteredHenkatens = $activeManPowerHenkatens->filter(function ($henkaten) use ($currentGroup) {
             $isCorrectGroup = optional($henkaten->manPower)->grup === $currentGroup; 
 
-$isApproved = strtolower($henkaten->status) === 'approved';
+            // Lebih robust - case insensitive
+            $isPending = in_array(strtolower($henkaten->status), ['pending', 'menunggu']);
 
-             return $isCorrectGroup && $isApproved;
+            return $isCorrectGroup && $isPending;
         });
     } else {
         $filteredHenkatens = collect();
