@@ -12,6 +12,9 @@ use App\Models\MaterialHenkaten;
 use App\Models\MachineHenkaten;
 use App\Models\ManPower;
 use App\Models\ManPowerManyStation;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
+
 
 class HenkatenApprovalController extends Controller
 {
@@ -186,6 +189,83 @@ class HenkatenApprovalController extends Controller
                     ->get();
 
     return view('secthead.edit-approval', compact('mp', 'pivotData'));
+}
+
+public function sendHenkatenReminder()
+{
+    // Semua user dengan role Sect Head
+    $users = \App\Models\User::whereIn('role', [
+        'Sect Head QC',
+        'Sect Head PPIC',
+        'Sect Head Produksi'
+    ])->get();
+
+    foreach ($users as $user) {
+
+        // Tipe data henkaten
+        $types = [
+            'manpower' => ManPowerHenkaten::class,
+            'method'   => MethodHenkaten::class,
+            'material' => MaterialHenkaten::class,
+            'machine'  => MachineHenkaten::class,
+        ];
+
+        foreach ($types as $type => $model) {
+
+            // Query dasar
+            $query = $model::where('status', 'Pending')
+                ->whereDate('created_at', '<=', Carbon::now()->subDays(7));
+
+            // Filter berdasarkan role user
+            switch ($user->role) {
+
+                case 'Sect Head QC':
+                    $query->whereRaw("LOWER(line_area) LIKE 'incoming%'");
+                    break;
+
+                case 'Sect Head PPIC':
+                    $query->where('line_area', 'Delivery');
+                    break;
+
+                case 'Sect Head Produksi':
+                    $allowedLineAreas = [
+                        'FA L1','FA L2','FA L3','FA L5','FA L6',
+                        'SMT L1','SMT L2'
+                    ];
+                    $query->whereIn('line_area', $allowedLineAreas);
+                    break;
+            }
+
+            $items = $query->get();
+
+            // Jika tidak ada data, skip
+            if ($items->count() == 0) {
+                continue;
+            }
+
+            // Tentukan file blade email sesuai tipe
+            $view = match($type) {
+                'manpower' => 'emails.reminder.manpower-reminder',
+                'method'   => 'emails.reminder.method-reminder',
+                'material' => 'emails.reminder.material-reminder',
+                'machine'  => 'emails.reminder.machine-reminder',
+            };
+
+            // Kirim email
+            Mail::send($view, [
+                'name'  => $user->name,
+                'total' => $items->count(),
+                'items' => $items
+            ], function ($m) use ($user, $type) {
+                $m->to($user->email)
+                  ->subject("Reminder Pending Henkaten (" . ucfirst($type) . ")");
+            });
+        }
+    }
+
+    Log::info('Reminder Henkaten berhasil dikirim.');
+
+    return "Reminder sent.";
 }
 
 

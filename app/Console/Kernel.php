@@ -4,6 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Http\Controllers\HenkatenApprovalController;
 
 class Kernel extends ConsoleKernel
 {
@@ -12,7 +13,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Scheduler untuk mengirim reminder Henkaten setiap hari jam 07:00
+        $schedule->call(function () {
+            app(HenkatenApprovalController::class)->sendHenkatenReminder();
+        })->dailyAt('07:00');
     }
 
     /**

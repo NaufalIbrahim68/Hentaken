@@ -1283,7 +1283,6 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
                     // Cek jika $materialHenkatens ada, baru lakukan filter
                     if (isset($materialHenkatens)) {
                         $filteredMaterialHenkatens = $materialHenkatens->filter(function ($henkaten) {
-                            // Filter hanya tampilkan yang statusnya 'approved'
                             // Asumsi nama field adalah 'status'
                             return strtolower($henkaten->status) === 'pending';
                         });
