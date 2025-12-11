@@ -518,7 +518,7 @@ document.addEventListener('alpine:init', () => {
                 this.fetchStations(false); 
             }
 
-            if (this.selectedStation && this.selectedGrup && this.selectedLineArea) {
+            if (this.selectedStation && this.selectedLineArea && (this.selectedGrup || this.isQCOrPPIC)) {
                 await this.fetchManpowerBefore();
             }
 
@@ -551,7 +551,8 @@ document.addEventListener('alpine:init', () => {
         },
 
         async fetchManpowerBefore() {
-            if (!this.selectedStation || !this.selectedLineArea || !this.selectedGrup) {
+            const requiresGroup = !this.isQCOrPPIC;
+            if (!this.selectedStation || !this.selectedLineArea || (requiresGroup && !this.selectedGrup)) {
                 this.manpowerBefore = { id: '', nama: '' };
                 return;
             }
@@ -561,7 +562,9 @@ document.addEventListener('alpine:init', () => {
                 const url = new URL(this.findManpowerUrl, window.location.origin);
                 url.searchParams.append('station_id', this.selectedStation);
                 url.searchParams.append('line_area', this.selectedLineArea);
-                url.searchParams.append('grup', this.selectedGrup);
+                if (this.selectedGrup) {
+                    url.searchParams.append('grup', this.selectedGrup);
+                }
 
                 const res = await fetch(url);
                 const data = await res.json();
@@ -579,7 +582,7 @@ document.addEventListener('alpine:init', () => {
         async searchAfter() {
             this.autocompleteResults = [];
             
-            if (!this.selectedGrup || !this.selectedLineArea) {
+            if (!this.selectedLineArea || (!this.selectedGrup && !this.isQCOrPPIC)) {
                 return;
             }
             
@@ -624,7 +627,8 @@ document.addEventListener('alpine:init', () => {
         async openDropdown() {
             this.isDropdownOpen = true;
             
-            const canLoad = this.selectedGrup && this.selectedLineArea && 
+            const canLoad = this.selectedLineArea &&
+                           (this.selectedGrup || this.isQCOrPPIC) &&
                            (this.isLeaderFAOrSMT || this.isQCOrPPIC || this.selectedStation);
             
             if (canLoad && this.autocompleteResults.length === 0) {

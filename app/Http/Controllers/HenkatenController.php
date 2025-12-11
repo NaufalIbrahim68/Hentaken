@@ -129,7 +129,8 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
 
     // ================= GROUP ==================
     $currentGroup = Session::get('active_grup');
-    if (!$currentGroup) {
+    // Leader QC & PPIC tidak memakai grup, jadi jangan blok akses jika grup belum dipilih
+    if (!$currentGroup && !in_array($userRole, ['Leader QC', 'Leader PPIC'])) {
         return redirect()->route('dashboard')
             ->with('error', 'Silakan pilih Grup di Dashboard terlebih dahulu.');
     }
@@ -150,117 +151,131 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
     // ==============================================================
     // BAGIAN 3: FORM PEMBUATAN HENKATEN METHOD
     // ==============================================================
-  public function store(Request $request)
-{
-    $validated = $request->validate([
-        'shift'               => 'required|string',
-        'grup'                => 'required|string',
-        'man_power_id'        => 'required|integer|exists:man_power,id',
-        'man_power_id_after'  => 'required|integer|exists:man_power,id|different:man_power_id',
-        'station_id'          => 'required|integer|exists:stations,id',
-        'keterangan'          => 'required|string',
-        'line_area'           => 'required|string',
-        'effective_date'      => 'required|date',
-        'end_date'            => 'required|date|after_or_equal:effective_date',
-        'lampiran'            => 'nullable|file|mimes:jpeg,png,pdf,zip,rar|max:2048',
-        'lampiran_2'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
-        'lampiran_3'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240',
-        'time_start'          => 'required|date_format:H:i',
-        'time_end'            => [
-        'required',
-        'date_format:H:i',
-        function ($attribute, $value, $fail) use ($request) {
-            // Gabungkan tanggal + waktu untuk perbandingan
-            $effectiveDate = $request->input('effective_date');
-            $endDate = $request->input('end_date');
-            $timeStart = $request->input('time_start');
-            
-            if ($effectiveDate && $endDate && $timeStart && $value) {
-                try {
-                    $dateTimeStart = Carbon::parse($effectiveDate . ' ' . $timeStart);
-                    $dateTimeEnd = Carbon::parse($endDate . ' ' . $value);
+    public function store(Request $request)
+    {
+        $userRole = Auth::user()?->role;
+        $isLeaderQCorPPIC = in_array($userRole, ['Leader QC', 'Leader PPIC']);
+        
+        // Jika Leader QC atau Leader PPIC, set grup otomatis ke 'A'
+        if ($isLeaderQCorPPIC) {
+            $request->merge(['grup' => 'A']);
+        }
+    
+        $validated = $request->validate([
+            'shift'               => 'required|string',
+            'grup'                => $isLeaderQCorPPIC ? 'nullable|string' : 'required|string',
+            'man_power_id'        => 'required|integer|exists:man_power,id',
+            'man_power_id_after'  => 'required|integer|exists:man_power,id|different:man_power_id',
+            'station_id'          => 'required|integer|exists:stations,id',
+            'keterangan'          => 'required|string',
+            'line_area'           => 'required|string',
+            'effective_date'      => 'required|date',
+            'end_date'            => 'required|date|after_or_equal:effective_date',
+            'lampiran'            => 'nullable|file|mimes:jpeg,png,pdf,zip,rar|max:2048',
+            'lampiran_2'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240', 
+            'lampiran_3'          => 'nullable|file|mimes:png,jpg,jpeg,pdf,zip,rar|max:10240',
+            'time_start'          => 'required|date_format:H:i',
+            'time_end'            => [
+                'required',
+                'date_format:H:i',
+                function ($attribute, $value, $fail) use ($request) {
+                    // Gabungkan tanggal + waktu untuk perbandingan
+                    $effectiveDate = $request->input('effective_date');
+                    $endDate = $request->input('end_date');
+                    $timeStart = $request->input('time_start');
                     
-                    if ($dateTimeEnd->lte($dateTimeStart)) {
-                        $fail('Tanggal & waktu berakhir harus setelah tanggal & waktu mulai.');
+                    if ($effectiveDate && $endDate && $timeStart && $value) {
+                        try {
+                            $dateTimeStart = Carbon::parse($effectiveDate . ' ' . $timeStart);
+                            $dateTimeEnd = Carbon::parse($endDate . ' ' . $value);
+                            
+                            if ($dateTimeEnd->lte($dateTimeStart)) {
+                                $fail('Tanggal & waktu berakhir harus setelah tanggal & waktu mulai.');
+                            }
+                        } catch (\Exception $e) {
+                            $fail('Format tanggal atau waktu tidak valid.');
+                        }
                     }
-                } catch (\Exception $e) {
-                    $fail('Format tanggal atau waktu tidak valid.');
+                }
+            ],
+            'serial_number_start' => 'nullable|string|max:255',
+            'serial_number_end'   => 'nullable|string|max:255',
+        ], [
+            'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.',
+            'lampiran.mimes'               => 'Lampiran harus berupa jpeg, png, pdf, zip, atau rar.',
+            'end_date.after_or_equal'      => 'Tanggal berakhir harus sama dengan atau setelah tanggal efektif.',
+            'time_end.after'               => 'Waktu selesai harus setelah waktu mulai.',
+        ]);
+    
+        // Pastikan grup selalu 'A' untuk Leader QC dan Leader PPIC
+        if ($isLeaderQCorPPIC) {
+            $validated['grup'] = 'A';
+        }
+    
+        // Array untuk track uploaded files (untuk rollback jika error)
+        $uploadedFiles = [];
+    
+        try {
+            DB::beginTransaction();
+    
+            // Get ManPower data
+            $manPowerAsli  = ManPower::findOrFail($validated['man_power_id']);
+            $manPowerAfter = ManPower::findOrFail($validated['man_power_id_after']);
+    
+            // Upload lampiran 1
+            if ($request->hasFile('lampiran')) {
+                $validated['lampiran'] = $request->file('lampiran')
+                    ->store('henkaten_man_power_lampiran', 'public');
+                $uploadedFiles[] = $validated['lampiran'];
+            }
+    
+            // Upload lampiran 2
+            if ($request->hasFile('lampiran_2')) {
+                $validated['lampiran_2'] = $request->file('lampiran_2')
+                    ->store('henkaten_man_power_lampiran', 'public');
+                $uploadedFiles[] = $validated['lampiran_2'];
+            }
+    
+            // Upload lampiran 3
+            if ($request->hasFile('lampiran_3')) {
+                $validated['lampiran_3'] = $request->file('lampiran_3')
+                    ->store('henkaten_man_power_lampiran', 'public');
+                $uploadedFiles[] = $validated['lampiran_3'];
+            }
+    
+            // Prepare data untuk create
+            $validated['nama']       = $manPowerAsli->nama;
+            $validated['nama_after'] = $manPowerAfter->nama;
+            $validated['status']     = 'PENDING';
+            $validated['user_id']    = Auth::id(); // Pastikan field ini ada di fillable model
+    
+            // Create henkaten record
+            $henkaten = ManPowerHenkaten::create($validated);
+    
+            DB::commit();
+    
+            return redirect()->route('henkaten.create')
+                ->with('success', 'Henkaten Man Power berhasil dibuat.');
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+    
+            // Delete all uploaded files jika terjadi error
+            foreach ($uploadedFiles as $filePath) {
+                if (Storage::disk('public')->exists($filePath)) {
+                    Storage::disk('public')->delete($filePath);
                 }
             }
+    
+            Log::error('Error creating ManPower Henkaten: ' . $e->getMessage());
+    
+            return back()
+                ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
+                ->withInput();
         }
-    ],
-        'serial_number_start' => 'nullable|string|max:255',
-        'serial_number_end'   => 'nullable|string|max:255',
-    ], [
-        'man_power_id_after.different' => 'Man Power Pengganti tidak boleh sama dengan Man Power Sebelum.',
-        'lampiran.mimes'               => 'Lampiran harus berupa jpeg, png, pdf, zip, atau rar.',
-        'end_date.after_or_equal'      => 'Tanggal berakhir harus sama dengan atau setelah tanggal efektif.',
-        'time_end.after'               => 'Waktu selesai harus setelah waktu mulai.',
-    ]);
-
-    // Array untuk track uploaded files (untuk rollback jika error)
-    $uploadedFiles = [];
-
-    try {
-        DB::beginTransaction();
-
-        // Get ManPower data
-        $manPowerAsli  = ManPower::findOrFail($validated['man_power_id']);
-        $manPowerAfter = ManPower::findOrFail($validated['man_power_id_after']);
-
-        // Upload lampiran 1
-        if ($request->hasFile('lampiran')) {
-            $validated['lampiran'] = $request->file('lampiran')
-                ->store('henkaten_man_power_lampiran', 'public');
-            $uploadedFiles[] = $validated['lampiran'];
-        }
-
-        // Upload lampiran 2
-        if ($request->hasFile('lampiran_2')) {
-            $validated['lampiran_2'] = $request->file('lampiran_2')
-                ->store('henkaten_man_power_lampiran', 'public');
-            $uploadedFiles[] = $validated['lampiran_2'];
-        }
-
-        // Upload lampiran 3
-        if ($request->hasFile('lampiran_3')) {
-            $validated['lampiran_3'] = $request->file('lampiran_3')
-                ->store('henkaten_man_power_lampiran', 'public');
-            $uploadedFiles[] = $validated['lampiran_3'];
-        }
-
-        // Prepare data untuk create
-        $validated['nama']       = $manPowerAsli->nama;
-        $validated['nama_after'] = $manPowerAfter->nama;
-        $validated['status']     = 'PENDING';
-        $validated['user_id']    = Auth::id(); // Pastikan field ini ada di fillable model
-
-        // Create henkaten record
-        $henkaten = ManPowerHenkaten::create($validated);
-
-        DB::commit();
-
-        return redirect()->route('henkaten.create')
-            ->with('success', 'Henkaten Man Power berhasil dibuat.');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        // Delete all uploaded files jika terjadi error
-        foreach ($uploadedFiles as $filePath) {
-            if (Storage::disk('public')->exists($filePath)) {
-                Storage::disk('public')->delete($filePath);
-            }
-        }
-
-        Log::error('Error creating ManPower Henkaten: ' . $e->getMessage());
-
-        return back()
-            ->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
-            ->withInput();
     }
-}
 
+    
  public function createMethodHenkaten()
 {
     // Ambil data shift dari session
@@ -1191,14 +1206,21 @@ public function storeMachineHenkaten(Request $request)
 
     public function getManPower(Request $request)
     {
-        $data = $request->validate([
-            'grup' => 'required|string',
+        $role = Auth::user()?->role;
+        $requiresGroup = !in_array($role, ['Leader QC', 'Leader PPIC']);
+
+        $rules = [
             'line_area' => 'required|string',
             'station_id' => 'required|integer|exists:stations,id',
-        ]);
+        ];
+        if ($requiresGroup) {
+            $rules['grup'] = 'required|string';
+        }
+
+        $data = $request->validate($rules);
 
         $employeeToReplace = ManPower::where('station_id', $data['station_id'])
-            ->where('grup', $data['grup'])
+            ->when($requiresGroup, fn($q) => $q->where('grup', $data['grup'] ?? null))
             ->first(['id', 'nama']);
 
         if ($employeeToReplace) {

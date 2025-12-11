@@ -446,9 +446,16 @@ class ManPowerController extends Controller
         
         $stationIdInput = $request->input('station_id');
         $stationIdInt = filter_var($stationIdInput, FILTER_VALIDATE_INT) ? (int)$stationIdInput : 0;
+
+        $userRole = Auth::check() ? Auth::user()->role : null;
         
-        // Grup dan Line Area WAJIB
-        if (empty($grupInput) || empty($lineArea)) {
+        $requiresGroup = !in_array($userRole, ['Leader QC', 'Leader PPIC']);
+
+        // Line Area wajib. Grup hanya wajib untuk role non-QC/PPIC
+        if (empty($lineArea)) {
+            return response()->json([]);
+        }
+        if ($requiresGroup && empty($grupInput)) {
             return response()->json([]);
         }
 
@@ -493,7 +500,7 @@ class ManPowerController extends Controller
                 'man_power_many_stations.station_id'
             )
             ->where('man_power_many_stations.status', 'Approved')
-            ->where('man_power.grup', $grupInput)
+            ->when($requiresGroup, fn($q) => $q->where('man_power.grup', $grupInput))
             ->where('man_power.line_area', $lineArea)
             ->where('stations.line_area', $lineArea)
             ->whereNotIn('man_power.id', $busyRegularIds);
@@ -511,13 +518,13 @@ class ManPowerController extends Controller
         $manPower = $manPowerQuery->distinct()->limit(50)->get();
         
         // ============================================================
-        // Query Man Power TROUBLESHOOTING (hanya jika line_area bukan Delivery/Incoming)
+        // Query Man Power TROUBLESHOOTING (hanya jika line_area bukan Delivery/Incoming dan grup tersedia)
         // ============================================================
         $troubleshooting = collect(); // default kosong
-        if (!in_array($lineArea, ['Delivery', 'Incoming'])) {
+        if (!in_array($lineArea, ['Delivery', 'Incoming']) && (!$requiresGroup || !empty($grupInput))) {
             $troubleshootingQuery = ManPower::query()
                 ->select('id', 'nama', 'grup', 'line_area')
-                ->where('grup', 'like', "{$grupInput}(Troubleshooting)%")
+                ->when($requiresGroup, fn($q) => $q->where('grup', 'like', "{$grupInput}(Troubleshooting)%"))
                 ->whereNotIn('id', $busyTsIds);
 
             // Filter line_area untuk troubleshooting
@@ -554,30 +561,36 @@ class ManPowerController extends Controller
         // Gabungkan dan Format Hasil
         // ============================================================
         $result = collect($manPower)
-            ->map(fn($item) => [
+            ->map(function (object $item): array {
+                return [
                 'id' => (string) $item->id,
                 'nama' => $item->nama,
                 'grup' => $item->grup,
                 'line_area' => $item->line_area,
                 'type' => 'regular'
-            ])
+                ];
+            })
             ->merge(
-                $troubleshooting->map(fn($item) => [
-                    'id' => 't-' . $item->id,
-                    'nama' => $item->nama,
-                    'grup' => $item->grup,
-                    'line_area' => $item->line_area ?? 'Flexible',
-                    'type' => 'troubleshooting'
-                ])
+                $troubleshooting->map(function (object $item): array {
+                    return [
+                        'id' => 't-' . $item->id,
+                        'nama' => $item->nama,
+                        'grup' => $item->grup,
+                        'line_area' => $item->line_area ?? 'Flexible',
+                        'type' => 'troubleshooting'
+                    ];
+                })
             )
             ->merge(
-                $universal->map(fn($item) => [
-                    'id' => 't-' . $item->id,
-                    'nama' => $item->nama,
-                    'grup' => 'Universal',
-                    'line_area' => 'ALL',
-                    'type' => 'universal'
-                ])
+                $universal->map(function (object $item): array {
+                    return [
+                        'id' => 't-' . $item->id,
+                        'nama' => $item->nama,
+                        'grup' => 'Universal',
+                        'line_area' => 'ALL',
+                        'type' => 'universal'
+                    ];
+                })
             )
             ->unique('id')
             ->values();

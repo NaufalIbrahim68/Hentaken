@@ -114,8 +114,8 @@ class ActivityLogController extends Controller
         if ($log->man_power_id_after != $validated['man_power_id_after']) {
             $mpAfterLama = ManPower::find($log->man_power_id_after);
             if ($mpAfterLama) {
+                // Jangan kosongkan station_id; cukup aktifkan kembali
                 $mpAfterLama->status = 'Actived';
-                $mpAfterLama->station_id = null;
                 $mpAfterLama->save();
             }
         }
@@ -171,8 +171,8 @@ class ActivityLogController extends Controller
             $manPowerAsli_Baru->status = 'Actived';
             $manPowerAsli_Baru->save();
 
+            // Jangan hapus station_id operator pengganti saat Henkaten selesai
             $manPowerAfter_Baru->status = 'Actived';
-            $manPowerAfter_Baru->station_id = null;
             $manPowerAfter_Baru->save();
         }
 
@@ -217,7 +217,8 @@ class ActivityLogController extends Controller
 
         $mpAfter = ManPower::find($log->man_power_id_after);
         if ($mpAfter) {
-            $mpAfter->update(['status' => 'Actived', 'station_id' => null]);
+            // Jangan kosongkan station_id saat menghapus log henkaten
+            $mpAfter->update(['status' => 'Actived']);
         }
 
         // ✅ HAPUS SEMUA LAMPIRAN
