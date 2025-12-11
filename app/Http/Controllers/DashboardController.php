@@ -208,6 +208,12 @@ $materialHenkatens = MaterialHenkaten::with(['station','material'])
     ->get();
 
 
+
+    // Leader QC & PPIC tidak memakai grup, jadi jangan filter grup
+if (in_array($role, ['Leader QC', 'Leader PPIC'])) {
+    $currentGroup = null;
+}
+
         // ============================================================
         // MANPOWER DISPLAY
         // ============================================================
@@ -216,52 +222,52 @@ $materialHenkatens = MaterialHenkaten::with(['station','material'])
         $dataManPowerKosong = true;
         $groupedManPower = collect();
 
-        if ($currentGroup) {
-            $stationsQuery = Station::where('line_area', $selectedLineArea)->pluck('id');
+       // Leader QC & PPIC tidak memakai grup → tetap jalankan blok manpower
+if ($currentGroup || in_array($role, ['Leader QC', 'Leader PPIC'])) {
 
-            $allManPower = ManPower::with('station')
-                ->where('grup', $currentGroup)
-           ->where('is_main_operator', 1) // <<< tambahkan filter ini
-                ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
-                ->get();
+    $allManPower = ManPower::with('station')
+        ->when($currentGroup, fn($q) => $q->where('grup', $currentGroup)) // hanya filter jika grup ada
+        ->where('is_main_operator', 1)
+        ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
+        ->get();
 
-            $manpowerByStation = $allManPower->groupBy('station_id');
-            $henkatenByStation = $activeManPowerHenkatens->groupBy('station_id');
+    $manpowerByStation = $allManPower->groupBy('station_id');
+    $henkatenByStation = $activeManPowerHenkatens->groupBy('station_id');
 
-            $stationIds = $manpowerByStation->keys()->merge($henkatenByStation->keys())->unique();
+    $stationIds = $manpowerByStation->keys()->merge($henkatenByStation->keys())->unique();
 
-            foreach ($stationIds as $stationId) {
-                if ($henkatenByStation->has($stationId)) {
+    foreach ($stationIds as $stationId) {
 
-                    $henk = $henkatenByStation[$stationId]->sortByDesc('effective_date')->first();
+        if ($henkatenByStation->has($stationId)) {
+            $henk = $henkatenByStation[$stationId]->sortByDesc('effective_date')->first();
 
-                    $oldWorker = new ManPower([
-                        'id' => $henk->man_power_id,
-                        'nama' => $henk->nama,
-                        'keterangan' => $henk->keterangan,
-                        'grup' => $henk->manPower->grup ?? $currentGroup,
-                        'station_id' => $stationId,
-                        'status' => 'Henkaten',
-                    ]);
+            $oldWorker = new ManPower([
+                'id' => $henk->man_power_id,
+                'nama' => $henk->nama,
+                'keterangan' => $henk->keterangan,
+                'grup' => $henk->manPower->grup ?? $currentGroup,
+                'station_id' => $stationId,
+                'status' => 'Henkaten',
+            ]);
 
-                    $oldWorker->setRelation('station', $henk->station ?? Station::find($stationId));
-                    $manPower->push($oldWorker);
+            $oldWorker->setRelation('station', $henk->station ?? Station::find($stationId));
+            $manPower->push($oldWorker);
 
-                } else {
-                    $workers = $manpowerByStation->get($stationId, collect());
-                    if ($workers->isNotEmpty()) {
-                        $worker = $workers->first();
-                        $worker->setAttribute('status', $worker->status ?? 'NORMAL');
-                        $manPower->push($worker);
-                    }
-                }
-            }
-
-            if ($manPower->isNotEmpty()) {
-                $dataManPowerKosong = false;
-                $groupedManPower = $manPower->groupBy('station_id');
+        } else {
+            $workers = $manpowerByStation->get($stationId, collect());
+            if ($workers->isNotEmpty()) {
+                $worker = $workers->first();
+                $worker->setAttribute('status', 'NORMAL');
+                $manPower->push($worker);
             }
         }
+    }
+
+    if ($manPower->isNotEmpty()) {
+        $dataManPowerKosong = false;
+        $groupedManPower = $manPower->groupBy('station_id');
+    }
+}
 
         // ============================================================
         // METHOD

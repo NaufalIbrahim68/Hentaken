@@ -210,30 +210,32 @@
     
     <div class="flex-1 flex justify-end items-center space-x-2">
         
-        {{-- Dropdown Anda (sudah benar) --}}
-        <div>
-            <select id="grupFilterDropdown" 
-                    {{-- Panggil JS setGrup HANYA JIKA nilainya bukan "" (bukan "Pilih Grup") --}}
-                    onchange="if(this.value) { setGrup(this.value); }"
-                    class="text-[10px] font-bold px-2 py-0.5 rounded border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                    style="padding-right: 1.75rem;"> {{-- Styling untuk panah dropdown --}}
+      {{-- === FILTER GRUP (Tidak tampil untuk Leader PPIC & Leader QC) === --}}
+            @if (!in_array($userRole, ['Leader PPIC', 'Leader QC']))
+                <div>
+                    <select id="grupFilterDropdown"
+                            onchange="if(this.value) { setGrup(this.value); }"
+                            class="text-[10px] font-bold px-2 py-0.5 rounded border-gray-300 shadow-sm 
+                                   focus:border-purple-500 focus:ring-purple-500"
+                            style="padding-right: 1.75rem;">
 
-                {{-- Opsi "Pilih Grup" akan aktif jika session $currentGroup kosong --}}
-                <option value="" {{ is_null($currentGroup ?? null) ? 'selected' : '' }} disabled>
-                    Pilih Grup...
-                </option>
+                        <option value="" {{ is_null($currentGroup ?? null) ? 'selected' : '' }} disabled>
+                            Pilih Grup...
+                        </option>
 
-                <option value="A" {{ ($currentGroup ?? null) == 'A' ? 'selected' : '' }}>
-                    Grup A
-                </option>
+                        <option value="A" {{ ($currentGroup ?? null) == 'A' ? 'selected' : '' }}>
+                            Grup A
+                        </option>
 
-                <option value="B" {{ ($currentGroup ?? null) == 'B' ? 'selected' : '' }}>
-                    Grup B
-                </option>
-            </select>
+                        <option value="B" {{ ($currentGroup ?? null) == 'B' ? 'selected' : '' }}>
+                            Grup B
+                        </option>
+                    </select>
+                </div>
+            @endif
         </div>
-</div>
-</div>
+    </div>
+
 
 {{-- ======================================================================= --}}
 {{-- BAGIAN ATAS: DAFTAR MAN POWER (TABEL HORIZONTAL) --}}
