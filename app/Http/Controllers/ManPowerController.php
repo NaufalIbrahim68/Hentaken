@@ -33,19 +33,30 @@ class ManPowerController extends Controller
                             ->orderBy('line_area', 'asc')
                             ->pluck('line_area');
 
-        // 3. ✅ Buat query dengan DISTINCT dan eager loading proper
-        $query = ManPower::query()
-            ->with(['station', 'stations']) // Load relasi station utama dan many stations
-            ->select('man_power.*') // Select semua kolom dari man_power
-            ->distinct(); // ✅ Hindari duplikasi
-
-        // 4. Terapkan filter JIKA $selectedLineArea ada isinya
+        // 3. ✅ Buat query untuk menghindari duplikasi
+        // Gunakan subquery untuk mendapatkan hanya ID unik berdasarkan kombinasi nama+station_id+grup
+        $subquery = ManPower::query()
+            ->selectRaw('MIN(id) as id')
+            ->groupBy('nama', 'station_id', 'grup', 'line_area');
+        
         if ($selectedLineArea) {
-            $query->where('man_power.line_area', $selectedLineArea); // Specify table
+            $subquery->where('line_area', $selectedLineArea);
+        }
+        
+        $uniqueIds = $subquery->pluck('id');
+        
+        // Query utama dengan eager loading hanya untuk ID yang unik
+        $query = ManPower::query()
+            ->with('station') // Load relasi station singular yang diperlukan untuk view
+            ->whereIn('id', $uniqueIds);
+
+        // 4. Terapkan filter JIKA $selectedLineArea ada isinya (untuk konsistensi)
+        if ($selectedLineArea) {
+            $query->where('line_area', $selectedLineArea);
         }
 
-        // 5. ✅ Order by dan paginate dengan distinct
-        $man_powers = $query->orderBy('man_power.nama', 'asc')
+        // 5. ✅ Order by dan paginate
+        $man_powers = $query->orderBy('nama', 'asc')
                            ->paginate(10)
                            ->appends(['line_area' => $selectedLineArea]); // Keep filter on pagination
 
@@ -195,12 +206,23 @@ class ManPowerController extends Controller
     // ==============================================================
     public function edit($id)
     {
-        $man_power = ManPower::with('stations')->findOrFail($id);
+        // Load man_power dengan relasi stations dan pivot data (status)
+        // Relasi stations sudah menggunakan withPivot(['status']) di model
+        $man_power = ManPower::with(['stations' => function($query) {
+            $query->select('stations.id', 'stations.station_name', 'stations.station_code', 'stations.line_area');
+        }])->findOrFail($id);
+        
+        // Ambil data pivot lengkap dari man_power_many_stations untuk mendapatkan semua informasi
+        $pivotData = DB::table('man_power_many_stations')
+            ->where('man_power_id', $id)
+            ->select('station_id', 'status', 'created_at', 'updated_at')
+            ->get()
+            ->keyBy('station_id');
         
         $lineAreas = Station::select('line_area')->distinct()->pluck('line_area');
         $stations = Station::all();
 
-        return view('manpower.edit_master', compact('man_power', 'lineAreas', 'stations'));
+        return view('manpower.edit_master', compact('man_power', 'lineAreas', 'stations', 'pivotData'));
     }
 
     // ==============================================================

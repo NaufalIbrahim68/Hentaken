@@ -42,6 +42,80 @@
                         </div>
                     @endif
 
+                    {{-- Informasi Main Station dan Stations yang Bisa Diampu --}}
+                    <div class="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Informasi Station</h4>
+                        
+                        {{-- Main Station --}}
+                        <div class="mb-4">
+                            <h5 class="text-sm font-semibold text-gray-700 mb-2">Main Station:</h5>
+                            @if($man_power->station)
+                                <div class="bg-green-50 border-l-4 border-green-500 p-3 rounded">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <span class="font-medium text-gray-800">{{ $man_power->station->station_name }}</span>
+                                            <span class="ml-2 text-xs text-green-600 font-semibold">(Main Station)</span>
+                                            @if($man_power->station->station_code)
+                                                <span class="ml-2 text-xs text-gray-500">({{ $man_power->station->station_code }})</span>
+                                            @endif
+                                        </div>
+                                        <span class="text-xs text-gray-600">Line Area: {{ $man_power->station->line_area }}</span>
+                                    </div>
+                                </div>
+                            @else
+                                <p class="text-sm text-gray-500 italic">Tidak ada main station</p>
+                            @endif
+                        </div>
+
+                        {{-- Stations yang Bisa Diampu (dari man_power_many_stations) --}}
+                        <div>
+                            <h5 class="text-sm font-semibold text-gray-700 mb-2">Stations yang Bisa Diampu:</h5>
+                            @if($man_power->stations && $man_power->stations->count() > 0)
+                                <div class="space-y-2">
+                                    @foreach($man_power->stations as $station)
+                                        @php
+                                            $pivotStatus = $pivotData->where('station_id', $station->id)->first();
+                                            $status = $pivotStatus ? $pivotStatus->status : 'N/A';
+                                            $isMainStation = $man_power->station_id == $station->id;
+                                        @endphp
+                                        <div class="bg-white border {{ $isMainStation ? 'border-green-300' : 'border-gray-300' }} rounded p-3">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex-1">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="font-medium text-gray-800">{{ $station->station_name }}</span>
+                                                        @if($isMainStation)
+                                                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">Main</span>
+                                                        @endif
+                                                        @if($station->station_code)
+                                                            <span class="text-xs text-gray-500">({{ $station->station_code }})</span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="mt-1 flex items-center gap-4 text-xs text-gray-600">
+                                                        <span>Line Area: {{ $station->line_area }}</span>
+                                                        <span class="flex items-center gap-1">
+                                                            Status: 
+                                                            <span class="px-2 py-1 rounded font-medium 
+                                                                @if($status == 'APPROVED' || $status == 'approved') bg-green-100 text-green-700
+                                                                @elseif($status == 'PENDING' || $status == 'pending') bg-yellow-100 text-yellow-700
+                                                                @elseif($status == 'REJECTED' || $status == 'rejected') bg-red-100 text-red-700
+                                                                @else bg-gray-100 text-gray-700
+                                                                @endif">
+                                                                {{ $status }}
+                                                            </span>
+                                                        </span>
+                                                    </div>
+                                                    
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-sm text-gray-500 italic">Belum ada stations yang bisa diampu</p>
+                            @endif
+                        </div>
+                    </div>
+
                     {{-- FORM EDIT --}}
                     <form action="{{ route('manpower.update', $man_power->id) }}" method="POST">
                         @csrf
