@@ -32,8 +32,8 @@ class DashboardController extends Controller
         $user = Auth::user();
         $role = $user ? $user->role : null;
     
-        // Untuk Leader QC & PPIC, set grup otomatis ke A
-        $isLeaderQCorPPIC = in_array($role, ['Leader QC', 'Leader PPIC']);
+        // Untuk Leader QC, PPIC, Sect Head QC & Sect Head PPIC, set grup otomatis ke A
+        $isLeaderQCorPPIC = in_array($role, ['Leader QC', 'Leader PPIC', 'Sect Head QC', 'Sect Head PPIC']);
         if ($isLeaderQCorPPIC) {
             session(['active_grup' => 'A']);
             $currentGroup = 'A';
@@ -322,7 +322,7 @@ class DashboardController extends Controller
             'Leader SMT' => 'dashboard.roles.leader_smt',
             'Leader PPIC' => 'dashboard.roles.leader_ppic',
             'Leader QC' => 'dashboard.roles.leader_qc',
-            'Sect Head Produksi' => 'dashboard.roles.leader_fa',
+            'Sect Head Produksi' => 'dashboard.roles.secthead_produksi',
             'Sect Head PPIC' => 'dashboard.roles.secthead_ppic',
             'Sect Head QC' => 'dashboard.roles.secthead_qc',
             default => 'dashboard.index',

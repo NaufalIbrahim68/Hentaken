@@ -149,12 +149,9 @@ class ManPowerController extends Controller
                     'waktu_mulai' => $data['waktu_mulai'],
                 ]);
 
-                // ✅ Simpan main station ke relasi dengan flag is_main_operator = 1
-                $manPower->stations()->attach($data['station_id'], [
-                    'is_main_operator' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+                // Note: Main station sudah disimpan di station_id
+                // Pivot table (man_power_many_stations) hanya untuk station TAMBAHAN
+                // yang ditambahkan dari menu Edit, bukan saat Create
 
             } else {
                 // ✅ Buat 1 RECORD manpower biasa
@@ -168,13 +165,28 @@ class ManPowerController extends Controller
                     'waktu_mulai' => $data['waktu_mulai'],
                 ]);
 
-                // ✅ Simpan main station ke relasi dengan flag is_main_operator = 1
-                $manPower->stations()->attach($data['station_id'], [
-                    'is_main_operator' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+                // Note: Main station sudah disimpan di station_id
+                // Pivot table (man_power_many_stations) hanya untuk station TAMBAHAN
+                // yang ditambahkan dari menu Edit, bukan saat Create
             }
+
+            // Log activity BEFORE commit (inside transaction)
+            \App\Models\ActivityLog::create([
+                'user_id' => Auth::id(),
+                'loggable_type' => ManPower::class,
+                'loggable_id' => $manPower->id,
+                'action' => 'created',
+                'details' => [
+                    'tanggal_dibuat' => now()->format('Y-m-d H:i:s'),
+                    'nama' => $manPower->nama,
+                    'tanggal_mulai' => $manPower->tanggal_mulai,
+                    'waktu_mulai' => $manPower->waktu_mulai,
+                    'line_area' => $lineAreaOfStation,
+                    'station_name' => $station->station_name ?? '-',
+                    'grup' => $manPower->grup,
+                    'status' => $manPower->status ?? 'pending',
+                ]
+            ]);
 
             DB::commit();
 
@@ -248,6 +260,27 @@ class ManPowerController extends Controller
                 'grup' => $validatedData['group'], // Note: validasi pakai 'group', model pakai 'grup'
             ]);
 
+            // Log activity
+            $additionalStations = $man_power->stations()
+                ->wherePivot('station_id', '!=', $man_power->station_id)
+                ->pluck('station_name')
+                ->toArray();
+            
+            \App\Models\ActivityLog::create([
+                'user_id' => Auth::id(),
+                'loggable_type' => ManPower::class,
+                'loggable_id' => $man_power->id,
+                'action' => 'updated',
+                'details' => [
+                    'tanggal_dibuat' => now()->format('Y-m-d H:i:s'),
+                    'nama' => $validatedData['nama'],
+                    'line_area' => $validatedData['line_area'],
+                    'grup' => $validatedData['group'],
+                    'station_tambahan' => !empty($additionalStations) ? implode(', ', $additionalStations) : '-',
+                    'status' => $man_power->status ?? '-',
+                ]
+            ]);
+
             DB::commit();
 
             Log::info('ManPower Updated Successfully', [
@@ -284,6 +317,19 @@ class ManPowerController extends Controller
             // ✅ Hapus relasi stations terlebih dahulu
             $man_power->stations()->detach();
             
+            // Log activity before deletion
+            \App\Models\ActivityLog::create([
+                'user_id' => Auth::id(),
+                'loggable_type' => ManPower::class,
+                'loggable_id' => $man_power->id,
+                'action' => 'deleted',
+                'details' => [
+                    'nama' => $man_power->nama,
+                    'grup' => $man_power->grup,
+                    'line_area' => $man_power->line_area,
+                ]
+            ]);
+
             // Hapus man power
             $man_power->delete();
 
@@ -656,10 +702,65 @@ class ManPowerController extends Controller
 
     public function confirmation()
     {
-        $manpowers = ManPower::where('status', 'pending')->get();
-        $methods   = \App\Models\Method::where('status', 'pending')->get();
-        $machines  = \App\Models\Machine::where('status', 'pending')->get();
-        $materials = \App\Models\Material::where('status', 'pending')->get();
+        // Get the authenticated user's role
+        $user = Auth::user();
+        $role = $user ? $user->role : null;
+
+        // Determine line_area filter based on role
+        $lineArea = null;
+        if ($role === 'Sect Head QC') {
+            $lineArea = 'Incoming';
+        } elseif ($role === 'Sect Head PPIC') {
+            $lineArea = 'Delivery';
+        }
+
+        // Query ManPower with optional line_area filtering
+        if ($lineArea) {
+            $manpowers = ManPower::where('status', 'pending')
+                ->whereHas('station', function ($q) use ($lineArea) {
+                    $q->where('line_area', $lineArea);
+                })
+                ->with('station')
+                ->get();
+        } else {
+            $manpowers = ManPower::where('status', 'pending')->with('station')->get();
+        }
+
+        // Query Method with optional line_area filtering
+        if ($lineArea) {
+            $methods = \App\Models\Method::where('status', 'pending')
+                ->whereHas('station', function ($q) use ($lineArea) {
+                    $q->where('line_area', $lineArea);
+                })
+                ->with('station')
+                ->get();
+        } else {
+            $methods = \App\Models\Method::where('status', 'pending')->with('station')->get();
+        }
+
+        // Query Machine with optional line_area filtering
+        if ($lineArea) {
+            $machines = \App\Models\Machine::where('status', 'pending')
+                ->whereHas('station', function ($q) use ($lineArea) {
+                    $q->where('line_area', $lineArea);
+                })
+                ->with('station')
+                ->get();
+        } else {
+            $machines = \App\Models\Machine::where('status', 'pending')->with('station')->get();
+        }
+
+        // Query Material with optional line_area filtering
+        if ($lineArea) {
+            $materials = \App\Models\Material::where('status', 'pending')
+                ->whereHas('station', function ($q) use ($lineArea) {
+                    $q->where('line_area', $lineArea);
+                })
+                ->with('station')
+                ->get();
+        } else {
+            $materials = \App\Models\Material::where('status', 'pending')->with('station')->get();
+        }
 
         return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials'));
     }

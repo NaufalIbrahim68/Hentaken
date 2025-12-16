@@ -225,7 +225,31 @@
                         <a href="{{ route('activity.log.method') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Method</a>
                     </div>
                 </div>
-            @endif
+                @endif
+
+                {{-- LOG MASTER DATA --}}
+                @if(in_array(Auth::user()->role, ['Leader FA', 'Leader PPIC', 'Leader QC']))
+                <div x-data="{ masterLogOpen: false }" class="mb-2">
+                    <button @click="masterLogOpen = !masterLogOpen"
+                            class="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <span>Log Master Data</span>
+                        </div>
+                        <svg class="w-4 h-4 transition-transform flex-shrink-0" :class="{ 'rotate-180': masterLogOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="masterLogOpen" x-transition class="ml-4 mt-2 space-y-1">
+                        <a href="{{ route('activity.log.master.manpower') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Man Power</a>
+                        <a href="{{ route('activity.log.master.machine') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Machine</a>
+                        <a href="{{ route('activity.log.master.material') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Material</a>
+                        <a href="{{ route('activity.log.master.method') }}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Method</a>
+                    </div>
+                </div>
+                @endif
         </nav>
 
         {{-- USER MENU --}}

@@ -12,8 +12,15 @@ class CheckRole
     {
         $user = Auth::user();
 
-        if (!$user || $user->role !== $role) {
-            abort(403, 'Unauthorized');
+        if (!$user) {
+            abort(403, 'User does not have the right roles.');
+        }
+
+        // Support multiple roles separated by pipe (|)
+        $allowedRoles = explode('|', $role);
+        
+        if (!in_array($user->role, $allowedRoles)) {
+            abort(403, 'User does not have the right roles.');
         }
 
         return $next($request);

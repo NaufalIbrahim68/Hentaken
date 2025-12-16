@@ -76,14 +76,22 @@ class MachineController extends Controller
             $fotoPath = $request->file('foto_path')->store('public/foto_machines');
         }
 
-        Machine::create([
+    $machine = Machine::create([
             'station_id' => $request->station_id,
             'deskripsi' => $request->deskripsi,
             'keterangan' => $request->keterangan,
             'foto_path' => $fotoPath,
         ]);
 
-        return redirect()->route('machines.index')->with('success', 'Data mesin berhasil ditambahkan.');
+        \App\Models\ActivityLog::create([
+            'user_id' => auth()->id(),
+            'loggable_type' => Machine::class,
+            'loggable_id' => $machine->id,
+            'action' => 'created',
+            'details' => ['deskripsi' => $request->deskripsi, 'keterangan' => $request->keterangan]
+        ]);
+
+        return redirect()->route('machines.index')->with('success', 'Data mesin berhasil ditambahkan');
     }
 
     /**

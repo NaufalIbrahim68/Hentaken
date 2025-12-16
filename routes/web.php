@@ -180,6 +180,20 @@ Route::get('/get-stations-by-line-area', [MaterialController::class, 'getStation
 
    
 
+// ======================================================================
+// ACTIVITY LOG MASTER DATA - (Man Power, Method, Machine, Material CRUD)
+// ======================================================================
+Route::prefix('activity-log-master')
+    ->middleware(['auth', 'role:Leader FA|Leader PPIC|Leader QC'])
+    ->name('activity.log.master.')
+    ->group(function () {
+        Route::get('/manpower', [\App\Http\Controllers\MasterDataLogController::class, 'manpower'])->name('manpower');
+        Route::get('/method', [\App\Http\Controllers\MasterDataLogController::class, 'method'])->name('method');
+        Route::get('/machine', [\App\Http\Controllers\MasterDataLogController::class, 'machine'])->name('machine');
+        Route::get('/material', [\App\Http\Controllers\MasterDataLogController::class, 'material'])->name('material');
+        Route::delete('/{id}', [\App\Http\Controllers\MasterDataLogController::class, 'destroy'])->name('destroy');
+    });
+
 
     // ======================================================================
 // ACTIVITY LOG - (MAN POWER - CRUD Lengkap)

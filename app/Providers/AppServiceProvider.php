@@ -78,16 +78,68 @@ class AppServiceProvider extends ServiceProvider
                                + $materials->count() + $machines->count();
 
                 // --- MASTER DATA PENDING ---
-                $pendingMasterManPower = ManPower::where('status', 'Pending')->count();
-                $pendingMasterMachine  = Machine::where('status', 'Pending')->count();
-                $pendingMasterMaterial = Material::where('status', 'Pending')->count();
-                $pendingMasterMethod   = Method::where('status', 'Pending')->count();
+                // Apply line_area filtering based on role
+                if ($role === 'Sect Head QC') {
+                    $pendingMasterManPower = ManPower::where('status', 'Pending')
+                        ->whereHas('station', function ($q) {
+                            $q->where('line_area', 'Incoming');
+                        })->count();
+                    $pendingMasterMachine = Machine::where('status', 'Pending')
+                        ->whereHas('station', function ($q) {
+                            $q->where('line_area', 'Incoming');
+                        })->count();
+                    $pendingMasterMaterial = Material::where('status', 'Pending')
+                        ->whereHas('station', function ($q) {
+                            $q->where('line_area', 'Incoming');
+                        })->count();
+                    $pendingMasterMethod = Method::where('status', 'Pending')
+                        ->whereHas('station', function ($q) {
+                            $q->where('line_area', 'Incoming');
+                        })->count();
+                } elseif ($role === 'Sect Head PPIC') {
+                    $pendingMasterManPower = ManPower::where('status', 'Pending')
+                        ->whereHas('station', function ($q) {
+                            $q->where('line_area', 'Delivery');
+                        })->count();
+                    $pendingMasterMachine = Machine::where('status', 'Pending')
+                        ->whereHas('station', function ($q) {
+                            $q->where('line_area', 'Delivery');
+                        })->count();
+                    $pendingMasterMaterial = Material::where('status', 'Pending')
+                        ->whereHas('station', function ($q) {
+                            $q->where('line_area', 'Delivery');
+                        })->count();
+                    $pendingMasterMethod = Method::where('status', 'Pending')
+                        ->whereHas('station', function ($q) {
+                            $q->where('line_area', 'Delivery');
+                        })->count();
+                } else {
+                    // For other roles (Sect Head Produksi, Admin, etc.), show all pending
+                    $pendingMasterManPower = ManPower::where('status', 'Pending')->count();
+                    $pendingMasterMachine  = Machine::where('status', 'Pending')->count();
+                    $pendingMasterMaterial = Material::where('status', 'Pending')->count();
+                    $pendingMasterMethod   = Method::where('status', 'Pending')->count();
+                }
 
                 $totalMasterData = $pendingMasterManPower + $pendingMasterMachine 
                                  + $pendingMasterMaterial + $pendingMasterMethod;
 
                 // --- MATRIX MAN POWER PENDING ---
-                $pendingMatrixManPower = ManPowerManyStation::where('status', 'Pending')->count();
+                // Apply line_area filtering based on role
+                if ($role === 'Sect Head QC') {
+                    $pendingMatrixManPower = ManPowerManyStation::where('status', 'Pending')
+                        ->whereHas('station', function ($q) {
+                            $q->where('line_area', 'Incoming');
+                        })->count();
+                } elseif ($role === 'Sect Head PPIC') {
+                    $pendingMatrixManPower = ManPowerManyStation::where('status', 'Pending')
+                        ->whereHas('station', function ($q) {
+                            $q->where('line_area', 'Delivery');
+                        })->count();
+                } else {
+                    // For other roles, show all pending
+                    $pendingMatrixManPower = ManPowerManyStation::where('status', 'Pending')->count();
+                }
 
                 // --- KIRIM KE VIEW ---
                 $view->with('pendingHenkatenCount', $totalHenkaten);

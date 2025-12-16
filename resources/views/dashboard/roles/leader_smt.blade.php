@@ -177,10 +177,18 @@
         </div>
     </div>
 
-    {{-- 4 SECTION GRID - . --}}
+    {{-- 4 SECTION GRID --}}
     <div class="grid grid-cols-2 gap-3 h-[92vh]">
- 
-{{-- MAN POWER --}}
+        {{-- MAN POWER --}}
+        @include('dashboard.partials._manpower_line')
+
+        {{-- METHOD --}}
+        @include('dashboard.partials._method_line')
+
+        {{-- MACHINE --}}
+        @include('dashboard.partials._machine_line')
+
+        {{-- MATERIAL --}}
 <div class="bg-white shadow rounded p-1 flex flex-col">
     {{-- ======================================================================= --}}
     {{-- BAGIAN HEADER: JUDUL DAN FILTER GRUP (DIUBAH JADI DROPDOWN) --}}
