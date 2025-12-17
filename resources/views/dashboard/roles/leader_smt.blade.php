@@ -177,21 +177,15 @@
         </div>
     </div>
 
-    {{-- 4 SECTION GRID --}}
+    {{-- 4 SECTION GRID - . --}}
     <div class="grid grid-cols-2 gap-3 h-[92vh]">
-        {{-- MAN POWER --}}
-        @include('dashboard.partials._manpower_line')
-
-        {{-- METHOD --}}
-        @include('dashboard.partials._method_line')
-
-        {{-- MACHINE --}}
-        @include('dashboard.partials._machine_line')
-
-        {{-- MATERIAL --}}
-@include('dashboard.partials._material_line')
-  </div> 
-    </div> 
+ 
+{{-- MAN POWER --}}
+<div class="bg-white shadow rounded p-1 flex flex-col">
+    {{-- ======================================================================= --}}
+    {{-- BAGIAN HEADER: JUDUL DAN FILTER GRUP (DIUBAH JADI DROPDOWN) --}}
+    {{-- ======================================================================= --}}
+    <div class="flex items-center mb-2 px-2 pt-1">
 
 
 
@@ -652,5 +646,8 @@
     }); 
 </script>
 @endpush
+
+{{-- PDF Auto-Slideshow --}}
+@include('dashboard.partials._pdf_slideshow')
 
 </x-app-layout>

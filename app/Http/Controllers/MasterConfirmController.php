@@ -13,81 +13,17 @@ use App\Models\Role;
 
 // --- 1. TAMBAHKAN INI ---
 use Illuminate\Support\Facades\Storage;
-use App\Models\ActivityLog;
-use Illuminate\Support\Facades\Auth;
 
 class MasterConfirmController extends Controller
 {
     public function index()
     {
-        // Get the authenticated user's role
-        $user = Auth::user();
-        $role = $user ? $user->role : null;
+        $manpowers = ManPower::where('status', 'Pending')->get();
+        $methods   = Method::where('status', 'Pending')->get();
+        $machines  = Machine::where('status', 'Pending')->get();
+        $materials = Material::where('status', 'Pending')->get();
 
-        // Determine line_area filter based on role
-        $lineArea = null;
-        if ($role === 'Sect Head QC') {
-            $lineArea = 'Incoming';
-        } elseif ($role === 'Sect Head PPIC') {
-            $lineArea = 'Delivery';
-        }
-        // For other roles (e.g., Sect Head Produksi), $lineArea remains null (no filtering)
-
-        // DEBUG: Log to check what's happening
-        \Log::info('Master Confirm Index - Role: ' . $role . ', Line Area Filter: ' . ($lineArea ?? 'NONE'));
-
-        // Query ManPower with optional line_area filtering
-        if ($lineArea) {
-            $manpowers = ManPower::where('status', 'Pending')
-                ->whereHas('station', function ($q) use ($lineArea) {
-                    $q->where('line_area', $lineArea);
-                })
-                ->with('station')
-                ->get();
-        } else {
-            $manpowers = ManPower::where('status', 'Pending')->with('station')->get();
-        }
-
-        // Query Method with optional line_area filtering
-        if ($lineArea) {
-            $methods = Method::where('status', 'Pending')
-                ->whereHas('station', function ($q) use ($lineArea) {
-                    $q->where('line_area', $lineArea);
-                })
-                ->with('station')
-                ->get();
-        } else {
-            $methods = Method::where('status', 'Pending')->with('station')->get();
-        }
-
-        // Query Machine with optional line_area filtering
-        if ($lineArea) {
-            $machines = Machine::where('status', 'Pending')
-                ->whereHas('station', function ($q) use ($lineArea) {
-                    $q->where('line_area', $lineArea);
-                })
-                ->with('station')
-                ->get();
-        } else {
-            $machines = Machine::where('status', 'Pending')->with('station')->get();
-        }
-
-        // Query Material with optional line_area filtering
-        if ($lineArea) {
-            $materials = Material::where('status', 'Pending')
-                ->whereHas('station', function ($q) use ($lineArea) {
-                    $q->where('line_area', $lineArea);
-                })
-                ->with('station')
-                ->get();
-        } else {
-            $materials = Material::where('status', 'Pending')->with('station')->get();
-        }
-
-        // DEBUG: Log counts
-        \Log::info('Counts - ManPower: ' . $manpowers->count() . ', Methods: ' . $methods->count() . ', Machines: ' . $machines->count() . ', Materials: ' . $materials->count());
-
-        return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials', 'role', 'lineArea'));
+        return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials'));
     }
 
     public function approve($type, $id)
@@ -95,19 +31,6 @@ class MasterConfirmController extends Controller
         $model = $this->getModel($type)::findOrFail($id);
         $model->status = 'Approved';
         $model->save();
-
-        // Update status di activity log yang sudah ada
-        $log = ActivityLog::where('loggable_type', get_class($model))
-            ->where('loggable_id', $model->id)
-            ->where('action', 'created')
-            ->first();
-        
-        if ($log) {
-            $details = $log->details;
-            $details['status'] = 'Approved';
-            $log->details = $details;
-            $log->save();
-        }
 
         return back()->with('success', ucfirst($type).' disetujui.');
     }
@@ -117,19 +40,6 @@ class MasterConfirmController extends Controller
         $model = $this->getModel($type)::findOrFail($id);
         $model->status = 'Revisi';
         $model->save();
-
-        // Update status di activity log yang sudah ada
-        $log = ActivityLog::where('loggable_type', get_class($model))
-            ->where('loggable_id', $model->id)
-            ->where('action', 'created')
-            ->first();
-        
-        if ($log) {
-            $details = $log->details;
-            $details['status'] = 'Revisi';
-            $log->details = $details;
-            $log->save();
-        }
 
         return back()->with('warning', ucfirst($type).' dikembalikan untuk revisi.');
     }

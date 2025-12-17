@@ -6,35 +6,14 @@ use App\Models\ManPower;
 use App\Models\ManPowerManyStation;
 use App\Models\Station;
 use Illuminate\Http\Request;
-use App\Models\ActivityLog;
-use Illuminate\Support\Facades\Auth;
 
 class ManPowerStationController extends Controller
 {
 
     public function matrixApprovalIndex()
     {
-        // Get the authenticated user's role
-        $user = Auth::user();
-        $role = $user ? $user->role : null;
-
-        // Determine line_area filter based on role
-        $lineArea = null;
-        if ($role === 'Sect Head QC') {
-            $lineArea = 'Incoming';
-        } elseif ($role === 'Sect Head PPIC') {
-            $lineArea = 'Delivery';
-        }
-        // For other roles (e.g., Sect Head Produksi), $lineArea remains null (no filtering)
-
-        // Query ManPowerManyStation with optional line_area filtering via station relationship
         $manpowerStations = ManPowerManyStation::where('status', 'PENDING')
             ->with(['manpower', 'station'])
-            ->when($lineArea, function ($query) use ($lineArea) {
-                $query->whereHas('station', function ($q) use ($lineArea) {
-                    $q->where('line_area', $lineArea);
-                });
-            })
             ->get();
 
         // Mengirim data ke view yang telah direvisi sebelumnya (secthead.approval-matrix-index)

@@ -103,9 +103,7 @@ class MasterDataLogController extends Controller
         ]);
     }
 
-    /**
-     * Delete activity log record
-     */
+    
     public function destroy($id)
     {
         $log = ActivityLog::findOrFail($id);
