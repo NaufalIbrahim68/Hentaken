@@ -1988,7 +1988,7 @@ $isHenkaten = ($currentWorker->status == 'Henkaten' || $currentWorker->status ==
 </script>
 @endpush
 
-{{-- PDF Auto-Slideshow --}}
-@include('dashboard.partials._pdf_slideshow')
+{{-- PNG Auto-Slideshow --}}
+@include('dashboard.partials._png_slideshow', ['role' => 'leader_qc'])
 
 </x-app-layout>
