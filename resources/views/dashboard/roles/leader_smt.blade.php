@@ -1,4 +1,3 @@
-
 <x-app-layout>
 
 
@@ -1770,5 +1769,8 @@
     }); 
 </script>
 @endpush
+
+{{-- PNG Auto-Slideshow --}}
+@include('dashboard.partials._png_slideshow', ['role' => 'leader_smt'])
 
 </x-app-layout>
