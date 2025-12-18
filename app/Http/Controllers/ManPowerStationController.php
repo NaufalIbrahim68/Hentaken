@@ -10,10 +10,26 @@ use Illuminate\Http\Request;
 class ManPowerStationController extends Controller
 {
 
+
     public function matrixApprovalIndex()
     {
+        $userRole = auth()->user()->role ?? 'guest';
+        
+        // Determine line_area filter based on user role
+        $lineAreaFilter = null;
+        if ($userRole === 'Sect Head QC') {
+            $lineAreaFilter = 'Incoming';
+        } elseif ($userRole === 'Sect Head PPIC') {
+            $lineAreaFilter = 'Delivery';
+        }
+        
         $manpowerStations = ManPowerManyStation::where('status', 'PENDING')
             ->with(['manpower', 'station'])
+            ->when($lineAreaFilter, function($query, $lineArea) {
+                return $query->whereHas('station', function($q) use ($lineArea) {
+                    $q->where('line_area', $lineArea);
+                });
+            })
             ->get();
 
         // Mengirim data ke view yang telah direvisi sebelumnya (secthead.approval-matrix-index)

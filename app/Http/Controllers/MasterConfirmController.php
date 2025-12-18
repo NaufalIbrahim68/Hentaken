@@ -18,10 +18,49 @@ class MasterConfirmController extends Controller
 {
     public function index()
     {
-        $manpowers = ManPower::where('status', 'Pending')->get();
-        $methods   = Method::where('status', 'Pending')->get();
-        $machines  = Machine::where('status', 'Pending')->get();
-        $materials = Material::where('status', 'Pending')->get();
+        $userRole = auth()->user()->role ?? 'guest';
+        
+        // Determine line_area filter based on user role
+        $lineAreaFilter = null;
+        if ($userRole === 'Sect Head QC') {
+            $lineAreaFilter = 'Incoming';
+        } elseif ($userRole === 'Sect Head PPIC') {
+            $lineAreaFilter = 'Delivery';
+        }
+        
+        // ManPower: has line_area column directly
+        $manpowers = ManPower::where('status', 'Pending')
+            ->when($lineAreaFilter, function($query, $lineArea) {
+                return $query->where('line_area', $lineArea);
+            })
+            ->get();
+            
+        // Method: filter via station relationship
+        $methods = Method::where('status', 'Pending')
+            ->when($lineAreaFilter, function($query, $lineArea) {
+                return $query->whereHas('station', function($q) use ($lineArea) {
+                    $q->where('line_area', $lineArea);
+                });
+            })
+            ->get();
+            
+        // Machine: filter via station relationship
+        $machines = Machine::where('status', 'Pending')
+            ->when($lineAreaFilter, function($query, $lineArea) {
+                return $query->whereHas('station', function($q) use ($lineArea) {
+                    $q->where('line_area', $lineArea);
+                });
+            })
+            ->get();
+            
+        // Material: filter via station relationship
+        $materials = Material::where('status', 'Pending')
+            ->when($lineAreaFilter, function($query, $lineArea) {
+                return $query->whereHas('station', function($q) use ($lineArea) {
+                    $q->where('line_area', $lineArea);
+                });
+            })
+            ->get();
 
         return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials'));
     }
