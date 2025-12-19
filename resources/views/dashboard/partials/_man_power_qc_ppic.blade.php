@@ -13,7 +13,7 @@
     <div class="flex-1 flex justify-end items-center space-x-2">
         
       {{-- === FILTER GRUP (Tidak tampil untuk Leader PPIC, Leader QC, dan Sect Head QC) === --}}
-            @if (!in_array($userRole, ['Leader PPIC', 'Leader QC', 'Sect Head QC']))
+            @if (!in_array($userRole, ['Leader PPIC', 'Leader QC', 'Sect Head QC', 'Sect Head PPIC']))
                 <div>
                     <select id="grupFilterDropdown"
                             onchange="if(this.value) { setGrup(this.value); }"
