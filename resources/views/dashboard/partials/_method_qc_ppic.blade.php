@@ -41,7 +41,7 @@
             
             @php
                 $currentUserRole = auth()->user()->role ?? 'guest'; 
-                $showMethodDetails = in_array($currentUserRole, ['Leader QC', 'Sect Head QC']);
+                $showMethodDetails = in_array($currentUserRole, ['Leader QC', 'Sect Head QC', 'Leader PPIC', 'Sect Head PPIC']);
             @endphp
                         
             @if ($showMethodDetails)

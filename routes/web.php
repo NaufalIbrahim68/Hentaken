@@ -251,7 +251,7 @@ Route::middleware(['auth', 'role:Sect Head Produksi|Sect Head PPIC|Sect Head QC'
     Route::get('/konfirmasi/master', [MasterConfirmController::class, 'index'])->name('konfirmasi.master');
     Route::post('/konfirmasi/master/{type}/{id}/approve', [MasterConfirmController::class, 'approve'])->name('konfirmasi.master.approve');
     Route::post('/konfirmasi/master/{type}/{id}/revisi', [MasterConfirmController::class, 'revisi'])->name('konfirmasi.master.revisi');
-    Route::get('/master/confirmation', [ManPowerController::class, 'confirmation'])->name('master.confirmation');
+    Route::get('/master/confirmation', [MasterConfirmController::class, 'index'])->name('master.confirmation');
     Route::get('/api/master-detail/{type}/{id}', [MasterConfirmController::class, 'show']);
     // Halaman list Matrix Man Power
 Route::get('/approval/omm', [ManPowerStationController::class, 'matrixApprovalIndex'])->name('approval.omm.index');

@@ -13,56 +13,65 @@ use App\Models\Role;
 
 // --- 1. TAMBAHKAN INI ---
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class MasterConfirmController extends Controller
 {
     public function index()
     {
-        $userRole = auth()->user()->role ?? 'guest';
+        $user = auth()->user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $userRole = $user->role ?? '';
+        
+        // Normalize role for comparison: lowercase and remove spaces/underscores
+        $normalizedRole = strtolower(str_replace([' ', '_'], '', $userRole));
         
         // Determine line_area filter based on user role
         $lineAreaFilter = null;
-        if ($userRole === 'Sect Head QC') {
+        if ($normalizedRole === 'sectheadqc') {
             $lineAreaFilter = 'Incoming';
-        } elseif ($userRole === 'Sect Head PPIC') {
+        } elseif ($normalizedRole === 'sectheadppic') {
             $lineAreaFilter = 'Delivery';
         }
         
-        // ManPower: has line_area column directly
-        $manpowers = ManPower::where('status', 'Pending')
-            ->when($lineAreaFilter, function($query, $lineArea) {
-                return $query->where('line_area', $lineArea);
-            })
+        // Helper to apply station-based filtering
+        $applyFilter = function($query, $filter) {
+            return $query->where(function($q) use ($filter) {
+                $q->whereHas('station', function($sq) use ($filter) {
+                    $sq->where('line_area', $filter);
+                });
+                
+                // Also check if line_area column exists and matches (as fallback or for manpower)
+                if (Schema::hasColumn($q->getModel()->getTable(), 'line_area')) {
+                    $q->orWhere(function($subq) use ($filter) {
+                        $subq->whereNull('station_id')
+                             ->where('line_area', $filter);
+                    });
+                }
+            });
+        };
+
+        // Fetch data with case-insensitive status check
+        $manpowers = ManPower::whereRaw("LOWER(status) = ?", ['pending'])
+            ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
             ->get();
             
-        // Method: filter via station relationship
-        $methods = Method::where('status', 'Pending')
-            ->when($lineAreaFilter, function($query, $lineArea) {
-                return $query->whereHas('station', function($q) use ($lineArea) {
-                    $q->where('line_area', $lineArea);
-                });
-            })
+        $methods = Method::whereRaw("LOWER(status) = ?", ['pending'])
+            ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
             ->get();
             
-        // Machine: filter via station relationship
-        $machines = Machine::where('status', 'Pending')
-            ->when($lineAreaFilter, function($query, $lineArea) {
-                return $query->whereHas('station', function($q) use ($lineArea) {
-                    $q->where('line_area', $lineArea);
-                });
-            })
+        $machines = Machine::whereRaw("LOWER(status) = ?", ['pending'])
+            ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
             ->get();
             
-        // Material: filter via station relationship
-        $materials = Material::where('status', 'Pending')
-            ->when($lineAreaFilter, function($query, $lineArea) {
-                return $query->whereHas('station', function($q) use ($lineArea) {
-                    $q->where('line_area', $lineArea);
-                });
-            })
+        $materials = Material::whereRaw("LOWER(status) = ?", ['pending'])
+            ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
             ->get();
 
-        return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials'));
+        return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials', 'lineAreaFilter'));
     }
 
     public function approve($type, $id)

@@ -46,48 +46,72 @@ class AppServiceProvider extends ServiceProvider
                 $materials = MaterialHenkaten::where('status', 'Pending');
                 $machines  = MachineHenkaten::where('status', 'Pending');
 
-                switch ($role) {
-                    case 'Sect Head QC':
-                        $manpowers->whereRaw("LOWER(line_area) LIKE 'incoming%'"); // ✅ DITAMBAHKAN
-                        $methods->whereRaw("LOWER(line_area) LIKE 'incoming%'");
-                        $materials->whereRaw("LOWER(line_area) LIKE 'incoming%'");
-                        $machines->whereRaw("LOWER(line_area) LIKE 'incoming%'");
-                        break;
+                $normalizedRole = strtolower(str_replace([' ', '_'], '', $role));
+                
+                $lineAreaFilter = null;
+                $allowedAreas = null;
 
-                    case 'Sect Head PPIC':
-                        $manpowers->where('line_area', 'Delivery'); // ✅ DITAMBAHKAN
-                        $methods->where('line_area', 'Delivery');
-                        $materials->where('line_area', 'Delivery');
-                        $machines->where('line_area', 'Delivery');
-                        break;
-
-                    case 'Sect Head Produksi':
-                        $allowedLineAreas = [
-                            'FA L1','FA L2','FA L3','FA L5','FA L6',
-                            'SMT L1','SMT L2'
-                        ];
-                        $manpowers->whereIn('line_area', $allowedLineAreas); // ✅ DITAMBAHKAN
-                        $methods->whereIn('line_area', $allowedLineAreas);
-                        $materials->whereIn('line_area', $allowedLineAreas);
-                        $machines->whereIn('line_area', $allowedLineAreas);
-                        break;
+                if ($normalizedRole === 'sectheadqc') {
+                    $lineAreaFilter = 'Incoming';
+                } elseif ($normalizedRole === 'sectheadppic') {
+                    $lineAreaFilter = 'Delivery';
+                } elseif ($normalizedRole === 'sectheadproduksi') {
+                    $allowedAreas = ['FA L1','FA L2','FA L3','FA L5','FA L6','SMT L1','SMT L2'];
                 }
 
-                // ✅ DITAMBAHKAN manpowers->count()
-                $totalHenkaten = $manpowers->count() + $methods->count() 
-                               + $materials->count() + $machines->count();
+                // --- HENKATEN PENDING ---
+                $hManpowers = ManPowerHenkaten::where('status', 'Pending');
+                $hMethods   = MethodHenkaten::where('status', 'Pending');
+                $hMaterials = MaterialHenkaten::where('status', 'Pending');
+                $hMachines  = MachineHenkaten::where('status', 'Pending');
+
+                if ($lineAreaFilter) {
+                    $hManpowers->where('line_area', $lineAreaFilter);
+                    $hMethods->where('line_area', $lineAreaFilter);
+                    $hMaterials->where('line_area', $lineAreaFilter);
+                    $hMachines->where('line_area', $lineAreaFilter);
+                } elseif ($allowedAreas) {
+                    $hManpowers->whereIn('line_area', $allowedAreas);
+                    $hMethods->whereIn('line_area', $allowedAreas);
+                    $hMaterials->whereIn('line_area', $allowedAreas);
+                    $hMachines->whereIn('line_area', $allowedAreas);
+                }
+
+                $totalHenkaten = $hManpowers->count() + $hMethods->count() 
+                               + $hMaterials->count() + $hMachines->count();
 
                 // --- MASTER DATA PENDING ---
-                $pendingMasterManPower = ManPower::where('status', 'Pending')->count();
-                $pendingMasterMachine  = Machine::where('status', 'Pending')->count();
-                $pendingMasterMaterial = Material::where('status', 'Pending')->count();
-                $pendingMasterMethod   = Method::where('status', 'Pending')->count();
-
-                $totalMasterData = $pendingMasterManPower + $pendingMasterMachine 
-                                 + $pendingMasterMaterial + $pendingMasterMethod;
+                $mManpowers = ManPower::where('status', 'Pending');
+                $mMachines  = Machine::where('status', 'Pending');
+                $mMaterials = Material::where('status', 'Pending');
+                $mMethods   = Method::where('status', 'Pending');
 
                 // --- MATRIX MAN POWER PENDING ---
-                $pendingMatrixManPower = ManPowerManyStation::where('status', 'Pending')->count();
+                $mMatrix = ManPowerManyStation::where('status', 'Pending');
+
+                if ($lineAreaFilter) {
+                    $mManpowers->where(function($q) use ($lineAreaFilter) {
+                        $q->whereHas('station', fn($sq) => $sq->where('line_area', $lineAreaFilter))
+                          ->orWhere(fn($subq) => $subq->whereNull('station_id')->where('line_area', $lineAreaFilter));
+                    });
+                    $mMachines->whereHas('station', fn($sq) => $sq->where('line_area', $lineAreaFilter));
+                    $mMaterials->whereHas('station', fn($sq) => $sq->where('line_area', $lineAreaFilter));
+                    $mMethods->whereHas('station', fn($sq) => $sq->where('line_area', $lineAreaFilter));
+                    $mMatrix->whereHas('station', fn($sq) => $sq->where('line_area', $lineAreaFilter));
+                } elseif ($allowedAreas) {
+                    $mManpowers->where(function($q) use ($allowedAreas) {
+                        $q->whereHas('station', fn($sq) => $sq->whereIn('line_area', $allowedAreas))
+                          ->orWhere(fn($subq) => $subq->whereNull('station_id')->whereIn('line_area', $allowedAreas));
+                    });
+                    $mMachines->whereHas('station', fn($sq) => $sq->whereIn('line_area', $allowedAreas));
+                    $mMaterials->whereHas('station', fn($sq) => $sq->whereIn('line_area', $allowedAreas));
+                    $mMethods->whereHas('station', fn($sq) => $sq->whereIn('line_area', $allowedAreas));
+                    $mMatrix->whereHas('station', fn($sq) => $sq->whereIn('line_area', $allowedAreas));
+                }
+
+                $totalMasterData = $mManpowers->count() + $mMachines->count() 
+                                 + $mMaterials->count() + $mMethods->count();
+                $pendingMatrixManPower = $mMatrix->count();
 
                 // --- KIRIM KE VIEW ---
                 $view->with('pendingHenkatenCount', $totalHenkaten);

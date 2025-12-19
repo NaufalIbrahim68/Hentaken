@@ -43,7 +43,7 @@
             @php
                 // Tentukan logic role di sini untuk mengontrol tampilan nama material
                 $currentUserRole = auth()->user()->role ?? 'guest'; 
-                $showMaterialDetails = in_array($currentUserRole, ['Leader QC', 'Sect Head QC']);
+                $showMaterialDetails = in_array($currentUserRole, ['Leader QC', 'Sect Head QC', 'Leader PPIC', 'Sect Head PPIC']);
             @endphp
                         
             @if ($showMaterialDetails)

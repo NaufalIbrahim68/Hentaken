@@ -48,7 +48,7 @@
             @php
                 // Mengambil role pengguna yang sedang login
                 $currentUserRole = auth()->user()->role ?? 'guest'; 
-                $showMachineDetails = in_array($currentUserRole, ['Leader QC', 'Sect Head QC']);
+                $showMachineDetails = in_array($currentUserRole, ['Leader QC', 'Sect Head QC', 'Leader PPIC', 'Sect Head PPIC']);
             @endphp
                         
             @if ($showMachineDetails)

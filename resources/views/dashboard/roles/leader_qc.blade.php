@@ -212,6 +212,8 @@
 </div>
 
 
+{{-- PNG Auto-Slideshow --}}
+@include('dashboard.partials._png_slideshow', ['role' => 'leader_qc'])
 
 
 
@@ -645,7 +647,5 @@
 </script>
 @endpush
 
-{{-- PNG Auto-Slideshow --}}
-@include('dashboard.partials._png_slideshow', ['role' => 'leader_qc'])
 
 </x-app-layout>
