@@ -21,7 +21,13 @@ class ManPowerObserver
             'action' => 'created',
             'details' => [
                 'message' => "Data man power '{$manPower->nama}' telah dibuat.",
-                'new_data' => $manPower->getAttributes(), // Simpan semua data baru
+                'nama' => $manPower->nama,
+                'grup' => $manPower->grup,
+                'line_area' => $manPower->line_area,
+                'tanggal_mulai' => $manPower->tanggal_mulai,
+                'waktu_mulai' => $manPower->waktu_mulai,
+                'status' => $manPower->status,
+                'new_data' => $manPower->getAttributes(),
             ],
         ]);
     }
@@ -54,6 +60,9 @@ class ManPowerObserver
             return;
         }
 
+        // Ambil data stasiun tambahan secara eksplisit dari DB
+        $additionalStations = $manPower->stations()->pluck('station_name')->toArray();
+
         ActivityLog::create([
             'user_id' => Auth::id(),
             'loggable_type' => ManPower::class,
@@ -61,6 +70,10 @@ class ManPowerObserver
             'action' => 'updated',
             'details' => [
                 'message' => "Data man power '{$manPower->nama}' telah diperbarui.",
+                'nama' => $manPower->nama,
+                'grup' => $manPower->grup,
+                'line_area' => $manPower->line_area,
+                'additional_stations' => $additionalStations,
                 'changes' => $changes, // Simpan detail perubahan
             ],
         ]);
@@ -78,8 +91,12 @@ class ManPowerObserver
             'loggable_id' => $manPower->id,
             'action' => 'deleted',
             'details' => [
-                'message' => "Data man power '{$manPower->nama}' (ID: {$manPower->id}) telah dihapus.",
-                'deleted_data' => $manPower->getAttributes(), // Simpan data yang dihapus
+                'message' => "Data man power '{$manPower->nama}' telah dihapus.",
+                'nama' => $manPower->nama,
+                'grup' => $manPower->grup,
+                'line_area' => $manPower->line_area,
+                'deletion_time' => now()->toDateTimeString(),
+                'deleted_data' => $manPower->getAttributes(),
             ],
         ]);
     }

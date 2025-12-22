@@ -106,7 +106,7 @@ let cardRotateTimer;
 let currentSlideIndex = 0;
 let currentCardIndex = 0;
 const totalSlides = {{ $totalSlides }};
-const INACTIVITY_TIMEOUT = 30000; // 30 seconds
+const INACTIVITY_TIMEOUT = 10000; // 10 seconds
 const SLIDE_INTERVAL = 5000; // 5 seconds per slide
 const CARD_ROTATE_INTERVAL = 5000; // 5 seconds per card rotation
 let slideshowActive = false;

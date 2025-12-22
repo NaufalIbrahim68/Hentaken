@@ -32,9 +32,9 @@ class DashboardController extends Controller
         $user = Auth::user();
         $role = $user ? $user->role : null;
     
-        // Untuk Leader QC & PPIC, set grup otomatis ke A
-        $isLeaderQCorPPIC = in_array($role, ['Leader QC', 'Leader PPIC']);
-        if ($isLeaderQCorPPIC) {
+        // Untuk Leader QC, Leader PPIC, dan Sect Head QC, Sect Head PPIC set grup otomatis ke A
+        $isAutoGroupA = in_array($role, ['Leader QC', 'Leader PPIC', 'Sect Head QC', 'Sect Head PPIC']);
+        if ($isAutoGroupA) {
             session(['active_grup' => 'A']);
             $currentGroup = 'A';
         } else {
@@ -346,7 +346,7 @@ class DashboardController extends Controller
             'dataManPowerKosong' => $dataManPowerKosong,
             'userRole' => $role,
             'henkatenIds' => $henkatenIds,
-            'isLeaderQCorPPIC' => $isLeaderQCorPPIC, // Tambahkan ini untuk view
+            'isAutoGroupA' => $isAutoGroupA, // Tambahkan ini untuk view
         ]);
     }
 

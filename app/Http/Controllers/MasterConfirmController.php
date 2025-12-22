@@ -13,17 +13,65 @@ use App\Models\Role;
 
 // --- 1. TAMBAHKAN INI ---
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class MasterConfirmController extends Controller
 {
     public function index()
     {
-        $manpowers = ManPower::where('status', 'Pending')->get();
-        $methods   = Method::where('status', 'Pending')->get();
-        $machines  = Machine::where('status', 'Pending')->get();
-        $materials = Material::where('status', 'Pending')->get();
+        $user = auth()->user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
 
-        return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials'));
+        $userRole = $user->role ?? '';
+        
+        // Normalize role for comparison: lowercase and remove spaces/underscores
+        $normalizedRole = strtolower(str_replace([' ', '_'], '', $userRole));
+        
+        // Determine line_area filter based on user role
+        $lineAreaFilter = null;
+        if ($normalizedRole === 'sectheadqc') {
+            $lineAreaFilter = 'Incoming';
+        } elseif ($normalizedRole === 'sectheadppic') {
+            $lineAreaFilter = 'Delivery';
+        }
+        
+        // Helper to apply station-based filtering
+        $applyFilter = function($query, $filter) {
+            return $query->where(function($q) use ($filter) {
+                $q->whereHas('station', function($sq) use ($filter) {
+                    $sq->where('line_area', $filter);
+                });
+                
+                // Also check if line_area column exists and matches (as fallback or for manpower)
+                if (Schema::hasColumn($q->getModel()->getTable(), 'line_area')) {
+                    $q->orWhere(function($subq) use ($filter) {
+                        $subq->whereNull('station_id')
+                             ->where('line_area', $filter);
+                    });
+                }
+            });
+        };
+
+        // Fetch data with case-insensitive status check
+        $manpowers = ManPower::whereRaw("LOWER(status) = ?", ['pending'])
+            ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
+            ->get();
+            
+        $methods = Method::whereRaw("LOWER(status) = ?", ['pending'])
+            ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
+            ->get();
+            
+        $machines = Machine::whereRaw("LOWER(status) = ?", ['pending'])
+            ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
+            ->get();
+            
+        $materials = Material::whereRaw("LOWER(status) = ?", ['pending'])
+            ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
+            ->get();
+
+        return view('secthead.master-confirm', compact('manpowers', 'methods', 'machines', 'materials', 'lineAreaFilter'));
     }
 
     public function approve($type, $id)

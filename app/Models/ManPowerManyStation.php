@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class ManPowerManyStation extends Model
+class ManPowerManyStation extends Pivot
 {
     protected $table = 'man_power_many_stations'; // tabel SQL Server
 

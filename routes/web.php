@@ -240,6 +240,17 @@ Route::prefix('activity-log/material')
         Route::get('/pdf', 'downloadPDF')->name('.pdf');
     });
 
+    // ======================================================================
+    // MASTER DATA ACTIVITY LOG
+    // ======================================================================
+    Route::prefix('master-log')->name('master.log.')->group(function () {
+        Route::get('/manpower', [\App\Http\Controllers\MasterDataLogController::class, 'manpower'])->name('manpower');
+        Route::get('/method', [\App\Http\Controllers\MasterDataLogController::class, 'method'])->name('method');
+        Route::get('/machine', [\App\Http\Controllers\MasterDataLogController::class, 'machine'])->name('machine');
+        Route::get('/material', [\App\Http\Controllers\MasterDataLogController::class, 'material'])->name('material');
+        Route::delete('/{id}', [\App\Http\Controllers\MasterDataLogController::class, 'destroy'])->name('destroy');
+    });
+
     
 
 // ======================================================================
@@ -251,7 +262,7 @@ Route::middleware(['auth', 'role:Sect Head Produksi|Sect Head PPIC|Sect Head QC'
     Route::get('/konfirmasi/master', [MasterConfirmController::class, 'index'])->name('konfirmasi.master');
     Route::post('/konfirmasi/master/{type}/{id}/approve', [MasterConfirmController::class, 'approve'])->name('konfirmasi.master.approve');
     Route::post('/konfirmasi/master/{type}/{id}/revisi', [MasterConfirmController::class, 'revisi'])->name('konfirmasi.master.revisi');
-    Route::get('/master/confirmation', [ManPowerController::class, 'confirmation'])->name('master.confirmation');
+    Route::get('/master/confirmation', [MasterConfirmController::class, 'index'])->name('master.confirmation');
     Route::get('/api/master-detail/{type}/{id}', [MasterConfirmController::class, 'show']);
     // Halaman list Matrix Man Power
 Route::get('/approval/omm', [ManPowerStationController::class, 'matrixApprovalIndex'])->name('approval.omm.index');

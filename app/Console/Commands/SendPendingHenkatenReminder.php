@@ -7,7 +7,7 @@ use App\Models\ManPowerHenkaten;
 use App\Models\MethodHenkaten;
 use App\Models\MaterialHenkaten;
 use App\Models\MachineHenkaten;
-use App\Models\User;
+use App\Models\User;    
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 
@@ -36,7 +36,7 @@ class SendPendingHenkatenReminder extends Command
 
             if ($pendingData->count() > 0) {
 
-                Mail::send('emails.henkaten_reminder', [
+                Mail::send('email.henkaten_reminder', [
                     'name' => $head->name,
                     'role' => $head->role,
                     'total' => $pendingData->count(),
