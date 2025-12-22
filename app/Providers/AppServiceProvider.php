@@ -9,13 +9,22 @@ use Illuminate\Support\Facades\Auth;
 // 1. IMPORT SEMUA MODEL (HENKATEN & MASTER)
 use App\Models\MachineHenkaten;
 use App\Models\MaterialHenkaten;
-use App\Models\ManPowerHenkaten; // ✅ DITAMBAHKAN
+use App\Models\ManPowerHenkaten; 
 use App\Models\ManPower; 
 use App\Models\Machine;
 use App\Models\Material;
 use App\Models\Method;
 use App\Models\MethodHenkaten;
 use App\Models\ManPowerManyStation;
+use App\Models\ManPowerManyStations;
+use App\Models\ManPowerStation;
+
+// IMPORT OBSERVERS
+use App\Observers\ManPowerObserver;
+use App\Observers\MethodObserver;
+use App\Observers\MachineObserver;
+use App\Observers\MaterialObserver;
+use App\Observers\ManPowerStationObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +41,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // REGISTER OBSERVERS
+        ManPower::observe(ManPowerObserver::class);
+        Method::observe(MethodObserver::class);
+        Machine::observe(MachineObserver::class);
+        Material::observe(MaterialObserver::class);
+        ManPowerStation::observe(ManPowerStationObserver::class);
+        ManPowerManyStation::observe(ManPowerStationObserver::class);
+        ManPowerManyStations::observe(ManPowerStationObserver::class);
+
         View::composer('layouts.app', function ($view) {
 
             $user = Auth::user();

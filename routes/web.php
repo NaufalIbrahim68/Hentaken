@@ -240,6 +240,17 @@ Route::prefix('activity-log/material')
         Route::get('/pdf', 'downloadPDF')->name('.pdf');
     });
 
+    // ======================================================================
+    // MASTER DATA ACTIVITY LOG
+    // ======================================================================
+    Route::prefix('master-log')->name('master.log.')->group(function () {
+        Route::get('/manpower', [\App\Http\Controllers\MasterDataLogController::class, 'manpower'])->name('manpower');
+        Route::get('/method', [\App\Http\Controllers\MasterDataLogController::class, 'method'])->name('method');
+        Route::get('/machine', [\App\Http\Controllers\MasterDataLogController::class, 'machine'])->name('machine');
+        Route::get('/material', [\App\Http\Controllers\MasterDataLogController::class, 'material'])->name('material');
+        Route::delete('/{id}', [\App\Http\Controllers\MasterDataLogController::class, 'destroy'])->name('destroy');
+    });
+
     
 
 // ======================================================================
