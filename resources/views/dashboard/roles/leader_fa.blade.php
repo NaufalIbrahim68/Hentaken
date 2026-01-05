@@ -166,11 +166,7 @@
             @endphp
 
             @foreach($lineAreas as $line)
-                {{-- 
-                    Kita cek apakah $line (cth: "FA L1", "SMT L1") 
-                    diawali dengan string "FA L".
-                    Kita gunakan namespace lengkap "Illuminate\Support\Str::" agar aman.
-                --}}
+              
                 @if(Illuminate\Support\Str::startsWith($line, 'FA L'))
                     
                     @php $hasFalLine = true; @endphp {{-- Tandai bahwa kita menemukan setidaknya satu line FA L --}}
@@ -180,12 +176,7 @@
                     </option>
                 @endif
             @endforeach
-
-            {{-- 
-                Jika setelah dicek semua, tidak ada satupun line FA L
-                (misalnya $lineAreas hanya berisi "SMT L1" dan "SMT L2"),
-                kita tampilkan pesan ini.
-            --}}
+            
             @if(!$hasFalLine)
                 <option disabled {{ !$selectedLineArea ? 'selected' : '' }}>
                     Tidak ada Line FA L

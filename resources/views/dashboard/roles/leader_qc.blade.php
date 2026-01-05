@@ -197,16 +197,16 @@
     <div class="grid grid-cols-2 gap-3 h-[92vh]">
  
         {{-- MAN POWER QC --}}
-        @include('dashboard.partials._man_power_qc')
+        @include('dashboard.partials._man_power_qc_ppic')
       
         {{-- METHOD QC --}}
-        @include('dashboard.partials._method_qc')
+        @include('dashboard.partials._method_qc_ppic')
 
         {{-- MACHINE QC --}}
-        @include('dashboard.partials._machine_qc')
+        @include('dashboard.partials._machine_qc_ppic')
 
         {{-- MATERIAL QC --}}
-        @include('dashboard.partials._material_qc')
+        @include('dashboard.partials._material_qc_ppic')
 
     </div>
 </div>
