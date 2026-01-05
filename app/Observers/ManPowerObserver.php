@@ -3,7 +3,7 @@
 namespace App\Observers;
 
 use App\Models\ManPower;
-use App\Models\ActivityLog; 
+use App\Models\MasterDataLog; 
 use Illuminate\Support\Facades\Auth;
 
 class ManPowerObserver
@@ -14,7 +14,7 @@ class ManPowerObserver
      */
     public function created(ManPower $manPower): void
     {
-        ActivityLog::create([
+        MasterDataLog::create([
             'user_id' => Auth::id(), // Mengambil ID user yang sedang login
             'loggable_type' => ManPower::class,
             'loggable_id' => $manPower->id,
@@ -63,7 +63,7 @@ class ManPowerObserver
         // Ambil data stasiun tambahan secara eksplisit dari DB
         $additionalStations = $manPower->stations()->pluck('station_name')->toArray();
 
-        ActivityLog::create([
+        MasterDataLog::create([
             'user_id' => Auth::id(),
             'loggable_type' => ManPower::class,
             'loggable_id' => $manPower->id,
@@ -85,7 +85,7 @@ class ManPowerObserver
      */
     public function deleted(ManPower $manPower): void
     {
-        ActivityLog::create([
+        MasterDataLog::create([
             'user_id' => Auth::id(),
             'loggable_type' => ManPower::class,
             'loggable_id' => $manPower->id,

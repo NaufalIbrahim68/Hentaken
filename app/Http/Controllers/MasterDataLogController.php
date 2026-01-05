@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
+use App\Models\MasterDataLog;
 use App\Models\ManPower;
 use App\Models\Method;
 use App\Models\Machine;
@@ -13,7 +13,7 @@ class MasterDataLogController extends Controller
 {
     public function manpower(Request $request)
     {
-        $query = ActivityLog::with('user')
+        $query = MasterDataLog::with('user')
             ->where('loggable_type', ManPower::class)
             ->latest('created_at');
 
@@ -36,7 +36,7 @@ class MasterDataLogController extends Controller
 
     public function method(Request $request)
     {
-        $query = ActivityLog::with('user')
+        $query = MasterDataLog::with('user')
             ->where('loggable_type', Method::class)
             ->latest('created_at');
 
@@ -59,7 +59,7 @@ class MasterDataLogController extends Controller
 
     public function machine(Request $request)
     {
-        $query = ActivityLog::with('user')
+        $query = MasterDataLog::with('user')
             ->where('loggable_type', Machine::class)
             ->latest('created_at');
 
@@ -82,7 +82,7 @@ class MasterDataLogController extends Controller
 
     public function material(Request $request)
     {
-        $query = ActivityLog::with('user')
+        $query = MasterDataLog::with('user')
             ->where('loggable_type', Material::class)
             ->latest('created_at');
 
@@ -106,7 +106,7 @@ class MasterDataLogController extends Controller
     
     public function destroy($id)
     {
-        $log = ActivityLog::findOrFail($id);
+        $log = MasterDataLog::findOrFail($id);
         $log->delete();
 
         return back()->with('success', 'Data log berhasil dihapus.');

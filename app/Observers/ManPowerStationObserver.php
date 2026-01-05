@@ -3,7 +3,7 @@
 namespace App\Observers;
 
 use App\Models\ManPowerStation;
-use App\Models\ActivityLog;
+use App\Models\MasterDataLog;
 use App\Models\ManPower;
 use App\Models\Station;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +24,7 @@ class ManPowerStationObserver
 
             if (!$manPower || !$station) return;
 
-            ActivityLog::create([
+            MasterDataLog::create([
                 'user_id' => Auth::id(),
                 'loggable_type' => ManPower::class,
                 'loggable_id' => $pivot->man_power_id,
@@ -69,7 +69,7 @@ class ManPowerStationObserver
             $oldStatus = $pivot->getOriginal('status');
             $newStatus = $pivot->status;
 
-            ActivityLog::create([
+            MasterDataLog::create([
                 'user_id' => Auth::id(),
                 'loggable_type' => ManPower::class,
                 'loggable_id' => $pivot->man_power_id,
@@ -108,7 +108,7 @@ class ManPowerStationObserver
 
             if (!$manPower || !$station) return;
 
-            ActivityLog::create([
+            MasterDataLog::create([
                 'user_id' => Auth::id(),
                 'loggable_type' => ManPower::class,
                 'loggable_id' => $pivot->man_power_id,

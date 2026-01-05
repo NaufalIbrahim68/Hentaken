@@ -3,14 +3,14 @@
 namespace App\Observers;
 
 use App\Models\Method;
-use App\Models\ActivityLog;
+use App\Models\MasterDataLog;
 use Illuminate\Support\Facades\Auth;
 
 class MethodObserver
 {
     public function created(Method $method): void
     {
-        ActivityLog::create([
+        MasterDataLog::create([
             'user_id' => Auth::id(),
             'loggable_type' => Method::class,
             'loggable_id' => $method->id,
@@ -43,7 +43,7 @@ class MethodObserver
             return;
         }
 
-        ActivityLog::create([
+        MasterDataLog::create([
             'user_id' => Auth::id(),
             'loggable_type' => Method::class,
             'loggable_id' => $method->id,
@@ -59,7 +59,7 @@ class MethodObserver
 
     public function deleted(Method $method): void
     {
-        ActivityLog::create([
+        MasterDataLog::create([
             'user_id' => Auth::id(),
             'loggable_type' => Method::class,
             'loggable_id' => $method->id,

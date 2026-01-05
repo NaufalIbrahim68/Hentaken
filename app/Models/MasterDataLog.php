@@ -7,13 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class ActivityLog extends Model
+class MasterDataLog extends Model
 {
     use HasFactory;
 
     /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'logs_masterdata';
+
+    /**
      * Mass-assignment protection.
-     * Sesuaikan jika Anda menggunakan nama tabel yang berbeda dari 'henkaten'
      */
     protected $fillable = [
         'user_id',
@@ -21,7 +27,6 @@ class ActivityLog extends Model
         'loggable_id',
         'action',
         'details',
-        
     ];
 
     /**

@@ -3,14 +3,14 @@
 namespace App\Observers;
 
 use App\Models\Material;
-use App\Models\ActivityLog;
+use App\Models\MasterDataLog;
 use Illuminate\Support\Facades\Auth;
 
 class MaterialObserver
 {
     public function created(Material $material): void
     {
-        ActivityLog::create([
+        MasterDataLog::create([
             'user_id' => Auth::id(),
             'loggable_type' => Material::class,
             'loggable_id' => $material->id,
@@ -44,7 +44,7 @@ class MaterialObserver
             return;
         }
 
-        ActivityLog::create([
+        MasterDataLog::create([
             'user_id' => Auth::id(),
             'loggable_type' => Material::class,
             'loggable_id' => $material->id,
@@ -60,7 +60,7 @@ class MaterialObserver
 
     public function deleted(Material $material): void
     {
-        ActivityLog::create([
+        MasterDataLog::create([
             'user_id' => Auth::id(),
             'loggable_type' => Material::class,
             'loggable_id' => $material->id,
