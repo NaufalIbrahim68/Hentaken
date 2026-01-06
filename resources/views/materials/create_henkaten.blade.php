@@ -323,7 +323,7 @@
             <p class="mt-3 italic text-xs">Pastikan lampiran jelas.</p>
         </div>
     
-    @elseif($userRole === 'Leader FA')
+    @elseif($userRole === 'Leader FA' || $userRole === 'SubLeader FA')
         <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-sm text-gray-600 h-full">
             <p class="font-semibold mb-2">Dokumen yang wajib dilampirkan :</p>
             <ul class="list-disc list-inside space-y-1">

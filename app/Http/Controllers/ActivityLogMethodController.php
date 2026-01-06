@@ -78,7 +78,7 @@ public function index(Request $request)
 
     // 4. Tentukan apakah role ini predefined (static)
     $userRole = auth()->user()->role;
-    $isPredefinedRole = in_array($userRole, ['Leader FA', 'Leader QC', 'Leader PPIC']);
+    $isPredefinedRole = in_array($userRole, ['Leader FA', 'SubLeader FA', 'Leader QC', 'Leader PPIC']);
 
     // 5. Kirim semua data ke Blade
     return view('methods.create_henkaten', [

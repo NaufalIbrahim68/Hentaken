@@ -69,7 +69,7 @@ public function edit(MachineHenkaten $log): View
     // =============================
     // ROLE: Leader FA → Hardcode
     // =============================
-    if ($role === 'Leader FA') {
+    if ($role === 'Leader FA' || $role === 'SubLeader FA') {
 
         $machinesToDisplay = collect([
             (object)['id' => 1, 'machines_category' => 'PROGRAM'],
@@ -114,7 +114,7 @@ public function edit(MachineHenkaten $log): View
         'log'               => $log,
         'lineAreas'         => $lineAreas,
         'machinesToDisplay' => $machinesToDisplay,
-        'isLeaderFA'        => ($role === 'Leader FA')
+        'isLeaderFA'        => ($role === 'Leader FA' || $role === 'SubLeader FA')
     ]);
 }
 
@@ -123,7 +123,7 @@ public function edit(MachineHenkaten $log): View
 
  public function update(Request $request, MachineHenkaten $log)
 {
-    $isLeaderFA = auth()->user()->role === 'Leader FA';
+    $isLeaderFA = auth()->user()->role === 'Leader FA' || auth()->user()->role === 'SubLeader FA';
 
     // VALIDASI DINAMIS
     $validatedData = $request->validate([

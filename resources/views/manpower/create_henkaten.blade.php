@@ -475,7 +475,7 @@ document.addEventListener('alpine:init', () => {
 
         // --- Computed Properties ---
         get isLeaderFAOrSMT() {
-            return ['Leader FA', 'Leader SMT'].includes(this.userRole);
+            return ['Leader FA', 'SubLeader FA', 'Leader SMT'].includes(this.userRole);
         },
         
         get isQCOrPPIC() {

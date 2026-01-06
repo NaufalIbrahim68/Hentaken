@@ -50,7 +50,7 @@ class HenkatenController extends Controller
     $roleLineArea = ''; // Dipakai untuk role yang Line Area-nya fix
 
     // ============== ROLE: LEADER FA / SMT ==================
-    if ($userRole === 'Leader FA' || $userRole === 'Leader SMT')
+    if ($userRole === 'Leader FA' || $userRole === 'SubLeader FA' || $userRole === 'Leader SMT')
     {
         $prefix = (str_ends_with($userRole, 'FA')) ? 'FA' : 'SMT';
 

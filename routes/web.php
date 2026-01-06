@@ -14,6 +14,7 @@ use App\Http\Controllers\ActivityLogMachineController;
 use App\Http\Controllers\MasterConfirmController;
 use App\Http\Controllers\HenkatenApprovalController;
 use App\Http\Controllers\ManPowerStationController;
+use App\Http\Controllers\ManagementUserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -297,5 +298,13 @@ Route::get('/api/omm-detail/{id}', [ManPowerStationController::class, 'showOmmDe
     Route::get('/api/henkaten-detail/{type}/{id}', [HenkatenController::class, 'getHenkatenDetail']);
 
 
-});
+    });
+
+    // ======================================================================
+    // USER MANAGEMENT (Admin Only)
+    // ======================================================================
+    Route::middleware(['checkrole:Admin'])->group(function () {
+        Route::resource('users', ManagementUserController::class);
+    });
+
 });

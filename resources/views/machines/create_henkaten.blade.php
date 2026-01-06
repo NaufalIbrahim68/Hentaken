@@ -41,7 +41,7 @@
 
                         $userRole = Auth::user()->role ?? 'Guest';
                         $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
-                        $isLeaderFA = ($userRole === 'Leader FA');
+                        $isLeaderFA = ($userRole === 'Leader FA' || $userRole === 'SubLeader FA');
                         $predefinedLineArea = match ($userRole) {
                             'Leader QC' => 'Incoming',
                             'Leader PPIC' => 'Delivery',

@@ -319,6 +319,7 @@ class DashboardController extends Controller
         $view = match ($role) {
             'Admin' => 'dashboard.index',
             'Leader FA' => 'dashboard.roles.leader_fa',
+            'SubLeader FA' => 'dashboard.roles.subleader_fa',
             'Leader SMT' => 'dashboard.roles.leader_smt',
             'Leader PPIC' => 'dashboard.roles.leader_ppic',
             'Leader QC' => 'dashboard.roles.leader_qc',
