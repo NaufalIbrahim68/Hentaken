@@ -31,11 +31,15 @@ class ActivityLogController extends Controller
         if (auth()->check()) {
             $role = auth()->user()->role;
             if ($role === 'Leader SMT') {
-                $lineAreas = collect(['SMT L1', 'SMT L2']);
+                $lineAreas = Station::select('line_area')
+                                    ->where('line_area', 'like', 'SMT%')
+                                    ->distinct()
+                                    ->orderBy('line_area', 'asc')
+                                    ->pluck('line_area');
                 if ($line_area) {
                     $query->where('line_area', $line_area);
                 } else {
-                    $query->whereIn('line_area', ['SMT L1', 'SMT L2']);
+                    $query->where('line_area', 'like', 'SMT%');
                 }
             } elseif ($role === 'Leader QC') {
                 $lineAreas = collect(['Incoming']);

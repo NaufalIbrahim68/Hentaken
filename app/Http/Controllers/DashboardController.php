@@ -48,7 +48,7 @@ class DashboardController extends Controller
                     $lineAreas = $lineAreas->filter(fn($line) => str_starts_with($line, 'FA L'));
                     break;
                 case 'Leader SMT':
-                    $lineAreas = collect(['SMT L1', 'SMT L2']);
+                    $lineAreas = $lineAreas->filter(fn($line) => str_starts_with($line, 'SMT'));
                     break;
                 case 'Sect Head Produksi':
                     $lineAreas = collect(['FA L1','FA L2','FA L3','FA L5','FA L6','SMT L1','SMT L2']);

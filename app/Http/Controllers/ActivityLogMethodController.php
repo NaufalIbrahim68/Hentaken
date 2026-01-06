@@ -32,7 +32,11 @@ public function index(Request $request)
         if (auth()->check()) {
             $role = auth()->user()->role;
             if ($role === 'Leader SMT') {
-                $lineAreas = collect(['SMT L1', 'SMT L2']);
+                $lineAreas = Station::select('line_area')
+                    ->where('line_area', 'like', 'SMT%')
+                    ->distinct()
+                    ->orderBy('line_area', 'asc')
+                    ->pluck('line_area');
             } elseif ($role === 'Leader QC') {
                 $lineAreas = collect(['Incoming']);
             } elseif ($role === 'Leader PPIC') {
@@ -55,7 +59,7 @@ public function index(Request $request)
                     });
                 } else {
                     $query->whereHas('station', function ($q) {
-                        $q->whereIn('line_area', ['SMT L1', 'SMT L2']);
+                        $q->where('line_area', 'like', 'SMT%');
                     });
                 }
             } elseif ($role === 'Leader QC') {
