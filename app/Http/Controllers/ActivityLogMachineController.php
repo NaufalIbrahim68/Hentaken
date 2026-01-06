@@ -22,21 +22,86 @@ class ActivityLogMachineController extends Controller
         $filterLine = $request->input('line_area'); // <-- BARU
 
         // 3. Ambil data untuk dropdown Line Area (BARU)
-        $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
+        if (auth()->check()) {
+            $role = auth()->user()->role;
+            if ($role === 'Leader SMT') {
+                $lineAreas = collect(['SMT L1', 'SMT L2']);
+            } elseif ($role === 'Leader QC') {
+                $lineAreas = collect(['Incoming']);
+            } elseif ($role === 'Leader PPIC') {
+                $lineAreas = collect(['Delivery']);
+            } elseif ($role === 'Leader FA') {
+                $lineAreas = Station::select('line_area')
+                                    ->where('line_area', 'like', 'FA L%')
+                                    ->distinct()
+                                    ->orderBy('line_area', 'asc')
+                                    ->pluck('line_area');
+            } else {
+                $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
+            }
+        } else {
+            $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
+        }
 
         // 4. Eager load 'station'
         $query = MachineHenkaten::with('station')
                                    ->latest();
 
-        // 5. Terapkan filter tanggal
+        if (auth()->check()) {
+            $role = auth()->user()->role;
+            if ($role === 'Leader SMT') {
+                if ($filterLine) {
+                    $query->whereHas('station', function ($q) use ($filterLine) {
+                        $q->where('line_area', $filterLine);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->whereIn('line_area', ['SMT L1', 'SMT L2']);
+                    });
+                }
+            } elseif ($role === 'Leader QC') {
+                if ($filterLine) {
+                    $query->whereHas('station', function ($q) use ($filterLine) {
+                        $q->where('line_area', $filterLine);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'Incoming');
+                    });
+                }
+            } elseif ($role === 'Leader PPIC') {
+                if ($filterLine) {
+                    $query->whereHas('station', function ($q) use ($filterLine) {
+                        $q->where('line_area', $filterLine);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'Delivery');
+                    });
+                }
+            } elseif ($role === 'Leader FA') {
+                if ($filterLine) {
+                    $query->whereHas('station', function ($q) use ($filterLine) {
+                        $q->where('line_area', $filterLine);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'like', 'FA L%');
+                    });
+                }
+            } elseif ($filterLine) {
+                $query->whereHas('station', function ($q) use ($filterLine) {
+                    $q->where('line_area', $filterLine);
+                });
+            }
+        } elseif ($filterLine) {
+            $query->whereHas('station', function ($q) use ($filterLine) {
+                $q->where('line_area', $filterLine);
+            });
+        }
+
         if ($created_date) {
             $query->whereDate('created_at', $created_date);
-        }
-        
-        // 6. Terapkan filter Line Area (BARU)
-        if ($filterLine) {
-            // Asumsi tabel machine_henkaten punya kolom 'line_area'
-            $query->where('line_area', $filterLine); 
         }
 
         $logs = $query->paginate(10);

@@ -40,6 +40,10 @@
                             <select id="role" name="role" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="Admin" {{ $user->role === 'Admin' ? 'selected' : '' }}>Admin</option>
                                 <option value="Leader SMT" {{ $user->role === 'Leader SMT' ? 'selected' : '' }}>Leader SMT</option>
+                                <option value="Leader FA" {{ $user->role === 'Leader FA' ? 'selected' : '' }}>Leader FA</option>
+                                <option value="SubLeader FA" {{ $user->role === 'SubLeader FA' ? 'selected' : '' }}>SubLeader FA</option>
+                                <option value="Leader PPIC" {{ $user->role === 'Leader PPIC' ? 'selected' : '' }}>Leader PPIC</option>
+                                <option value="Leader QC" {{ $user->role === 'Leader QC' ? 'selected' : '' }}>Leader QC</option>
                                 <option value="Sect Head Produksi" {{ $user->role === 'Sect Head Produksi' ? 'selected' : '' }}>Sect Head Produksi</option>
                                 <option value="Sect Head PPIC" {{ $user->role === 'Sect Head PPIC' ? 'selected' : '' }}>Sect Head PPIC</option>
                                 <option value="Sect Head QC" {{ $user->role === 'Sect Head QC' ? 'selected' : '' }}>Sect Head QC</option>

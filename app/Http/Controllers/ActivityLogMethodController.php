@@ -28,19 +28,80 @@ public function index(Request $request)
         $query->whereDate('created_at', $created_date);
     }
 
-    // <-- TAMBAHAN: Filter berdasarkan line_area di tabel station
-    if ($line_area) {
-        $query->whereHas('station', function ($q) use ($line_area) {
-            $q->where('line_area', $line_area);
-        });
-    }
-
-    $logs = $query->latest('created_at')
-        ->paginate(10)
-        ->appends($request->query());
-
     // <-- TAMBAHAN: Ambil data unik line_area untuk dropdown
-    $lineAreas = Station::distinct()->whereNotNull('line_area')->pluck('line_area');
+        if (auth()->check()) {
+            $role = auth()->user()->role;
+            if ($role === 'Leader SMT') {
+                $lineAreas = collect(['SMT L1', 'SMT L2']);
+            } elseif ($role === 'Leader QC') {
+                $lineAreas = collect(['Incoming']);
+            } elseif ($role === 'Leader PPIC') {
+                $lineAreas = collect(['Delivery']);
+            } elseif ($role === 'Leader FA') {
+                $lineAreas = Station::distinct()->where('line_area', 'like', 'FA L%')->pluck('line_area');
+            } else {
+                $lineAreas = Station::distinct()->whereNotNull('line_area')->pluck('line_area');
+            }
+        } else {
+            $lineAreas = Station::distinct()->whereNotNull('line_area')->pluck('line_area');
+        }
+
+        if (auth()->check()) {
+            $role = auth()->user()->role;
+            if ($role === 'Leader SMT') {
+                if ($line_area) {
+                    $query->whereHas('station', function ($q) use ($line_area) {
+                        $q->where('line_area', $line_area);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->whereIn('line_area', ['SMT L1', 'SMT L2']);
+                    });
+                }
+            } elseif ($role === 'Leader QC') {
+                if ($line_area) {
+                    $query->whereHas('station', function ($q) use ($line_area) {
+                        $q->where('line_area', $line_area);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'Incoming');
+                    });
+                }
+            } elseif ($role === 'Leader PPIC') {
+                if ($line_area) {
+                    $query->whereHas('station', function ($q) use ($line_area) {
+                        $q->where('line_area', $line_area);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'Delivery');
+                    });
+                }
+            } elseif ($role === 'Leader FA') {
+                if ($line_area) {
+                    $query->whereHas('station', function ($q) use ($line_area) {
+                        $q->where('line_area', $line_area);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'like', 'FA L%');
+                    });
+                }
+            } elseif ($line_area) {
+                $query->whereHas('station', function ($q) use ($line_area) {
+                    $q->where('line_area', $line_area);
+                });
+            }
+        } elseif ($line_area) {
+            $query->whereHas('station', function ($q) use ($line_area) {
+                $q->where('line_area', $line_area);
+            });
+        }
+
+        $logs = $query->latest('created_at')
+            ->paginate(10)
+            ->appends($request->query());
 
     return view('methods.activity-log', [ // Pastikan nama view-nya benar
         'logs' => $logs,

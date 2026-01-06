@@ -21,23 +21,92 @@ class ActivityLogMaterialController extends Controller
    public function index(Request $request): View
 {
     $created_date = $request->input('created_date');
-    $filterLine = $request->input('line_area'); 
+    $filterLine = $request->input('line_area');        
+    
+    if (auth()->check()) {
+            $role = auth()->user()->role;
+            if ($role === 'Leader SMT') {
+                $lineAreas = collect(['SMT L1', 'SMT L2']);
+            } elseif ($role === 'Leader QC') {
+                $lineAreas = collect(['Incoming']);
+            } elseif ($role === 'Leader PPIC') {
+                $lineAreas = collect(['Delivery']);
+            } elseif ($role === 'Leader FA') {
+                $lineAreas = Station::select('line_area')
+                    ->where('line_area', 'like', 'FA L%')
+                    ->distinct()
+                    ->orderBy('line_area', 'asc')
+                    ->pluck('line_area');
+            } else {
+                $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
+            }
+        } else {
+            $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
+        }
 
-    $lineAreas = Station::distinct()->pluck('line_area')->sort()->toArray();
+        // ==========================================================
+        // PERBAIKAN DI SINI: Tambahkan 'material' ke eager loading
+        // ==========================================================
+        $query = MaterialHenkaten::with(['station', 'material']); // <-- DIPERBAIKI
 
-    // ==========================================================
-    // PERBAIKAN DI SINI: Tambahkan 'material' ke eager loading
-    // ==========================================================
-    $query = MaterialHenkaten::with(['station', 'material']) // <-- DIPERBAIKI
-                               ->latest();
+        if (auth()->check()) {
+            $role = auth()->user()->role;
+            if ($role === 'Leader SMT') {
+                if ($filterLine) {
+                    $query->whereHas('station', function ($q) use ($filterLine) {
+                        $q->where('line_area', $filterLine);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->whereIn('line_area', ['SMT L1', 'SMT L2']);
+                    });
+                }
+            } elseif ($role === 'Leader QC') {
+                if ($filterLine) {
+                    $query->whereHas('station', function ($q) use ($filterLine) {
+                        $q->where('line_area', $filterLine);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'Incoming');
+                    });
+                }
+            } elseif ($role === 'Leader PPIC') {
+                if ($filterLine) {
+                    $query->whereHas('station', function ($q) use ($filterLine) {
+                        $q->where('line_area', $filterLine);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'Delivery');
+                    });
+                }
+            } elseif ($role === 'Leader FA') {
+                if ($filterLine) {
+                    $query->whereHas('station', function ($q) use ($filterLine) {
+                        $q->where('line_area', $filterLine);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'like', 'FA L%');
+                    });
+                }
+            } elseif ($filterLine) {
+                $query->whereHas('station', function ($q) use ($filterLine) {
+                    $q->where('line_area', $filterLine);
+                });
+            }
+        } elseif ($filterLine) {
+            $query->whereHas('station', function ($q) use ($filterLine) {
+                $q->where('line_area', $filterLine);
+            });
+        }
+
+        $query->latest();
     // ==========================================================
 
     if ($created_date) {
         $query->whereDate('created_at', $created_date);
-    }
-    
-    if ($filterLine) {
-        $query->where('line_area', $filterLine);
     }
 
     $logs = $query->paginate(10);

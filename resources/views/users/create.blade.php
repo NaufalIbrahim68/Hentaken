@@ -39,6 +39,10 @@
                             <select id="role" name="role" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="Admin">Admin</option>
                                 <option value="Leader SMT">Leader SMT</option>
+                                <option value="Leader FA">Leader FA</option>
+                                <option value="SubLeader FA">SubLeader FA</option>
+                                <option value="Leader PPIC">Leader PPIC</option>
+                                <option value="Leader QC">Leader QC</option>
                                 <option value="Sect Head Produksi">Sect Head Produksi</option>
                                 <option value="Sect Head PPIC">Sect Head PPIC</option>
                                 <option value="Sect Head QC">Sect Head QC</option>

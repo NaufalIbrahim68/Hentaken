@@ -27,11 +27,34 @@ class ManPowerController extends Controller
         $selectedLineArea = $request->get('line_area');
 
         // 2. Ambil semua line_area yang unik untuk opsi dropdown
-        $lineAreas = ManPower::select('line_area')
-                            ->whereNotNull('line_area')
-                            ->distinct()
-                            ->orderBy('line_area', 'asc')
-                            ->pluck('line_area');
+        if (Auth::check()) {
+            $role = Auth::user()->role;
+            if ($role === 'Leader SMT') {
+                $lineAreas = collect(['SMT L1', 'SMT L2']);
+            } elseif ($role === 'Leader QC') {
+                $lineAreas = collect(['Incoming']);
+            } elseif ($role === 'Leader PPIC') {
+                $lineAreas = collect(['Delivery']);
+            } elseif ($role === 'Leader FA') {
+                $lineAreas = Station::select('line_area')
+                                    ->where('line_area', 'like', 'FA L%')
+                                    ->distinct()
+                                    ->orderBy('line_area', 'asc')
+                                    ->pluck('line_area');
+            } else {
+                $lineAreas = Station::select('line_area')
+                                    ->whereNotNull('line_area')
+                                    ->distinct()
+                                    ->orderBy('line_area', 'asc')
+                                    ->pluck('line_area');
+            }
+        } else {
+            $lineAreas = Station::select('line_area')
+                                ->whereNotNull('line_area')
+                                ->distinct()
+                                ->orderBy('line_area', 'asc')
+                                ->pluck('line_area');
+        }
 
         // 3. ✅ Buat query untuk menghindari duplikasi
         // Gunakan subquery untuk mendapatkan hanya ID unik berdasarkan kombinasi nama+station_id+grup
@@ -51,7 +74,36 @@ class ManPowerController extends Controller
             ->whereIn('id', $uniqueIds);
 
         // 4. Terapkan filter JIKA $selectedLineArea ada isinya (untuk konsistensi)
-        if ($selectedLineArea) {
+        if (Auth::check()) {
+            $role = Auth::user()->role;
+            if ($role === 'Leader SMT') {
+                if ($selectedLineArea) {
+                    $query->where('line_area', $selectedLineArea);
+                } else {
+                    $query->whereIn('line_area', ['SMT L1', 'SMT L2']);
+                }
+            } elseif ($role === 'Leader QC') {
+                if ($selectedLineArea) {
+                    $query->where('line_area', $selectedLineArea);
+                } else {
+                    $query->where('line_area', 'Incoming');
+                }
+            } elseif ($role === 'Leader PPIC') {
+                if ($selectedLineArea) {
+                    $query->where('line_area', $selectedLineArea);
+                } else {
+                    $query->where('line_area', 'Delivery');
+                }
+            } elseif ($role === 'Leader FA') {
+                if ($selectedLineArea) {
+                    $query->where('line_area', $selectedLineArea);
+                } else {
+                    $query->where('line_area', 'like', 'FA L%');
+                }
+            } elseif ($selectedLineArea) {
+                $query->where('line_area', $selectedLineArea);
+            }
+        } elseif ($selectedLineArea) {
             $query->where('line_area', $selectedLineArea);
         }
 

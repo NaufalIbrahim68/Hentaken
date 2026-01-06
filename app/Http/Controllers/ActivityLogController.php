@@ -28,15 +28,56 @@ class ActivityLogController extends Controller
             $query->whereDate('created_at', $created_date);
         }
 
-        if ($line_area) {
-            $query->where('line_area', $line_area);
+        if (auth()->check()) {
+            $role = auth()->user()->role;
+            if ($role === 'Leader SMT') {
+                $lineAreas = collect(['SMT L1', 'SMT L2']);
+                if ($line_area) {
+                    $query->where('line_area', $line_area);
+                } else {
+                    $query->whereIn('line_area', ['SMT L1', 'SMT L2']);
+                }
+            } elseif ($role === 'Leader QC') {
+                $lineAreas = collect(['Incoming']);
+                if ($line_area) {
+                    $query->where('line_area', $line_area);
+                } else {
+                    $query->where('line_area', 'Incoming');
+                }
+            } elseif ($role === 'Leader PPIC') {
+                $lineAreas = collect(['Delivery']);
+                if ($line_area) {
+                    $query->where('line_area', $line_area);
+                } else {
+                    $query->where('line_area', 'Delivery');
+                }
+            } elseif ($role === 'Leader FA') {
+                $lineAreas = Station::select('line_area')
+                                    ->where('line_area', 'like', 'FA L%')
+                                    ->distinct()
+                                    ->orderBy('line_area', 'asc')
+                                    ->pluck('line_area');
+                if ($line_area) {
+                    $query->where('line_area', $line_area);
+                } else {
+                    $query->where('line_area', 'like', 'FA L%');
+                }
+            } else {
+                $lineAreas = Station::distinct()->whereNotNull('line_area')->pluck('line_area');
+                if ($line_area) {
+                    $query->where('line_area', $line_area);
+                }
+            }
+        } else {
+            $lineAreas = Station::distinct()->whereNotNull('line_area')->pluck('line_area');
+            if ($line_area) {
+                $query->where('line_area', $line_area);
+            }
         }
 
         $logs = $query->latest('created_at')
             ->paginate(10)
             ->appends($request->query());
-
-        $lineAreas = Station::distinct()->whereNotNull('line_area')->pluck('line_area');
 
         return view('manpower.activity-log', [
             'logs' => $logs,

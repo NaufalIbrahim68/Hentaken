@@ -39,16 +39,16 @@ class DashboardController extends Controller
         if ($role !== 'Admin') {
             switch ($role) {
                 case 'Leader QC':
-                    $lineAreas = collect(['Incoming', 'Delivery']);
+                    $lineAreas = collect(['Incoming']);
                     break;
                 case 'Leader PPIC':
                     $lineAreas = collect(['Delivery']);
                     break;
                 case 'Leader FA':
-                    $lineAreas = $lineAreas->filter(fn($line) => str_starts_with($line, 'FA'));
+                    $lineAreas = $lineAreas->filter(fn($line) => str_starts_with($line, 'FA L'));
                     break;
                 case 'Leader SMT':
-                    $lineAreas = $lineAreas->filter(fn($line) => str_starts_with($line, 'SMT'));
+                    $lineAreas = collect(['SMT L1', 'SMT L2']);
                     break;
                 case 'Sect Head Produksi':
                     $lineAreas = collect(['FA L1','FA L2','FA L3','FA L5','FA L6','SMT L1','SMT L2']);

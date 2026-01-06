@@ -19,19 +19,99 @@ class MethodController extends Controller
     // Filter line_area
     $selectedLineArea = $request->get('line_area');
 
-    // Ambil list line_area unik dari tabel stations
-    $lineAreas = Station::select('line_area')
-        ->whereNotNull('line_area')
-        ->distinct()
-        ->orderBy('line_area', 'asc')
-        ->pluck('line_area');
+        // Ambil list line_area unik dari tabel stations
+        if (auth()->check()) {
+            $role = auth()->user()->role;
+            if ($role === 'Leader SMT') {
+                $lineAreas = collect(['SMT L1', 'SMT L2']);
+            } elseif ($role === 'Leader QC') {
+                $lineAreas = collect(['Incoming']);
+            } elseif ($role === 'Leader PPIC') {
+                $lineAreas = collect(['Delivery']);
+            } elseif ($role === 'Leader FA') {
+                $lineAreas = Station::select('line_area')
+                    ->where('line_area', 'like', 'FA L%')
+                    ->distinct()
+                    ->orderBy('line_area', 'asc')
+                    ->pluck('line_area');
+            } else {
+                $lineAreas = Station::select('line_area')
+                    ->whereNotNull('line_area')
+                    ->distinct()
+                    ->orderBy('line_area', 'asc')
+                    ->pluck('line_area');
+            }
+        } else {
+            $lineAreas = Station::select('line_area')
+                ->whereNotNull('line_area')
+                ->distinct()
+                ->orderBy('line_area', 'asc')
+                ->pluck('line_area');
+        }
 
     // Jika filter dipilih
-    if ($selectedLineArea) {
-        $query->whereHas('station', function ($q) use ($selectedLineArea) {
-            $q->whereRaw('LOWER(line_area) = ?', [strtolower($selectedLineArea)]);
-        });
-    }
+        if (auth()->check()) {
+            $role = auth()->user()->role;
+            if ($role === 'Leader SMT') {
+                if ($selectedLineArea) {
+                    $query->whereHas('station', function ($q) use ($selectedLineArea) {
+                        $q->where('line_area', $selectedLineArea);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->whereIn('line_area', ['SMT L1', 'SMT L2']);
+                    });
+                }
+            } elseif ($role === 'Leader QC') {
+                if ($selectedLineArea) {
+                    $query->whereHas('station', function ($q) use ($selectedLineArea) {
+                        $q->where('line_area', $selectedLineArea);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'Incoming');
+                    });
+                }
+            } elseif ($role === 'Leader PPIC') {
+                if ($selectedLineArea) {
+                    $query->whereHas('station', function ($q) use ($selectedLineArea) {
+                        $q->where('line_area', $selectedLineArea);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'Delivery');
+                    });
+                }
+            } elseif ($role === 'Leader FA') {
+                if ($selectedLineArea) {
+                    $query->whereHas('station', function ($q) use ($selectedLineArea) {
+                        $q->where('line_area', $selectedLineArea);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'like', 'FA L%');
+                    });
+                }
+            } elseif ($role === 'Leader FA') {
+                if ($selectedLineArea) {
+                    $query->whereHas('station', function ($q) use ($selectedLineArea) {
+                        $q->where('line_area', $selectedLineArea);
+                    });
+                } else {
+                    $query->whereHas('station', function ($q) {
+                        $q->where('line_area', 'like', 'FA L%');
+                    });
+                }
+            } elseif ($selectedLineArea) {
+                $query->whereHas('station', function ($q) use ($selectedLineArea) {
+                    $q->where('line_area', $selectedLineArea);
+                });
+            }
+        } elseif ($selectedLineArea) {
+            $query->whereHas('station', function ($q) use ($selectedLineArea) {
+                $q->where('line_area', $selectedLineArea);
+            });
+        }
 
     // Pagination
     $methods = $query->paginate(5);
