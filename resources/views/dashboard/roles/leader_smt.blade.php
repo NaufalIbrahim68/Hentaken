@@ -162,18 +162,13 @@
                 class="text-base font-bold border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
             
             @php
-                $hasFalLine = false; // Variabel bantu untuk melacak
+                $hasSmtLine = false; // Variabel bantu untuk melacak
             @endphp
 
             @foreach($lineAreas as $line)
-                {{-- 
-                    Kita cek apakah $line (cth: "FA L1", "SMT L1") 
-                    diawali dengan string "FA L".
-                    Kita gunakan namespace lengkap "Illuminate\Support\Str::" agar aman.
-                --}}
-                @if(Illuminate\Support\Str::startsWith($line, 'FA L'))
+                @if(Illuminate\Support\Str::startsWith($line, 'SMT L'))
                     
-                    @php $hasFalLine = true; @endphp {{-- Tandai bahwa kita menemukan setidaknya satu line FA L --}}
+                    @php $hasSmtLine = true; @endphp {{-- Tandai bahwa kita menemukan setidaknya satu line SMT L --}}
 
                     <option value="{{ $line }}" {{ $selectedLineArea == $line ? 'selected' : '' }}>
                         HENKATEN {{ $line }}
@@ -181,14 +176,9 @@
                 @endif
             @endforeach
 
-            {{-- 
-                Jika setelah dicek semua, tidak ada satupun line FA L
-                (misalnya $lineAreas hanya berisi "SMT L1" dan "SMT L2"),
-                kita tampilkan pesan ini.
-            --}}
-            @if(!$hasFalLine)
+            @if(!$hasSmtLine)
                 <option disabled {{ !$selectedLineArea ? 'selected' : '' }}>
-                    Tidak ada Line FA L
+                    Tidak ada Line SMT L
                 </option>
             @endif
 

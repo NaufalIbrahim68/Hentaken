@@ -79,6 +79,17 @@
                                 </select>
                             </div>
 
+                            {{-- Sertifikasi (is_main_operator) --}}
+                            <div class="mb-4">
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="checkbox" name="is_main_operator" value="1" 
+                                        {{ old('is_main_operator') ? 'checked' : '' }}
+                                        class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                    <span class="text-gray-700 text-sm font-bold">Sertifikasi</span>
+                                </label>
+                                <p class="text-xs text-gray-500 mt-1 ml-8">Centang jika karyawan sudah tersertifikasi.</p>
+                            </div>
+
                             {{-- Tanggal Mulai  --}}
                             <div>
                                 <label for="tanggal_mulai" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Mulai</label>

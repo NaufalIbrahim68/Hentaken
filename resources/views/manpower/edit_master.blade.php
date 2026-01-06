@@ -185,6 +185,17 @@
                             </div>
                         </div>
 
+                        {{-- Sertifikasi (is_main_operator) --}}
+                        <div class="mb-4">
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" name="is_main_operator" value="1" 
+                                    {{ old('is_main_operator', $man_power->is_main_operator) ? 'checked' : '' }}
+                                    class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <span class="text-gray-700 text-sm font-bold">Sertifikasi</span>
+                            </label>
+                            <p class="text-xs text-gray-500 mt-1 ml-8">Centang jika karyawan sudah tersertifikasi.</p>
+                        </div>
+
                         {{-- Group --}}
                         <div class="mb-4">
                             <label for="group" class="block text-gray-700 text-sm font-bold mb-2">Group</label>
@@ -192,8 +203,8 @@
                                     class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-blue-500"
                                     required>
                                 <option value="">Pilih Group</option>
-                                <option value="A" {{ old('group', $man_power->group) == 'A' ? 'selected' : '' }}>A</option>
-                                <option value="B" {{ old('group', $man_power->group) == 'B' ? 'selected' : '' }}>B</option>
+                                <option value="A" {{ old('group', $man_power->grup) == 'A' ? 'selected' : '' }}>A</option>
+                                <option value="B" {{ old('group', $man_power->grup) == 'B' ? 'selected' : '' }}>B</option>
                             </select>
                         </div>
 

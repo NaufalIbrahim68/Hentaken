@@ -30,7 +30,7 @@ class ManPower extends Model
         'status',
           'waktu_mulai',
           'tanggal_mulai',
-
+        'is_main_operator',
     ];
 
 

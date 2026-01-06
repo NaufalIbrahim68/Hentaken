@@ -552,6 +552,15 @@ document.addEventListener('alpine:init', () => {
 
         async fetchManpowerBefore() {
             const requiresGroup = !this.isQCOrPPIC;
+            
+            // If station is selected but line area isn't, try to find it from the station list
+            if (this.selectedStation && !this.selectedLineArea) {
+                const station = this.allStations.find(st => st.id == this.selectedStation);
+                if (station) {
+                    this.selectedLineArea = station.line_area;
+                }
+            }
+
             if (!this.selectedStation || !this.selectedLineArea || (requiresGroup && !this.selectedGrup)) {
                 this.manpowerBefore = { id: '', nama: '' };
                 return;

@@ -71,8 +71,15 @@
                                             {{ $loop->iteration + ($man_powers->currentPage() - 1) * $man_powers->perPage() }}
                                         </td>
                                   <td class="py-3 px-4 font-medium">
-    {{ $man_power->nama }}
-</td>
+                                        <div class="flex items-center gap-2">
+                                            {{ $man_power->nama }}
+                                            @if($man_power->is_main_operator)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800" title="Certified">
+                                                    Cert
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </td>
 
 
                                         <td class="py-3 px-4 font-medium">{{ $man_power->line_area }}</td>

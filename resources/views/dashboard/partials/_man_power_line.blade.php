@@ -3,51 +3,51 @@
     {{-- ======================================================================= --}}
     {{-- BAGIAN HEADER: JUDUL DAN FILTER GRUP (DIUBAH JADI DROPDOWN) --}}
     {{-- ======================================================================= --}}
-    <div class="flex items-center mb-2 px-2 pt-1">
+    <div class="grid grid-cols-3 items-center mb-2 px-2 pt-1">
+        {{-- Kolom Kiri (Kosong) --}}
+        <div></div>
 
-    <div class="flex-1">
+        {{-- Kolom Tengah (Judul) --}}
+        <h2 class="text-sm font-semibold text-center">MAN POWER</h2>
+
+        {{-- Kolom Kanan (Filter) --}}
+        <div class="flex justify-end items-center space-x-2">
+            @if (!$isAutoGroupA)
+                {{-- Dropdown Grup --}}
+                <div>
+                    <select id="grupFilterDropdown" 
+                            {{-- Panggil JS setGrup HANYA JIKA nilainya bukan "" (bukan "Pilih Grup") --}}
+                            onchange="if(this.value) { setGrup(this.value); }"
+                            class="text-[10px] font-bold px-2 py-0.5 rounded border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                            style="padding-right: 1.75rem;"> {{-- Styling untuk panah dropdown --}}
+
+                        {{-- Opsi "Pilih Grup" akan aktif jika session $currentGroup kosong --}}
+                        <option value="" {{ is_null($currentGroup ?? null) ? 'selected' : '' }} disabled>
+                            Pilih Grup...
+                        </option>
+
+                        <option value="A" {{ ($currentGroup ?? null) == 'A' ? 'selected' : '' }}>
+                            Grup A
+                        </option>
+
+                        <option value="B" {{ ($currentGroup ?? null) == 'B' ? 'selected' : '' }}>
+                            Grup B
+                        </option>
+                    </select>
+                </div>
+
+                {{-- TOMBOL RESET --}}
+                <div>
+                    <a href="{{ route('dashboard.resetGrup') }}" 
+                       class="text-[10px] text-gray-500 hover:text-red-600 underline" 
+                       title="Reset Pilihan Grup">
+                        Reset
+                    </a>
+                </div>
+            @endif
         </div>
-
-     <h2 class="text-sm font-semibold mb-3 text-center">MAN POWER</h2>
-    
-    <div class="flex-1 flex justify-end items-center space-x-2">
-        
-        {{-- Dropdown Anda (sudah benar) --}}
-        <div>
-            <select id="grupFilterDropdown" 
-                    {{-- Panggil JS setGrup HANYA JIKA nilainya bukan "" (bukan "Pilih Grup") --}}
-                    onchange="if(this.value) { setGrup(this.value); }"
-                    class="text-[10px] font-bold px-2 py-0.5 rounded border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                    style="padding-right: 1.75rem;"> {{-- Styling untuk panah dropdown --}}
-
-                {{-- Opsi "Pilih Grup" akan aktif jika session $currentGroup kosong --}}
-                <option value="" {{ is_null($currentGroup ?? null) ? 'selected' : '' }} disabled>
-                    Pilih Grup...
-                </option>
-
-                <option value="A" {{ ($currentGroup ?? null) == 'A' ? 'selected' : '' }}>
-                    Grup A
-                </option>
-
-                <option value="B" {{ ($currentGroup ?? null) == 'B' ? 'selected' : '' }}>
-                    Grup B
-                </option>
-            </select>
-        </div>
-
-        {{-- TOMBOL RESET BARU (sudah benar) --}}
-        <div>
-            <a href="{{ route('dashboard.resetGrup') }}" 
-               class="text-[10px] text-gray-500 hover:text-red-600 underline" 
-               title="Reset Pilihan Grup">
-                Reset
-            </a>
-        </div>
-
     </div>
     
-</div>
-
 {{-- ======================================================================= --}}
 {{-- BAGIAN ATAS: DAFTAR MAN POWER (TABEL HORIZONTAL) --}}
 {{-- ======================================================================= --}}

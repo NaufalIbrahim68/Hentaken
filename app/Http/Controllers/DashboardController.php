@@ -32,22 +32,11 @@ class DashboardController extends Controller
         $user = Auth::user();
         $role = $user ? $user->role : null;
     
-        // Untuk Leader QC, Leader PPIC, dan Sect Head QC, Sect Head PPIC set grup otomatis ke A
-        $isAutoGroupA = in_array($role, ['Leader QC', 'Leader PPIC', 'Sect Head QC', 'Sect Head PPIC']);
-        if ($isAutoGroupA) {
-            session(['active_grup' => 'A']);
-            $currentGroup = 'A';
-        } else {
-            $currentGroup = $request->input('group', session('active_grup'));
-        }
-    
         // Default: ambil semua line_area
         $lineAreas = Station::select('line_area')->distinct()->orderBy('line_area')->pluck('line_area');
     
         // Admin bisa akses semua line_area
-        if ($role === 'Admin') {
-            // Admin akses semua
-        } else {
+        if ($role !== 'Admin') {
             switch ($role) {
                 case 'Leader QC':
                     $lineAreas = collect(['Incoming', 'Delivery']);
@@ -56,7 +45,10 @@ class DashboardController extends Controller
                     $lineAreas = collect(['Delivery']);
                     break;
                 case 'Leader FA':
+                    $lineAreas = $lineAreas->filter(fn($line) => str_starts_with($line, 'FA'));
+                    break;
                 case 'Leader SMT':
+                    $lineAreas = $lineAreas->filter(fn($line) => str_starts_with($line, 'SMT'));
                     break;
                 case 'Sect Head Produksi':
                     $lineAreas = collect(['FA L1','FA L2','FA L3','FA L5','FA L6','SMT L1','SMT L2']);
@@ -72,6 +64,18 @@ class DashboardController extends Controller
     
         $selectedLineArea = request('line_area', $lineAreas->first());
         session(['active_line' => $selectedLineArea]);
+
+        // Untuk Leader QC, Leader PPIC, dan Sect Head QC, Sect Head PPIC set grup otomatis ke A
+        // Tambahkan Admin jika area adalah Incoming atau Delivery
+        $isAutoGroupA = in_array($role, ['Leader QC', 'Leader PPIC', 'Sect Head QC', 'Sect Head PPIC']) || 
+                        ($role === 'Admin' && in_array(strtoupper($selectedLineArea), ['INCOMING', 'DELIVERY']));
+        
+        if ($isAutoGroupA) {
+            session(['active_grup' => 'A']);
+            $currentGroup = 'A';
+        } else {
+            $currentGroup = $request->input('group', session('active_grup'));
+        }
     
         // ============================================================
         // BASE QUERY FUNCTION UNTUK FILTER HENKATEN

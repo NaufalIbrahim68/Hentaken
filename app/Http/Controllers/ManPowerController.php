@@ -114,12 +114,14 @@ class ManPowerController extends Controller
             'shift' => 'nullable|string',
             'tanggal_mulai' => 'required|date',
             'waktu_mulai' => 'required|date_format:H:i',
+            'is_main_operator' => 'nullable|boolean',
         ]);
 
         DB::beginTransaction();
         try {
             // 2. AMBIL DATA REQUEST
-            $data = $request->only(['nama', 'station_id', 'shift', 'grup', 'tanggal_mulai', 'waktu_mulai']);
+            $data = $request->only(['nama', 'station_id', 'shift', 'grup', 'tanggal_mulai', 'waktu_mulai', 'is_main_operator']);
+            $data['is_main_operator'] = $request->has('is_main_operator') ? 1 : 0;
 
             // 3. CARI LINE AREA BERDASARKAN STATION_ID
             $station = Station::find($data['station_id']);
@@ -147,6 +149,7 @@ class ManPowerController extends Controller
                     'troubleshooting_id' => $troubleshooting->id,
                     'tanggal_mulai' => $data['tanggal_mulai'],
                     'waktu_mulai' => $data['waktu_mulai'],
+                    'is_main_operator' => $data['is_main_operator'],
                 ]);
 
                 // ✅ Simpan main station ke relasi dengan flag is_main_operator = 1
@@ -166,6 +169,7 @@ class ManPowerController extends Controller
                     'status' => 'pending',
                     'tanggal_mulai' => $data['tanggal_mulai'],
                     'waktu_mulai' => $data['waktu_mulai'],
+                    'is_main_operator' => $data['is_main_operator'],
                 ]);
 
                 // ✅ Simpan main station ke relasi dengan flag is_main_operator = 1
@@ -234,6 +238,7 @@ class ManPowerController extends Controller
             'nama'      => 'required|string|max:255',
             'line_area' => 'required|string|max:255',
             'group'     => 'required|in:A,B',
+            'is_main_operator' => 'nullable|boolean',
         ]);
 
         DB::beginTransaction();
@@ -246,6 +251,7 @@ class ManPowerController extends Controller
                 'nama' => $validatedData['nama'],
                 'line_area' => $validatedData['line_area'],
                 'grup' => $validatedData['group'], // Note: validasi pakai 'group', model pakai 'grup'
+                'is_main_operator' => $request->has('is_main_operator') ? 1 : 0,
             ]);
 
             DB::commit();

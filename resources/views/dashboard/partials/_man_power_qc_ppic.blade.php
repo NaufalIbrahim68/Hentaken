@@ -3,36 +3,41 @@
     {{-- ======================================================================= --}}
     {{-- BAGIAN HEADER: JUDUL DAN FILTER GRUP (DIUBAH JADI DROPDOWN) --}}
     {{-- ======================================================================= --}}
-    <div class="flex items-center mb-2 px-2 pt-1">
+    <div class="grid grid-cols-3 items-center mb-2 px-2 pt-1">
+        {{-- Kolom Kiri (Kosong) --}}
+        <div></div>
 
-    <div class="flex-1">
-        </div>
+        {{-- Kolom Tengah (Judul) --}}
+        <h2 class="text-sm font-semibold text-center">MAN POWER</h2>
 
-     <h2 class="text-sm font-semibold mb-3 text-center">MAN POWER</h2>
-    
-    <div class="flex-1 flex justify-end items-center space-x-2">
-        
-      {{-- === FILTER GRUP (Tidak tampil untuk Leader PPIC, Leader QC, dan Sect Head QC) === --}}
-            @if (!in_array($userRole, ['Leader PPIC', 'Leader QC', 'Sect Head QC', 'Sect Head PPIC']))
+        {{-- Kolom Kanan (Filter) --}}
+        <div class="flex justify-end items-center space-x-2">
+            @if (!$isAutoGroupA)
+                {{-- Dropdown Grup --}}
                 <div>
-                    <select id="grupFilterDropdown"
+                    <select id="grupFilterDropdown" 
                             onchange="if(this.value) { setGrup(this.value); }"
-                            class="text-[10px] font-bold px-2 py-0.5 rounded border-gray-300 shadow-sm 
-                                   focus:border-purple-500 focus:ring-purple-500"
+                            class="text-[10px] font-bold px-2 py-0.5 rounded border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
                             style="padding-right: 1.75rem;">
-
                         <option value="" {{ is_null($currentGroup ?? null) ? 'selected' : '' }} disabled>
                             Pilih Grup...
                         </option>
-
                         <option value="A" {{ ($currentGroup ?? null) == 'A' ? 'selected' : '' }}>
                             Grup A
                         </option>
-
                         <option value="B" {{ ($currentGroup ?? null) == 'B' ? 'selected' : '' }}>
                             Grup B
                         </option>
                     </select>
+                </div>
+
+                {{-- TOMBOL RESET --}}
+                <div>
+                    <a href="{{ route('dashboard.resetGrup') }}" 
+                       class="text-[10px] text-gray-500 hover:text-red-600 underline" 
+                       title="Reset Pilihan Grup">
+                        Reset
+                    </a>
                 </div>
             @endif
         </div>

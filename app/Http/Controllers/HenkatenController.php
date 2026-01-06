@@ -59,6 +59,11 @@ class HenkatenController extends Controller
         $lineAreas = array_values(array_filter($allLineAreas, fn($a) => str_starts_with($a, $prefix)));
 
         $showStationDropdown = true;
+        
+        // Auto-select the first available line area for leaders
+        if (!empty($lineAreas)) {
+            $roleLineArea = $lineAreas[0];
+        }
     }
 
 elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
@@ -301,6 +306,10 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
     } elseif ($role === 'Leader PPIC') {
         $lineAreas = collect(['Delivery']);
         $predefinedLineArea = 'Delivery';
+    } elseif ($role === 'Leader SMT') {
+        $lineAreas = collect(['SMT L1', 'SMT L2']);
+    } elseif ($role === 'Leader FA') {
+        $lineAreas = collect(['FA L1', 'FA L2', 'FA L3', 'FA L5', 'FA L6']);
     } else {
         // Semua line_area unik dari tabel station
         $lineAreas = Station::select('line_area')
@@ -325,6 +334,16 @@ elseif (in_array($userRole, ['Leader PPIC', 'Leader QC']))
     } else {
         // Mode dinamis (role lain)
         $selectedLineArea = old('line_area');
+
+        // Pre-select for SMT/FA leaders if no old value
+        if (!$selectedLineArea) {
+            if ($role === 'Leader SMT') {
+                $selectedLineArea = 'SMT L1';
+            } elseif ($role === 'Leader FA') {
+                $selectedLineArea = 'FA L1';
+            }
+        }
+
         if ($selectedLineArea) {
             $stations = Station::where('line_area', $selectedLineArea)->get();
         }
@@ -569,6 +588,12 @@ public function storeMethodHenkaten(Request $request)
                         ->pluck('line_area')
                         ->unique();
 
+    if ($userRole === 'Leader SMT') {
+        $lineAreas = $lineAreas->filter(fn($area) => str_starts_with($area, 'SMT'))->values();
+    } elseif ($userRole === 'Leader FA') {
+        $lineAreas = $lineAreas->filter(fn($area) => str_starts_with($area, 'FA'))->values();
+    }
+
     // 2. Inisialisasi daftar model
     $stations = collect();
     $materialsForDynamicRole = collect(); // ✅ Ganti nama agar tidak konflik
@@ -576,9 +601,22 @@ public function storeMethodHenkaten(Request $request)
 
     // 3. Logika mengisi data lama (old) untuk mode dinamis
     if (!$isPredefinedRole) {
-        if ($oldLineArea = old('line_area')) {
-            $stations = Station::where('line_area', $oldLineArea)->get();
+        $oldLineArea = old('line_area');
+        
+        // Pre-select for SMT/FA leaders if no old value
+        if (!$oldLineArea) {
+            if ($userRole === 'Leader SMT') {
+                $oldLineArea = 'SMT L1';
+            } elseif ($userRole === 'Leader FA') {
+                $oldLineArea = 'FA L1';
+            }
         }
+
+        if ($oldLineArea) {
+            $stations = Station::where('line_area', $oldLineArea)->get();
+            // Ensure $lineAreas has this if it was filtered out by some reason (though it shouldn't be)
+        }
+        
         if ($oldStation = old('station_id')) {
             // Ambil material untuk stasiun yang dipilih (mode dinamis)
             $materialsForDynamicRole = Material::where('station_id', $oldStation)->get();
@@ -828,6 +866,9 @@ public function createMachineHenkaten()
         // 🟢 BARU: Filter Line Area khusus Leader FA
         $allowedFALineAreas = ['FA L1', 'FA L2', 'FA L3', 'FA L5', 'FA L6'];
         $lineAreas = $allLineAreas->filter(fn($area) => in_array($area, $allowedFALineAreas))->values();
+    } elseif ($role === 'Leader SMT') {
+        $allowedSMTLineAreas = ['SMT L1', 'SMT L2'];
+        $lineAreas = $allLineAreas->filter(fn($area) => in_array($area, $allowedSMTLineAreas))->values();
     } else {
         $lineAreas = $allLineAreas; // Role lain melihat semua
     }
