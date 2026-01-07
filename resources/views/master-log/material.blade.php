@@ -65,31 +65,46 @@
                                     </td>
                                     <td class="py-2 px-3">
                                         <div class="max-w-md overflow-hidden text-xs">
-                                            <div class="mb-2 p-2 bg-gray-50 rounded border border-gray-100">
-                                                <p><strong>Material:</strong> {{ $log->details['material_name'] ?? '-' }}</p>
-                                                <p><strong>Line Area:</strong> {{ $log->details['line_area'] ?? '-' }}</p>
-                                                
-                                                @if($log->action === 'deleted')
-                                                    <p><strong>Waktu Hapus:</strong> {{ $log->created_at->translatedFormat('l, d F Y | H:i') }}</p>
-                                                    <p><strong>Status:</strong> <span class="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-800">DELETED</span></p>
-                                                @elseif(isset($log->details['status']))
-                                                     <p><strong>Status:</strong> <span class="px-1.5 py-0.5 rounded text-[10px] {{ ($log->details['status'] ?? '') === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ strtoupper($log->details['status'] ?? '-') }}</span></p>
-                                                @endif
-                                            </div>
+                                            @if($log->action === 'updated')
+                                                <div class="mb-2 p-2 bg-gray-50 rounded border border-gray-100">
+                                                    <p><strong>Material:</strong> {{ $log->details['material_name'] ?? '-' }}</p>
+                                                    <p><strong>Line Area:</strong> {{ $log->details['line_area'] ?? '-' }}</p>
+                                                </div>
 
-                                            @if($log->action === 'updated' && !empty($log->details['changes']))
-                                                <hr class="my-1 border-gray-200">
-                                                <p class="font-bold text-[10px] text-gray-400 uppercase">Detail Perubahan:</p>
-                                                <ul class="list-disc list-inside">
-                                                    @foreach($log->details['changes'] as $field => $change)
-                                                        <li class="text-[11px]">
-                                                            <strong>{{ ucwords(str_replace('_', ' ', $field)) }}</strong>: 
-                                                            <span class="text-red-500">{{ is_array($change['old']) ? json_encode($change['old']) : (empty($change['old']) ? '-' : $change['old']) }}</span> 
-                                                            &rarr; 
-                                                            <span class="text-green-500">{{ is_array($change['new']) ? json_encode($change['new']) : (empty($change['new']) ? '-' : $change['new']) }}</span>
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
+                                                @if(!empty($log->details['changes']))
+                                                    <hr class="my-1 border-gray-200">
+                                                    <p class="font-bold text-[10px] text-gray-400 uppercase">Detail Perubahan:</p>
+                                                    <ul class="list-disc list-inside">
+                                                        @foreach($log->details['changes'] as $field => $change)
+                                                            @php
+                                                                $fieldName = ucwords(str_replace('_', ' ', $field));
+                                                                $oldVal = is_array($change['old']) ? json_encode($change['old']) : (empty($change['old']) ? '-' : $change['old']);
+                                                                $newVal = is_array($change['new']) ? json_encode($change['new']) : (empty($change['new']) ? '-' : $change['new']);
+                                                            @endphp
+                                                            <li class="text-[11px]">
+                                                                <strong>{{ $fieldName }}</strong>: 
+                                                                <span class="text-red-500">{{ $oldVal }}</span> 
+                                                                &rarr; 
+                                                                <span class="text-green-500">{{ $newVal }}</span>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                @endif
+                                            @else
+                                                <div class="mb-2 p-2 bg-gray-50 rounded border border-gray-100">
+                                                    @if($log->action === 'created')
+                                                        <p><strong>Material:</strong> {{ $log->details['material_name'] ?? '-' }}</p>
+                                                        <p><strong>Line Area:</strong> {{ $log->details['line_area'] ?? '-' }}</p>
+                                                        <p><strong>Status:</strong> <span class="px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-800">CREATED</span></p>
+                                                    @elseif($log->action === 'deleted')
+                                                        <p><strong>Material:</strong> {{ $log->details['material_name'] ?? '-' }}</p>
+                                                        <p><strong>Line Area:</strong> {{ $log->details['line_area'] ?? '-' }}</p>
+                                                        <p><strong>Waktu Hapus:</strong> {{ $log->created_at->translatedFormat('l, d F Y | H:i') }}</p>
+                                                        <p><strong>Status:</strong> <span class="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-800">DELETED</span></p>
+                                                    @else
+                                                        <p>{{ $log->details['message'] ?? '-' }}</p>
+                                                    @endif
+                                                </div>
                                             @endif
                                         </div>
                                     </td>

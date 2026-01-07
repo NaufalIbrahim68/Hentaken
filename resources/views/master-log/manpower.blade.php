@@ -106,11 +106,35 @@
                                                     <p class="font-bold text-[10px] text-gray-400 uppercase">Detail Perubahan:</p>
                                                     <ul class="list-disc list-inside">
                                                         @foreach($changes as $field => $change)
+                                                            @php
+                                                                $fieldName = $field;
+                                                                $oldVal = $change['old'];
+                                                                $newVal = $change['new'];
+                                                                
+                                                                // Default colors: red for old, green for new
+                                                                $oldColor = 'text-red-500';
+                                                                $newColor = 'text-green-500';
+
+                                                                if ($field === 'is_main_operator') {
+                                                                    $fieldName = 'Sertifikasi';
+                                                                    
+                                                                    // For certification, color based on the value itself
+                                                                    $oldColor = $oldVal ? 'text-green-500' : 'text-red-500';
+                                                                    $newColor = $newVal ? 'text-green-500' : 'text-red-500';
+
+                                                                    $oldVal = $oldVal ? 'Tersertifikasi' : 'Tidak Tersertifikasi';
+                                                                    $newVal = $newVal ? 'Tersertifikasi' : 'Tidak Tersertifikasi';
+                                                                } else {
+                                                                    $fieldName = ucwords(str_replace('_', ' ', $fieldName));
+                                                                    $oldVal = is_array($oldVal) ? json_encode($oldVal) : (empty($oldVal) ? '-' : $oldVal);
+                                                                    $newVal = is_array($newVal) ? json_encode($newVal) : (empty($newVal) ? '-' : $newVal);
+                                                                }
+                                                            @endphp
                                                             <li class="text-[11px]">
-                                                                <strong>{{ ucwords(str_replace('_', ' ', $field)) }}</strong>: 
-                                                                <span class="text-red-500">{{ is_array($change['old']) ? json_encode($change['old']) : (empty($change['old']) ? '-' : $change['old']) }}</span> 
+                                                                <strong>{{ $fieldName }}</strong>: 
+                                                                <span class="{{ $oldColor }}">{{ $oldVal }}</span> 
                                                                 &rarr; 
-                                                                <span class="text-green-500">{{ is_array($change['new']) ? json_encode($change['new']) : (empty($change['new']) ? '-' : $change['new']) }}</span>
+                                                                <span class="{{ $newColor }}">{{ $newVal }}</span>
                                                             </li>
                                                         @endforeach
                                                     </ul>

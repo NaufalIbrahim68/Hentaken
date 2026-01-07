@@ -103,7 +103,7 @@ class MasterDataLogController extends Controller
         ]);
     }
 
-    
+
     public function destroy($id)
     {
         $log = MasterDataLog::findOrFail($id);

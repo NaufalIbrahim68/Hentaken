@@ -211,7 +211,6 @@ class DashboardController extends Controller
         $dataManPowerKosong = true;
         $groupedManPower = collect();
     
-        // Selalu jalankan jika grup sudah di-set (termasuk auto-set untuk Leader QC/PPIC)
         if ($currentGroup) {
             $allManPower = ManPower::with('station')
                 ->where('grup', $currentGroup)
