@@ -52,14 +52,15 @@ class MachineController extends Controller
                 ->pluck('line_area');
         }
 
+    $search = $request->get('search');
     // Search
-    if ($request->filled('search')) {
-        $search = $request->search;
+    if ($search) {
         $query->where(function($q) use ($search) {
             $q->where('deskripsi', 'like', '%' . $search . '%')
               ->orWhere('keterangan', 'like', '%' . $search . '%')
               ->orWhereHas('station', function ($qs) use ($search) {
-                  $qs->where('station_code', 'like', '%' . $search . '%');
+                  $qs->where('station_code', 'like', '%' . $search . '%')
+                    ->orWhere('station_name', 'like', '%' . $search . '%');
               });
         });
     }
@@ -128,9 +129,14 @@ class MachineController extends Controller
             });
         }
 
-    $machines = $query->paginate(5);
+    $machines = $query->paginate(5)->appends(['line_area' => $selectedLineArea, 'search' => $search]);
 
-    return view('machines.index', compact('machines', 'lineAreas', 'selectedLineArea'));
+    return view('machines.index', [
+        'machines' => $machines,
+        'lineAreas' => $lineAreas,
+        'selectedLineArea' => $selectedLineArea,
+        'search' => $search
+    ]);
 }
 
 

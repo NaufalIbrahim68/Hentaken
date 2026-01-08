@@ -18,6 +18,7 @@ class MethodController extends Controller
 
     // Filter line_area
     $selectedLineArea = $request->get('line_area');
+    $search = $request->get('search');
 
         // Ambil list line_area unik dari tabel stations
         if (auth()->check()) {
@@ -52,6 +53,17 @@ class MethodController extends Controller
                 ->orderBy('line_area', 'asc')
                 ->pluck('line_area');
         }
+
+    // Search
+    if ($search) {
+        $query->where(function($q) use ($search) {
+            $q->where('keterangan', 'like', '%' . $search . '%')
+              ->orWhereHas('station', function ($qs) use ($search) {
+                  $qs->where('station_name', 'like', '%' . $search . '%')
+                    ->orWhere('station_code', 'like', '%' . $search . '%');
+              });
+        });
+    }
 
     // Jika filter dipilih
         if (auth()->check()) {
@@ -118,9 +130,9 @@ class MethodController extends Controller
         }
 
     // Pagination
-    $methods = $query->paginate(5);
+    $methods = $query->paginate(5)->appends(['line_area' => $selectedLineArea, 'search' => $search]);
 
-    return view('methods.index', compact('methods', 'lineAreas', 'selectedLineArea'));
+    return view('methods.index', compact('methods', 'lineAreas', 'selectedLineArea', 'search'));
 }
 
 

@@ -55,19 +55,19 @@ class MasterConfirmController extends Controller
         };
 
         // Fetch data with case-insensitive status check
-        $manpowers = ManPower::whereRaw("LOWER(status) = ?", ['pending'])
+        $manpowers = ManPower::with('station')->whereRaw("LOWER(status) = ?", ['pending'])
             ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
             ->get();
             
-        $methods = Method::whereRaw("LOWER(status) = ?", ['pending'])
+        $methods = Method::with('station')->whereRaw("LOWER(status) = ?", ['pending'])
             ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
             ->get();
             
-        $machines = Machine::whereRaw("LOWER(status) = ?", ['pending'])
+        $machines = Machine::with('station')->whereRaw("LOWER(status) = ?", ['pending'])
             ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
             ->get();
             
-        $materials = Material::whereRaw("LOWER(status) = ?", ['pending'])
+        $materials = Material::with('station')->whereRaw("LOWER(status) = ?", ['pending'])
             ->when($lineAreaFilter, fn($q, $f) => $applyFilter($q, $f))
             ->get();
 
@@ -112,18 +112,8 @@ class MasterConfirmController extends Controller
         $modelClass = $this->getModel($type);
         $query = $modelClass::query();
 
-        // Eager load relasi 'station' untuk manpower
-        if ($type === 'manpower') {
-            $query->with('station');
-        }
-
-        // --- 2. TAMBAHKAN BLOK INI ---
-        // Eager load relasi 'station' untuk material (jika perlu)
-        if ($type === 'material') {
-            // Asumsi: Di model Material.php, ada relasi `public function station()`
-            $query->with('station'); 
-        }
-        // -----------------------------
+        // Eager load relasi 'station' untuk semua model yang memilikinya
+        $query->with('station');
 
         $model = $query->findOrFail($id);
 

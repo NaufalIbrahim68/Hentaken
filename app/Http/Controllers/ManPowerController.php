@@ -25,6 +25,7 @@ class ManPowerController extends Controller
     {
         // 1. Ambil nilai filter dari request
         $selectedLineArea = $request->get('line_area');
+        $search = $request->get('search');
 
         // 2. Ambil semua line_area yang unik untuk opsi dropdown
         if (Auth::check()) {
@@ -68,6 +69,10 @@ class ManPowerController extends Controller
         
         if ($selectedLineArea) {
             $subquery->where('line_area', $selectedLineArea);
+        }
+        
+        if ($search) {
+            $subquery->where('nama', 'like', "%$search%");
         }
         
         $uniqueIds = $subquery->pluck('id');
@@ -114,13 +119,17 @@ class ManPowerController extends Controller
         // 5. ✅ Order by dan paginate
         $man_powers = $query->orderBy('nama', 'asc')
                            ->paginate(10)
-                           ->appends(['line_area' => $selectedLineArea]); // Keep filter on pagination
+                           ->appends([
+                               'line_area' => $selectedLineArea,
+                               'search' => $search,
+                           ]); // Keep filter on pagination
 
         // 6. Kirim semua data yang diperlukan ke view
         return view('manpower.index', [
             'man_powers' => $man_powers,
             'lineAreas' => $lineAreas,           
             'selectedLineArea' => $selectedLineArea, 
+            'search' => $search,
         ]);
     }
 

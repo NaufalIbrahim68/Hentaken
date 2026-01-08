@@ -126,6 +126,10 @@
                                 <span class="text-gray-900" x-text="detail.station ? detail.station.station_name : '-'"></span>
                             </div>
                             <div>
+                                <span class="font-semibold text-gray-600">Line Area:</span>
+                                <span class="text-gray-900" x-text="detail.station ? detail.station.line_area : '-'"></span>
+                            </div>
+                            <div>
                                 <span class="font-semibold text-gray-600">Status:</span>
                                 <span class="text-yellow-600 font-semibold" x-text="detail.status || '-'"></span>
                             </div>
@@ -158,7 +162,7 @@
                             </div>
                              <div>
                                 <span class="font-semibold text-gray-600">Line Area:</span>
-                                <span class="text-gray-900" x-text="detail.line_area || '-'"></span>
+                                <span class="text-gray-900" x-text="detail.station ? detail.station.line_area : '-'"></span>
                             </div>
                             <div>
                                 <span class="font-semibold text-gray-600">Keterangan:</span>

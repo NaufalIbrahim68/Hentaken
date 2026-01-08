@@ -25,20 +25,33 @@
         Tambah Data
     </a>
 
-    {{-- Filter Line Area (Kanan) --}}
-    <form method="GET" action="{{ route('machines.index') }}" class="flex items-center space-x-2">
-        <label for="line_area" class="text-sm font-medium text-gray-700">Filter Area:</label>
-        <select name="line_area" id="line_area"
-            class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
-            onchange="this.form.submit()">
-            <option value="">Semua Line Area</option>
-            @foreach ($lineAreas as $area)
-                <option value="{{ $area }}" {{ $selectedLineArea == $area ? 'selected' : '' }}>
-                    {{ $area }}
-                </option>
-            @endforeach
-        </select>
-    </form>
+                    {{-- Filter & Search (Kanan) --}}
+                    <form method="GET" action="{{ route('machines.index') }}" class="flex items-center space-x-3">
+                        <div class="relative flex items-center">
+                            <div class="relative group">
+                                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari mesin / station..." 
+                                       class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 pl-3 transition duration-300">
+                            </div>
+
+                            <button type="submit" class="ml-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md text-sm transition duration-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                Cari
+                            </button>
+                        </div>
+
+                        <div class="flex items-center space-x-2 border-l pl-3 h-8 border-gray-200">
+                            <label for="line_area" class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filter Area:</label>
+                            <select name="line_area" id="line_area"
+                                class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 py-1.5"
+                                onchange="this.form.submit()">
+                                <option value="">Semua Line Area</option>
+                                @foreach ($lineAreas as $area)
+                                    <option value="{{ $area }}" {{ $selectedLineArea == $area ? 'selected' : '' }}>
+                                        {{ $area }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </form>
 
 </div>
                     {{-- Tabel Data --}}

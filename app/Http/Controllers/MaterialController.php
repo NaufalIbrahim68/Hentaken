@@ -51,12 +51,15 @@ class MaterialController extends Controller
                 ->pluck('line_area');
         }
 
-    if ($request->has('search') && $request->search !== '') {
-        $search = $request->search;
+    $search = $request->get('search');
+    if ($search) {
         $query->where(function($q) use ($search) {
-            $q->where('material_name', 'like', '%'.$search.'%')
-              ->orWhere('station_code', 'like', '%'.$search.'%')
-              ->orWhere('keterangan', 'like', '%'.$search.'%');
+            $q->where('material_name', 'like', '%' . $search . '%')
+              ->orWhere('keterangan', 'like', '%' . $search . '%')
+              ->orWhereHas('station', function ($qs) use ($search) {
+                  $qs->where('station_name', 'like', '%' . $search . '%')
+                    ->orWhere('station_code', 'like', '%' . $search . '%');
+              });
         });
     }
 
@@ -123,9 +126,9 @@ class MaterialController extends Controller
             });
         }
 
-    $materials = $query->paginate(5);
+    $materials = $query->paginate(5)->appends(['line_area' => $selectedLineArea, 'search' => $request->search]);
 
-    return view('materials.index', compact('materials', 'lineAreas', 'selectedLineArea'));
+    return view('materials.index', compact('materials', 'lineAreas', 'selectedLineArea', 'search'));
 }
 
     /**
@@ -169,7 +172,6 @@ class MaterialController extends Controller
 
        Material::create([
             'station_id' => $request->station_id,
-            'station_code' => $station->station_code,
             'material_name' => $request->material_name,
             'keterangan' => $request->keterangan,
             'foto_path' => $lampiranPath, // <-- Ini kuncinya
@@ -215,7 +217,6 @@ class MaterialController extends Controller
 
         $material->update([
             'station_id' => $request->station_id,
-            'station_code' => $station->station_code,
             'material_name' => $request->material_name,
             'keterangan' => $request->keterangan,
             'lampiran' => $lampiranPath,
