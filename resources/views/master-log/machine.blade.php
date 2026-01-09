@@ -25,6 +25,15 @@
                                 <option value="deleted" {{ $action == 'deleted' ? 'selected' : '' }}>Deleted</option>
                             </select>
                         </div>
+                        <div>
+                            <label for="line_area" class="block text-xs font-medium text-gray-700">Filter Line Area</label>
+                            <select name="line_area" id="line_area" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                <option value="">Semua Line Area</option>
+                                @foreach($lineAreas as $area)
+                                    <option value="{{ $area }}" {{ $line_area == $area ? 'selected' : '' }}>{{ $area }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <button type="submit" class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition">
                             Filter
                         </button>
@@ -65,9 +74,18 @@
                                     </td>
                                     <td class="py-2 px-3">
                                         <div class="max-w-md overflow-hidden text-xs">
+                                            @php
+                                                // Try to get station_name from details, otherwise fetch from database
+                                                $stationName = $log->details['station_name'] ?? null;
+                                                if (!$stationName && $log->loggable_id) {
+                                                    $machine = \App\Models\Machine::with('station')->find($log->loggable_id);
+                                                    $stationName = $machine?->station?->station_name ?? $log->details['deskripsi'] ?? '-';
+                                                }
+                                                $stationName = $stationName ?: ($log->details['deskripsi'] ?? '-');
+                                            @endphp
                                             @if($log->action === 'updated')
                                                 <div class="mb-2 p-2 bg-gray-50 rounded border border-gray-100">
-                                                    <p><strong>Deskripsi:</strong> {{ $log->details['deskripsi'] ?? '-' }}</p>
+                                                    <p><strong>Station Name:</strong> {{ $stationName }}</p>
                                                     <p><strong>Line Area:</strong> {{ $log->details['line_area'] ?? '-' }}</p>
                                                 </div>
 
@@ -93,11 +111,11 @@
                                             @else
                                                 <div class="mb-2 p-2 bg-gray-50 rounded border border-gray-100">
                                                     @if($log->action === 'created')
-                                                        <p><strong>Deskripsi:</strong> {{ $log->details['deskripsi'] ?? '-' }}</p>
+                                                        <p><strong>Station Name:</strong> {{ $stationName }}</p>
                                                         <p><strong>Line Area:</strong> {{ $log->details['line_area'] ?? '-' }}</p>
-                                                        <p><strong>Status:</strong> <span class="px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-800">CREATED</span></p>
+                                                        <p><strong>Status:</strong> <span class="px-1.5 py-0.5 rounded text-[10px] {{ ($log->details['status'] ?? '') === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ strtoupper($log->details['status'] ?? (isset($log->details['new_data']['status']) ? $log->details['new_data']['status'] : 'PENDING')) }}</span></p>
                                                     @elseif($log->action === 'deleted')
-                                                        <p><strong>Deskripsi:</strong> {{ $log->details['deskripsi'] ?? '-' }}</p>
+                                                        <p><strong>Station Name:</strong> {{ $stationName }}</p>
                                                         <p><strong>Line Area:</strong> {{ $log->details['line_area'] ?? '-' }}</p>
                                                         <p><strong>Waktu Hapus:</strong> {{ $log->created_at->translatedFormat('l, d F Y | H:i') }}</p>
                                                         <p><strong>Status:</strong> <span class="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-800">DELETED</span></p>
@@ -131,8 +149,9 @@
                     </table>
                 </div>
 
-                <div class="mt-4">
-                    {{ $logs->links() }}
+                {{-- PAGINATION --}}
+                <div class="p-6 pt-0">
+                    {{ $logs->appends(request()->query())->links('vendor.pagination.tailwind-masterlog-machine') }}
                 </div>
             </div>
         </div>

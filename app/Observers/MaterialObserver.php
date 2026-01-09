@@ -18,6 +18,7 @@ class MaterialObserver
             'details' => [
                 'message' => "Data material '{$material->material_name}' telah dibuat.",
                 'material_name' => $material->material_name,
+                'station_name' => $material->station->station_name ?? '-',
                 'line_area' => $material->station->line_area ?? '-',
                 'status' => $material->status,
                 'new_data' => $material->getAttributes(),
@@ -52,6 +53,7 @@ class MaterialObserver
             'details' => [
                 'message' => "Data material '{$material->material_name}' telah diperbarui.",
                 'material_name' => $material->material_name,
+                'station_name' => $material->station->station_name ?? '-',
                 'line_area' => $material->station->line_area ?? '-',
                 'changes' => $changes,
             ],
@@ -68,6 +70,7 @@ class MaterialObserver
             'details' => [
                 'message' => "Data material '{$material->material_name}' telah dihapus.",
                 'material_name' => $material->material_name,
+                'station_name' => $material->station->station_name ?? '-',
                 'line_area' => $material->station->line_area ?? '-',
                 'deleted_data' => $material->getAttributes(),
             ],

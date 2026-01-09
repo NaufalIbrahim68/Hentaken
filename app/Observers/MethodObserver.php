@@ -18,6 +18,7 @@ class MethodObserver
             'details' => [
                 'message' => "Data method '{$method->name}' telah dibuat.",
                 'name' => $method->name,
+                'station_name' => $method->station->station_name ?? '-',
                 'line_area' => $method->station->line_area ?? '-',
                 'new_data' => $method->getAttributes(),
             ],
@@ -51,6 +52,7 @@ class MethodObserver
             'details' => [
                 'message' => "Data method '{$method->name}' telah diperbarui.",
                 'name' => $method->name,
+                'station_name' => $method->station->station_name ?? '-',
                 'line_area' => $method->station->line_area ?? '-',
                 'changes' => $changes,
             ],
@@ -67,6 +69,7 @@ class MethodObserver
             'details' => [
                 'message' => "Data method '{$method->name}' telah dihapus.",
                 'name' => $method->name,
+                'station_name' => $method->station->station_name ?? '-',
                 'line_area' => $method->station->line_area ?? '-',
                 'deleted_data' => $method->getAttributes(),
             ],

@@ -18,6 +18,7 @@ class MachineObserver
             'details' => [
                 'message' => "Data machine '{$machine->deskripsi}' telah dibuat.",
                 'deskripsi' => $machine->deskripsi,
+                'station_name' => $machine->station->station_name ?? '-',
                 'line_area' => $machine->station->line_area ?? '-',
                 'new_data' => $machine->getAttributes(),
             ],
@@ -51,6 +52,7 @@ class MachineObserver
             'details' => [
                 'message' => "Data machine '{$machine->deskripsi}' telah diperbarui.",
                 'deskripsi' => $machine->deskripsi,
+                'station_name' => $machine->station->station_name ?? '-',
                 'line_area' => $machine->station->line_area ?? '-',
                 'changes' => $changes,
             ],
@@ -67,6 +69,7 @@ class MachineObserver
             'details' => [
                 'message' => "Data machine '{$machine->deskripsi}' telah dihapus.",
                 'deskripsi' => $machine->deskripsi,
+                'station_name' => $machine->station->station_name ?? '-',
                 'line_area' => $machine->station->line_area ?? '-',
                 'deleted_data' => $machine->getAttributes(),
             ],

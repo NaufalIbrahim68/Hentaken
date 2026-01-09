@@ -25,6 +25,15 @@
                                 <option value="deleted" {{ $action == 'deleted' ? 'selected' : '' }}>Deleted</option>
                             </select>
                         </div>
+                        <div>
+                            <label for="line_area" class="block text-xs font-medium text-gray-700">Filter Line Area</label>
+                            <select name="line_area" id="line_area" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                <option value="">Semua Line Area</option>
+                                @foreach($lineAreas as $area)
+                                    <option value="{{ $area }}" {{ $line_area == $area ? 'selected' : '' }}>{{ $area }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <button type="submit" class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition">
                             Filter
                         </button>
@@ -183,8 +192,9 @@
                     </table>
                 </div>
 
-                <div class="mt-4">
-                    {{ $logs->links() }}
+                {{-- PAGINATION --}}
+                <div class="p-6 pt-0">
+                    {{ $logs->appends(request()->query())->links('vendor.pagination.tailwind-masterlog-manpower') }}
                 </div>
             </div>
         </div>
