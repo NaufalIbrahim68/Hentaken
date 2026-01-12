@@ -35,10 +35,21 @@ class MaterialObserver
             }
 
             $oldValue = $material->getOriginal($key);
-            $changes[$key] = [
-                'old' => $oldValue,
-                'new' => $newValue,
-            ];
+            
+            // Resolve station_id to station_name for readable log
+            if ($key === 'station_id') {
+                $oldStation = \App\Models\Station::find($oldValue);
+                $newStation = \App\Models\Station::find($newValue);
+                $changes['station'] = [
+                    'old' => $oldStation ? $oldStation->station_name . ' (' . $oldStation->line_area . ')' : '-',
+                    'new' => $newStation ? $newStation->station_name . ' (' . $newStation->line_area . ')' : '-',
+                ];
+            } else {
+                $changes[$key] = [
+                    'old' => $oldValue,
+                    'new' => $newValue,
+                ];
+            }
         }
 
         if (empty($changes)) {

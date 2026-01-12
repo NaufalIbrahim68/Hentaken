@@ -75,11 +75,29 @@
                                     <td class="py-2 px-3">
                                         <div class="max-w-md overflow-hidden text-xs">
                                             @php
-                                                // Try to get data from details, otherwise fetch from database
+                                                // Try to get data from details - check multiple sources
                                                 $materialName = $log->details['material_name'] ?? null;
                                                 $stationName = $log->details['station_name'] ?? null;
                                                 $lineArea = $log->details['line_area'] ?? null;
                                                 
+                                                // Fallback: check new_data (for created logs)
+                                                if (!$materialName && isset($log->details['new_data']['material_name'])) {
+                                                    $materialName = $log->details['new_data']['material_name'];
+                                                }
+                                                
+                                                // Fallback: check deleted_data (for deleted logs)
+                                                if (!$materialName && isset($log->details['deleted_data']['material_name'])) {
+                                                    $materialName = $log->details['deleted_data']['material_name'];
+                                                }
+                                                
+                                                // Fallback: extract from message "Data material 'XXX' telah..."
+                                                if (!$materialName && isset($log->details['message'])) {
+                                                    if (preg_match("/Data material '(.+?)' telah/", $log->details['message'], $matches)) {
+                                                        $materialName = $matches[1];
+                                                    }
+                                                }
+                                                
+                                                // Final fallback: fetch from database if material still exists
                                                 if ((!$stationName || !$materialName) && $log->loggable_id) {
                                                     $material = \App\Models\Material::with('station')->find($log->loggable_id);
                                                     if ($material) {
