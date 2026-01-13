@@ -36,7 +36,7 @@ class SendPendingHenkatenReminder extends Command
 
             if ($pendingData->count() > 0) {
 
-                Mail::send('email.henkaten_reminder', [
+                Mail::send('email.Approval_henkaten_manpower_reminder', [
                     'name' => $head->name,
                     'role' => $head->role,
                     'total' => $pendingData->count(),

@@ -308,3 +308,10 @@ Route::get('/api/omm-detail/{id}', [ManPowerStationController::class, 'showOmmDe
     });
 
 });
+
+// ======================================================================
+// TESTING ROUTE - Henkaten Email Reminder (Admin & Sect Head)
+// ======================================================================
+Route::get('/test/henkaten-reminder', [HenkatenApprovalController::class, 'sendHenkatenReminder'])
+    ->middleware(['auth'])
+    ->name('test.henkaten.reminder');

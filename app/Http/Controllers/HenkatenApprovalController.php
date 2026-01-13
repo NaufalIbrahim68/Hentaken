@@ -193,12 +193,18 @@ class HenkatenApprovalController extends Controller
 
 public function sendHenkatenReminder()
 {
+    $debugInfo = [];
+    $emailsSent = 0;
+
     // Semua user dengan role Sect Head
     $users = \App\Models\User::whereIn('role', [
         'Sect Head QC',
         'Sect Head PPIC',
         'Sect Head Produksi'
     ])->get();
+
+    $debugInfo['total_secthead_users'] = $users->count();
+    $debugInfo['users'] = $users->map(fn($u) => ['name' => $u->name, 'role' => $u->role, 'email' => $u->email])->toArray();
 
     foreach ($users as $user) {
 
@@ -212,8 +218,8 @@ public function sendHenkatenReminder()
 
         foreach ($types as $type => $model) {
 
-            // Query dasar
-            $query = $model::where('status', 'Pending')
+            // Query dasar - handle both 'Pending' and 'PENDING'
+            $query = $model::whereRaw("UPPER(status) = 'PENDING'")
                 ->whereDate('created_at', '<=', Carbon::now()->subDays(7));
 
             // Filter berdasarkan role user
@@ -237,6 +243,14 @@ public function sendHenkatenReminder()
             }
 
             $items = $query->get();
+            
+            $debugInfo['queries'][] = [
+                'user' => $user->name,
+                'role' => $user->role,
+                'type' => $type,
+                'count' => $items->count(),
+                'sql' => $query->toSql()
+            ];
 
             // Jika tidak ada data, skip
             if ($items->count() == 0) {
@@ -245,27 +259,46 @@ public function sendHenkatenReminder()
 
             // Tentukan file blade email sesuai tipe
             $view = match($type) {
-                'manpower' => 'emails.reminder.manpower-reminder',
-                'method'   => 'emails.reminder.method-reminder',
-                'material' => 'emails.reminder.material-reminder',
-                'machine'  => 'emails.reminder.machine-reminder',
+                'manpower' => 'email.Approval_henkaten_manpower_reminder',
+                'method'   => 'email.Approval_henkaten_method_reminder',
+                'material' => 'email.Approval_henkaten_material_reminder',
+                'machine'  => 'email.Approval_henkaten_machines_reminder',
             };
 
-            // Kirim email
-            Mail::send($view, [
-                'name'  => $user->name,
-                'total' => $items->count(),
-                'items' => $items
-            ], function ($m) use ($user, $type) {
-                $m->to($user->email)
-                  ->subject("Reminder Pending Henkaten (" . ucfirst($type) . ")");
-            });
+            try {
+                // Kirim email
+                Mail::send($view, [
+                    'name'  => $user->name,
+                    'total' => $items->count(),
+                    'items' => $items
+                ], function ($m) use ($user, $type) {
+                    $m->to($user->email)
+                      ->subject("Reminder Pending Henkaten (" . ucfirst($type) . ")");
+                });
+                
+                $emailsSent++;
+                $debugInfo['emails_sent'][] = [
+                    'to' => $user->email,
+                    'type' => $type,
+                    'status' => 'success'
+                ];
+            } catch (\Exception $e) {
+                $debugInfo['emails_sent'][] = [
+                    'to' => $user->email,
+                    'type' => $type,
+                    'status' => 'failed',
+                    'error' => $e->getMessage()
+                ];
+            }
         }
     }
 
-    Log::info('Reminder Henkaten berhasil dikirim.');
+    Log::info('Reminder Henkaten berhasil dikirim.', $debugInfo);
 
-    return "Reminder sent.";
+    return response()->json([
+        'message' => "Reminder sent. Total emails: {$emailsSent}",
+        'debug' => $debugInfo
+    ]);
 }
 
 
