@@ -1,4 +1,3 @@
-
 <x-app-layout>
     <style>
         .machine-status {
@@ -140,6 +139,7 @@
         .scrollbar-hide::-webkit-scrollbar {
             display: none;
         }
+
         .scrollbar-hide {
             -ms-overflow-style: none;
             scrollbar-width: none;
@@ -154,42 +154,39 @@
                 <img src="{{ asset('assets/images/AVI.png') }}" alt="Logo AVI" class="h-10 w-auto" />
             </div>
 
-       <div class="w-1/3 text-center">
-    <form action="{{ url()->current() }}" method="GET" class="flex justify-center">
-        
-        <select name="line_area" 
-                onchange="this.form.submit()"
-                class="text-base font-bold border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-            
-            @php
-                $hasFalLine = false; // Variabel bantu untuk melacak
-            @endphp
+            <div class="w-1/3 text-center">
+                <form action="{{ url()->current() }}" method="GET" class="flex justify-center">
 
-            @foreach($lineAreas as $line)
-              
-                @if(Illuminate\Support\Str::startsWith($line, 'FA L'))
-                    
-                    @php $hasFalLine = true; @endphp {{-- Tandai bahwa kita menemukan setidaknya satu line FA L --}}
+                    <select name="line_area" onchange="this.form.submit()"
+                        class="text-base font-bold border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
 
-                    <option value="{{ $line }}" {{ $selectedLineArea == $line ? 'selected' : '' }}>
-                        HENKATEN {{ $line }}
-                    </option>
-                @endif
-            @endforeach
-            
-            @if(!$hasFalLine)
-                <option disabled {{ !$selectedLineArea ? 'selected' : '' }}>
-                    Tidak ada Line FA L
-                </option>
-            @endif
+                        @php
+                            $hasFalLine = false; // Variabel bantu untuk melacak
+                        @endphp
 
-        </select>
-    </form>
+                        @foreach ($lineAreas as $line)
+                            @if (Illuminate\Support\Str::startsWith($line, 'FA L'))
+                                @php $hasFalLine = true; @endphp {{-- Tandai bahwa kita menemukan setidaknya satu line FA L --}}
+
+                                <option value="{{ $line }}" {{ $selectedLineArea == $line ? 'selected' : '' }}>
+                                    HENKATEN {{ $line }}
+                                </option>
+                            @endif
+                        @endforeach
+
+                        @if (!$hasFalLine)
+                            <option disabled {{ !$selectedLineArea ? 'selected' : '' }}>
+                                Tidak ada Line FA L
+                            </option>
+                        @endif
+
+                    </select>
+                </form>
 
 
-    {{-- Ini tetap sama dari kode Anda --}}
-    <p class="text-[10px] text-gray-600" id="current-date"></p>
-</div>
+                {{-- Ini tetap sama dari kode Anda --}}
+                <p class="text-[10px] text-gray-600" id="current-date"></p>
+            </div>
 
             {{-- Time & Shift --}}
             <div class="w-1/3 text-right">
@@ -201,194 +198,238 @@
         {{-- 4 SECTION GRID --}}
         <div class="grid grid-cols-2 gap-3 h-[92vh]">
             {{-- Your content sections here --}}
-        
- 
- 
-{{-- MAN POWER --}}
-@include('dashboard.partials._man_power_line')
-      
-{{-- METHOD  --}}
-@include('dashboard.partials._method_line')
 
-{{-- MACHINE --}}
-@include('dashboard.partials._machine_line')
 
-{{-- MATERIAL --}}
-@include('dashboard.partials._material_line')
 
-            </div>
-            </div>
+            {{-- MAN POWER --}}
+            @include('dashboard.partials._man_power_fa')
 
-    
+            {{-- METHOD  --}}
+            @include('dashboard.partials._method_fa')
 
-{{-- PNG Auto-Slideshow --}}
-@include('dashboard.partials._png_slideshow', ['role' => 'leader_fa'])
+            {{-- MACHINE --}}
+            @include('dashboard.partials._machine_fa')
 
-@push('scripts')
-<script>
-    function updateDateTime() {
-        const now = new Date();
-        const dateOptions = { day: '2-digit', month: 'long', year: 'numeric' };
-        document.getElementById("current-date").textContent = now.toLocaleDateString('en-GB', dateOptions);
-        document.getElementById("current-time").textContent = now.toLocaleTimeString('en-GB');
-        const hour = now.getHours();
-        let shift = (hour >= 7 && hour < 19) ? "Shift 2" : "Shift 1";
-        document.getElementById("current-shift").textContent = shift;
-    }
+            {{-- MATERIAL --}}
+            @include('dashboard.partials._material_fa')
 
-    function setGrup(grup) {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        fetch("{{ route('dashboard.setGrup') }}", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-            body: JSON.stringify({ grup: grup })
-        })
-        .then(response => response.ok ? response.json() : Promise.reject())
-        .then(data => { if (data.status === 'success') location.reload(); })
-        .catch(error => console.error('Error:', error));
-    }
+        </div>
+    </div>
 
-    function showHenkatenDetail(henkatenId) {
-        const card = document.querySelector(`[data-henkaten-id="${henkatenId}"]`);
-        const modal = document.getElementById('henkatenDetailModal');
-        if (!card || !modal) return;
-        const data = card.dataset;
-        modal.querySelector('#modalNamaBefore').textContent = data.nama || '-';
-        modal.querySelector('#modalNamaAfter').textContent = data.namaAfter || '-';
-        modal.querySelector('#modalStation').textContent = data.station || '-';
-        modal.querySelector('#modalShift').textContent = data.shift || '-';
-        modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
-        modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
-        modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
-        modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
-        modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
-        modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
-        modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
-        modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
-        const section = modal.querySelector('#modalLampiranSection');
-        const link = modal.querySelector('#modalLampiranLink');
-        if (data.lampiran) { section.classList.remove('hidden'); link.href = data.lampiran; } else { section.classList.add('hidden'); }
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
 
-    function closeHenkatenModal() {
-        document.getElementById('henkatenDetailModal').classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    }
 
-    function showMethodHenkatenDetail(henkatenId) {
-        const card = document.querySelector(`.method-card[data-henkaten-id="${henkatenId}"]`);
-        const modal = document.getElementById('methodHenkatenDetailModal');
-        if (!card || !modal) return;
-        const data = card.dataset;
-        modal.querySelector('#modalStation').textContent = data.station || '-';
-        modal.querySelector('#modalShift').textContent = data.shift || '-';
-        modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
-        modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
-        modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
-        modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
-        modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
-        modal.querySelector('#modalKeteranganBefore').textContent = data.keterangan || '-';
-        modal.querySelector('#modalKeteranganAfter').textContent = data.keteranganAfter || '-';
-        modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
-        modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
-        const section = modal.querySelector('#modalLampiranSection');
-        const link = modal.querySelector('#modalLampiranLink');
-        if (data.lampiran) { link.href = data.lampiran; section.classList.remove('hidden'); } else { section.classList.add('hidden'); }
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
+    {{-- PNG Auto-Slideshow --}}
+    @include('dashboard.partials._png_slideshow', ['role' => 'leader_fa'])
 
-    function closeMethodHenkatenModal() {
-        const modal = document.getElementById('methodHenkatenDetailModal');
-        if (modal) modal.classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    }
+    @push('scripts')
+        <script>
+            function updateDateTime() {
+                const now = new Date();
+                const dateOptions = {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                };
+                document.getElementById("current-date").textContent = now.toLocaleDateString('en-GB', dateOptions);
+                document.getElementById("current-time").textContent = now.toLocaleTimeString('en-GB');
+                const hour = now.getHours();
+                let shift = (hour >= 7 && hour < 19) ? "Shift 2" : "Shift 1";
+                document.getElementById("current-shift").textContent = shift;
+            }
 
-    function showMaterialHenkatenDetail(element) {
-        const modal = document.getElementById('materialHenkatenDetailModal');
-        if (!modal) return;
-        modal.querySelector('#modalMaterialBefore').textContent = element.getAttribute('data-nama');
-        modal.querySelector('#modalMaterialAfter').textContent = element.getAttribute('data-nama-after');
-        modal.querySelector('#modalStation').textContent = element.getAttribute('data-station');
-        modal.querySelector('#modalShift').textContent = element.getAttribute('data-shift');
-        modal.querySelector('#modalLineArea').textContent = element.getAttribute('data-line-area');
-        modal.querySelector('#modalKeterangan').textContent = element.getAttribute('data-keterangan');
-        modal.querySelector('#modalSerialStart').textContent = element.getAttribute('data-serial-number-start');
-        modal.querySelector('#modalSerialEnd').textContent = element.getAttribute('data-serial-number-end');
-        modal.querySelector('#modalTimeStart').textContent = element.getAttribute('data-time-start');
-        modal.querySelector('#modalTimeEnd').textContent = element.getAttribute('data-time-end');
-        modal.querySelector('#modalEffectiveDate').textContent = element.getAttribute('data-effective-date');
-        modal.querySelector('#modalEndDate').textContent = element.getAttribute('data-end-date');
-        modal.querySelector('#modalMaterial').textContent = element.getAttribute('data-material');
-        const section = modal.querySelector('#modalLampiranSection');
-        const link = modal.querySelector('#modalLampiranLink');
-        if (element.getAttribute('data-lampiran')) { section.classList.remove('hidden'); link.href = element.getAttribute('data-lampiran'); } else { section.classList.add('hidden'); }
-        modal.classList.remove('hidden');
-    }
+            function setGrup(grup) {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                fetch("{{ route('dashboard.setGrup') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            grup: grup
+                        })
+                    })
+                    .then(response => response.ok ? response.json() : Promise.reject())
+                    .then(data => {
+                        if (data.status === 'success') location.reload();
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
 
-    function closeMaterialHenkatenModal() {
-        document.getElementById('materialHenkatenDetailModal').classList.add('hidden');
-    }
+            function showHenkatenDetail(henkatenId) {
+                const card = document.querySelector(`[data-henkaten-id="${henkatenId}"]`);
+                const modal = document.getElementById('henkatenDetailModal');
+                if (!card || !modal) return;
+                const data = card.dataset;
+                modal.querySelector('#modalNamaBefore').textContent = data.nama || '-';
+                modal.querySelector('#modalNamaAfter').textContent = data.namaAfter || '-';
+                modal.querySelector('#modalStation').textContent = data.station || '-';
+                modal.querySelector('#modalShift').textContent = data.shift || '-';
+                modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
+                modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
+                modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
+                modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
+                modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
+                modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
+                modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
+                modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
+                const section = modal.querySelector('#modalLampiranSection');
+                const link = modal.querySelector('#modalLampiranLink');
+                if (data.lampiran) {
+                    section.classList.remove('hidden');
+                    link.href = data.lampiran;
+                } else {
+                    section.classList.add('hidden');
+                }
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
 
-    function showMachineHenkatenDetail(element) {
-        const modal = document.getElementById('henkatenModal');
-        if (!modal) return;
-        const data = element.dataset;
-        modal.querySelector('#modalDescriptionBefore').textContent = data.descriptionBefore || '-';
-        modal.querySelector('#modalDescriptionAfter').textContent = data.descriptionAfter || '-';
-        modal.querySelector('#modalStation').textContent = data.station || '-';
-        modal.querySelector('#modalShift').textContent = data.shift || '-';
-        modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
-        modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
-        modal.querySelector('#modalMachine').textContent = data.machine || '-';
-        modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
-        modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
-        modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
-        modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
-        modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
-        modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
-        const section = modal.querySelector('#modalLampiranSection');
-        const link = modal.querySelector('#modalLampiranLink');
-        if (data.lampiran) { link.href = data.lampiran; section.classList.remove('hidden'); } else { section.classList.add('hidden'); link.href = '#'; }
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
+            function closeHenkatenModal() {
+                document.getElementById('henkatenDetailModal').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
 
-    function closeMachineHenkatenModal() {
-        const modal = document.getElementById('henkatenModal');
-        if (modal) modal.classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    }
+            function showMethodHenkatenDetail(henkatenId) {
+                const card = document.querySelector(`.method-card[data-henkaten-id="${henkatenId}"]`);
+                const modal = document.getElementById('methodHenkatenDetailModal');
+                if (!card || !modal) return;
+                const data = card.dataset;
+                modal.querySelector('#modalStation').textContent = data.station || '-';
+                modal.querySelector('#modalShift').textContent = data.shift || '-';
+                modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
+                modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
+                modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
+                modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
+                modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
+                modal.querySelector('#modalKeteranganBefore').textContent = data.keterangan || '-';
+                modal.querySelector('#modalKeteranganAfter').textContent = data.keteranganAfter || '-';
+                modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
+                modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
+                const section = modal.querySelector('#modalLampiranSection');
+                const link = modal.querySelector('#modalLampiranLink');
+                if (data.lampiran) {
+                    link.href = data.lampiran;
+                    section.classList.remove('hidden');
+                } else {
+                    section.classList.add('hidden');
+                }
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
 
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            closeHenkatenModal?.(); closeMethodHenkatenModal?.(); closeMaterialHenkatenModal?.(); closeMachineHenkatenModal?.();
-        }
-    });
+            function closeMethodHenkatenModal() {
+                const modal = document.getElementById('methodHenkatenDetailModal');
+                if (modal) modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
 
-    setInterval(updateDateTime, 1000);
-    updateDateTime();
+            function showMaterialHenkatenDetail(element) {
+                const modal = document.getElementById('materialHenkatenDetailModal');
+                if (!modal) return;
+                modal.querySelector('#modalMaterialBefore').textContent = element.getAttribute('data-nama');
+                modal.querySelector('#modalMaterialAfter').textContent = element.getAttribute('data-nama-after');
+                modal.querySelector('#modalStation').textContent = element.getAttribute('data-station');
+                modal.querySelector('#modalShift').textContent = element.getAttribute('data-shift');
+                modal.querySelector('#modalLineArea').textContent = element.getAttribute('data-line-area');
+                modal.querySelector('#modalKeterangan').textContent = element.getAttribute('data-keterangan');
+                modal.querySelector('#modalSerialStart').textContent = element.getAttribute('data-serial-number-start');
+                modal.querySelector('#modalSerialEnd').textContent = element.getAttribute('data-serial-number-end');
+                modal.querySelector('#modalTimeStart').textContent = element.getAttribute('data-time-start');
+                modal.querySelector('#modalTimeEnd').textContent = element.getAttribute('data-time-end');
+                modal.querySelector('#modalEffectiveDate').textContent = element.getAttribute('data-effective-date');
+                modal.querySelector('#modalEndDate').textContent = element.getAttribute('data-end-date');
+                modal.querySelector('#modalMaterial').textContent = element.getAttribute('data-material');
+                const section = modal.querySelector('#modalLampiranSection');
+                const link = modal.querySelector('#modalLampiranLink');
+                if (element.getAttribute('data-lampiran')) {
+                    section.classList.remove('hidden');
+                    link.href = element.getAttribute('data-lampiran');
+                } else {
+                    section.classList.add('hidden');
+                }
+                modal.classList.remove('hidden');
+            }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const manPowerModal = document.getElementById('henkatenDetailModal');
-        if (manPowerModal) manPowerModal.addEventListener('click', function(e) { if (e.target === this) closeHenkatenModal(); });
-        
-        const methodModal = document.getElementById('methodHenkatenDetailModal');
-        if (methodModal) methodModal.addEventListener('click', function(e) { if (e.target === this) closeMethodHenkatenModal(); });
+            function closeMaterialHenkatenModal() {
+                document.getElementById('materialHenkatenDetailModal').classList.add('hidden');
+            }
 
-        const materialModal = document.getElementById('materialHenkatenDetailModal');
-        if (materialModal) materialModal.addEventListener('click', function(e) { if (e.target === this) closeMaterialHenkatenModal(); });
-        
-        const machineModal = document.getElementById('henkatenModal');
-        const machineCloseButton = machineModal?.querySelector('#modalCloseButton');
-        if (machineModal && machineCloseButton) {
-            machineCloseButton.addEventListener('click', closeMachineHenkatenModal);
-            machineModal.addEventListener('click', function(e) { if (e.target === this) closeMachineHenkatenModal(); });
-        }
-    }); 
-</script>
-@endpush
+            function showMachineHenkatenDetail(element) {
+                const modal = document.getElementById('henkatenModal');
+                if (!modal) return;
+                const data = element.dataset;
+                modal.querySelector('#modalDescriptionBefore').textContent = data.descriptionBefore || '-';
+                modal.querySelector('#modalDescriptionAfter').textContent = data.descriptionAfter || '-';
+                modal.querySelector('#modalStation').textContent = data.station || '-';
+                modal.querySelector('#modalShift').textContent = data.shift || '-';
+                modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
+                modal.querySelector('#modalKeterangan').textContent = data.keterangan || '-';
+                modal.querySelector('#modalMachine').textContent = data.machine || '-';
+                modal.querySelector('#modalSerialStart').textContent = data.serialNumberStart || '-';
+                modal.querySelector('#modalSerialEnd').textContent = data.serialNumberEnd || '-';
+                modal.querySelector('#modalTimeStart').textContent = data.timeStart || '-';
+                modal.querySelector('#modalTimeEnd').textContent = data.timeEnd || '-';
+                modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
+                modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
+                const section = modal.querySelector('#modalLampiranSection');
+                const link = modal.querySelector('#modalLampiranLink');
+                if (data.lampiran) {
+                    link.href = data.lampiran;
+                    section.classList.remove('hidden');
+                } else {
+                    section.classList.add('hidden');
+                    link.href = '#';
+                }
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeMachineHenkatenModal() {
+                const modal = document.getElementById('henkatenModal');
+                if (modal) modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeHenkatenModal?.();
+                    closeMethodHenkatenModal?.();
+                    closeMaterialHenkatenModal?.();
+                    closeMachineHenkatenModal?.();
+                }
+            });
+
+            setInterval(updateDateTime, 1000);
+            updateDateTime();
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const manPowerModal = document.getElementById('henkatenDetailModal');
+                if (manPowerModal) manPowerModal.addEventListener('click', function(e) {
+                    if (e.target === this) closeHenkatenModal();
+                });
+
+                const methodModal = document.getElementById('methodHenkatenDetailModal');
+                if (methodModal) methodModal.addEventListener('click', function(e) {
+                    if (e.target === this) closeMethodHenkatenModal();
+                });
+
+                const materialModal = document.getElementById('materialHenkatenDetailModal');
+                if (materialModal) materialModal.addEventListener('click', function(e) {
+                    if (e.target === this) closeMaterialHenkatenModal();
+                });
+
+                const machineModal = document.getElementById('henkatenModal');
+                const machineCloseButton = machineModal?.querySelector('#modalCloseButton');
+                if (machineModal && machineCloseButton) {
+                    machineCloseButton.addEventListener('click', closeMachineHenkatenModal);
+                    machineModal.addEventListener('click', function(e) {
+                        if (e.target === this) closeMachineHenkatenModal();
+                    });
+                }
+            });
+        </script>
+    @endpush
 
 </x-app-layout>
