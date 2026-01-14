@@ -25,16 +25,16 @@ class DashboardController extends Controller
         $currentTime = $now->toTimeString();
         $shiftNumForQuery = ($currentTime >= '07:00:00' && $currentTime <= '18:59:59') ? 2 : 1;
         session(['active_shift' => $shiftNumForQuery]);
-    
+
         // ============================================================
         // ROLE + LINE AREA HANDLING
         // ============================================================
         $user = Auth::user();
         $role = $user ? $user->role : null;
-    
+
         // Default: ambil semua line_area
         $lineAreas = Station::select('line_area')->distinct()->orderBy('line_area')->pluck('line_area');
-    
+
         // Admin bisa akses semua line_area
         if ($role !== 'Admin') {
             switch ($role) {
@@ -51,7 +51,7 @@ class DashboardController extends Controller
                     $lineAreas = $lineAreas->filter(fn($line) => str_starts_with($line, 'SMT'));
                     break;
                 case 'Sect Head Produksi':
-                    $lineAreas = collect(['FA L1','FA L2','FA L3','FA L5','FA L6','SMT L1','SMT L2']);
+                    $lineAreas = collect(['FA L1', 'FA L2', 'FA L3', 'FA L5', 'FA L6', 'SMT L1', 'SMT L2']);
                     break;
                 case 'Sect Head QC':
                     $lineAreas = collect(['Incoming']);
@@ -61,22 +61,22 @@ class DashboardController extends Controller
                     break;
             }
         }
-    
+
         $selectedLineArea = request('line_area', $lineAreas->first());
         session(['active_line' => $selectedLineArea]);
 
         // Untuk Leader QC, Leader PPIC, dan Sect Head QC, Sect Head PPIC set grup otomatis ke A
         // Tambahkan Admin jika area adalah Incoming atau Delivery
-        $isAutoGroupA = in_array($role, ['Leader QC', 'Leader PPIC', 'Sect Head QC', 'Sect Head PPIC']) || 
-                        ($role === 'Admin' && in_array(strtoupper($selectedLineArea), ['INCOMING', 'DELIVERY']));
-        
+        $isAutoGroupA = in_array($role, ['Leader QC', 'Leader PPIC', 'Sect Head QC', 'Sect Head PPIC']) ||
+            ($role === 'Admin' && in_array(strtoupper($selectedLineArea), ['INCOMING', 'DELIVERY']));
+
         if ($isAutoGroupA) {
             session(['active_grup' => 'A']);
             $currentGroup = 'A';
         } else {
             $currentGroup = $request->input('group', session('active_grup'));
         }
-    
+
         // ============================================================
         // BASE QUERY FUNCTION UNTUK FILTER HENKATEN
         // ============================================================
@@ -84,7 +84,7 @@ class DashboardController extends Controller
             $today = $now->toDateString();
             $currentTime = $now->toTimeString();
             $currentDateTime = $now;
-    
+
             $query->where(function ($q) use ($today, $currentTime, $currentDateTime) {
                 // CASE 1: TANPA JAM
                 $q->where(function ($sub) use ($today) {
@@ -93,10 +93,10 @@ class DashboardController extends Controller
                         ->whereDate('effective_date', '<=', $today)
                         ->where(function ($w) use ($today) {
                             $w->whereDate('end_date', '>=', $today)
-                              ->orWhereNull('end_date');
+                                ->orWhereNull('end_date');
                         });
                 });
-    
+
                 // CASE 2: DENGAN JAM
                 $q->orWhere(function ($sub) use ($today, $currentTime, $currentDateTime) {
                     $sub->whereNotNull('time_start')
@@ -104,30 +104,30 @@ class DashboardController extends Controller
                         ->where(function ($dateRange) use ($currentDateTime) {
                             $dateRange->where(function ($singleDay) use ($currentDateTime) {
                                 $singleDay->whereColumn('effective_date', '=', 'end_date')
-                                          ->whereDate('effective_date', '=', $currentDateTime->toDateString())
-                                          ->whereTime('time_start', '<=', $currentDateTime->toTimeString())
-                                          ->whereTime('time_end', '>=', $currentDateTime->toTimeString());
+                                    ->whereDate('effective_date', '=', $currentDateTime->toDateString())
+                                    ->whereTime('time_start', '<=', $currentDateTime->toTimeString())
+                                    ->whereTime('time_end', '>=', $currentDateTime->toTimeString());
                             })
-                            ->orWhere(function ($multiDay) use ($currentDateTime) {
-                                $multiDay->whereColumn('effective_date', '!=', 'end_date')
-                                         ->where(function ($range) use ($currentDateTime) {
-                                             $range->where(function ($startCheck) use ($currentDateTime) {
-                                                 $startCheck->whereDate('effective_date', '=', $currentDateTime->toDateString())
-                                                           ->whereTime('time_start', '<=', $currentDateTime->toTimeString());
-                                             })
-                                             ->orWhere(function ($middleCheck) use ($currentDateTime) {
-                                                 $middleCheck->whereDate('effective_date', '<', $currentDateTime->toDateString())
-                                                            ->whereDate('end_date', '>', $currentDateTime->toDateString());
-                                             })
-                                             ->orWhere(function ($endCheck) use ($currentDateTime) {
-                                                 $endCheck->whereDate('end_date', '=', $currentDateTime->toDateString())
-                                                         ->whereTime('time_end', '>=', $currentDateTime->toTimeString());
-                                             });
-                                         });
-                            });
+                                ->orWhere(function ($multiDay) use ($currentDateTime) {
+                                    $multiDay->whereColumn('effective_date', '!=', 'end_date')
+                                        ->where(function ($range) use ($currentDateTime) {
+                                            $range->where(function ($startCheck) use ($currentDateTime) {
+                                                $startCheck->whereDate('effective_date', '=', $currentDateTime->toDateString())
+                                                    ->whereTime('time_start', '<=', $currentDateTime->toTimeString());
+                                            })
+                                                ->orWhere(function ($middleCheck) use ($currentDateTime) {
+                                                    $middleCheck->whereDate('effective_date', '<', $currentDateTime->toDateString())
+                                                        ->whereDate('end_date', '>', $currentDateTime->toDateString());
+                                                })
+                                                ->orWhere(function ($endCheck) use ($currentDateTime) {
+                                                    $endCheck->whereDate('end_date', '=', $currentDateTime->toDateString())
+                                                        ->whereTime('time_end', '>=', $currentDateTime->toTimeString());
+                                                });
+                                        });
+                                });
                         });
                 });
-    
+
                 // CASE 3: SHIFT MALAM
                 $q->orWhere(function ($sub) use ($today, $currentTime) {
                     $sub->whereNotNull('time_start')
@@ -136,16 +136,16 @@ class DashboardController extends Controller
                         ->whereDate('effective_date', '<=', $today)
                         ->where(function ($w) use ($today) {
                             $w->whereDate('end_date', '>=', $today)
-                              ->orWhereNull('end_date');
+                                ->orWhereNull('end_date');
                         })
                         ->where(function ($time) use ($currentTime) {
                             $time->whereTime('time_start', '<=', $currentTime)
-                                  ->orWhereTime('time_end', '>=', $currentTime);
+                                ->orWhereTime('time_end', '>=', $currentTime);
                         });
                 });
             });
         };
-    
+
         // ============================================================
         // HENKATEN QUERY
         // ============================================================
@@ -162,21 +162,21 @@ class DashboardController extends Controller
             ->where(function ($q) {
                 $q->where(function ($dateQ) {
                     $dateQ->whereDate('effective_date', '<=', today())
-                          ->whereNull('end_date');
+                        ->whereNull('end_date');
                 })->orWhere(function ($dateQ) {
                     $dateQ->whereDate('effective_date', '<=', today())
-                          ->whereDate('end_date', '>=', today());
+                        ->whereDate('end_date', '>=', today());
                 });
             })
             ->get();
-    
+
         $henkatenIds = $activeManPowerHenkatens
             ->flatMap(fn($row) => [$row->man_power_id, $row->man_power_id_after])
             ->filter()
             ->unique()
             ->values()
             ->toArray();
-    
+
         // METHOD HENKATEN
         $activeMethodHenkatens = MethodHenkaten::with('station')
             ->where('status', 'PENDING')
@@ -185,7 +185,7 @@ class DashboardController extends Controller
             ->where($baseHenkatenQuery)
             ->latest('effective_date')
             ->get();
-    
+
         // MACHINE HENKATEN
         $machineHenkatens = MachineHenkaten::with('station')
             ->where('status', 'PENDING')
@@ -194,39 +194,39 @@ class DashboardController extends Controller
             ->where($baseHenkatenQuery)
             ->latest('effective_date')
             ->get();
-    
+
         // MATERIAL HENKATEN
-        $materialHenkatens = MaterialHenkaten::with(['station','material'])
+        $materialHenkatens = MaterialHenkaten::with(['station', 'material'])
             ->where('status', 'PENDING')
             ->where('shift', $shiftNumForQuery)
             ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
             ->where($baseHenkatenQuery)
             ->latest('effective_date')
             ->get();
-    
+
         // ============================================================
         // MANPOWER DISPLAY
         // ============================================================
         $manPower = collect();
         $dataManPowerKosong = true;
         $groupedManPower = collect();
-    
+
         if ($currentGroup) {
             $allManPower = ManPower::with('station')
                 ->where('grup', $currentGroup)
                 ->where('is_main_operator', 1)
                 ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
                 ->get();
-    
+
             $manpowerByStation = $allManPower->groupBy('station_id');
             $henkatenByStation = $activeManPowerHenkatens->groupBy('station_id');
-    
+
             $stationIds = $manpowerByStation->keys()->merge($henkatenByStation->keys())->unique();
-    
+
             foreach ($stationIds as $stationId) {
                 if ($henkatenByStation->has($stationId)) {
                     $henk = $henkatenByStation[$stationId]->sortByDesc('effective_date')->first();
-    
+
                     $oldWorker = new ManPower([
                         'id' => $henk->man_power_id,
                         'nama' => $henk->nama,
@@ -235,7 +235,7 @@ class DashboardController extends Controller
                         'station_id' => $stationId,
                         'status' => 'Henkaten',
                     ]);
-    
+
                     $oldWorker->setRelation('station', $henk->station ?? Station::find($stationId));
                     $manPower->push($oldWorker);
                 } else {
@@ -247,66 +247,70 @@ class DashboardController extends Controller
                     }
                 }
             }
-    
+
             if ($manPower->isNotEmpty()) {
                 $dataManPowerKosong = false;
                 $groupedManPower = $manPower->groupBy('station_id');
             }
         }
-    
+
         // ============================================================
         // METHOD
         // ============================================================
         $methods = Method::with('station')
             ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
             ->get();
-    
+
         $henkatenStationIds = $activeMethodHenkatens->pluck('station_id')->unique()->toArray();
-    
+
         foreach ($methods as $method) {
             $method->setAttribute(
                 'status',
                 in_array($method->station_id, $henkatenStationIds) ? 'HENKATEN' : ($method->keterangan ?? 'NORMAL')
             );
         }
-    
+
         // ============================================================
         // MACHINE
         // ============================================================
         $machines = Machine::with('station')
             ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
             ->get();
-    
+
         $henkatenMachineStationIds = $machineHenkatens->pluck('station_id')->unique()->toArray();
-    
+
         foreach ($machines as $machine) {
             $machine->setAttribute('keterangan', in_array($machine->station_id, $henkatenMachineStationIds)
                 ? 'HENKATEN'
                 : ($machine->keterangan ?? 'NORMAL'));
         }
-    
+
         // ============================================================
         // MATERIAL
         // ============================================================
         $stationIdsForLine = Station::where('line_area', $selectedLineArea)->pluck('id');
-    
+
+        // Filter hanya material yang punya material_name (tidak null dan tidak kosong)
         $materials = Material::with('station')
-                        ->whereIn('station_id', $stationIdsForLine)
-                        ->get();
-    
+            ->whereIn('station_id', $stationIdsForLine)
+            ->whereNotNull('material_name')
+            ->where('material_name', '!=', '')
+            ->get();
+
         $materialsByStationId = $materials->keyBy('station_id');
-    
+
         $activeMaterialStationIds = $materialHenkatens->pluck('station_id')->unique()->toArray();
-    
+
+        // Hanya ambil station yang memiliki material
         $stations = Station::whereIn('id', $materialsByStationId->pluck('station_id'))->get();
-    
+
         $stationStatuses = $stations->map(function ($station) use ($activeMaterialStationIds, $materialsByStationId) {
             $material = $materialsByStationId->get($station->id);
-    
+
             $stationStatus = in_array($station->id, $activeMaterialStationIds)
-                                ? 'HENKATEN'
-                                : 'NORMAL';
-    
+                ? 'HENKATEN'
+                : 'NORMAL';
+
             return [
                 'id' => $station->id,
                 'name' => $station->station_name,
@@ -315,7 +319,7 @@ class DashboardController extends Controller
                 'material_status' => $material ? $material->status : 'INACTIVE',
             ];
         });
-    
+
         // ============================================================
         // SELECT VIEW BERDASARKAN ROLE
         // ============================================================
@@ -331,7 +335,7 @@ class DashboardController extends Controller
             'Sect Head QC' => 'dashboard.roles.secthead_qc',
             default => 'dashboard.index',
         };
-    
+
         return view($view, [
             'lineAreas' => $lineAreas,
             'selectedLineArea' => $selectedLineArea,
