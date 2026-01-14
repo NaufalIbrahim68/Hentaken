@@ -215,6 +215,8 @@ class DashboardController extends Controller
             $allManPower = ManPower::with('station')
                 ->where('grup', $currentGroup)
                 ->where('is_main_operator', 1)
+                ->whereNotNull('nama')
+                ->where('nama', '!=', '')
                 ->whereHas('station', fn($q) => $q->where('line_area', $selectedLineArea))
                 ->get();
 
@@ -226,6 +228,11 @@ class DashboardController extends Controller
             foreach ($stationIds as $stationId) {
                 if ($henkatenByStation->has($stationId)) {
                     $henk = $henkatenByStation[$stationId]->sortByDesc('effective_date')->first();
+
+                    // Skip jika nama null atau kosong
+                    if (empty($henk->nama)) {
+                        continue;
+                    }
 
                     $oldWorker = new ManPower([
                         'id' => $henk->man_power_id,
