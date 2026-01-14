@@ -20,12 +20,14 @@
                                 <label for="line_area" class="block text-xs font-medium text-gray-700">
                                     Filter Line Area
                                 </label>
-                                <select name="line_area" id="line_area" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm 
+                                <select name="line_area" id="line_area"
+                                    class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm 
                                         focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                     <option value="">Semua Line</option>
                                     @isset($lineAreas)
                                         @foreach ($lineAreas as $line)
-                                            <option value="{{ $line }}" {{ ($line_area ?? '') == $line ? 'selected' : '' }}>
+                                            <option value="{{ $line }}"
+                                                {{ ($line_area ?? '') == $line ? 'selected' : '' }}>
                                                 {{ $line }}
                                             </option>
                                         @endforeach
@@ -39,31 +41,33 @@
                                     Filter Tanggal
                                 </label>
                                 <input type="date" name="created_date" id="created_date"
-                                    value="{{ $created_date ?? '' }}" class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm 
+                                    value="{{ $created_date ?? '' }}"
+                                    class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm 
                                     focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                             </div>
 
-                            <button type="submit" class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium 
+                            <button type="submit"
+                                class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium 
                                     rounded-md text-white bg-blue-600 hover:bg-blue-700 
                                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                                 Filter
                             </button>
-                            <a href="{{ route('activity.log.manpower') }}" class="py-2 px-6 border border-gray-300 shadow-sm text-sm font-medium rounded-md 
+                            <a href="{{ route('activity.log.manpower') }}"
+                                class="py-2 px-6 border border-gray-300 shadow-sm text-sm font-medium rounded-md 
                                     text-gray-700 bg-white hover:bg-gray-100 
                                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                                 Reset
                             </a>
 
                             {{-- TOMBOL DOWNLOAD PDF --}}
-                            <button type="submit" 
-                                    formaction="{{ route('activity.log.manpower.pdf') }}" 
-                                    formtarget="_blank"
-                                    class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium 
+                            <button type="submit" formaction="{{ route('activity.log.manpower.pdf') }}"
+                                formtarget="_blank"
+                                class="py-2 px-6 border border-transparent shadow-sm text-sm font-medium 
                                            rounded-md text-white bg-green-600 hover:bg-green-700 
                                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
                                 Download PDF
                             </button>
-                            
+
                         </form>
                     </div>
                 </div>
@@ -99,7 +103,7 @@
                         <tbody>
                             @forelse ($logs as $log)
                                 <tr class="bg-white border-b hover:bg-gray-50 text-xs">
-                                    
+
                                     <td class="py-2 px-3 whitespace-nowrap">
                                         {{ $log->created_at ? $log->created_at->format('d M Y') : '-' }}
                                     </td>
@@ -122,13 +126,13 @@
                                             -
                                         @endif
                                     </td>
-                                    
+
                                     <td class="py-2 px-3">
                                         @php
-                                            $status = $log->status; 
+                                            $status = $log->status;
                                             $badgeClass = '';
 
-                                            if($status == 'Approved') {
+                                            if ($status == 'Approved') {
                                                 $badgeClass = 'bg-green-100 text-green-700';
                                             } elseif ($status == 'Pending') {
                                                 $badgeClass = 'bg-yellow-100 text-yellow-700';
@@ -138,7 +142,8 @@
                                                 $badgeClass = 'bg-gray-100 text-gray-700';
                                             }
                                         @endphp
-                                        <span class="text-xs font-semibold inline-block py-1 px-2 rounded-full whitespace-nowrap {{ $badgeClass }}">
+                                        <span
+                                            class="text-xs font-semibold inline-block py-1 px-2 rounded-full whitespace-nowrap {{ $badgeClass }}">
                                             {{ $status ?? '-' }}
                                         </span>
                                     </td>
@@ -176,23 +181,29 @@
                                             @endif
                                         </div>
                                     </td>
-                                    
+
                                     <td class="py-2 px-3">
                                         <div class="flex space-x-1">
-                                            <a href="{{ route('activity.log.manpower.edit', $log->id) }}" 
-                                                class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-medium px-2 py-1 rounded-md transition">
-                                                Edit
-                                            </a>
-                                            <form action="{{ route('activity.log.manpower.destroy', $log->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
+                                            {{-- Sembunyikan tombol Edit untuk entri dari fitur Change (tidak memiliki field shift) --}}
+                                            @if ($log->shift)
+                                                <a href="{{ route('activity.log.manpower.edit', $log->id) }}"
+                                                    class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-medium px-2 py-1 rounded-md transition">
+                                                    Edit
+                                                </a>
+                                            @endif
+                                            <form action="{{ route('activity.log.manpower.destroy', $log->id) }}"
+                                                method="POST" class="inline-block"
+                                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" 
-                                                        class="inline-block bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-2 py-1 rounded-md transition">
+                                                <button type="submit"
+                                                    class="inline-block bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-2 py-1 rounded-md transition">
                                                     Hapus
                                                 </button>
                                             </form>
                                         </div>
                                     </td>
+
                                 </tr>
                             @empty
                                 <tr class="bg-white border-b">
