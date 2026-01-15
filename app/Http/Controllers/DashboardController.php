@@ -322,7 +322,7 @@ class DashboardController extends Controller
                 'id' => $station->id,
                 'name' => $station->station_name,
                 'status' => $stationStatus,
-                'material_name' => $material ? $material->material_name : 'No Material Assigned',
+                    'material_name' => $material ? $material->material_name : 'No Material Assigned',
                 'material_status' => $material ? $material->status : 'INACTIVE',
             ];
         });
