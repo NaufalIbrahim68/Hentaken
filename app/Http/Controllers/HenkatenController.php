@@ -301,9 +301,17 @@ class HenkatenController extends Controller
             $lineAreas = collect(['Delivery']);
             $predefinedLineArea = 'Delivery';
         } elseif ($role === 'Leader SMT') {
-            $lineAreas = collect(['SMT L1', 'SMT L2']);
+            $lineAreas = Station::where('line_area', 'like', 'SMT %')
+                ->distinct()
+                ->pluck('line_area')
+                ->sort()
+                ->values();
         } elseif ($role === 'Leader FA') {
-            $lineAreas = collect(['FA L1', 'FA L2', 'FA L3', 'FA L5', 'FA L6']);
+            $lineAreas = Station::where('line_area', 'like', 'FA %')
+                ->distinct()
+                ->pluck('line_area')
+                ->sort()
+                ->values();
         } else {
             // Semua line_area unik dari tabel station
             $lineAreas = Station::select('line_area')

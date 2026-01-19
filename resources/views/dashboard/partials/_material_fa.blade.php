@@ -1,9 +1,9 @@
-{{-- MATERIAL SECTION --}}
-{{-- ============================================= --}}
+
+
 <div class="bg-white shadow rounded p-4 flex flex-col mt-1">
     <h2 class="text-sm font-semibold mb-3 text-center">MATERIAL</h2>
 
-    {{-- Material Table --}}
+    
     <div class="w-full">
         <table class="w-full border-collapse">
             <thead>
@@ -23,7 +23,7 @@
                 </tr>
             </thead>
             <tbody>
-                {{-- Row untuk Icon --}}
+                
                 <tr>
                     @foreach($stationStatuses as $station)
                         @php
@@ -41,11 +41,10 @@
                         </td>
                     @endforeach
                 </tr>
-               {{-- Row untuk Status --}}
+               
               <tr>
     @foreach ($stationStatuses as $station)
         @php
-            // $station adalah array, bukan object
             $isHenkaten = ($station['status'] === 'HENKATEN');
             $bgColor = $isHenkaten ? 'bg-red-500' : 'bg-green-500';
         @endphp
@@ -65,7 +64,7 @@
         </table>
     </div>
 
-    {{-- Legend --}}
+    
     <div class="flex justify-center gap-4 mt-3 text-[10px]">
         <div class="flex items-center gap-1">
             <div class="w-2 h-2 rounded-full bg-green-600"></div>
@@ -78,36 +77,32 @@
     </div>
 
 
-   {{-- ============================================= --}}
-{{--  MATERIAL HENKATEN CARD SECTION      --}}
-{{-- ============================================= --}}
+   
+
+
 <div class="border-t mt-2 pt-2">
     <div class="relative">
         
 
-        {{-- Container Scroll --}}
+        
         <div class="overflow-x-auto scrollbar-hide scroll-smooth" id="materialHenkatenContainer">
             <div class="flex justify-center gap-3 p-2">
                 
-                {{-- =============================================== --}}
-                {{-- LOGIKA BARU: FILTER STATUS 'PENDING' --}}
-                {{-- =============================================== --}}
+                
+                
+                
                 @php
-                    // Inisialisasi koleksi kosong untuk keamanan
                     $filteredMaterialHenkatens = collect(); 
-
-                    // Cek jika $materialHenkatens ada, baru lakukan filter
                     if (isset($materialHenkatens)) {
                         $filteredMaterialHenkatens = $materialHenkatens->filter(function ($henkaten) {
-                            // Asumsi nama field adalah 'status'
                             return strtolower($henkaten->status) === 'pending';
                         });
                     }
                 @endphp
-                {{-- =============================================== --}}
+                
 
 
-                {{-- Gunakan koleksi BARU ($filteredMaterialHenkatens) untuk loop --}}
+                
                 @if($filteredMaterialHenkatens->isNotEmpty())
                     @foreach($filteredMaterialHenkatens as $henkaten)
                         <div 
@@ -115,7 +110,7 @@
                             style="width: 220px;"
                             onclick="showMaterialHenkatenDetail(this)" 
                             
-                            {{-- ====== Data Lengkap Untuk Modal ====== --}}
+                            
                             data-nama="{{ $henkaten->description_before ?? '-' }}"
                             data-nama-after="{{ $henkaten->description_after ?? '-' }}"
                             data-station="{{ $henkaten->station->station_name ?? '-' }}"
@@ -132,7 +127,7 @@
                             data-material="{{ $henkaten->material->material_name ?? '-' }}"
                         >
 
-                            {{-- CURRENT & NEW PART --}}
+                            
                             <div class="grid grid-cols-2 gap-1">
                                 <div class="bg-white shadow rounded p-1 text-center">
                                  <h3 class="text-[8px] font-bold mb-0.5">CURRENT PART</h3>
@@ -144,7 +139,7 @@
                                 </div>
                             </div>
 
-                            {{-- SERIAL NUMBER --}}
+                            
                             <div class="grid grid-cols-2 gap-1">
                                 <div class="bg-blue-400 text-center py-0.5 rounded">
                                     <span class="text-[7px] text-white font-medium">
@@ -158,7 +153,7 @@
                                 </div>
                             </div>
 
-                            {{-- ACTIVE DATE --}}
+                            
                             <div class="flex justify-center">
                                 <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
                                     ACTIVE:
@@ -171,7 +166,7 @@
                         </div>
                     @endforeach
                 @else
-                    {{-- Pesan @else diubah untuk mencerminkan filter --}}
+                    
                     <div class="text-center text-xs text-gray-400 py-4 w-full">No Actived Material Henkaten</div>
                 @endif
             </div>
@@ -181,16 +176,16 @@
     </div>
 </div>
 
-{{-- ============================================================= --}}
-{{-- MODAL DETAIL HENKATEN (MATERIAL) --}}
-{{-- ============================================================= --}}
+
+
+
 <div id="materialHenkatenDetailModal"
     class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
 
-    {{-- 1️⃣ CARD UTAMA --}}
+    
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden transform transition-all scale-100">
 
-        {{-- 2️⃣ HEADER WARNA ORANGE --}}
+        
         <div class="sticky top-0 bg-gradient-to-r from-purple-500 to-yellow-500 px-6 py-4 flex justify-between items-center">
             <h3 class="text-lg font-bold text-white tracking-wide">Detail Henkaten Material</h3>
             <button onclick="closeMaterialHenkatenModal()" class="text-white hover:text-gray-200 transition">
@@ -201,17 +196,17 @@
             </button>
         </div>
 
-       {{-- 3️⃣ ISI MODAL --}}
+       
        <div class="p-6 space-y-4">
 
-            {{-- PERUBAHAN MATERIAL --}}
+            
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 class="text-sm font-semibold text-gray-700 mb-3">Perubahan Material</h4>
                 <div class="flex items-center justify-around">
                     <div class="text-center">
                         <span class="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">Sebelum</span>
                         
-                        {{-- IKON OBENG (Sebelum - Warna Abu) --}}
+                        
                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-6 h-6 text-gray-500 mx-auto my-2">
                             <rect x="4" y="4" width="7" height="7" rx="1" stroke-width="2"/>
                             <rect x="13" y="4" width="7" height="7" rx="1" stroke-width="2"/>
@@ -237,7 +232,7 @@
                     </div>
                 </div>
             </div>
-               {{-- DETAIL INFORMASI --}}
+               
             <div class="space-y-3">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                     <div class="bg-orange-50 p-3 rounded-lg">
@@ -257,11 +252,11 @@
                         <p id="modalKeterangan" class="font-semibold text-sm">-</p>
                     </div>
 
-                    {{-- ✅ Tambahan: Nama Material --}}
+                    
                     <div class="bg-orange-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Material</p>
                         <p id="modalMaterial" class="font-semibold text-sm truncate">
-                            {{-- Ini akan diisi oleh JavaScript, jadi tidak perlu diubah --}}
+                            
                             -
                         </p>
                     </div>
@@ -287,7 +282,7 @@
                 </div>
             </div>
 
-            {{-- PERIODE --}}
+            
             <div class="flex justify-between items-center px-4 py-2">
                 <div class="text-left">
                     <p class="text-xs text-gray-500">Mulai</p>
@@ -307,7 +302,7 @@
 
             
 
-            {{-- LAMPIRAN --}}
+            
             <div id="modalLampiranSection" class="hidden pt-2">
                 <a id="modalLampiranLink" href="#" target="_blank"
                     class="block bg-orange-600 hover:bg-orange-700 text-white text-sm px-4 py-2 rounded-lg text-center transition">

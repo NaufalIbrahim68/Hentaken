@@ -1,10 +1,7 @@
-{{-- MACHINE SECTION --}}
 <div class="bg-white shadow rounded p-4 flex flex-col mt-1">
     <h2 class="text-sm font-semibold mb-3 text-center">MACHINE</h2>
 
-    {{-- Machine Table --}}
     <div class="relative">
-        {{-- Tombol Scroll Kiri (Floating) --}}
         <button onclick="document.getElementById('machineTableScroll').scrollBy({left: -200, behavior: 'smooth'})"
             class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white/90 hover:bg-purple-500 hover:text-white text-gray-600 rounded-full flex items-center justify-center shadow-lg border border-gray-200 transition-all duration-200">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -32,7 +29,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {{-- Row untuk Icon --}}
                     <tr>
                         @foreach ($machines as $mc)
                             @php
@@ -56,7 +52,6 @@
                             </td>
                         @endforeach
                     </tr>
-                    {{-- Row untuk Status --}}
                     <tr>
                         @foreach ($machines as $mc)
                             @php
@@ -75,7 +70,6 @@
             </table>
         </div>
 
-        {{-- Tombol Scroll Kanan (Floating) --}}
         <button onclick="document.getElementById('machineTableScroll').scrollBy({left: 200, behavior: 'smooth'})"
             class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white/90 hover:bg-purple-500 hover:text-white text-gray-600 rounded-full flex items-center justify-center shadow-lg border border-gray-200 transition-all duration-200">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +78,6 @@
         </button>
     </div>
 
-    {{-- Legend --}}
     <div class="flex justify-center gap-4 mt-3 text-[10px]">
         <div class="flex items-center gap-1">
             <div class="w-2 h-2 rounded-full bg-green-600"></div>
@@ -113,22 +106,21 @@
 
             @forelse($filteredMachineHenkatens as $henkaten)
                 <div class="flex-shrink-0 flex flex-col space-y-1 p-1.5 rounded-lg border-2 shadow-md cursor-pointer hover:bg-gray-100 transition"
-                    style="width: 220px;" onclick="showMachineHenkatenDetail(this)" {{-- Data untuk "Perubahan" --}}
+                    style="width: 220px;" onclick="showMachineHenkatenDetail(this)" 
                     data-description-before="{{ $henkaten->description_before ?? 'N/A' }}"
-                    data-description-after="{{ $henkaten->description_after ?? 'N/A' }}" {{-- Data untuk Grid 1 --}}
+                    data-description-after="{{ $henkaten->description_after ?? 'N/A' }}" 
                     data-station="{{ $henkaten->station->station_name ?? 'N/A' }}"
                     data-shift="{{ $henkaten->shift ?? 'N/A' }}" data-line-area="{{ $henkaten->line_area ?? 'N/A' }}"
                     data-keterangan="{{ $henkaten->keterangan ?? 'N/A' }}"
-                    data-machine="{{ $henkaten->machine ?? 'N/A' }}" {{-- Data untuk Grid 2 --}}
+                    data-machine="{{ $henkaten->machine ?? 'N/A' }}" 
                     data-serial-number-start="{{ $henkaten->serial_number_start ?? '-' }}"
                     data-serial-number-end="{{ $henkaten->serial_number_end ?? '-' }}"
                     data-time-start="{{ $henkaten->time_start ?? '-' }}"
-                    data-time-end="{{ $henkaten->time_end ?? '-' }}" {{-- Data untuk Periode (Format disamakan dengan gambar) --}}
+                    data-time-end="{{ $henkaten->time_end ?? '-' }}" 
                     data-effective-date="{{ $henkaten->effective_date ? $henkaten->effective_date->format('d M Y') : '-' }}"
                     data-end-date="{{ $henkaten->end_date ? $henkaten->end_date->format('d M Y') : 'Selanjutnya' }}"
-                    {{-- Data untuk Lampiran --}} data-lampiran="{{ $henkaten->lampiran ? asset($henkaten->lampiran) : '' }}">
+                    data-lampiran="{{ $henkaten->lampiran ? asset($henkaten->lampiran) : '' }}">
 
-                    {{-- Tampilan Visual Kartu (disesuaikan dengan field baru) --}}
                     <div class="flex items-center justify-center space-x-1.5">
                         <div class="text-center">
                             <div class="text-[8px] font-bold">OLD JIG</div>
@@ -159,30 +151,25 @@
                     </div>
                     <div class="flex justify-center">
                         <div class="bg-orange-500 text-white px-1 py-0.5 rounded-full text-[7px] font-semibold">
-                            {{-- Format visual kartu tetap ringkas --}}
+                            
                             ACTIVE: {{ $henkaten->effective_date->format('j/M/y') }} -
                             {{ $henkaten->end_date ? $henkaten->end_date->format('j/M/y') : '...' }}
                         </div>
                     </div>
                 </div>
             @empty
-                {{-- ========================================================== --}}
-                {{-- 🔔 PERUBAHAN DI SINI: Teks pemberitahuan --}}
-                {{-- ========================================================== --}}
+               
                 <div class="text-center text-xs text-gray-400 py-4 w-full">No Actived Machine Henkaten</div>
             @endforelse
         </div>
     </div>
 </div>
 
-{{-- ============================================= --}}
-{{-- MODAL UNTUK DETAIL MACHINE HENKATEN --}}
-{{-- ============================================= --}}
+
 <div id="henkatenModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
 
     <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
 
-        {{-- 1️⃣ HEADER MODAL --}}
         <div class="flex justify-between items-center border-b p-4 bg-gradient-to-r from-emerald-500 to-teal-600">
             <h3 class="text-lg font-semibold text-white">Detail Henkaten Machine</h3>
             <button id="modalCloseButton" class="text-white hover:text-gray-200 transition">
@@ -193,19 +180,15 @@
             </button>
         </div>
 
-        {{-- 2️⃣ ISI MODAL --}}
         <div class="p-6 space-y-4">
 
-            {{-- PERUBAHAN JIG/MACHINE --}}
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 class="text-sm font-semibold text-gray-700 mb-3">Perubahan Jig / Machine</h4>
                 <div class="flex items-center justify-around">
 
-                    {{-- SEBELUM --}}
                     <div class="text-center">
                         <span class="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">Sebelum</span>
 
-                        {{-- IKON OBENG (Sebelum - Warna Abu) --}}
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                             class="w-6 h-6 text-gray-500 mx-auto my-2">
                             <path
@@ -220,11 +203,9 @@
 
                     <div class="text-2xl text-gray-400">→</div>
 
-                    {{-- SESUDAH --}}
                     <div class="text-center">
                         <span class="text-xs bg-green-600 text-white px-2 py-0.5 rounded">Sesudah</span>
 
-                        {{-- IKON OBENG (Sesudah -  Warna Hijau) --}}
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
                             class="w-6 h-6 text-green-600 mx-auto my-2">
                             <path
@@ -239,7 +220,6 @@
                 </div>
             </div>
 
-            {{-- DETAIL INFORMASI (Grid 1) --}}
             <div class="space-y-3">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                     <div class="bg-orange-50 p-3 rounded-lg">
@@ -258,7 +238,6 @@
                         <p class="text-xs text-gray-500">Keterangan</p>
                         <p id="modalKeterangan" class="font-semibold text-sm">-</p>
                     </div>
-                    {{-- MACHINE (Full Width Box) --}}
                     <div class="bg-orange-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Machine</p>
                         <p id="modalMachine" class="font-semibold text-sm">-</p>
@@ -266,7 +245,6 @@
                 </div>
             </div>
 
-            {{-- DETAIL INFORMASI (Grid 2) --}}
             <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div class="bg-orange-50 p-3 rounded-lg">
                     <p class="text-xs text-gray-500">Serial Number Start</p>
@@ -286,7 +264,6 @@
                 </div>
             </div>
 
-            {{-- PERIODE --}}
             <div class="flex justify-between items-center px-4 py-2 border-t mt-4 pt-4">
                 <div class="text-left">
                     <p class="text-xs text-gray-500">Mulai</p>
@@ -304,7 +281,6 @@
                 </div>
             </div>
 
-            {{-- LAMPIRAN --}}
             <div id="modalLampiranSection" class="hidden pt-2">
                 <a id="modalLampiranLink" href="#" target="_blank"
                     class="block bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm px-4 py-2 rounded-lg text-center transition-all duration-300 shadow-md hover:shadow-lg">

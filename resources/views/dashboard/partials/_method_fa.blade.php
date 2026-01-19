@@ -1,4 +1,4 @@
-{{-- METHOD SECTION --}}
+
 <div class="bg-white shadow rounded p-4 flex flex-col">
     <h2 class="text-sm font-semibold mb-3 text-center">METHOD</h2>
 
@@ -21,7 +21,7 @@
                 </tr>
             </thead>
             <tbody>
-                {{-- Row untuk Icon --}}
+                
                 <tr>
                     @foreach ($methods as $m)
                         @php
@@ -40,7 +40,7 @@
                         </td>
                     @endforeach
                 </tr>
-                {{-- Row untuk Status --}}
+                
                 <tr>
                     @foreach ($methods as $m)
                         @php
@@ -58,7 +58,7 @@
         </table>
     </div>
 
-    {{-- Legend --}}
+    
     <div class="flex justify-center gap-4 mt-3 text-[10px]">
         <div class="flex items-center gap-1">
             <div class="w-2 h-2 rounded-full bg-green-600"></div>
@@ -71,9 +71,8 @@
     </div>
 
 
-  {{-- ======================================================================= --}}
-{{-- BAGIAN BAWAH: DETAIL HENKATEN (METODE) 
-{{-- ======================================================================= --}}
+  
+
 <div class="border-t mt-2 pt-2">
 
     <div class="flex items-center gap-1">
@@ -90,14 +89,14 @@
 
             @if($filteredMethodHenkatens->isNotEmpty())
                 <div class="flex justify-center gap-3 min-w-full px-2">
-                    {{-- Loop menggunakan variabel baru yang sudah difilter --}}
+                    
                     @foreach($filteredMethodHenkatens as $henkaten)
                         @php
                             $startDate = strtoupper($henkaten->effective_date->format('j/M/y'));
                             $endDate = $henkaten->end_date ? strtoupper($henkaten->end_date->format('j/M/y')) : 'SELANJUTNYA';
                         @endphp
 
-                        {{-- KOTAK UTAMA UNTUK SETIAP HENKATEN (METODE) --}}
+                        
                         <div class="method-card flex-shrink-0 flex flex-col space-y-2 p-2 rounded-lg border border-gray-300 shadow-md cursor-pointer hover:bg-orange-50 transition transform hover:scale-[1.02]"
                             style="width: 240px;"
                             onclick="showMethodHenkatenDetail({{ $henkaten->id }})"
@@ -116,7 +115,7 @@
                             data-time-end="{{ $henkaten->time_end ? \Carbon\Carbon::parse($henkaten->time_end)->format('H:i') : '-' }}"
                             >
                             
-                            {{-- Perubahan Metode --}}
+                            
                             <div class="flex items-center justify-center space-x-2">
                                 <div class="text-center">
                                     <p class="text-[8px] font-semibold truncate w-20" title="{{ $henkaten->keterangan }}">{{ $henkaten->keterangan }}</p>
@@ -129,7 +128,7 @@
                                 </div>
                             </div>
 
-                            {{-- Serial Number --}}
+                            
                             <div class="grid grid-cols-2 gap-1">
                                 <div class="bg-blue-400 text-center py-0.5 rounded">
                                     <span class="text-[8px] text-white font-medium">Start: {{ $henkaten->serial_number_start ?? '-' }}</span>
@@ -139,7 +138,7 @@
                                 </div>
                             </div>
 
-                            {{-- Periode Aktif --}}
+                            
                             <div class="flex justify-center">
                                 <div class="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[9px] font-semibold">
                                     {{ $startDate }} - {{ $endDate }}
@@ -149,9 +148,9 @@
                     @endforeach
                 </div>
             @else
-                {{-- ========================================================== --}}
-                {{-- 🔔 PERUBAHAN DI SINI: Teks pemberitahuan --}}
-                {{-- ========================================================== --}}
+                
+                
+                
                 <div class="text-center text-xs text-gray-400 py-4">No Actived Method Henkaten</div>
             @endif
         </div>
@@ -160,16 +159,15 @@
     </div>
 </div>
 
-{{-- ============================================================= --}}
-{{-- MODAL DETAIL HENKATEN (METODE) 
-{{-- ============================================================= --}}
+
+
 <div id="methodHenkatenDetailModal"
     class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     
-    {{-- 1. UKURAN DISESUAIKAN MENJADI max-w-3xl --}}
+    
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden transform transition-all scale-100">
 
-        {{-- 2. HEADER TETAP BIRU (TEMA METHOD) --}}
+        
         <div class="sticky top-0 bg-gradient-to-r from-blue-500 to-indigo-500 px-6 py-4 flex justify-between items-center">
             <h3 class="text-lg font-bold text-white tracking-wide">Detail Henkaten Metode</h3>
             <button onclick="closeMethodHenkatenModal()" class="text-white hover:text-gray-200 transition">
@@ -179,31 +177,31 @@
             </button>
         </div>
 
-        {{-- 3. CONTENT MODAL DENGAN LAYOUT BARU --}}
-        <div class="p-6 space-y-4"> {{-- Padding diubah ke p-6 agar seragam --}}
+        
+        <div class="p-6 space-y-4"> 
             
-           {{-- PERUBAHAN METODE --}}
+           
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 class="text-sm font-semibold text-gray-700 mb-3">Perubahan Metode</h4>
                 <div class="flex items-center justify-around">
 
-                    {{-- Bagian "Sebelum" dimodifikasi --}}
+                    
                     <div class="text-center">
                         <span class="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">Sebelum</span>
-                        {{-- Data 'keterangan' dari tabel dimasukkan di sini --}}
+                        
                         <p id="modalKeteranganBefore" class="font-semibold text-sm mt-1">
-                            {{-- Ini akan diisi oleh JavaScript --}}
+                            
                         </p>
                     </div>
 
                     <div class="text-2xl text-gray-400">→</div>
 
-                    {{-- Bagian "Sesudah" dimodifikasi --}}
+                    
                     <div class="text-center">
                         <span class="text-xs bg-green-500 text-white px-2 py-0.5 rounded">Sesudah</span>
-                        {{-- Data 'keterangan_after' dari tabel dimasukkan di sini --}}
+                        
                         <p id="modalKeteranganAfter" class="font-semibold text-sm mt-1">
-                            {{-- Ini akan diisi oleh JavaScript --}}
+                            
                         </p>
                     </div>
 
@@ -211,9 +209,9 @@
             </div>
 
 
-            {{-- 4. INFORMASI DETAIL (LAYOUT GRID BARU 4 KOLOM) --}}
+            
             <div class="space-y-3">
-                {{-- Row 1: Station, Shift, Line Area, Keterangan --}}
+                
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div class="bg-blue-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Station</p>
@@ -230,7 +228,7 @@
                     
                 </div>
 
-                {{-- Row 2: Serial Numbers & Times --}}
+                
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div class="bg-blue-50 p-3 rounded-lg">
                         <p class="text-xs text-gray-500">Serial Number Start</p>
@@ -251,7 +249,7 @@
                 </div>
             </div>
 
-            {{-- 5. PERIODE (LAYOUT BARU SEPERTI MAN POWER) --}}
+            
             <div class="flex justify-between items-center px-4 py-2">
                 <div class="text-left">
                     <p class="text-xs text-gray-500">Mulai</p>
@@ -269,7 +267,7 @@
             </div>
 
 
-            {{-- LAMPIRAN --}}
+            
             <div id="modalLampiranSection" class="hidden pt-2">
                 <h4 class="text-sm font-semibold text-gray-700 mb-2">Lampiran</h4>
                 <a id="modalLampiranLink" href="#" target="_blank"

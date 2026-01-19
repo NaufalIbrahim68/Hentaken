@@ -1,9 +1,9 @@
-{{-- PDF Auto-Slideshow Component --}}
-{{-- Activates after 30 minutes of inactivity --}}
+
+
 
 <div id="pdfSlideshowModal" class="pdf-slideshow-modal" style="display: none;">
     <div class="pdf-slideshow-overlay">
-        {{-- Close Button --}}
+        
         <button onclick="closePdfSlideshow()" class="pdf-close-btn" title="Close (ESC)">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -11,7 +11,7 @@
             </svg>
         </button>
 
-        {{-- Navigation Buttons --}}
+        
         <button onclick="previousPdf()" class="pdf-nav-btn pdf-nav-prev" title="Previous (←)">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="15 18 9 12 15 6"></polyline>
@@ -24,12 +24,12 @@
             </svg>
         </button>
 
-        {{-- PDF Viewer Container --}}
+        
         <div class="pdf-viewer-container">
             <embed id="pdfViewer" type="application/pdf" width="100%" height="100%">
         </div>
 
-        {{-- Slide Counter & Progress Bar --}}
+        
         <div class="pdf-controls-bottom">
             <div class="pdf-slide-counter">
                 <span id="currentSlide">1</span> / <span id="totalSlides">1</span>
@@ -196,87 +196,62 @@
 </style>
 
 <script>
-// ========================================
-// PDF SLIDESHOW CONFIGURATION
-// ========================================
 
-// Get current user role from Laravel
 const userRole = '{{ strtolower(str_replace(" ", "_", Auth::user()->role ?? "")) }}';
 
-// PDF files by role - UPDATE these arrays with your PDF paths
 const pdfFilesByRole = {
     'leader_fa': [
         '/pdfs/slideshow/leader_fa/slide1.pdf',
         '/pdfs/slideshow/leader_fa/slide2.pdf',
         '/pdfs/slideshow/leader_fa/slide3.pdf',
-        // Add more PDFs for Leader FA here
     ],
     'leader_smt': [
         '/pdfs/slideshow/leader_smt/slide1.pdf',
         '/pdfs/slideshow/leader_smt/slide2.pdf',
         '/pdfs/slideshow/leader_smt/slide3.pdf',
-        // Add more PDFs for Leader SMT here
     ],
     'leader_ppic': [
         '/pdfs/slideshow/leader_ppic/slide1.pdf',
         '/pdfs/slideshow/leader_ppic/slide2.pdf',
         '/pdfs/slideshow/leader_ppic/slide3.pdf',
-        // Add more PDFs for Leader PPIC here
     ],
     'leader_qc': [
         '/pdfs/slideshow/leader_qc/slide1.pdf',
         '/pdfs/slideshow/leader_qc/slide2.pdf',
         '/pdfs/slideshow/leader_qc/slide3.pdf',
-        // Add more PDFs for Leader QC here
     ]
 };
 
-// Get PDF files for current user role
 const pdfFiles = pdfFilesByRole[userRole] || [];
 
-// Configuration
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
-// const INACTIVITY_TIMEOUT = 10 * 1000; // 10 seconds (for testing)
 const SLIDE_INTERVAL = 10 * 1000; // 10 seconds between slides
 
-// ========================================
-// GLOBAL STATE
-// ========================================
 let inactivityTimer = null;
 let slideTimer = null;
 let currentSlideIndex = 0;
 let progressInterval = null;
 
-// ========================================
-// INACTIVITY DETECTION
-// ========================================
 function resetInactivityTimer() {
-    // Clear existing timer
     if (inactivityTimer) {
         clearTimeout(inactivityTimer);
     }
 
-    // If slideshow is open, close it
     if (document.getElementById('pdfSlideshowModal').style.display !== 'none') {
         closePdfSlideshow();
     }
 
-    // Start new timer
     inactivityTimer = setTimeout(() => {
         showPdfSlideshow();
     }, INACTIVITY_TIMEOUT);
 }
 
-// Track user activity
 const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
 
 activityEvents.forEach(event => {
     document.addEventListener(event, resetInactivityTimer);
 });
 
-// ========================================
-// SLIDESHOW FUNCTIONS
-// ========================================
 function showPdfSlideshow() {
     if (pdfFiles.length === 0) {
         console.warn('No PDF files configured for slideshow for role: ' + userRole);
@@ -329,16 +304,12 @@ function updateSlideCounter() {
     document.getElementById('totalSlides').textContent = pdfFiles.length;
 }
 
-// ========================================
-// AUTO-ADVANCE & PROGRESS BAR
-// ========================================
 function startAutoAdvance() {
     stopAutoAdvance(); // Clear any existing timers
 
     let progress = 0;
     const progressBar = document.getElementById('pdfProgressFill');
 
-    // Update progress bar every 100ms
     progressInterval = setInterval(() => {
         progress += (100 / SLIDE_INTERVAL) * 100;
         if (progress >= 100) {
@@ -347,7 +318,6 @@ function startAutoAdvance() {
         progressBar.style.width = progress + '%';
     }, 100);
 
-    // Auto-advance to next slide
     slideTimer = setTimeout(() => {
         nextPdf();
     }, SLIDE_INTERVAL);
@@ -367,9 +337,6 @@ function resetProgress() {
     progressBar.style.width = '0%';
 }
 
-// ========================================
-// KEYBOARD NAVIGATION
-// ========================================
 document.addEventListener('keydown', function(e) {
     const modal = document.getElementById('pdfSlideshowModal');
     if (modal.style.display === 'none') return;
@@ -387,10 +354,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// ========================================
-// INITIALIZATION
-// ========================================
-// Start inactivity timer when page loads
 document.addEventListener('DOMContentLoaded', function() {
     resetInactivityTimer();
     console.log('PDF Slideshow initialized for role: ' + userRole);
