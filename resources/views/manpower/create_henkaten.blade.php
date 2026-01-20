@@ -332,11 +332,9 @@
                                     </div>
                                 </div>
 
-                                {{-- Lampiran (3 Field) --}}
                                 <div class="mb-6 mt-6">
                                     <h3 class="block text-gray-700 text-sm font-bold mb-4">Lampiran</h3>
 
-                                    {{-- Lampiran 1  --}}
                                     <div class="mb-4">
                                         <label for="lampiran" class="block text-gray-700 text-sm font-medium mb-2">
                                             Lampiran 1 (Opsional)
@@ -358,7 +356,6 @@
                                         @endif
                                     </div>
 
-                                    {{-- Lampiran 2 (Optional) --}}
                                     <div class="mb-4">
                                         <label for="lampiran_2" class="block text-gray-700 text-sm font-medium mb-2">
                                             Lampiran 2 (Opsional)
@@ -380,7 +377,6 @@
                                         @endif
                                     </div>
 
-                                    {{-- Lampiran 3 (Optional) --}}
                                     <div class="mb-4">
                                         <label for="lampiran_3" class="block text-gray-700 text-sm font-medium mb-2">
                                             Lampiran 3 (Opsional)
@@ -434,7 +430,6 @@
             const initialStationsData = @json($stations ?? []);
 
             Alpine.data('henkatenForm', (config) => ({
-                // --- Data Properties ---
                 isEditing: config.isEditing,
                 logId: config.logId,
                 userRole: config.userRole,
@@ -464,13 +459,11 @@
                 afterValid: true,
                 isDropdownOpen: false,
 
-                // URL Helpers
                 findManpowerUrl: config.findManpowerUrl,
                 searchManpowerUrl: config.searchManpowerUrl,
                 findStationsUrl: config.findStationsUrl,
                 checkAfterUrl: config.checkAfterUrl,
 
-                // --- Computed Properties ---
                 get isLeaderFAOrSMT() {
                     return ['Leader FA', 'SubLeader FA', 'Leader SMT'].includes(this.userRole);
                 },
