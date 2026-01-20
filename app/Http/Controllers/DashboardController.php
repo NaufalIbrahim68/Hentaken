@@ -322,7 +322,7 @@ class DashboardController extends Controller
                 'id' => $station->id,
                 'name' => $station->station_name,
                 'status' => $stationStatus,
-                    'material_name' => $material ? $material->material_name : 'No Material Assigned',
+                'material_name' => $material ? $material->material_name : 'No Material Assigned',
                 'material_status' => $material ? $material->status : 'INACTIVE',
             ];
         });
@@ -331,7 +331,7 @@ class DashboardController extends Controller
         // SELECT VIEW BERDASARKAN ROLE
         // ============================================================
         $view = match ($role) {
-            'Admin' => 'dashboard.index',
+            'Admin' => 'dashboard.roles.admin',
             'Leader FA' => 'dashboard.roles.leader_fa',
             'SubLeader FA' => 'dashboard.roles.subleader_fa',
             'Leader SMT' => 'dashboard.roles.leader_smt',
@@ -340,7 +340,7 @@ class DashboardController extends Controller
             'Sect Head Produksi' => 'dashboard.roles.leader_fa',
             'Sect Head PPIC' => 'dashboard.roles.secthead_ppic',
             'Sect Head QC' => 'dashboard.roles.secthead_qc',
-            default => 'dashboard.index',
+            default => 'dashboard.roles.admin',
         };
 
         return view($view, [
