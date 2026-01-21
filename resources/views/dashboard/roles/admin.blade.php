@@ -232,7 +232,6 @@
 
         {{-- 4 SECTION GRID --}}
         <div class="grid grid-cols-2 gap-3 h-[92vh]">
-            {{-- Your content sections here --}}
 
 
 
