@@ -7,9 +7,10 @@ use App\Models\ManPowerHenkaten;
 use App\Models\MethodHenkaten;
 use App\Models\MaterialHenkaten;
 use App\Models\MachineHenkaten;
-use App\Models\User;    
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class SendPendingHenkatenReminder extends Command
 {
@@ -27,67 +28,143 @@ class SendPendingHenkatenReminder extends Command
             'Sect Head Produksi'
         ])->get();
 
-        foreach ($sectionHeads as $head) {
+        $this->info("Found " . $sectionHeads->count() . " Section Heads");
 
-            // Ambil pending sesuai role (sama seperti logic index user)
-            $pendingData = $this->getPendingForRole($head->role)
+        foreach ($sectionHeads as $head) {
+            $this->info("Processing: {$head->name} ({$head->role})");
+
+            // Kumpulkan pending data per tipe
+            $allPendingItems = collect();
+            $summary = [];
+
+            // ManPower
+            $manpowerQuery = $this->applyRoleFilter(ManPowerHenkaten::query(), $head->role);
+            $manpowerPending = $manpowerQuery
+                ->where('status', 'Pending')
                 ->where('created_at', '<=', $deadline)
                 ->get();
 
-            if ($pendingData->count() > 0) {
+            if ($manpowerPending->count() > 0) {
+                $summary['Man Power'] = $manpowerPending->count();
+                foreach ($manpowerPending as $item) {
+                    $allPendingItems->push([
+                        'type' => 'Man Power',
+                        'npk' => $item->nama ?? '-',
+                        'line_area' => $item->line_area,
+                        'created_at' => $item->created_at,
+                        'keterangan' => $item->keterangan ?? '-',
+                    ]);
+                }
+            }
 
-                Mail::send('email.Approval_henkaten_manpower_reminder', [
-                    'name' => $head->name,
-                    'role' => $head->role,
-                    'total' => $pendingData->count(),
-                    'items' => $pendingData
-                ], function($msg) use ($head) {
-                    $msg->to($head->email)
-                        ->subject('Reminder Approval Henkaten Pending > 7 Hari');
-                });
+            // Method
+            $methodQuery = $this->applyRoleFilter(MethodHenkaten::query(), $head->role);
+            $methodPending = $methodQuery
+                ->where('status', 'Pending')
+                ->where('created_at', '<=', $deadline)
+                ->get();
 
-                $this->info("Reminder dikirim ke: {$head->name}");
+            if ($methodPending->count() > 0) {
+                $summary['Method'] = $methodPending->count();
+                foreach ($methodPending as $item) {
+                    $allPendingItems->push([
+                        'type' => 'Method',
+                        'npk' => '-',
+                        'line_area' => $item->line_area,
+                        'created_at' => $item->created_at,
+                        'keterangan' => $item->keterangan ?? '-',
+                    ]);
+                }
+            }
+
+            // Material
+            $materialQuery = $this->applyRoleFilter(MaterialHenkaten::query(), $head->role);
+            $materialPending = $materialQuery
+                ->where('status', 'Pending')
+                ->where('created_at', '<=', $deadline)
+                ->get();
+
+            if ($materialPending->count() > 0) {
+                $summary['Material'] = $materialPending->count();
+                foreach ($materialPending as $item) {
+                    $allPendingItems->push([
+                        'type' => 'Material',
+                        'npk' => '-',
+                        'line_area' => $item->line_area,
+                        'created_at' => $item->created_at,
+                        'keterangan' => $item->keterangan ?? '-',
+                    ]);
+                }
+            }
+
+            // Machine
+            $machineQuery = $this->applyRoleFilter(MachineHenkaten::query(), $head->role);
+            $machinePending = $machineQuery
+                ->where('status', 'Pending')
+                ->where('created_at', '<=', $deadline)
+                ->get();
+
+            if ($machinePending->count() > 0) {
+                $summary['Machine'] = $machinePending->count();
+                foreach ($machinePending as $item) {
+                    $allPendingItems->push([
+                        'type' => 'Machine',
+                        'npk' => '-',
+                        'line_area' => $item->line_area,
+                        'created_at' => $item->created_at,
+                        'keterangan' => $item->keterangan ?? '-',
+                    ]);
+                }
+            }
+
+            // Jika ada pending items, kirim email
+            if ($allPendingItems->count() > 0) {
+                $totalCount = $allPendingItems->count();
+                try {
+                    Mail::send('email.henkaten_reminder', [
+                        'name' => $head->name,
+                        'role' => $head->role,
+                        'total' => $totalCount,
+                        'items' => $allPendingItems,
+                        'summary' => $summary,
+                    ], function ($msg) use ($head, $totalCount) {
+                        $msg->to($head->email)
+                            ->subject('Reminder: ' . $totalCount . ' Henkaten Pending > 7 Hari');
+                    });
+
+                    $this->info("  ✓ Email sent to {$head->email} ({$totalCount} items)");
+                    Log::info("Henkaten reminder sent to {$head->email}", ['count' => $totalCount]);
+                } catch (\Exception $e) {
+                    $this->error("  ✗ Failed to send email: " . $e->getMessage());
+                    Log::error("Failed to send henkaten reminder to {$head->email}: " . $e->getMessage());
+                }
+            } else {
+                $this->info("  - No pending items > 7 days");
             }
         }
 
+        $this->info("Done!");
         return Command::SUCCESS;
     }
 
-
-    private function getPendingForRole($role)
+    /**
+     * Apply line_area filter based on role
+     */
+    private function applyRoleFilter($query, $role)
     {
-        $manpowers = ManPowerHenkaten::where('status', 'Pending');
-        $methods = MethodHenkaten::where('status', 'Pending');
-        $materials = MaterialHenkaten::where('status', 'Pending');
-        $machines = MachineHenkaten::where('status', 'Pending');
-
         switch ($role) {
             case 'Sect Head QC':
-                $manpowers->whereRaw("LOWER(line_area) LIKE 'incoming%'");
-                $methods->whereRaw("LOWER(line_area) LIKE 'incoming%'");
-                $materials->whereRaw("LOWER(line_area) LIKE 'incoming%'");
-                $machines->whereRaw("LOWER(line_area) LIKE 'incoming%'");
-                break;
+                return $query->whereRaw("LOWER(line_area) LIKE 'incoming%'");
 
             case 'Sect Head PPIC':
-                $manpowers->where('line_area', 'Delivery');
-                $methods->where('line_area', 'Delivery');
-                $materials->where('line_area', 'Delivery');
-                $machines->where('line_area', 'Delivery');
-                break;
+                return $query->where('line_area', 'Delivery');
 
             case 'Sect Head Produksi':
-                $allowed = ['FA L1','FA L2','FA L3','FA L5','FA L6','SMT L1','SMT L2'];
-                $manpowers->whereIn('line_area', $allowed);
-                $methods->whereIn('line_area', $allowed);
-                $materials->whereIn('line_area', $allowed);
-                $machines->whereIn('line_area', $allowed);
-                break;
-        }
+                $allowed = ['FA L1', 'FA L2', 'FA L3', 'FA L5', 'FA L6', 'SMT L1', 'SMT L2'];
+                return $query->whereIn('line_area', $allowed);
 
-        return $manpowers
-            ->union($methods)
-            ->union($materials)
-            ->union($machines);
+            default:
+                return $query;
+        }
     }
 }
