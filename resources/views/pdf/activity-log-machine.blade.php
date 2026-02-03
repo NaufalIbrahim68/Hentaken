@@ -80,7 +80,6 @@
             </td>
             <td class="title">
                 <h1>Laporan Activity Log</h1>
-                {{-- UBAH: Judul --}}
                 <h2>Henkaten Machine</h2>
             </td>
         </tr>
@@ -100,13 +99,12 @@
     <table>
         <thead>
             <tr>
-                {{-- UBAH: Kolom disesuaikan untuk Machine --}}
                 <th>Tgl Dibuat</th>
-                <th>Kategori</th> {{-- TAMBAHAN BARU --}}
+                <th>Kategori</th> 
                 <th>Line Area</th>
                 <th>Station</th>
-                <th>Desc. Sebelum</th> {{-- UBAH: Judul --}}
-                <th>Desc. Sesudah</th> {{-- UBAH: Judul --}}
+                <th>Desc. Sebelum</th> 
+                <th>Desc. Sesudah</th> 
                 <th>Tgl Efektif</th>
                 <th>Waktu</th>
                 <th>Supp. Part No. Start</th>
@@ -118,16 +116,12 @@
         <tbody>
             @forelse ($logs as $log)
                 <tr>
-                    {{-- created_at --}}
                     <td class="text-center">{{ $log->created_at ? $log->created_at->format('d M Y') : '-' }}</td>
                     
-                    {{-- Kategori (BARU) --}}
                     <td class="text-center">{{ $log->machine ?? '-' }}</td>
                     
-                    {{-- line_area --}}
                     <td class="text-center">{{ $log->line_area ?? '-' }}</td>
                     
-                    {{-- station_id (via relasi) --}}
                     <td class="text-center">{{ $log->station->station_name ?? 'N/A' }}</td>
                     
                     {{-- UBAH: description_before --}}
@@ -210,7 +204,6 @@
 
             @empty
                 <tr>
-                    {{-- UBAH: Colspan disesuaikan (12 kolom) --}}
                     <td colspan="12" class="text-center">Tidak ada data untuk filter yang dipilih.</td>
                 </tr>
             @endforelse

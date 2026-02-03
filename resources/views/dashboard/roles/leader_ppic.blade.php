@@ -220,9 +220,6 @@
 @push('scripts')
 <script>
     
-    /**
-     * Update jam, tanggal, dan shift secara real-time.
-     */
     function updateDateTime() {
         const now = new Date();
         const dateOptions = { day: '2-digit', month: 'long', year: 'numeric' };
@@ -232,9 +229,9 @@
         const hour = now.getHours();
         let shift;
         if (hour >= 7 && hour < 19) {
-            shift = "Shift 2"; // 07:00 - 18:59
+            shift = "Shift 2"; 
         } else {
-            shift = "Shift 1"; // 19:00 - 06:59
+            shift = "Shift 1"; 
         }
         document.getElementById("current-shift").textContent = shift;
     }
@@ -294,7 +291,6 @@
         
         const data = card.dataset; // Ambil semua data- attributes
 
-        // --- PERBAIKAN: Gunakan modal.querySelector() ---
         modal.querySelector('#modalNamaBefore').textContent = data.nama || '-';
         modal.querySelector('#modalNamaAfter').textContent = data.namaAfter || '-';
         modal.querySelector('#modalStation').textContent = data.station || '-';
@@ -308,7 +304,6 @@
         modal.querySelector('#modalEffectiveDate').textContent = data.effectiveDate || '-';
         modal.querySelector('#modalEndDate').textContent = data.endDate || 'Selanjutnya';
         
-        // Mengurus Lampiran
         const lampiran = data.lampiran;
         const section = modal.querySelector('#modalLampiranSection'); // <-- Perbaikan
         const link = modal.querySelector('#modalLampiranLink'); // <-- Perbaikan
@@ -348,7 +343,6 @@
 
         const data = card.dataset; 
 
-        // (Kode ini sudah benar menggunakan modal.querySelector())
         modal.querySelector('#modalStation').textContent = data.station || '-';
         modal.querySelector('#modalShift').textContent = data.shift || '-';
         modal.querySelector('#modalLineArea').textContent = data.lineArea || '-';
@@ -471,7 +465,7 @@
             lampiranSection.classList.remove('hidden');
         } else {
             lampiranSection.classList.add('hidden');
-            lampiranLink.href = '#'; // Reset href
+            lampiranLink.href = '#'; 
         }
 
         // 5. Tampilkan modal
@@ -497,7 +491,7 @@
             closeHenkatenModal?.();
             closeMethodHenkatenModal?.();
             closeMaterialHenkatenModal?.();
-            closeMachineHenkatenModal?.(); // <-- Pastikan ini ada
+            closeMachineHenkatenModal?.(); 
         }
     });
 
@@ -521,9 +515,8 @@
     // INISIALISASI SAAT HALAMAN DIMUAT (DOMContentLoaded)
     // ==================================================
 
-    // Jalankan jam
     setInterval(updateDateTime, 1000);
-    updateDateTime(); // Panggil sekali saat muat
+    updateDateTime(); 
 
     document.addEventListener('DOMContentLoaded', function() {
 

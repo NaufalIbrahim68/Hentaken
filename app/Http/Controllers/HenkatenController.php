@@ -26,18 +26,12 @@ use Illuminate\Support\Str; // <--- ADD THIS LINE
 
 class HenkatenController extends Controller
 {
-    // ==============================================================
-    // BAGIAN 1: FORM PEMBUATAN HENKATEN MAN POWER
-    // ==============================================================
     public function create()
     {
         $user = Auth::user();
-        // Gunakan user->role yang sudah terformat Title Case jika memungkinkan
         $userRole = $user->role ?? 'Operator';
 
-        // Cek apakah user punya record manpower
         $manpower = ManPower::where('nama', $user->name)->first();
-        // Gunakan ManPower::where('user_id', $user->id) jika sudah ada relasi
         $isMainOperator = $manpower?->is_main_operator == 1;
 
         // Ambil semua line area
@@ -47,19 +41,14 @@ class HenkatenController extends Controller
         $stations = collect();
         $lineAreas = $allLineAreas;
         $showStationDropdown = false;
-        $roleLineArea = ''; // Dipakai untuk role yang Line Area-nya fix
+        $roleLineArea = '';
 
-        // ============== ROLE: LEADER FA / SMT ==================
         if ($userRole === 'Leader FA' || $userRole === 'SubLeader FA' || $userRole === 'Leader SMT') {
             $prefix = (str_ends_with($userRole, 'FA')) ? 'FA' : 'SMT';
-
-            // Leader FA/SMT boleh melihat semua line area mereka
             $stations = Station::where('line_area', 'LIKE', $prefix . '%')->get();
             $lineAreas = array_values(array_filter($allLineAreas, fn($a) => str_starts_with($a, $prefix)));
 
             $showStationDropdown = true;
-
-            // Auto-select the first available line area for leaders
             if (!empty($lineAreas)) {
                 $roleLineArea = $lineAreas[0];
             }
@@ -87,13 +76,9 @@ class HenkatenController extends Controller
             $roleLineArea = $fixedLineArea;
             $showStationDropdown = true;
 
-            // DEBUG
             Log::info('=== LEADER QC/PPIC DEBUG ===');
             Log::info('Stations Data: ', $stations->toArray());
-        }
-
-        // ============== ROLE LAIN (Operator/Admin/DLL) ==================
-        else {
+        } else {
             if ($manpower) {
                 // Operator memiliki Line Area dan Station yang fix
                 $stations = Station::where('id', $manpower->station_id)->get();
@@ -111,25 +96,19 @@ class HenkatenController extends Controller
                     $showStationDropdown = false;
                 }
             } else {
-                // User bukan Manpower
                 $stations = collect();
                 $lineAreas = [];
                 $showStationDropdown = false;
             }
         }
 
-        // ================= SHIFT ==================
         $now = Carbon::now('Asia/Jakarta');
-        // Asumsi shift 2: 07:00 - 18:59:59. Shift 1: 19:00 - 06:59:59 (+1 hari)
         $shift2Start = $now->copy()->setTime(7, 0, 0);
         $shift1Start = $now->copy()->setTime(19, 0, 0);
 
-        // Logika Shift: Shift 2 jika antara 7 pagi dan 7 malam, Shift 1 selain itu.
         $currentShift = ($now->gte($shift2Start) && $now->lt($shift1Start)) ? 2 : 1;
 
-        // ================= GROUP ==================
         $currentGroup = Session::get('active_grup');
-        // Leader QC & PPIC tidak memakai grup, jadi jangan blok akses jika grup belum dipilih
         if (!$currentGroup && !in_array($userRole, ['Leader QC', 'Leader PPIC'])) {
             return redirect()->route('dashboard')
                 ->with('error', 'Silakan pilih Grup di Dashboard terlebih dahulu.');
@@ -148,9 +127,7 @@ class HenkatenController extends Controller
     }
 
 
-    // ==============================================================
-    // BAGIAN 3: FORM PEMBUATAN HENKATEN METHOD
-    // ==============================================================
+
     public function store(Request $request)
     {
         $userRole = Auth::user()?->role;
@@ -179,7 +156,6 @@ class HenkatenController extends Controller
                 'required',
                 'date_format:H:i',
                 function ($attribute, $value, $fail) use ($request) {
-                    // Gabungkan tanggal + waktu untuk perbandingan
                     $effectiveDate = $request->input('effective_date');
                     $endDate = $request->input('end_date');
                     $timeStart = $request->input('time_start');
@@ -207,49 +183,41 @@ class HenkatenController extends Controller
             'time_end.after'               => 'Waktu selesai harus setelah waktu mulai.',
         ]);
 
-        // Pastikan grup selalu 'A' untuk Leader QC dan Leader PPIC
         if ($isLeaderQCorPPIC) {
             $validated['grup'] = 'A';
         }
 
-        // Array untuk track uploaded files (untuk rollback jika error)
         $uploadedFiles = [];
 
         try {
             DB::beginTransaction();
 
-            // Get ManPower data
             $manPowerAsli  = ManPower::findOrFail($validated['man_power_id']);
             $manPowerAfter = ManPower::findOrFail($validated['man_power_id_after']);
 
-            // Upload lampiran 1
             if ($request->hasFile('lampiran')) {
                 $validated['lampiran'] = $request->file('lampiran')
                     ->store('henkaten_man_power_lampiran', 'public');
                 $uploadedFiles[] = $validated['lampiran'];
             }
 
-            // Upload lampiran 2
             if ($request->hasFile('lampiran_2')) {
                 $validated['lampiran_2'] = $request->file('lampiran_2')
                     ->store('henkaten_man_power_lampiran', 'public');
                 $uploadedFiles[] = $validated['lampiran_2'];
             }
 
-            // Upload lampiran 3
             if ($request->hasFile('lampiran_3')) {
                 $validated['lampiran_3'] = $request->file('lampiran_3')
                     ->store('henkaten_man_power_lampiran', 'public');
                 $uploadedFiles[] = $validated['lampiran_3'];
             }
 
-            // Prepare data untuk create
             $validated['nama']       = $manPowerAsli->nama;
             $validated['nama_after'] = $manPowerAfter->nama;
             $validated['status']     = 'PENDING';
-            $validated['user_id']    = Auth::id(); // Pastikan field ini ada di fillable model
+            $validated['user_id']    = Auth::id();
 
-            // Create henkaten record
             $henkaten = ManPowerHenkaten::create($validated);
 
             DB::commit();
@@ -277,7 +245,6 @@ class HenkatenController extends Controller
 
     public function createMethodHenkaten()
     {
-        // Ambil data shift dari session
         $currentShift = session('active_shift', 1);
 
 
@@ -285,15 +252,12 @@ class HenkatenController extends Controller
         $role = $user ? $user->role : null;
         $isPredefinedRole = in_array($role, ['Leader QC', 'Leader PPIC']);
 
-        // --- INISIALISASI VARIABEL BARU ---
         $selectedLineArea = null;
         $predefinedLineArea = null;
-        $methodList = collect(); // pastikan collection kosong
+        $methodList = collect();
         $stations = collect();
         $lineAreas = collect();
-        // -----------------------------------
 
-        // --- A. LOGIKA PENENTUAN LINE AREA ---
         if ($role === 'Leader QC') {
             $lineAreas = collect(['Incoming']);
             $predefinedLineArea = 'Incoming';
@@ -313,7 +277,6 @@ class HenkatenController extends Controller
                 ->sort()
                 ->values();
         } else {
-            // Semua line_area unik dari tabel station
             $lineAreas = Station::select('line_area')
                 ->distinct()
                 ->whereNotNull('line_area')
@@ -447,40 +410,31 @@ class HenkatenController extends Controller
         ];
         $validated = $request->validate($rules);
 
-        // ✅ Array untuk track uploaded files (untuk rollback)
         $uploadedFiles = [];
 
         try {
             DB::beginTransaction();
 
-            // =========================================================
-            // Upload File - KONSISTEN
-            // =========================================================
 
-            // Upload lampiran 1
+
             if ($request->hasFile('lampiran')) {
                 $validated['lampiran'] = $request->file('lampiran')
                     ->store('henkaten_methods_lampiran', 'public');
                 $uploadedFiles[] = $validated['lampiran'];
             }
 
-            // Upload lampiran 2
             if ($request->hasFile('lampiran_2')) {
                 $validated['lampiran_2'] = $request->file('lampiran_2')
                     ->store('henkaten_methods_lampiran', 'public');
                 $uploadedFiles[] = $validated['lampiran_2'];
             }
 
-            // Upload lampiran 3
             if ($request->hasFile('lampiran_3')) {
                 $validated['lampiran_3'] = $request->file('lampiran_3')
                     ->store('henkaten_methods_lampiran', 'public');
                 $uploadedFiles[] = $validated['lampiran_3'];
             }
 
-            // =========================================================
-            // Ambil methods_name dari DB jika ada method_id
-            // =========================================================
             $methodName = $validated['method_id']
                 ? Method::find($validated['method_id'])->methods_name
                 : null;
@@ -513,7 +467,7 @@ class HenkatenController extends Controller
                 'serial_number_end'   => $validated['serial_number_end'] ?? null,
                 'note'                => $validated['note'] ?? null,
                 'status'              => 'PENDING',
-                'user_id'             => Auth::id(), // ✅ TAMBAHKAN jika ada di fillable
+                'user_id'             => Auth::id(),
             ];
 
             MethodHenkaten::create($dataToCreate);
@@ -548,7 +502,6 @@ class HenkatenController extends Controller
         $stationId = $request->input('station_id');
 
         if (!$stationId) {
-            // Mengembalikan 400 Bad Request jika ID hilang
             return response()->json(['error' => 'Station ID diperlukan.'], 400);
         }
 
@@ -580,9 +533,8 @@ class HenkatenController extends Controller
             'Leader PPIC' => 'Delivery',
             default => null,
         };
-        // -----------------------------
 
-        // 1. Ambil semua Line Area unik (untuk dropdown dinamis, jika role bukan predefined)
+
         $lineAreas = Station::whereNotNull('line_area')
             ->orderBy('line_area', 'asc')
             ->pluck('line_area')
@@ -594,16 +546,13 @@ class HenkatenController extends Controller
             $lineAreas = $lineAreas->filter(fn($area) => str_starts_with($area, 'FA'))->values();
         }
 
-        // 2. Inisialisasi daftar model
         $stations = collect();
-        $materialsForDynamicRole = collect(); // ✅ Ganti nama agar tidak konflik
-        $defaultMaterialOptions = collect(); // ✅ Nama variabel yang dicari di Blade
+        $materialsForDynamicRole = collect();
+        $defaultMaterialOptions = collect();
 
-        // 3. Logika mengisi data lama (old) untuk mode dinamis
         if (!$isPredefinedRole) {
             $oldLineArea = old('line_area');
 
-            // Pre-select for SMT/FA leaders if no old value
             if (!$oldLineArea) {
                 if ($userRole === 'Leader SMT') {
                     $oldLineArea = 'SMT L1';
@@ -614,49 +563,40 @@ class HenkatenController extends Controller
 
             if ($oldLineArea) {
                 $stations = Station::where('line_area', $oldLineArea)->get();
-                // Ensure $lineAreas has this if it was filtered out by some reason (though it shouldn't be)
             }
 
             if ($oldStation = old('station_id')) {
-                // Ambil material untuk stasiun yang dipilih (mode dinamis)
                 $materialsForDynamicRole = Material::where('station_id', $oldStation)->get();
             }
         }
 
-        // 4. LOGIKA KHUSUS untuk Leader QC/PPIC (Mode Predefined)
         if ($isPredefinedRole && $predefinedLineArea) {
-            // Ambil material yang stasiunnya berada di line area yang sesuai.
-            // Hasilnya adalah Collection objek Material Eloquent (dengan ID dan Nama).
             $defaultMaterialOptions = Material::whereHas('station', function ($query) use ($predefinedLineArea) {
                 $query->where('line_area', $predefinedLineArea);
             })
-                ->select('id', 'material_name') // Ambil ID dan Nama
+                ->select('id', 'material_name')
                 ->get();
         }
 
         return view('materials.create_henkaten', compact(
             'lineAreas',
             'stations',
-            'materialsForDynamicRole', // Digunakan untuk mode dinamis (jika old() ada)
+            'materialsForDynamicRole',
             'currentShift',
             'userRole',
             'isPredefinedRole',
             'predefinedLineArea',
-            'defaultMaterialOptions' // ✅ Variabel yang akan digunakan di Blade untuk Leader QC/PPIC
+            'defaultMaterialOptions'
         ));
     }
 
     public function storeMaterialHenkaten(Request $request)
     {
-        // 1. Tentukan Role Pengguna
         $userRole = Auth::user()->role ?? 'operator';
         $isPredefinedRole = ($userRole === 'Leader PPIC' || $userRole === 'Leader QC');
 
         $stationIdValue = null;
 
-        // =========================================================
-        // MODIFIKASI: Pencarian ID (Station & Material) untuk Role Predefined
-        // =========================================================
         if ($isPredefinedRole) {
             $lineArea = $request->input('line_area');
             $materialName = $request->input('material_name');
@@ -684,7 +624,6 @@ class HenkatenController extends Controller
             }
         }
 
-        // 3. Validasi Data
         try {
             $validationRules = [
                 'shift'               => 'required|string',
@@ -699,7 +638,6 @@ class HenkatenController extends Controller
                     'required',
                     'date_format:H:i',
                     function ($attribute, $value, $fail) use ($request) {
-                        // Gabungkan tanggal + waktu untuk perbandingan
                         $effectiveDate = $request->input('effective_date');
                         $endDate = $request->input('end_date');
                         $timeStart = $request->input('time_start');
@@ -750,16 +688,11 @@ class HenkatenController extends Controller
             return back()->withErrors($e->errors())->withInput();
         }
 
-        // ✅ Array untuk track uploaded files (untuk rollback)
         $uploadedFiles = [];
 
-        // 4. Proses Penyimpanan Data ke Database
         try {
             DB::beginTransaction();
 
-            // =========================================================
-            // Upload File - KONSISTEN
-            // =========================================================
 
             // Upload lampiran 1
             if ($request->hasFile('lampiran')) {
@@ -782,16 +715,11 @@ class HenkatenController extends Controller
                 $uploadedFiles[] = $validatedData['lampiran_3'];
             }
 
-            // =========================================================
-            // Prepare Data
-            // =========================================================
             $dataToCreate = $validatedData;
 
-            // Hapus field yang tidak ada di Model/Tabel
             unset($dataToCreate['material_name']);
             unset($dataToCreate['redirect_to']);
 
-            // Tambahkan field tambahan
             $dataToCreate['status'] = 'PENDING';
             $dataToCreate['user_id'] = Auth::id();
 
@@ -805,7 +733,6 @@ class HenkatenController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            // ✅ DELETE semua uploaded files jika error
             foreach ($uploadedFiles as $filePath) {
                 if (Storage::disk('public')->exists($filePath)) {
                     Storage::disk('public')->delete($filePath);
@@ -840,48 +767,40 @@ class HenkatenController extends Controller
                 ->with('error', 'Silakan pilih Grup di Dashboard terlebih dahulu.');
         }
 
-        // --- LOGIKA ROLE & FILTER LINE AREA ---
         $user = Auth::user();
         $role = $user ? $user->role : null;
 
-        // 🟢 PERUBAHAN: Leader FA tidak termasuk isPredefinedRole
         $isPredefinedRole = in_array($role, ['Leader QC', 'Leader PPIC']);
         $isLeaderFA = ($role === 'Leader FA');
 
-        // Ambil SEMUA Line Area unik yang ada di tabel 'stations'
         $allLineAreas = Station::select('line_area')
             ->distinct()
             ->whereNotNull('line_area')
             ->orderBy('line_area', 'asc')
             ->pluck('line_area');
 
-        // Filter Line Areas yang akan ditampilkan/dipilih berdasarkan role
         if ($role === 'Leader QC') {
             $lineAreas = $allLineAreas->filter(fn($area) => $area === 'Incoming')->values();
         } elseif ($role === 'Leader PPIC') {
             $lineAreas = $allLineAreas->filter(fn($area) => $area === 'Delivery')->values();
         } elseif ($isLeaderFA) {
-            // 🟢 BARU: Filter Line Area khusus Leader FA
             $allowedFALineAreas = ['FA L1', 'FA L2', 'FA L3', 'FA L5', 'FA L6'];
             $lineAreas = $allLineAreas->filter(fn($area) => in_array($area, $allowedFALineAreas))->values();
         } elseif ($role === 'Leader SMT') {
             $allowedSMTLineAreas = ['SMT L1', 'SMT L2'];
             $lineAreas = $allLineAreas->filter(fn($area) => in_array($area, $allowedSMTLineAreas))->values();
         } else {
-            $lineAreas = $allLineAreas; // Role lain melihat semua
+            $lineAreas = $allLineAreas; 
         }
 
-        // Tentukan Line Area yang sedang dipilih/aktif (default ke Line Area pertama yang tersedia)
         $selectedLineArea = old('line_area', $lineAreas->first());
 
-        // Jika role adalah predefined, gunakan Line Area yang sudah difilter sebagai selected default
         $predefinedLineArea = $isPredefinedRole ? $lineAreas->first() : null;
 
         if ($isPredefinedRole) {
             $selectedLineArea = $predefinedLineArea;
         }
 
-        // --- AMBIL DATA STATIONS DAN MACHINES BERDASARKAN SELECTED LINE AREA ---
         $stations = collect();
         $machinesToDisplay = collect([
             (object)['id' => 1, 'machines_category' => 'PROGRAM'],
@@ -890,13 +809,12 @@ class HenkatenController extends Controller
             (object)['id' => 4, 'machines_category' => 'Kamera'],
         ]);
 
-        $machineCategories = collect(); // Nama kategori unik
+        $machineCategories = collect(); 
 
         if ($selectedLineArea) {
 
             $stations = Station::where('line_area', $selectedLineArea)->get();
 
-            // khusus Leader FA → selalu gunakan hardcode
             if ($isLeaderFA) {
 
                 $machinesToDisplay = collect([
@@ -914,7 +832,6 @@ class HenkatenController extends Controller
                 ]);
             } else {
 
-                // role lain tetap pakai database
                 $stationIds = $stations->pluck('id')->toArray();
 
                 $machinesToDisplay = Machine::select('id', 'machines_category', 'station_id', 'deskripsi')
@@ -927,11 +844,8 @@ class HenkatenController extends Controller
 
 
 
-            // --- LOGIKA 'old' data untuk station ---
-            // Di mode predefined, kita tidak perlu old('station_id') karena form hanya mengirim Line Area.
-            $predefinedStationId = $stations->first()->id ?? null; // ID stasiun pertama di Line Area jika predefined
+            $predefinedStationId = $stations->first()->id ?? null; 
 
-            // Untuk mode dynamic/operator, kita perlu old('station_id') untuk re-populasi.
             $oldStationId = old('station_id', $log?->station_id);
 
             return view('machines.create_henkaten', compact(
@@ -941,11 +855,11 @@ class HenkatenController extends Controller
                 'currentGroup',
                 'currentShift',
                 'isPredefinedRole',
-                'predefinedLineArea', // Digunakan di blade untuk input hidden/static
-                'selectedLineArea', // Digunakan untuk initial load stations di mode dynamic
-                'predefinedStationId', // ID stasiun default untuk role predefined (jika ada)
-                'machineCategories', // Daftar Category Name (Hanya untuk referensi)
-                'machinesToDisplay' // KUNCI: Daftar Mesin Lengkap (ID, Category, Station ID) untuk Blade/JS
+                'predefinedLineArea', 
+                'selectedLineArea', 
+                'predefinedStationId', 
+                'machineCategories', 
+                'machinesToDisplay' 
             ));
         }
     }
@@ -953,7 +867,6 @@ class HenkatenController extends Controller
 
     public function storeMachineHenkaten(Request $request)
     {
-        // --- 1. Tentukan Role Pengguna dan Inisialisasi Variabel ---
         $userRole = Auth::user()->role ?? 'operator';
         $isPredefinedRole = in_array($userRole, ['Leader QC', 'Leader PPIC']);
         $isLeaderFA = ($userRole === 'Leader FA');
@@ -964,9 +877,8 @@ class HenkatenController extends Controller
         $machineIdTarget = null;
         $targetMachineId = null;
         $selectedMachine = null;
-        $uploadedFiles = []; // ✅ Track uploaded files untuk rollback
+        $uploadedFiles = [];
 
-        // --- A. Mencari/Menentukan STATION_ID dan MACHINE_ID ---
 
         if ($isLeaderFA) {
             $categoryInput = $request->input('category');
@@ -1040,7 +952,6 @@ class HenkatenController extends Controller
             $dataToValidate['id_machines'] = $targetMachineId;
         }
 
-        // --- B. Validasi Data ---
 
         try {
             $request->merge($dataToValidate);
@@ -1056,7 +967,6 @@ class HenkatenController extends Controller
                     'required',
                     'date_format:H:i',
                     function ($attribute, $value, $fail) use ($request) {
-                        // Gabungkan tanggal + waktu untuk perbandingan
                         $effectiveDate = $request->input('effective_date');
                         $endDate = $request->input('end_date');
                         $timeStart = $request->input('time_start');
@@ -1093,7 +1003,6 @@ class HenkatenController extends Controller
 
             $validated = $request->validate($validationRules);
 
-            // --- C. Pengecekan Tumpang Tindih Waktu (Overlap Check) ---
 
             $newEffectiveDate = $validated['effective_date'];
             $newEndDate = $validated['end_date'] ?? '2999-12-31';
@@ -1127,41 +1036,30 @@ class HenkatenController extends Controller
                 ]);
             }
 
-            // --- D. Proses Penyimpanan Data ---
 
             DB::beginTransaction();
 
-            // =========================================================
-            // Upload File - KONSISTEN
-            // =========================================================
 
-            // Upload lampiran 1
             if ($request->hasFile('lampiran')) {
                 $validated['lampiran'] = $request->file('lampiran')
                     ->store('henkaten_machines_lampiran', 'public');
                 $uploadedFiles[] = $validated['lampiran'];
             }
 
-            // Upload lampiran 2
             if ($request->hasFile('lampiran_2')) {
                 $validated['lampiran_2'] = $request->file('lampiran_2')
                     ->store('henkaten_machines_lampiran', 'public');
                 $uploadedFiles[] = $validated['lampiran_2'];
             }
 
-            // Upload lampiran 3
             if ($request->hasFile('lampiran_3')) {
                 $validated['lampiran_3'] = $request->file('lampiran_3')
                     ->store('henkaten_machines_lampiran', 'public');
                 $uploadedFiles[] = $validated['lampiran_3'];
             }
 
-            // =========================================================
-            // Prepare Data
-            // =========================================================
             $dataToCreate = $validated;
 
-            // Mapping kolom ke nama database yang benar
             if ($isLeaderFA) {
                 $dataToCreate['machine'] = $machineCategory;
                 $dataToCreate['id_machines'] = null;
@@ -1173,13 +1071,11 @@ class HenkatenController extends Controller
             $dataToCreate['description_before'] = $validated['before_value'];
             $dataToCreate['description_after'] = $validated['after_value'];
             $dataToCreate['status'] = 'PENDING';
-            $dataToCreate['user_id'] = Auth::id(); // ✅ Tambahkan jika ada di fillable
+            $dataToCreate['user_id'] = Auth::id();
 
-            // Hapus key-key asli dari form yang tidak ada di tabel database
             unset($dataToCreate['before_value']);
             unset($dataToCreate['after_value']);
 
-            // ✅ lampiran, lampiran_2, lampiran_3 sudah otomatis ada di $dataToCreate
 
             MachineHenkaten::create($dataToCreate);
 
@@ -1192,7 +1088,6 @@ class HenkatenController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            // ✅ DELETE semua uploaded files jika error
             foreach ($uploadedFiles as $filePath) {
                 if (Storage::disk('public')->exists($filePath)) {
                     Storage::disk('public')->delete($filePath);
@@ -1210,9 +1105,6 @@ class HenkatenController extends Controller
         }
     }
 
-    // ==============================================================
-    // BAGIAN 6: API BANTUAN
-    // ==============================================================
 
 
     public function getStationsByLine(Request $request)
@@ -1221,7 +1113,7 @@ class HenkatenController extends Controller
 
         $stations = Station::where('line_area', $request->line_area)
             ->orderBy('station_name', 'asc')
-            ->get(['id', 'station_name', 'line_area']); // Tanpa is_main_operator dulu
+            ->get(['id', 'station_name', 'line_area']); 
 
         return response()->json($stations);
     }
@@ -1268,9 +1160,6 @@ class HenkatenController extends Controller
         ]);
     }
 
-    // ==============================================================
-    // BAGIAN 7: APPROVAL HENKATEN
-    // ==============================================================
     public function approval()
     {
         $manpowers = ManPowerHenkaten::where('status', 'PENDING')->get();
@@ -1367,7 +1256,6 @@ class HenkatenController extends Controller
 
             $statusToSet = 'Approved';
 
-            // Logika khusus untuk manpower PERMANEN
             if ($type == 'manpower' && $item->note == '-') {
                 $masterManPower = ManPower::find($item->man_power_id);
 
@@ -1412,9 +1300,7 @@ class HenkatenController extends Controller
         return redirect()->route('henkaten.approval')->with('success', 'Henkaten ' . ucfirst($type) . ' dikirim kembali untuk revisi.');
     }
 
-    // ==============================================================
-    // BAGIAN 8: CHANGE/PERGANTIAN MANPOWER
-    // ==============================================================
+
     public function createChange($id_manpower)
     {
         $manPower = ManPower::with('station')->findOrFail($id_manpower);
@@ -1445,7 +1331,6 @@ class HenkatenController extends Controller
 
             $status = ($today >= $effectiveDate) ? 'Approved' : 'Pending';
 
-            // Simpan log Henkaten
             $logHenkaten = new ManPowerHenkaten();
             $logHenkaten->man_power_id = $validatedData['master_man_power_id'];
             $logHenkaten->line_area = $validatedData['line_area'];
@@ -1458,7 +1343,6 @@ class HenkatenController extends Controller
             $logHenkaten->status = $status;
             $logHenkaten->save();
 
-            // ✅ TAMBAHKAN INI: Update tabel man_power jika sudah effective
             if ($status === 'Approved') {
                 $manPower = ManPower::findOrFail($validatedData['master_man_power_id']);
                 $manPower->nama = $validatedData['nama_sesudah'];
@@ -1482,15 +1366,9 @@ class HenkatenController extends Controller
         }
     }
 
-
-
-
-
-
     public function checkAfter(Request $request)
     {
         try {
-            // ✅ Validasi input dengan Laravel validator
             $validated = $request->validate([
                 'man_power_id_after' => 'required|integer',
                 'shift' => 'required|string',
@@ -1500,7 +1378,6 @@ class HenkatenController extends Controller
                 'ignore_log_id' => 'nullable|integer',
             ]);
 
-            // ✅ Cek apakah man_power_id_after ada di database
             $manPowerExists = ManPower::where('id', $validated['man_power_id_after'])->exists();
 
             if (!$manPowerExists) {
@@ -1510,46 +1387,38 @@ class HenkatenController extends Controller
                 ], 404);
             }
 
-            // ✅ Cek konflik jadwal
             $query = ManPowerHenkaten::where('man_power_id_after', $validated['man_power_id_after'])
                 ->where('shift', $validated['shift'])
                 ->where('grup', $validated['grup'])
                 ->where(function ($q) use ($validated) {
-                    // Cek overlap tanggal
                     $q->where(function ($query) use ($validated) {
-                        // Case 1: effective_date baru berada di antara range existing
                         $query->whereBetween('effective_date', [
                             $validated['effective_date'],
                             $validated['end_date']
                         ]);
                     })
                         ->orWhere(function ($query) use ($validated) {
-                            // Case 2: end_date baru berada di antara range existing
                             $query->whereBetween('end_date', [
                                 $validated['effective_date'],
                                 $validated['end_date']
                             ]);
                         })
                         ->orWhere(function ($query) use ($validated) {
-                            // Case 3: range baru mencakup range existing
                             $query->where('effective_date', '>=', $validated['effective_date'])
                                 ->where('end_date', '<=', $validated['end_date']);
                         })
                         ->orWhere(function ($query) use ($validated) {
-                            // Case 4: range existing mencakup range baru
                             $query->where('effective_date', '<=', $validated['effective_date'])
                                 ->where('end_date', '>=', $validated['end_date']);
                         });
                 });
 
-            // ✅ Jika edit, ignore record yang sedang diedit
             if (!empty($validated['ignore_log_id'])) {
                 $query->where('id', '!=', $validated['ignore_log_id']);
             }
 
             $exists = $query->exists();
 
-            // ✅ Log untuk debugging (optional)
             if ($exists) {
                 Log::info('Konflik jadwal Henkaten ditemukan', [
                     'man_power_id_after' => $validated['man_power_id_after'],
@@ -1566,7 +1435,6 @@ class HenkatenController extends Controller
                     : 'Jadwal tersedia'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            // ✅ Tangani validation error
             Log::warning('Validasi checkAfter gagal', [
                 'errors' => $e->errors(),
                 'input' => $request->all()
@@ -1578,7 +1446,6 @@ class HenkatenController extends Controller
                 'message' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            // ✅ Tangani error umum
             Log::error('Error checkAfter: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'input' => $request->all()
@@ -1592,9 +1459,6 @@ class HenkatenController extends Controller
         }
     }
 
-    // ==============================================================
-    // BAGIAN 9: CHANGE/PERGANTIAN MATERIAL
-    // ==============================================================
     public function createMaterialChange($id_material)
     {
         $material = Material::with('station')->findOrFail($id_material);
@@ -1624,7 +1488,6 @@ class HenkatenController extends Controller
 
             $status = ($today >= $effectiveDate) ? 'Approved' : 'Pending';
 
-            // Simpan log Henkaten Material
             $logHenkaten = new MaterialHenkaten();
             $logHenkaten->material_id = $validatedData['master_material_id'];
             $logHenkaten->line_area = $validatedData['line_area'];
@@ -1637,7 +1500,6 @@ class HenkatenController extends Controller
             $logHenkaten->user_id = Auth::id();
             $logHenkaten->save();
 
-            // ✅ Update tabel materials jika sudah effective
             if ($status === 'Approved') {
                 $material = Material::findOrFail($validatedData['master_material_id']);
                 $material->material_name = $validatedData['material_name_after'];

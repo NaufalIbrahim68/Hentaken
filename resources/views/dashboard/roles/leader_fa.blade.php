@@ -125,7 +125,6 @@
             min-height: 0;
         }
 
-        /* Optimasi untuk profile icons */
         .profile-icon {
             width: 6px;
             height: 6px;
@@ -161,12 +160,12 @@
                         class="text-base font-bold border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
 
                         @php
-                            $hasFalLine = false; // Variabel bantu untuk melacak
+                            $hasFalLine = false; 
                         @endphp
 
                         @foreach ($lineAreas as $line)
                             @if (Illuminate\Support\Str::startsWith($line, 'FA L'))
-                                @php $hasFalLine = true; @endphp {{-- Tandai bahwa kita menemukan setidaknya satu line FA L --}}
+                                @php $hasFalLine = true; @endphp 
 
                                 <option value="{{ $line }}" {{ $selectedLineArea == $line ? 'selected' : '' }}>
                                     HENKATEN {{ $line }}

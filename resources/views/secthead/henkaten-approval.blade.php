@@ -9,7 +9,7 @@
 
         @foreach (['manpower', 'method', 'machine', 'material'] as $type)
             @php
-                $items = ${$type.'s'} ?? collect(); 
+                $items = ${$type . 's'} ?? collect();
             @endphp
 
             <div class="bg-white shadow rounded-lg p-6">
@@ -67,13 +67,13 @@
                                     {{-- DATA UMUM --}}
                                     <td class="px-4 py-2">{{ $item->line_area ?? '-' }}</td>
                                     <td class="px-4 py-2">
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-200 text-yellow-800">
+                                        <span
+                                            class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-200 text-yellow-800">
                                             {{ $item->status }}
                                         </span>
                                     </td>
                                     <td class="px-4 py-2 text-center">
-                                        <button 
-                                            @click="openModal('{{ $type }}', {{ $item->id }})"
+                                        <button @click="openModal('{{ $type }}', {{ $item->id }})"
                                             class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs shadow-sm">
                                             Detail
                                         </button>
@@ -87,23 +87,20 @@
         @endforeach
 
         {{-- Modal Detail dengan Layout Kanan-Kiri --}}
-        <div x-show="showModal" 
-             class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4"
-             @click.away="showModal = false"
-             x-cloak
-             x-transition:enter="ease-out duration-300"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="ease-in duration-200"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0">
-            
+        <div x-show="showModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4"
+            @click.away="showModal = false" x-cloak x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+            x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+
             <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[85vh] overflow-y-auto" @click.stop>
                 <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-lg font-semibold">Detail Henkaten (<span x-text="type" class="capitalize"></span>)</h3>
-                    <button @click="showModal = false" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+                    <h3 class="text-lg font-semibold">Detail Henkaten (<span x-text="type" class="capitalize"></span>)
+                    </h3>
+                    <button @click="showModal = false"
+                        class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
                 </div>
-                
+
                 {{-- Loading State --}}
                 <div x-show="loading" class="text-center p-8">
                     <p class="text-gray-500">Loading data...</p>
@@ -111,17 +108,17 @@
 
                 {{-- Konten Modal dengan Layout 2 Kolom --}}
                 <div x-show="!loading && Object.keys(detail).length > 0" class="text-sm">
-                    
+
                     {{-- Informasi Umum - Layout 2 Kolom --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 pb-6 border-b">
                         {{-- Kolom Kiri --}}
                         <div class="space-y-4">
                             <h4 class="text-md font-semibold text-gray-800 mb-3 border-b pb-2">Informasi Umum</h4>
-                            
+
                             <div>
                                 <dt class="font-medium text-gray-500 mb-1">Station / Line:</dt>
                                 <dd class="text-gray-900">
-                                    <span x-text="detail.station?.station_name || '-'"></span> / 
+                                    <span x-text="detail.station?.station_name || '-'"></span> /
                                     <span x-text="detail.line_area || '-'"></span>
                                 </dd>
                             </div>
@@ -135,13 +132,14 @@
                                 <dt class="font-medium text-gray-500 mb-1">Lampiran:</dt>
                                 <dd>
                                     <template x-if="detail.lampiran && detail.lampiran !== '-'">
-                                        <a :href="`/storage/${detail.lampiran}`" 
-                                           target="_blank" 
-                                           class="text-blue-600 hover:underline inline-flex items-center">
-                                           <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                           </svg>
-                                           Unduh Lampiran
+                                        <a :href="`/storage/${detail.lampiran}`" target="_blank"
+                                            class="text-blue-600 hover:underline inline-flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            Unduh Lampiran
                                         </a>
                                     </template>
                                     <template x-if="!detail.lampiran || detail.lampiran === '-'">
@@ -149,23 +147,144 @@
                                     </template>
                                 </dd>
                             </div>
+
+
+                            {{-- Syarat & Ketentuan Lampiran (Khusus Man Power) --}}
+                            <template x-if="type === 'manpower'">
+                                <div
+                                    class="mt-4 bg-gray-50 p-3 rounded-md border border-gray-200 text-xs text-gray-600">
+                                    <p class="font-semibold mb-1">Dokumen yang wajib dilampirkan :</p>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li><strong>Sakit :</strong> Wajib melampirkan SKS.</li>
+                                        <li><strong>Cuti/Tugas Resmi :</strong> Wajib melampirkan surat tugas.</li>
+                                        <li><strong>izin/Darurat :</strong> Dokumen penting lainnya</li>
+                                    </ul>
+                                    <p class="mt-2 italic text-[10px]">Pastikan lampiran jelas.</p>
+                                </div>
+                            </template>
+
+                            {{-- Syarat & Ketentuan Lampiran (Khusus Machine) --}}
+                            <template x-if="type === 'machine'">
+                                <div
+                                    class="mt-4 bg-gray-50 p-3 rounded-md border border-gray-200 text-xs text-gray-600">
+                                    <p class="font-semibold mb-1">Dokumen yang wajib dilampirkan :</p>
+                                    @if (Auth::user()->role === 'Sect Head PPIC')
+                                        <ul class="list-disc list-inside space-y-1">
+                                            <li><strong>Paco Delivery Problem :</strong> Hasil Verifikasi PACO</li>
+                                            <li><strong>Komputer Problem :</strong> Form Manual Delivery Quantity</li>
+                                        </ul>
+                                    @elseif(Auth::user()->role === 'Sect Head QC')
+                                        <p class="font-semibold mb-1">Checking Fixture</p>
+                                        <ul class="list-disc list-inside space-y-1">
+                                            <li class="font-semibold">Planned Change :</li>
+                                            <ul class="list-disc list-inside ml-4 space-y-1">
+                                                <li>Hasil Verifikasi Checking Fixture</li>
+                                                <li>Form 4M Report</li>
+                                            </ul>
+                                            <li class="font-semibold mt-2">Sudden Change :</li>
+                                            <ul class="list-disc list-inside ml-4 space-y-1">
+                                                <li>IRD Supplier</li>
+                                                <li>Incoming Inspection Sheet</li>
+                                            </ul>
+                                        </ul>
+                                    @elseif(Auth::user()->role === 'Sect Head Produksi')
+                                        <ul class="list-disc list-inside space-y-1">
+                                            <li class="font-semibold">Planned Change :</li>
+                                            <ul class="list-disc list-inside ml-4 space-y-1">
+                                                <li>Form 4M Change</li>
+                                                <li>Report Eng Trial</li>
+                                            </ul>
+                                            <li class="font-semibold mt-2">Sudden Change :</li>
+                                            <ul class="list-inside ml-4">
+                                                <li>Tidak Ada</li>
+                                            </ul>
+                                        </ul>
+                                    @endif
+                                    <p class="mt-2 italic text-[10px]">Pastikan lampiran jelas.</p>
+                                </div>
+                            </template>
+
+                            {{-- Syarat & Ketentuan Lampiran (Khusus Material) --}}
+                            <template x-if="type === 'material'">
+                                <div
+                                    class="mt-4 bg-gray-50 p-3 rounded-md border border-gray-200 text-xs text-gray-600">
+                                    <p class="font-semibold mb-1">Dokumen yang wajib dilampirkan :</p>
+                                    @if (Auth::user()->role === 'Sect Head PPIC')
+                                        <ul class="list-disc list-inside space-y-1">
+                                            <li><strong>Perubahan Part :</strong> Wajib melampirkan Surat Jalan
+                                                Customer, dan Form IPP</li>
+                                            <li><strong>Perubahan Tag Produksi :</strong> Wajib melampirkan Standard
+                                                Packaging</li>
+                                        </ul>
+                                    @elseif(Auth::user()->role === 'Sect Head QC')
+                                        <ul class="list-disc list-inside space-y-1">
+                                            <li>Tag IPP supplier</li>
+                                            <li>WI Incoming Inspection</li>
+                                            <li>IRD part dari Supplier</li>
+                                            <li>Incoming Inspection Sheet</li>
+                                            <li>Form 4M Report</li>
+                                        </ul>
+                                    @elseif(Auth::user()->role === 'Sect Head Produksi')
+                                        <ul class="list-disc list-inside space-y-1">
+                                            <li>Form 4M Change</li>
+                                            <li>Report Engineering Trial</li>
+                                            <li>Report Testing</li>
+                                            <li>Report Verifikasi</li>
+                                        </ul>
+                                    @endif
+                                    <p class="mt-2 italic text-[10px]">Pastikan lampiran jelas.</p>
+                                </div>
+                            </template>
+
+                            {{-- Syarat & Ketentuan Lampiran (Khusus Method) --}}
+                            <template x-if="type === 'method'">
+                                @if (Auth::user()->role === 'Sect Head QC')
+                                    <!-- Leader QC does not show Method terms in create view, so we omit it here too -->
+                                @else
+                                    <div
+                                        class="mt-4 bg-gray-50 p-3 rounded-md border border-gray-200 text-xs text-gray-600">
+                                        <p class="font-semibold mb-1">Dokumen yang wajib dilampirkan :</p>
+                                        @if (Auth::user()->role === 'Sect Head PPIC')
+                                            <ul class="list-disc list-inside space-y-1">
+                                                <li><strong>Perubahan WI :</strong> Wajib melampirkan WI Preparation
+                                                    Delivery, dan Mom Form</li>
+                                            </ul>
+                                        @elseif(Auth::user()->role === 'Sect Head Produksi')
+                                            <ul class="list-disc list-inside space-y-1">
+                                                <li class="font-semibold">Planned Change :</li>
+                                                <ul class="list-disc list-inside ml-4 space-y-1">
+                                                    <li>Form 4M Change</li>
+                                                    <li>Work Instruction</li>
+                                                </ul>
+                                                <li class="font-semibold mt-2">Sudden Change :</li>
+                                                <ul class="list-disc list-inside ml-4 space-y-1">
+                                                    <li>Tidak Ada( Sudah Approval QC & Leader Sebelum Running)</li>
+                                                </ul>
+                                            </ul>
+                                        @endif
+                                        <p class="mt-2 italic text-[10px]">Pastikan lampiran jelas.</p>
+                                    </div>
+                                @endif
+                            </template>
                         </div>
 
                         {{-- Kolom Kanan --}}
                         <div class="space-y-4">
                             <h4 class="text-md font-semibold text-gray-800 mb-3 border-b pb-2">Waktu</h4>
-                            
+
                             <div>
                                 <dt class="font-medium text-gray-500 mb-1">Waktu Mulai (Efektif):</dt>
                                 <dd class="text-gray-900">
-                                    <span x-text="formatDate(detail.effective_date)"></span> @ <span x-text="formatTime(detail.time_start)"></span>
+                                    <span x-text="formatDate(detail.effective_date)"></span> @ <span
+                                        x-text="formatTime(detail.time_start)"></span>
                                 </dd>
                             </div>
 
                             <div>
                                 <dt class="font-medium text-gray-500 mb-1">Waktu Selesai (Estimasi):</dt>
                                 <dd class="text-gray-900">
-                                    <span x-text="formatDate(detail.end_date)"></span> @ <span x-text="formatTime(detail.time_end)"></span>
+                                    <span x-text="formatDate(detail.end_date)"></span> @ <span
+                                        x-text="formatTime(detail.time_end)"></span>
                                 </dd>
                             </div>
                         </div>
@@ -173,17 +292,19 @@
 
                     {{-- Detail Perubahan - Layout 2 Kolom --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        
+
                         {{-- MANPOWER --}}
                         <template x-if="type === 'manpower'">
                             <div class="md:col-span-2">
-                                <h4 class="text-md font-semibold text-gray-800 mb-4 border-b pb-2">Detail Perubahan Manpower</h4>
+                                <h4 class="text-md font-semibold text-gray-800 mb-4 border-b pb-2">Detail Perubahan
+                                    Manpower</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {{-- Kolom Kiri --}}
                                     <div class="space-y-4">
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Operator Awal:</dt>
-                                            <dd class="text-gray-900 font-semibold" x-text="detail.nama || 'N/A'"></dd>
+                                            <dd class="text-gray-900 font-semibold" x-text="detail.nama || 'N/A'">
+                                            </dd>
                                         </div>
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Grup:</dt>
@@ -194,30 +315,33 @@
                                             <dd class="text-gray-900" x-text="detail.serial_number_start || '-'"></dd>
                                         </div>
                                     </div>
-                                    
+
                                     {{-- Kolom Kanan --}}
                                     <div class="space-y-4">
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Operator Pengganti:</dt>
-                                            <dd class="text-gray-900 font-semibold" x-text="detail.nama_after || 'N/A'"></dd>
+                                            <dd class="text-gray-900 font-semibold"
+                                                x-text="detail.nama_after || 'N/A'"></dd>
                                         </div>
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Serial Number End:</dt>
                                             <dd class="text-gray-900" x-text="detail.serial_number_end || '-'"></dd>
                                         </div>
                                     </div>
-                                    
+
                                     {{-- Keterangan Full Width --}}
                                     <div class="md:col-span-2">
                                         <dt class="font-medium text-gray-500 mb-1">Keterangan:</dt>
-                                        <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded" x-text="detail.keterangan || '-'"></dd>
+                                        <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded"
+                                            x-text="detail.keterangan || '-'"></dd>
                                     </div>
 
                                     {{-- Note Full Width (jika ada) --}}
                                     <template x-if="detail.note && detail.note !== '-'">
                                         <div class="md:col-span-2">
                                             <dt class="font-medium text-gray-500 mb-1">Catatan:</dt>
-                                            <dd class="text-gray-900 whitespace-pre-wrap bg-blue-50 p-3 rounded" x-text="detail.note"></dd>
+                                            <dd class="text-gray-900 whitespace-pre-wrap bg-blue-50 p-3 rounded"
+                                                x-text="detail.note"></dd>
                                         </div>
                                     </template>
 
@@ -227,23 +351,27 @@
                                             <dt class="font-medium text-gray-500 mb-2">Lampiran Tambahan:</dt>
                                             <dd class="space-y-2">
                                                 <template x-if="detail.lampiran_2 && detail.lampiran_2 !== '-'">
-                                                    <a :href="`/storage/${detail.lampiran_2}`" 
-                                                       target="_blank" 
-                                                       class="text-blue-600 hover:underline inline-flex items-center block">
-                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                       </svg>
-                                                       Lampiran 2
+                                                    <a :href="`/storage/${detail.lampiran_2}`" target="_blank"
+                                                        class="text-blue-600 hover:underline inline-flex items-center block">
+                                                        <svg class="w-4 h-4 mr-1" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        Lampiran 2
                                                     </a>
                                                 </template>
                                                 <template x-if="detail.lampiran_3 && detail.lampiran_3 !== '-'">
-                                                    <a :href="`/storage/${detail.lampiran_3}`" 
-                                                       target="_blank" 
-                                                       class="text-blue-600 hover:underline inline-flex items-center block">
-                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                       </svg>
-                                                       Lampiran 3
+                                                    <a :href="`/storage/${detail.lampiran_3}`" target="_blank"
+                                                        class="text-blue-600 hover:underline inline-flex items-center block">
+                                                        <svg class="w-4 h-4 mr-1" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        Lampiran 3
                                                     </a>
                                                 </template>
                                             </dd>
@@ -256,32 +384,37 @@
                         {{-- MACHINE --}}
                         <template x-if="type === 'machine'">
                             <div class="md:col-span-2">
-                                <h4 class="text-md font-semibold text-gray-800 mb-4 border-b pb-2">Detail Perubahan Machine</h4>
+                                <h4 class="text-md font-semibold text-gray-800 mb-4 border-b pb-2">Detail Perubahan
+                                    Machine</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {{-- Kolom Kiri --}}
                                     <div class="space-y-4">
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Mesin:</dt>
-                                            <dd class="text-gray-900 font-semibold" x-text="detail.machine || '-'"></dd>
+                                            <dd class="text-gray-900 font-semibold" x-text="detail.machine || '-'">
+                                            </dd>
                                         </div>
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Deskripsi Sebelum:</dt>
-                                            <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded" x-text="detail.description_before || '-'"></dd>
+                                            <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded"
+                                                x-text="detail.description_before || '-'"></dd>
                                         </div>
                                     </div>
-                                    
+
                                     {{-- Kolom Kanan --}}
                                     <div class="space-y-4">
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Deskripsi Sesudah:</dt>
-                                            <dd class="text-gray-900 whitespace-pre-wrap bg-green-50 p-3 rounded" x-text="detail.description_after || '-'"></dd>
+                                            <dd class="text-gray-900 whitespace-pre-wrap bg-green-50 p-3 rounded"
+                                                x-text="detail.description_after || '-'"></dd>
                                         </div>
                                     </div>
-                                    
+
                                     {{-- Keterangan Full Width --}}
                                     <div class="md:col-span-2">
                                         <dt class="font-medium text-gray-500 mb-1">Keterangan:</dt>
-                                        <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded" x-text="detail.keterangan || '-'"></dd>
+                                        <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded"
+                                            x-text="detail.keterangan || '-'"></dd>
                                     </div>
 
                                     {{-- Lampiran Tambahan --}}
@@ -290,23 +423,27 @@
                                             <dt class="font-medium text-gray-500 mb-2">Lampiran Tambahan:</dt>
                                             <dd class="space-y-2">
                                                 <template x-if="detail.lampiran_2 && detail.lampiran_2 !== '-'">
-                                                    <a :href="`/storage/${detail.lampiran_2}`" 
-                                                       target="_blank" 
-                                                       class="text-blue-600 hover:underline inline-flex items-center block">
-                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                       </svg>
-                                                       Lampiran 2
+                                                    <a :href="`/storage/${detail.lampiran_2}`" target="_blank"
+                                                        class="text-blue-600 hover:underline inline-flex items-center block">
+                                                        <svg class="w-4 h-4 mr-1" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        Lampiran 2
                                                     </a>
                                                 </template>
                                                 <template x-if="detail.lampiran_3 && detail.lampiran_3 !== '-'">
-                                                    <a :href="`/storage/${detail.lampiran_3}`" 
-                                                       target="_blank" 
-                                                       class="text-blue-600 hover:underline inline-flex items-center block">
-                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                       </svg>
-                                                       Lampiran 3
+                                                    <a :href="`/storage/${detail.lampiran_3}`" target="_blank"
+                                                        class="text-blue-600 hover:underline inline-flex items-center block">
+                                                        <svg class="w-4 h-4 mr-1" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        Lampiran 3
                                                     </a>
                                                 </template>
                                             </dd>
@@ -319,13 +456,15 @@
                         {{-- MATERIAL --}}
                         <template x-if="type === 'material'">
                             <div class="md:col-span-2">
-                                <h4 class="text-md font-semibold text-gray-800 mb-4 border-b pb-2">Detail Perubahan Material</h4>
+                                <h4 class="text-md font-semibold text-gray-800 mb-4 border-b pb-2">Detail Perubahan
+                                    Material</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {{-- Kolom Kiri --}}
                                     <div class="space-y-4">
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Material:</dt>
-                                            <dd class="text-gray-900 font-semibold" x-text="detail.material?.material_name || '-'"></dd>
+                                            <dd class="text-gray-900 font-semibold"
+                                                x-text="detail.material?.material_name || '-'"></dd>
                                         </div>
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Status:</dt>
@@ -333,22 +472,25 @@
                                         </div>
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Deskripsi Sebelum:</dt>
-                                            <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded" x-text="detail.description_before || '-'"></dd>
+                                            <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded"
+                                                x-text="detail.description_before || '-'"></dd>
                                         </div>
                                     </div>
-                                    
+
                                     {{-- Kolom Kanan --}}
                                     <div class="space-y-4">
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Deskripsi Sesudah:</dt>
-                                            <dd class="text-gray-900 whitespace-pre-wrap bg-green-50 p-3 rounded" x-text="detail.description_after || '-'"></dd>
+                                            <dd class="text-gray-900 whitespace-pre-wrap bg-green-50 p-3 rounded"
+                                                x-text="detail.description_after || '-'"></dd>
                                         </div>
                                     </div>
-                                    
+
                                     {{-- Keterangan Full Width --}}
                                     <div class="md:col-span-2">
                                         <dt class="font-medium text-gray-500 mb-1">Keterangan:</dt>
-                                        <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded" x-text="detail.keterangan || '-'"></dd>
+                                        <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded"
+                                            x-text="detail.keterangan || '-'"></dd>
                                     </div>
 
                                     {{-- Lampiran Tambahan --}}
@@ -357,23 +499,27 @@
                                             <dt class="font-medium text-gray-500 mb-2">Lampiran Tambahan:</dt>
                                             <dd class="space-y-2">
                                                 <template x-if="detail.lampiran_2 && detail.lampiran_2 !== '-'">
-                                                    <a :href="`/storage/${detail.lampiran_2}`" 
-                                                       target="_blank" 
-                                                       class="text-blue-600 hover:underline inline-flex items-center block">
-                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                       </svg>
-                                                       Lampiran 2
+                                                    <a :href="`/storage/${detail.lampiran_2}`" target="_blank"
+                                                        class="text-blue-600 hover:underline inline-flex items-center block">
+                                                        <svg class="w-4 h-4 mr-1" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        Lampiran 2
                                                     </a>
                                                 </template>
                                                 <template x-if="detail.lampiran_3 && detail.lampiran_3 !== '-'">
-                                                    <a :href="`/storage/${detail.lampiran_3}`" 
-                                                       target="_blank" 
-                                                       class="text-blue-600 hover:underline inline-flex items-center block">
-                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                       </svg>
-                                                       Lampiran 3
+                                                    <a :href="`/storage/${detail.lampiran_3}`" target="_blank"
+                                                        class="text-blue-600 hover:underline inline-flex items-center block">
+                                                        <svg class="w-4 h-4 mr-1" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        Lampiran 3
                                                     </a>
                                                 </template>
                                             </dd>
@@ -386,7 +532,8 @@
                         {{-- METHOD --}}
                         <template x-if="type === 'method'">
                             <div class="md:col-span-2">
-                                <h4 class="text-md font-semibold text-gray-800 mb-4 border-b pb-2">Detail Perubahan Method</h4>
+                                <h4 class="text-md font-semibold text-gray-800 mb-4 border-b pb-2">Detail Perubahan
+                                    Method</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {{-- Kolom Kiri --}}
                                     <div class="space-y-4">
@@ -396,15 +543,17 @@
                                         </div>
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Keterangan Sebelum:</dt>
-                                            <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded" x-text="detail.keterangan || '-'"></dd>
+                                            <dd class="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded"
+                                                x-text="detail.keterangan || '-'"></dd>
                                         </div>
                                     </div>
-                                    
+
                                     {{-- Kolom Kanan --}}
                                     <div class="space-y-4">
                                         <div>
                                             <dt class="font-medium text-gray-500 mb-1">Keterangan Sesudah:</dt>
-                                            <dd class="text-gray-900 whitespace-pre-wrap bg-green-50 p-3 rounded" x-text="detail.keterangan_after || '-'"></dd>
+                                            <dd class="text-gray-900 whitespace-pre-wrap bg-green-50 p-3 rounded"
+                                                x-text="detail.keterangan_after || '-'"></dd>
                                         </div>
                                     </div>
 
@@ -414,23 +563,27 @@
                                             <dt class="font-medium text-gray-500 mb-2">Lampiran Tambahan:</dt>
                                             <dd class="space-y-2">
                                                 <template x-if="detail.lampiran_2 && detail.lampiran_2 !== '-'">
-                                                    <a :href="`/storage/${detail.lampiran_2}`" 
-                                                       target="_blank" 
-                                                       class="text-blue-600 hover:underline inline-flex items-center block">
-                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                       </svg>
-                                                       Lampiran 2
+                                                    <a :href="`/storage/${detail.lampiran_2}`" target="_blank"
+                                                        class="text-blue-600 hover:underline inline-flex items-center block">
+                                                        <svg class="w-4 h-4 mr-1" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        Lampiran 2
                                                     </a>
                                                 </template>
                                                 <template x-if="detail.lampiran_3 && detail.lampiran_3 !== '-'">
-                                                    <a :href="`/storage/${detail.lampiran_3}`" 
-                                                       target="_blank" 
-                                                       class="text-blue-600 hover:underline inline-flex items-center block">
-                                                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                       </svg>
-                                                       Lampiran 3
+                                                    <a :href="`/storage/${detail.lampiran_3}`" target="_blank"
+                                                        class="text-blue-600 hover:underline inline-flex items-center block">
+                                                        <svg class="w-4 h-4 mr-1" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        Lampiran 3
                                                     </a>
                                                 </template>
                                             </dd>
@@ -454,40 +607,35 @@
                         @csrf
                         <div class="mb-4">
                             <label for="revision_notes" class="block text-sm font-medium text-gray-700 mb-1">
-                                Catatan Revisi 
+                                Catatan Revisi
                                 <span class="text-gray-500">(Wajib diisi jika ada Revisi)</span>
                             </label>
-                            <textarea 
-                                id="revision_notes" 
-                                name="revision_notes"
-                                rows="3" 
+                            <textarea id="revision_notes" name="revision_notes" rows="3"
                                 class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
-                                placeholder="Contoh: Lampiran tidak sesuai, mohon diperbaiki..."
-                                required
-                            ></textarea>
+                                placeholder="Contoh: Lampiran tidak sesuai, mohon diperbaiki..." required></textarea>
                         </div>
                     </form>
 
                     {{-- Baris Tombol Aksi --}}
                     <div class="flex justify-end space-x-3">
                         {{-- Tombol Revisi --}}
-                        <button 
-                            type="submit" 
-                            form="revision-form"
+                        <button type="submit" form="revision-form"
                             class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow-sm">
                             Revisi
                         </button>
-                        
+
                         {{-- Form Approve --}}
                         <form :action="`/henkaten/approval/${type}/${id}/approve`" method="POST">
                             @csrf
-                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow-sm">
+                            <button type="submit"
+                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow-sm">
                                 Approve
                             </button>
                         </form>
-                        
+
                         {{-- Tombol Tutup --}}
-                        <button @click="showModal = false" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded shadow-sm">
+                        <button @click="showModal = false"
+                            class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded shadow-sm">
                             Tutup
                         </button>
                     </div>
@@ -525,7 +673,9 @@
                         })
                         .catch(error => {
                             console.error('Error fetching henkaten detail:', error);
-                            this.detail = { error: 'Gagal memuat data.' };
+                            this.detail = {
+                                error: 'Gagal memuat data.'
+                            };
                             this.loading = false;
                         });
                 },
@@ -560,4 +710,4 @@
             }
         }
     </script>
-</x-app-layout> 
+</x-app-layout>
